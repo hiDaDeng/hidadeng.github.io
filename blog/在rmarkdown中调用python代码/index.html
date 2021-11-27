@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>在Rmarkdown中调用Python代码 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="数据分析, 可视化, 第三方包, R语言" />
+<meta name="description" content="左手R，右手Python！">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/%E5%9C%A8rmarkdown%E4%B8%AD%E8%B0%83%E7%94%A8python%E4%BB%A3%E7%A0%81/" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="在Rmarkdown中调用Python代码" />
+<meta property="og:description" content="左手R，右手Python！" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/%E5%9C%A8rmarkdown%E4%B8%AD%E8%B0%83%E7%94%A8python%E4%BB%A3%E7%A0%81/" />
+<meta property="og:image" content="/images/blog/datascience.jpg" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2021-11-23T18:40:10&#43;06:00" />
+<meta property="article:modified_time" content="2021-11-23T18:40:10&#43;06:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/datascience.jpg" />
+<meta name="twitter:title" content="在Rmarkdown中调用Python代码"/>
+<meta name="twitter:description" content="左手R，右手Python！"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "在Rmarkdown中调用Python代码",
+      "item": "/blog/%E5%9C%A8rmarkdown%E4%B8%AD%E8%B0%83%E7%94%A8python%E4%BB%A3%E7%A0%81/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "在Rmarkdown中调用Python代码",
+  "name": "在Rmarkdown中调用Python代码",
+  "description": "左手R，右手Python！",
+  "keywords": [
+    "数据分析", "可视化", "第三方包", "R语言"
+  ],
+  "articleBody": "代码下载 https://github.com/hidadeng/DaDengAndHisPython/blob/master/在Rmarkdown中调用Python代码.zip\nPython和R是一对数据科学两大语言，在互联互通的路上，我感觉R更加的积极。还记得之前 Python中调用R的库-rpy2， 在Python使用R语言语法还是有些不自然。在R中调用Python体验十分棒，一起跟我看看吧。\nreticulate包是可以让R语言非常流畅自然联通Python的关键。\nRmarkdown预备知识\nRmarkdown很像jupyter notbeook和markdown的结合。\n 代码块 markdon文本  代码块 在Rmarkdown中的代码块的开始都是以三引号、{}和语言名为标志，以三引号结尾。\nlibrary(ggplot2) ggplot(mpg, aes(x=displ, y=cty))+ geom_point() library(ggplot2) ggplot(mpg, aes(x=displ, y=cty))+ geom_point()   后面设置好reticulate包后，就可以在Rmarkdown中使用python代码块，\nimport pandas as pd df = pd.read_csv('test.csv') df.head() markdown文本 文本部分全部支持markdown语法，这里不做赘述。\n安装 install.packages(\"reticulate\") 环境设置 当我们在R代码块中设置好Python环境，就可以在Rmarkdown中跑Python代码。\n查询Python 首先我们需要知道Python安装路径，可以在命令行中逐行执行下面代码\npython3 import sys sys.executable 我的mac电脑的Python安装路径为\n/Library/Frameworks/Python.framework/Versions/3.7/bin/python3 指定Python 执行下方的代码(路径改为自己的Python安装路径)\nlibrary(reticulate) ## Warning: package 'reticulate' was built under R version 3.6.2 use_python('/Library/Frameworks/Python.framework/Versions/3.7/bin/python3') 执行代码后，我们就可以愉快的使用Python代码\n运行Python代码 在Rmarkdown中写Python代码块\n作图 import numpy as np import matplotlib.pyplot as plt # 计算正弦曲线上点的 x 和 y 坐标 x = np.arange(0, 3 * np.pi, 0.1) y = np.sin(x) plt.title(\"sine wave form\") # 使用 matplotlib 来绘制点 plt.plot(x, y) plt.show()   读取csv import pandas as pd df = pd.read_csv(\"test.csv\", encoding=\"gbk\") df.head() ## birthday name text age gender height weight ## 0 1985/10/08 Alice 我很开心，每天都这么快乐，我很幸福 35 female 175 55 ## 1 95.07.07 Mary 我很难过 25 female 165 50 ## 2 01-11-10 Mike 唉，真难受 19 male 180 75 ## 3 90/2/8 Smith 无所谓开心还是难过 30 male 175 70 ## 4 93-1-5 Henry 每天赚一万，真爽！ 27 male 185 80 返回的df是Python对象，我们可以看到表格不好看，这是R中的Python对象。\n在R代码块中调用Python变量(对象) 刚刚讲的都是在Rmakdown中运行Python代码块，并不是在R代码块中运行Python代码或者调用Python变量。\npy$python_variable_name R代码块中调用Python方法\npy$python_variable_name\n py相当于Python中的对象 $ 相当于Python中的点 python_variable_name 是Python代码块中的变量名  比如在上文中Python的变量df，在R中调用\npy$df   现在调用Python对象df时，R会默认将其转为R对象，所以内容一样，样式似乎变好看了。\nR代码块中导入Python库 使用os库的listdir函数查询当前项目文件夹内的文件列表\nimport os os.listdir() ## ['reticulate学习.md', 'test.csv', 'test.py', 'reticulate学习.html', 'reticulate学习_files', 'reticulate.pdf', 'reticulate学习.Rmd', 'data.py'] 在R代码块中实现上方的Python功能，如下，很简单\nlibrary(reticulate) #导入库 os  import(\"os\") #os库的listdir函数 os$listdir() ## [1] \"reticulate学习.md\" \"test.csv\" \"test.py\" ## [4] \"reticulate学习.html\" \"reticulate学习_files\" \"reticulate.pdf\" ## [7] \"reticulate学习.Rmd\" \"data.py\" 可以发现\n import(\"os)代替了import os $代替了.  代替了 =  再熟悉一下\nlibrary(reticulate) pd  import(\"pandas\") df2  pd$read_csv(\"test.csv\", encoding=\"gbk\") df2   需要注意的是，在R代码块中执行Python代码时，默认会将Python对象转为R对象。\nsource_python() 使用reticulate包中的source_python(‘py文件路径’)可以导入py文件中的变量，这样就可以在R代码块中使用外部变量。例如我在data.py中准备A和B两个字符串\nA = '我是张三,' B = '来自河北' 在R代码块中运行data.py\nlibrary(reticulate) source_python(\"data.py\") print(A) ## [1] \"我是张三,\" print(B) ## [1] \"来自河北\" paste0(A, B) ## [1] \"我是张三,来自河北\" py_run_file() 在R代码块中运行项目文件夹中的test.py文件\nlibrary(reticulate) py_run_file(\"test.py\") 数据类型对比    R Python Examples     Single-element vector Scalar 1, 1L, TRUE, \"foo\"   Multi-element vector List c(1.0, 2.0, 3.0), c(1L, 2L, 3L)   List of multiple types Tuple list(1L, TRUE, \"foo\")   Named list Dict list(a = 1L, b = 2.0), dict(x = x_data)   Matrix/Array NumPy ndarray matrix(c(1,2,3,4), nrow = 2, ncol = 2)   Data Frame Pandas DataFrame data.frame(x = c(1,2,3), y = c(\"a\", \"b\", \"c\"))   Function Python function function(x) x + 1   NULL, TRUE, FALSE None, True, False NULL, TRUE, FALSE    ",
+  "wordCount" : "335",
+  "inLanguage": "en",
+  "image":"/images/blog/datascience.jpg","datePublished": "2021-11-23T18:40:10+06:00",
+  "dateModified": "2021-11-23T18:40:10+06:00",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/%E5%9C%A8rmarkdown%E4%B8%AD%E8%B0%83%E7%94%A8python%E4%BB%A3%E7%A0%81/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/blog" title="博文">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/categories/" title="类目">
+                    <span>类目</span>
+                </a>
+            </li>
+            <li>
+                <a href="mailto:thunderhit@qq.com" title="联系">
+                    <span>联系</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="/">Home</a>&nbsp;»&nbsp;<a href="/blog/">Blogs</a></div>
+    <h1 class="post-title">
+      在Rmarkdown中调用Python代码
+    </h1>
+    <div class="post-description">
+      左手R，右手Python！
+    </div>
+    <div class="post-meta"><span title='2021-11-23 18:40:10 +0600 +0600'>2021-11-18</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/datascience.jpg" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/datascience.jpg" alt=""></a>
+        
+</figure><div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul><ul>
+                <li>
+                    <a href="#%e4%bb%a3%e7%a0%81%e4%b8%8b%e8%bd%bd" aria-label="代码下载">代码下载</a></li>
+                <li>
+                    <a href="#%e4%bb%a3%e7%a0%81%e5%9d%97" aria-label="代码块">代码块</a></li>
+                <li>
+                    <a href="#markdown%e6%96%87%e6%9c%ac" aria-label="markdown文本">markdown文本</a></li>
+                <li>
+                    <a href="#%e5%ae%89%e8%a3%85" aria-label="安装">安装</a></li>
+                <li>
+                    <a href="#%e7%8e%af%e5%a2%83%e8%ae%be%e7%bd%ae" aria-label="环境设置">环境设置</a></li>
+                <li>
+                    <a href="#%e6%9f%a5%e8%af%a2python" aria-label="查询Python">查询Python</a></li>
+                <li>
+                    <a href="#%e6%8c%87%e5%ae%9apython" aria-label="指定Python">指定Python</a></li>
+                <li>
+                    <a href="#%e8%bf%90%e8%a1%8cpython%e4%bb%a3%e7%a0%81" aria-label="运行Python代码">运行Python代码</a></li>
+                <li>
+                    <a href="#%e4%bd%9c%e5%9b%be" aria-label="作图">作图</a></li>
+                <li>
+                    <a href="#%e8%af%bb%e5%8f%96csv" aria-label="读取csv">读取csv</a></li></ul>
+                    
+                <li>
+                    <a href="#%e5%9c%a8r%e4%bb%a3%e7%a0%81%e5%9d%97%e4%b8%ad%e8%b0%83%e7%94%a8python%e5%8f%98%e9%87%8f%e5%af%b9%e8%b1%a1" aria-label="在R代码块中调用Python变量(对象)">在R代码块中调用Python变量(对象)</a><ul>
+                        
+                <li>
+                    <a href="#pypython_variable_name" aria-label="py$python_variable_name">py$python_variable_name</a></li></ul>
+                </li>
+                <li>
+                    <a href="#r%e4%bb%a3%e7%a0%81%e5%9d%97%e4%b8%ad%e5%af%bc%e5%85%a5python%e5%ba%93" aria-label="R代码块中导入Python库">R代码块中导入Python库</a><ul>
+                        
+                <li>
+                    <a href="#source_python" aria-label="source_python()">source_python()</a></li>
+                <li>
+                    <a href="#py_run_file" aria-label="py_run_file()">py_run_file()</a></li></ul>
+                </li>
+                <li>
+                    <a href="#%e6%95%b0%e6%8d%ae%e7%b1%bb%e5%9e%8b%e5%af%b9%e6%af%94" aria-label="数据类型对比">数据类型对比</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="代码下载">代码下载<a hidden class="anchor" aria-hidden="true" href="#代码下载">#</a></h2>
+<p><a href="https://github.com/hidadeng/DaDengAndHisPython/blob/master/%E5%9C%A8Rmarkdown%E4%B8%AD%E8%B0%83%E7%94%A8Python%E4%BB%A3%E7%A0%81.zip">https://github.com/hidadeng/DaDengAndHisPython/blob/master/在Rmarkdown中调用Python代码.zip</a></p>
+<p>Python和R是一对数据科学两大语言，在互联互通的路上，我感觉R更加的积极。还记得之前 <strong>Python中调用R的库-rpy2</strong>， 在Python使用R语言语法还是有些不自然。在R中调用Python体验十分棒，一起跟我看看吧。</p>
+<p>reticulate包是可以让R语言非常流畅自然联通Python的关键。</p>
+<p><strong>Rmarkdown预备知识</strong></p>
+<p>Rmarkdown很像jupyter notbeook和markdown的结合。</p>
+<ul>
+<li>代码块</li>
+<li>markdon文本</li>
+</ul>
+<h2 id="代码块">代码块<a hidden class="anchor" aria-hidden="true" href="#代码块">#</a></h2>
+<p>在Rmarkdown中的代码块的开始都是以三引号、{}和语言名为标志，以三引号结尾。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">library(ggplot2)
+ggplot(mpg, aes(x=displ, y=cty))+
+  geom_point()
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">library</span><span class="p">(</span><span class="n">ggplot2</span><span class="p">)</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">ggplot</span><span class="p">(</span><span class="n">mpg</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">displ</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">cty</span><span class="p">))</span><span class="o">+</span>
+  <span class="nf">geom_point</span><span class="p">()</span>
+</code></pre></div><figure>
+    <img loading="lazy" src="img/unnamed-chunk-1-1.png" width="800"/> 
+</figure>
+
+<p>后面设置好reticulate包后，就可以在Rmarkdown中使用python代码块，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import pandas as pd
+df = pd.read_csv(&#39;test.csv&#39;)
+df.head()
+</code></pre></div><h2 id="markdown文本">markdown文本<a hidden class="anchor" aria-hidden="true" href="#markdown文本">#</a></h2>
+<p>文本部分全部支持markdown语法，这里不做赘述。</p>
+<h2 id="安装">安装<a hidden class="anchor" aria-hidden="true" href="#安装">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">install.packages(&#34;reticulate&#34;)
+</code></pre></div><h2 id="环境设置">环境设置<a hidden class="anchor" aria-hidden="true" href="#环境设置">#</a></h2>
+<p>当我们在R代码块中设置好Python环境，就可以在Rmarkdown中跑Python代码。</p>
+<h2 id="查询python">查询Python<a hidden class="anchor" aria-hidden="true" href="#查询python">#</a></h2>
+<p>首先我们需要知道Python安装路径，可以在<strong>命令行</strong>中逐行执行下面代码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">python3
+import sys
+sys.executable
+</code></pre></div><p>我的mac电脑的Python安装路径为</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">/Library/Frameworks/Python.framework/Versions/3.7/bin/python3
+</code></pre></div><h2 id="指定python">指定Python<a hidden class="anchor" aria-hidden="true" href="#指定python">#</a></h2>
+<p>执行下方的代码(路径改为自己的Python安装路径)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">library</span><span class="p">(</span><span class="n">reticulate</span><span class="p">)</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="err">##</span> <span class="nx">Warning</span><span class="p">:</span> <span class="kn">package</span> <span class="err">&#39;</span><span class="nx">reticulate</span><span class="err">&#39;</span> <span class="nx">was</span> <span class="nx">built</span> <span class="nx">under</span> <span class="nx">R</span> <span class="nx">version</span> <span class="mf">3.6.2</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">use_python</span><span class="p">(</span><span class="s">&#39;/Library/Frameworks/Python.framework/Versions/3.7/bin/python3&#39;</span><span class="p">)</span>
+</code></pre></div><p>执行代码后，我们就可以愉快的使用Python代码</p>
+<h2 id="运行python代码">运行Python代码<a hidden class="anchor" aria-hidden="true" href="#运行python代码">#</a></h2>
+<p>在Rmarkdown中写Python代码块</p>
+<h2 id="作图">作图<a hidden class="anchor" aria-hidden="true" href="#作图">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span> 
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span> 
+<span class="c1"># 计算正弦曲线上点的 x 和 y 坐标</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>  <span class="mi">3</span>  <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>  <span class="mf">0.1</span><span class="p">)</span> 
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&#34;sine wave form&#34;</span><span class="p">)</span>  
+<span class="c1"># 使用 matplotlib 来绘制点</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> 
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><figure>
+    <img loading="lazy" src="img/unnamed-chunk-3-1.png" width="800"/> 
+</figure>
+
+<h2 id="读取csv">读取csv<a hidden class="anchor" aria-hidden="true" href="#读取csv">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&#34;test.csv&#34;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&#34;gbk&#34;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">##      birthday   name               text  age  gender  height  weight
+## 0  1985/10/08  Alice  我很开心，每天都这么快乐，我很幸福   35  female     175      55
+## 1    95.07.07   Mary               我很难过   25  female     165      50
+## 2    01-11-10   Mike              唉，真难受   19    male     180      75
+## 3      90/2/8  Smith          无所谓开心还是难过   30    male     175      70
+## 4      93-1-5  Henry          每天赚一万，真爽！   27    male     185      80
+</code></pre></div><p>返回的df是Python对象，我们可以看到表格不好看，这是R中的Python对象。</p>
+<h1 id="在r代码块中调用python变量对象">在R代码块中调用Python变量(对象)<a hidden class="anchor" aria-hidden="true" href="#在r代码块中调用python变量对象">#</a></h1>
+<p>刚刚讲的都是在Rmakdown中运行Python代码块，并不是在R代码块中运行Python代码或者调用Python变量。</p>
+<h2 id="pypython_variable_name">py$python_variable_name<a hidden class="anchor" aria-hidden="true" href="#pypython_variable_name">#</a></h2>
+<p>R代码块中调用Python方法</p>
+<p>py$python_variable_name</p>
+<ul>
+<li>py相当于Python中的对象</li>
+<li>$ 相当于Python中的<strong>点</strong></li>
+<li>python_variable_name 是Python代码块中的变量名</li>
+</ul>
+<p>比如在上文中Python的变量df，在R中调用</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="n">py</span><span class="o">$</span><span class="n">df</span>
+</code></pre></div><figure>
+    <img loading="lazy" src="img/df.png" width="800"/> 
+</figure>
+
+<p>现在调用Python对象df时，R会默认将其转为R对象，所以内容一样，样式似乎变好看了。</p>
+<h1 id="r代码块中导入python库">R代码块中导入Python库<a hidden class="anchor" aria-hidden="true" href="#r代码块中导入python库">#</a></h1>
+<p>使用os库的listdir函数查询当前项目文件夹内的文件列表</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">()</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">## [&#39;reticulate学习.md&#39;, &#39;test.csv&#39;, &#39;test.py&#39;, &#39;reticulate学习.html&#39;, &#39;reticulate学习_files&#39;, &#39;reticulate.pdf&#39;, &#39;reticulate学习.Rmd&#39;, &#39;data.py&#39;]
+</code></pre></div><p>在R代码块中实现上方的Python功能，如下，很简单</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">library</span><span class="p">(</span><span class="n">reticulate</span><span class="p">)</span>
+
+<span class="c1">#导入库</span>
+<span class="n">os</span> <span class="o">&lt;-</span> <span class="nf">import</span><span class="p">(</span><span class="s">&#34;os&#34;</span><span class="p">)</span>
+
+<span class="c1">#os库的listdir函数</span>
+<span class="n">os</span><span class="o">$</span><span class="nf">listdir</span><span class="p">()</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">## [1] &#34;reticulate学习.md&#34;    &#34;test.csv&#34;             &#34;test.py&#34;             
+## [4] &#34;reticulate学习.html&#34;  &#34;reticulate学习_files&#34; &#34;reticulate.pdf&#34;      
+## [7] &#34;reticulate学习.Rmd&#34;   &#34;data.py&#34;
+</code></pre></div><p>可以发现</p>
+<ul>
+<li><code>import(&quot;os)</code>代替了<code>import os</code></li>
+<li><code>$</code>代替了<code>.</code></li>
+<li><code>&lt;-</code> 代替了 <code>=</code></li>
+</ul>
+<p>再熟悉一下</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">library</span><span class="p">(</span><span class="n">reticulate</span><span class="p">)</span>
+<span class="n">pd</span> <span class="o">&lt;-</span> <span class="nf">import</span><span class="p">(</span><span class="s">&#34;pandas&#34;</span><span class="p">)</span>
+<span class="n">df2</span> <span class="o">&lt;-</span> <span class="n">pd</span><span class="o">$</span><span class="nf">read_csv</span><span class="p">(</span><span class="s">&#34;test.csv&#34;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s">&#34;gbk&#34;</span><span class="p">)</span>
+<span class="n">df2</span>
+</code></pre></div><figure>
+    <img loading="lazy" src="img/df2.png" width="800"/> 
+</figure>
+
+<p>需要注意的是，在R代码块中执行Python代码时，默认会将Python对象转为R对象。</p>
+<h2 id="source_python">source_python()<a hidden class="anchor" aria-hidden="true" href="#source_python">#</a></h2>
+<p>使用reticulate包中的source_python(&lsquo;py文件路径&rsquo;)可以导入py文件中的变量，这样就可以在R代码块中使用外部变量。例如我在data.py中准备A和B两个字符串</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">A = &#39;我是张三,&#39;
+B = &#39;来自河北&#39;
+</code></pre></div><p>在R代码块中运行data.py</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">library</span><span class="p">(</span><span class="n">reticulate</span><span class="p">)</span>
+
+<span class="nf">source_python</span><span class="p">(</span><span class="s">&#34;data.py&#34;</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">## [1] &#34;我是张三,&#34;
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">print</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">## [1] &#34;来自河北&#34;
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">paste0</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">## [1] &#34;我是张三,来自河北&#34;
+</code></pre></div><h2 id="py_run_file">py_run_file()<a hidden class="anchor" aria-hidden="true" href="#py_run_file">#</a></h2>
+<p>在R代码块中运行项目文件夹中的test.py文件</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">library</span><span class="p">(</span><span class="n">reticulate</span><span class="p">)</span>
+<span class="nf">py_run_file</span><span class="p">(</span><span class="s">&#34;test.py&#34;</span><span class="p">)</span>
+</code></pre></div><h1 id="数据类型对比">数据类型对比<a hidden class="anchor" aria-hidden="true" href="#数据类型对比">#</a></h1>
+<table>
+<thead>
+<tr>
+<th>R</th>
+<th>Python</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Single-element vector</td>
+<td>Scalar</td>
+<td><code>1</code>, <code>1L</code>, <code>TRUE</code>, <code>&quot;foo&quot;</code></td>
+</tr>
+<tr>
+<td>Multi-element vector</td>
+<td>List</td>
+<td><code>c(1.0, 2.0, 3.0)</code>, <code>c(1L, 2L, 3L)</code></td>
+</tr>
+<tr>
+<td>List of multiple types</td>
+<td>Tuple</td>
+<td><code>list(1L, TRUE, &quot;foo&quot;)</code></td>
+</tr>
+<tr>
+<td>Named list</td>
+<td>Dict</td>
+<td><code>list(a = 1L, b = 2.0)</code>, <code>dict(x = x_data)</code></td>
+</tr>
+<tr>
+<td>Matrix/Array</td>
+<td>NumPy ndarray</td>
+<td><code>matrix(c(1,2,3,4), nrow = 2, ncol = 2)</code></td>
+</tr>
+<tr>
+<td>Data Frame</td>
+<td>Pandas DataFrame</td>
+<td><code>data.frame(x = c(1,2,3), y = c(&quot;a&quot;, &quot;b&quot;, &quot;c&quot;))</code></td>
+</tr>
+<tr>
+<td>Function</td>
+<td>Python function</td>
+<td><code>function(x) x + 1</code></td>
+</tr>
+<tr>
+<td>NULL, TRUE, FALSE</td>
+<td>None, True, False</td>
+<td><code>NULL</code>, <code>TRUE</code>, <code>FALSE</code></td>
+</tr>
+</tbody>
+</table>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/">数据分析</a></li>
+      <li><a href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/">可视化</a></li>
+      <li><a href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/">第三方包</a></li>
+      <li><a href="/tags/r%E8%AF%AD%E8%A8%80/">R语言</a></li>
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2021 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

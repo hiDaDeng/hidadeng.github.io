@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>SHAP机器学习模型解释库 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="python, 第三方包, 机器学习" />
+<meta name="description" content="图文代码理解机器学习模型中各特征对结果的贡献">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/shap%E5%AD%A6%E4%B9%A0/" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="SHAP机器学习模型解释库" />
+<meta property="og:description" content="图文代码理解机器学习模型中各特征对结果的贡献" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/shap%E5%AD%A6%E4%B9%A0/" />
+<meta property="og:image" content="/images/blog/output_22_0.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2021-10-14T16:40:10&#43;06:00" />
+<meta property="article:modified_time" content="2021-10-14T16:40:10&#43;06:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/output_22_0.png" />
+<meta name="twitter:title" content="SHAP机器学习模型解释库"/>
+<meta name="twitter:description" content="图文代码理解机器学习模型中各特征对结果的贡献"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "SHAP机器学习模型解释库",
+      "item": "/blog/shap%E5%AD%A6%E4%B9%A0/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "SHAP机器学习模型解释库",
+  "name": "SHAP机器学习模型解释库",
+  "description": "图文代码理解机器学习模型中各特征对结果的贡献",
+  "keywords": [
+    "python", "第三方包", "机器学习"
+  ],
+  "articleBody": "代码下载 点击此处下载代码\n 原文链接 https://towardsdatascience.com/shap-explain-any-machine-learning-model-in-python-24207127cad7\n  想象一下，你正试图训练一个机器学习模型来预测广告是否被特定的人点击。在收到关于某人的一些信息后，模型预测某人会不会点击广告。\n  但是为什么模型会输出这样的预测结果呢？ 每个特征对预测的贡献有多大？ 如果您能看到一个图表，显示每个特征对预测的贡献程度，如下所示，不是很好吗？\n  Shapley值就能起到特征权重测度的作用。\nShapley值是什么？ Shapley值是博弈论中使用的一种方法，它涉及公平地将收益和成本分配给在联盟中工作的行动者。 由于每个行动者对联盟的贡献是不同的，Shapley值保证每个行动者根据贡献的多少获得公平的份额。\n  小案例 Shapley值被广泛地应用于求解群体中每个工人(特征)的贡献问题。要理解Shapley值的作用，让我们想象一下贵公司刚刚做了A/B测试，他们在测试广告策略的不同组合。\n每个策略在特定月份的收入是：\n 无广告：150美元 社交媒体：300美元 谷歌广告：200美元 电子邮件营销：350美元 社交媒体和谷歌广告：320美元 社交媒体和电子邮件营销：400美元 谷歌广告和电子邮件营销：350美元 电子邮件营销，谷歌广告和社交媒体：450美元    使用三则广告与不使用广告的收入相差300美元，每则广告对这一差异有多大的贡献?\n  我们可以通过计算每一类广告的Shapley值来计算谷歌广告对公司收入的总贡献入手，通过公式可以计算出Google广告的总贡献：\n  让我们找到Google广告的边际贡献及其权重。\n寻找谷歌广告的边际贡献 第一，我们将发现谷歌广告对以下群体的边际贡献：\n 无广告 谷歌广告+社交媒体 谷歌广告+电子邮件营销 谷歌广告+电子邮件营销+社交媒体    Google广告 对 无广告 的边际贡献是：\n  谷歌广告 对 谷歌广告\u0026社交媒体组合 的边际贡献是：\n  谷歌广告 对 谷歌广告\u0026电子邮件营销组合 的边际贡献是：\n  谷歌广告 对 谷歌广告、电子邮件营销和社交媒体组合 的边际贡献是：\n  发现权重 为了发现权重，我们将把不同广告策略的组合组织成如下多个层次，每个层次对应于每个组合中广告策略的数量。\n然后根据每个层次的边数分配权重，我们看到了这一点：\n 第一级包含3条边，因此每个边的权重为1/3 第二级包含6条边，因此每条边的权重将为1/6 第三级包含3条边，因此每条边的权重将为1/3    发现Google广告的总贡献 根据前面的权重和边际贡献，我们已经可以找到Google广告的总贡献!\n    酷!所以谷歌广告在使用3种广告策略与不使用广告的总收入差异中贡献了36.67美元。36.67是Google广告的Shapey值。\n  重复以上步骤，对于另外两种广告策略，我们可以看出：\n  电子邮件营销贡献151.67美元\n  社交媒体贡献116.67美元\n  谷歌广告贡献36.67美元\n    他们共同出资300美元，用于使用3种不同类型的广告与不使用广告的区别!挺酷的，不是吗? 既然我们理解了Shapley值，那么让我们看看如何使用它来解释机器学习模型。\nSHAP-在Python中解释机器学习模型 SHAP是一个Python库，它使用Shapley值来解释任何机器学习模型的输出。\n安装SHAP\n!pip3 install shap 训练模型 为了理解SHAP工作原理，我们使用Kaggle平台内的advertising广告数据集。\nimport pandas as pd df = pd.read_csv(\"advertising.csv\") df.head()   我们将建立一个机器学习模型, 该模型根据用户个人特质信息来预测其是否点击广告。\n我们使用Patsy将DataFrame转换为一组特征和一组目标值：\nfrom patsy import dmatrices from sklearn.model_selection import train_test_split y, X = dmatrices( \"clicked_on_ad ~ daily_time_spent_on_site + age + area_income + daily_internet_usage + male -1\", data=df, ) X_frame = pd.DataFrame(data=X, columns=X.design_info.column_names) 把数据分为测试集和训练接\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=7) 接下来使用XGBoost训练模型，并做预测\nimport xgboost model = xgboost.XGBClassifier().fit(X_train, y_train) y_predicted = model.predict(X_test) 为了查看模型表现，我们使用F1得分\nfrom sklearn.metrics import f1_score f1 = f1_score(y_test, y_predicted) f1 0.9619047619047619  太好了!\n解释该模型 该模型很好地预测了用户是否点击广告。但它是如何得出这样的预测的? 每个特征对最终预测与平均预测的差异贡献了多少?\n注意，这个问题与我们在文章开头论述的问题非常相似。\n因此，寻找每个特征的Shapley值可以帮助我们确定它们的贡献。得到特征i的重要性的步骤与之前类似，其中i是特征的索引：\n 获取所有不包含特征i的子集 找出特征i对这些子集中每个子集的边际贡献 聚合所有边际贡献来计算特征i的贡献  若要使用SHAP查找Shapley值，只需将训练好的模型插入shap.Explainer\nimport shap explainer = shap.Explainer(model) shap_values = explainer(X_frame) ntree_limit is deprecated, use `iteration_range` or model slicing instead.  SHAP瀑布图 可视化第一个预测的解释：\n#第一条记录是未点击 shap.plots.waterfall(shap_values[0])   啊哈!现在我们知道每个特征对第一次预测的贡献。对上图的解释：\n   蓝色条显示某一特定特征在多大程度上降低了预测的值。 红条显示了一个特定的特征在多大程度上增加了预测值。 负值意味着该人点击广告的概率小于0.5  我们应该期望总贡献等于预测与均值预测的差值。我们来验证一下：\n  酷!他们是平等的。\n可视化第二个预测的解释：\n#第二条记录也是未点击 shap.plots.waterfall(shap_values[1])   SHAP摘要图 我们可以使用SHAP摘要图，而不是查看每个单独的实例，来可视化这些特性对多个实例的整体影响：\nshap.summary_plot(shap_values, X)   SHAP摘要图告诉我们数据集上最重要的特征及其影响范围。\n从上面的情节中，我们可以对模型的预测获得一些有趣的见解：\n 用户的 daily_internet_usage 对该用户是否点击广告的影响最大。 随着daily_time_spent_on_site的增加，用户点击广告的可能性降低。 随着area_income的增加，用户点击广告的可能性降低。 随着age的增长，用户更容易点击广告。 如果用户是male，则该用户点击广告的可能性较小。  SHAP条形图 我们还可以使用SHAP条形图得到全局特征重要性图。\nshap.plots.bar(shap_values)   很酷!\n结论 恭喜你!您刚刚了解了Shapey值以及如何使用它来解释一个机器学习模型。希望本文将提供您使用Python来解释自己的机器学习模型的基本知识。\n",
+  "wordCount" : "202",
+  "inLanguage": "en",
+  "image":"/images/blog/output_22_0.png","datePublished": "2021-10-14T16:40:10+06:00",
+  "dateModified": "2021-10-14T16:40:10+06:00",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/shap%E5%AD%A6%E4%B9%A0/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/blog" title="博文">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/categories/" title="类目">
+                    <span>类目</span>
+                </a>
+            </li>
+            <li>
+                <a href="mailto:thunderhit@qq.com" title="联系">
+                    <span>联系</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="/">Home</a>&nbsp;»&nbsp;<a href="/blog/">Blogs</a></div>
+    <h1 class="post-title">
+      SHAP机器学习模型解释库
+    </h1>
+    <div class="post-description">
+      图文代码理解机器学习模型中各特征对结果的贡献
+    </div>
+    <div class="post-meta"><span title='2021-10-14 16:40:10 +0600 +0600'>2021-10-16</span>&nbsp;·&nbsp;1 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/output_22_0.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/output_22_0.png" alt=""></a>
+        
+</figure><div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#%e4%bb%a3%e7%a0%81%e4%b8%8b%e8%bd%bd" aria-label="代码下载">代码下载</a></li>
+                <li>
+                    <a href="#shapley%e5%80%bc%e6%98%af%e4%bb%80%e4%b9%88" aria-label="Shapley值是什么？">Shapley值是什么？</a></li>
+                <li>
+                    <a href="#%e5%b0%8f%e6%a1%88%e4%be%8b" aria-label="小案例">小案例</a></li>
+                <li>
+                    <a href="#%e5%af%bb%e6%89%be%e8%b0%b7%e6%ad%8c%e5%b9%bf%e5%91%8a%e7%9a%84%e8%be%b9%e9%99%85%e8%b4%a1%e7%8c%ae" aria-label="寻找谷歌广告的边际贡献">寻找谷歌广告的边际贡献</a></li>
+                <li>
+                    <a href="#%e5%8f%91%e7%8e%b0%e6%9d%83%e9%87%8d" aria-label="发现权重">发现权重</a></li>
+                <li>
+                    <a href="#%e5%8f%91%e7%8e%b0google%e5%b9%bf%e5%91%8a%e7%9a%84%e6%80%bb%e8%b4%a1%e7%8c%ae" aria-label="发现Google广告的总贡献">发现Google广告的总贡献</a></li>
+                <li>
+                    <a href="#shap-%e5%9c%a8python%e4%b8%ad%e8%a7%a3%e9%87%8a%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0%e6%a8%a1%e5%9e%8b" aria-label="SHAP-在Python中解释机器学习模型">SHAP-在Python中解释机器学习模型</a></li>
+                <li>
+                    <a href="#%e8%ae%ad%e7%bb%83%e6%a8%a1%e5%9e%8b" aria-label="训练模型">训练模型</a></li>
+                <li>
+                    <a href="#%e8%a7%a3%e9%87%8a%e8%af%a5%e6%a8%a1%e5%9e%8b" aria-label="解释该模型">解释该模型</a></li>
+                <li>
+                    <a href="#shap%e7%80%91%e5%b8%83%e5%9b%be" aria-label="SHAP瀑布图">SHAP瀑布图</a></li>
+                <li>
+                    <a href="#shap%e6%91%98%e8%a6%81%e5%9b%be" aria-label="SHAP摘要图">SHAP摘要图</a></li>
+                <li>
+                    <a href="#shap%e6%9d%a1%e5%bd%a2%e5%9b%be" aria-label="SHAP条形图">SHAP条形图</a></li>
+                <li>
+                    <a href="#%e7%bb%93%e8%ae%ba" aria-label="结论">结论</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="代码下载">代码下载<a hidden class="anchor" aria-hidden="true" href="#代码下载">#</a></h2>
+<p><a href="SHAP.zip">点击此处下载代码</a></p>
+<br>
+<blockquote>
+<p>原文链接 <a href="https://towardsdatascience.com/shap-explain-any-machine-learning-model-in-python-24207127cad7">https://towardsdatascience.com/shap-explain-any-machine-learning-model-in-python-24207127cad7</a></p>
+</blockquote>
+<h2 id="heading"><a hidden class="anchor" aria-hidden="true" href="#heading">#</a></h2>
+<p>想象一下，你正试图训练一个机器学习模型来预测广告是否被特定的人点击。在收到关于某人的一些信息后，模型预测某人会不会点击广告。</p>
+<figure>
+    <img loading="lazy" src="img/%e5%9b%be1.png"/> 
+</figure>
+
+<p>但是为什么模型会输出这样的预测结果呢？ 每个特征对预测的贡献有多大？ 如果您能看到一个图表，显示每个特征对预测的贡献程度，如下所示，不是很好吗？</p>
+<figure>
+    <img loading="lazy" src="img/%e6%9d%83%e9%87%8d.png"/> 
+</figure>
+
+<p>Shapley值就能起到特征权重测度的作用。</p>
+<h2 id="shapley值是什么">Shapley值是什么？<a hidden class="anchor" aria-hidden="true" href="#shapley值是什么">#</a></h2>
+<p>Shapley值是博弈论中使用的一种方法，它涉及公平地将收益和成本分配给在联盟中工作的行动者。
+由于每个行动者对联盟的贡献是不同的，Shapley值保证每个行动者根据贡献的多少获得公平的份额。</p>
+<figure>
+    <img loading="lazy" src="img/%e8%b4%a1%e7%8c%ae.png"/> 
+</figure>
+
+<h2 id="小案例">小案例<a hidden class="anchor" aria-hidden="true" href="#小案例">#</a></h2>
+<p>Shapley值被广泛地应用于求解群体中每个工人(特征)的贡献问题。要理解Shapley值的作用，让我们想象一下贵公司刚刚做了A/B测试，他们在测试广告策略的不同组合。</p>
+<p>每个策略在特定月份的收入是：</p>
+<ul>
+<li>无广告：150美元</li>
+<li>社交媒体：300美元</li>
+<li>谷歌广告：200美元</li>
+<li>电子邮件营销：350美元</li>
+<li>社交媒体和谷歌广告：320美元</li>
+<li>社交媒体和电子邮件营销：400美元</li>
+<li>谷歌广告和电子邮件营销：350美元</li>
+<li>电子邮件营销，谷歌广告和社交媒体：450美元</li>
+</ul>
+<figure>
+    <img loading="lazy" src="img/%e7%ad%96%e7%95%a5%e8%90%a5%e6%94%b6.png"/> 
+</figure>
+
+<p>使用三则广告与不使用广告的收入相差300美元，每则广告对这一差异有多大的贡献?</p>
+<figure>
+    <img loading="lazy" src="img/%e7%ad%96%e7%95%a5%e8%90%a5%e6%94%b6%e8%b4%a1%e7%8c%ae%e5%87%a0%e4%bd%95.png"/> 
+</figure>
+
+<p>我们可以通过计算每一类广告的Shapley值来计算谷歌广告对公司收入的总贡献入手，通过公式可以计算出Google广告的总贡献：</p>
+<figure>
+    <img loading="lazy" src="img/%e5%85%ac%e5%bc%8f.png"/> 
+</figure>
+
+<p>让我们找到Google广告的边际贡献及其权重。</p>
+<h2 id="寻找谷歌广告的边际贡献">寻找谷歌广告的边际贡献<a hidden class="anchor" aria-hidden="true" href="#寻找谷歌广告的边际贡献">#</a></h2>
+<p>第一，我们将发现谷歌广告对以下群体的边际贡献：</p>
+<ul>
+<li>无广告</li>
+<li>谷歌广告+社交媒体</li>
+<li>谷歌广告+电子邮件营销</li>
+<li>谷歌广告+电子邮件营销+社交媒体</li>
+</ul>
+<figure>
+    <img loading="lazy" src="img/%e8%be%b9%e9%99%85%e8%b4%a1%e7%8c%ae.png"/> 
+</figure>
+
+<p>Google广告 对 无广告 的边际贡献是：</p>
+<figure>
+    <img loading="lazy" src="img/MC1.png"/> 
+</figure>
+
+<p>谷歌广告 对 谷歌广告&amp;社交媒体组合 的边际贡献是：</p>
+<figure>
+    <img loading="lazy" src="img/MC2.png"/> 
+</figure>
+
+<p>谷歌广告 对 谷歌广告&amp;电子邮件营销组合 的边际贡献是：</p>
+<figure>
+    <img loading="lazy" src="img/MC3.png"/> 
+</figure>
+
+<p>谷歌广告 对 谷歌广告、电子邮件营销和社交媒体组合 的边际贡献是：</p>
+<figure>
+    <img loading="lazy" src="img/MC4.png"/> 
+</figure>
+
+<h2 id="发现权重">发现权重<a hidden class="anchor" aria-hidden="true" href="#发现权重">#</a></h2>
+<p>为了发现权重，我们将把不同广告策略的组合组织成如下多个层次，每个层次对应于每个组合中广告策略的数量。</p>
+<p>然后根据每个层次的边数分配权重，我们看到了这一点：</p>
+<ul>
+<li>第一级包含3条边，因此每个边的权重为1/3</li>
+<li>第二级包含6条边，因此每条边的权重将为1/6</li>
+<li>第三级包含3条边，因此每条边的权重将为1/3</li>
+</ul>
+<figure>
+    <img loading="lazy" src="img/%e5%8f%91%e7%8e%b0%e6%9d%83%e9%87%8d.png"/> 
+</figure>
+
+<h2 id="发现google广告的总贡献">发现Google广告的总贡献<a hidden class="anchor" aria-hidden="true" href="#发现google广告的总贡献">#</a></h2>
+<p>根据前面的权重和边际贡献，我们已经可以找到Google广告的总贡献!</p>
+<figure>
+    <img loading="lazy" src="img/google%e6%80%bb%e8%b4%a1%e7%8c%ae.png"/> 
+</figure>
+
+<figure>
+    <img loading="lazy" src="img/google%e5%85%ac%e5%bc%8f.png"/> 
+</figure>
+
+<p>酷!所以谷歌广告在使用3种广告策略与不使用广告的总收入差异中贡献了36.67美元。36.67是Google广告的Shapey值。</p>
+<figure>
+    <img loading="lazy" src="img/otherRevenue.png"/> 
+</figure>
+
+<p>重复以上步骤，对于另外两种广告策略，我们可以看出：</p>
+<ul>
+<li>
+<p>电子邮件营销贡献151.67美元</p>
+</li>
+<li>
+<p>社交媒体贡献116.67美元</p>
+</li>
+<li>
+<p>谷歌广告贡献36.67美元</p>
+<figure>
+    <img loading="lazy" src="img/%e5%90%84%e7%ad%96%e7%95%a5%e8%b4%a1%e7%8c%ae.png"/> 
+</figure>
+
+</li>
+</ul>
+<p>他们共同出资300美元，用于使用3种不同类型的广告与不使用广告的区别!挺酷的，不是吗?
+既然我们理解了Shapley值，那么让我们看看如何使用它来解释机器学习模型。</p>
+<h2 id="shap-在python中解释机器学习模型">SHAP-在Python中解释机器学习模型<a hidden class="anchor" aria-hidden="true" href="#shap-在python中解释机器学习模型">#</a></h2>
+<p>SHAP是一个Python库，它使用Shapley值来解释任何机器学习模型的输出。</p>
+<p>安装SHAP</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python">
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">shap</span>
+
+</code></pre></div><h2 id="训练模型">训练模型<a hidden class="anchor" aria-hidden="true" href="#训练模型">#</a></h2>
+<p>为了理解SHAP工作原理，我们使用Kaggle平台内的advertising广告数据集。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span> 
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&#34;advertising.csv&#34;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><figure>
+    <img loading="lazy" src="img/df.png"/> 
+</figure>
+
+<p>我们将建立一个机器学习模型, 该模型根据用户个人特质信息来预测其是否点击广告。</p>
+<p>我们使用Patsy将DataFrame转换为一组特征和一组目标值：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">patsy</span> <span class="kn">import</span> <span class="n">dmatrices</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
+
+<span class="n">y</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">dmatrices</span><span class="p">(</span>
+    <span class="s2">&#34;clicked_on_ad ~ daily_time_spent_on_site + age + area_income + daily_internet_usage  + male -1&#34;</span><span class="p">,</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">X_frame</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">design_info</span><span class="o">.</span><span class="n">column_names</span><span class="p">)</span>
+
+
+</code></pre></div><p>把数据分为测试集和训练接</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+</code></pre></div><p>接下来使用XGBoost训练模型，并做预测</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">xgboost</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">xgboost</span><span class="o">.</span><span class="n">XGBClassifier</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="n">y_predicted</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+</code></pre></div><p>为了查看模型表现，我们使用F1得分</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">f1_score</span>
+
+<span class="n">f1</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_predicted</span><span class="p">)</span>
+<span class="n">f1</span>
+</code></pre></div><pre><code>0.9619047619047619
+</code></pre>
+<p>太好了!</p>
+<h2 id="解释该模型">解释该模型<a hidden class="anchor" aria-hidden="true" href="#解释该模型">#</a></h2>
+<p>该模型很好地预测了用户是否点击广告。但它是如何得出这样的预测的? <strong>每个特征对最终预测与平均预测的差异贡献了多少?</strong></p>
+<p>注意，这个问题与我们在文章开头论述的问题非常相似。</p>
+<p>因此，寻找每个特征的Shapley值可以帮助我们确定它们的贡献。得到特征i的重要性的步骤与之前类似，其中i是特征的索引：</p>
+<ul>
+<li>获取所有不包含特征i的子集</li>
+<li>找出特征i对这些子集中每个子集的边际贡献</li>
+<li>聚合所有边际贡献来计算特征i的贡献</li>
+</ul>
+<p>若要使用SHAP查找Shapley值，只需将训练好的模型插入shap.Explainer</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">shap</span>
+
+<span class="n">explainer</span> <span class="o">=</span> <span class="n">shap</span><span class="o">.</span><span class="n">Explainer</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">shap_values</span> <span class="o">=</span> <span class="n">explainer</span><span class="p">(</span><span class="n">X_frame</span><span class="p">)</span>
+</code></pre></div><pre><code>ntree_limit is deprecated, use `iteration_range` or model slicing instead.
+</code></pre>
+<h2 id="shap瀑布图">SHAP瀑布图<a hidden class="anchor" aria-hidden="true" href="#shap瀑布图">#</a></h2>
+<p>可视化第一个预测的解释：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#第一条记录是未点击</span>
+<span class="n">shap</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">waterfall</span><span class="p">(</span><span class="n">shap_values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</code></pre></div><figure>
+    <img loading="lazy" src="img/output_20_0.png"/> 
+</figure>
+
+<p>啊哈!现在我们知道每个特征对第一次预测的贡献。对上图的解释：</p>
+<figure>
+    <img loading="lazy" src="img/%e7%ac%ac%e4%b8%80%e6%ac%a1%e9%a2%84%e6%b5%8b%e8%b4%a1%e7%8c%ae.png"/> 
+</figure>
+
+<ul>
+<li>蓝色条显示某一特定特征在多大程度上降低了预测的值。</li>
+<li>红条显示了一个特定的特征在多大程度上增加了预测值。</li>
+<li>负值意味着该人点击广告的概率小于0.5</li>
+</ul>
+<p>我们应该期望总贡献等于预测与均值预测的差值。我们来验证一下：</p>
+<figure>
+    <img loading="lazy" src="img/%e6%80%bb%e8%b4%a1%e7%8c%ae%e7%ad%89%e4%ba%8e%e9%a2%84%e6%b5%8b%e4%b8%8e%e5%9d%87%e5%80%bc%e9%a2%84%e6%b5%8b%e7%9a%84%e5%b7%ae%e5%80%bc.png"/> 
+</figure>
+
+<p>酷!他们是平等的。</p>
+<p>可视化第二个预测的解释：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#第二条记录也是未点击</span>
+<span class="n">shap</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">waterfall</span><span class="p">(</span><span class="n">shap_values</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</code></pre></div><figure>
+    <img loading="lazy" src="img/output_22_0.png"/> 
+</figure>
+
+<h2 id="shap摘要图">SHAP摘要图<a hidden class="anchor" aria-hidden="true" href="#shap摘要图">#</a></h2>
+<p>我们可以使用SHAP摘要图，而不是查看每个单独的实例，来可视化这些特性对多个实例的整体影响：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">shap</span><span class="o">.</span><span class="n">summary_plot</span><span class="p">(</span><span class="n">shap_values</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+</code></pre></div><figure>
+    <img loading="lazy" src="img/output_24_0.png"/> 
+</figure>
+
+<p>SHAP摘要图告诉我们数据集上最重要的特征及其影响范围。</p>
+<p>从上面的情节中，我们可以对模型的预测获得一些有趣的见解：</p>
+<ul>
+<li>用户的 <strong>daily_internet_usage</strong> 对该用户是否点击广告的影响最大。</li>
+<li>随着<strong>daily_time_spent_on_site</strong>的增加，用户点击广告的可能性降低。</li>
+<li>随着<strong>area_income</strong>的增加，用户点击广告的可能性降低。</li>
+<li>随着<strong>age</strong>的增长，用户更容易点击广告。</li>
+<li>如果用户是<strong>male</strong>，则该用户点击广告的可能性较小。</li>
+</ul>
+<h2 id="shap条形图">SHAP条形图<a hidden class="anchor" aria-hidden="true" href="#shap条形图">#</a></h2>
+<p>我们还可以使用SHAP条形图得到全局特征重要性图。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">shap</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">shap_values</span><span class="p">)</span>
+</code></pre></div><figure>
+    <img loading="lazy" src="img/output_26_0.png"/> 
+</figure>
+
+<p>很酷!</p>
+<h2 id="结论">结论<a hidden class="anchor" aria-hidden="true" href="#结论">#</a></h2>
+<p>恭喜你!您刚刚了解了Shapey值以及如何使用它来解释一个机器学习模型。希望本文将提供您使用Python来解释自己的机器学习模型的基本知识。</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="/tags/python/">Python</a></li>
+      <li><a href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/">第三方包</a></li>
+      <li><a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a></li>
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2021 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

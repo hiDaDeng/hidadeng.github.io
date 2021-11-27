@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>使用Pandas处理文本数据 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="Python, 文本分析, pandas" />
+<meta name="description" content="2000字详细说明">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86pandas%E7%AF%87/" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="使用Pandas处理文本数据" />
+<meta property="og:description" content="2000字详细说明" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86pandas%E7%AF%87/" />
+<meta property="og:image" content="/images/blog/pandas.jpeg" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2021-11-16T16:40:10&#43;06:00" />
+<meta property="article:modified_time" content="2021-11-16T16:40:10&#43;06:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/pandas.jpeg" />
+<meta name="twitter:title" content="使用Pandas处理文本数据"/>
+<meta name="twitter:description" content="2000字详细说明"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "使用Pandas处理文本数据",
+      "item": "/blog/%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86pandas%E7%AF%87/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "使用Pandas处理文本数据",
+  "name": "使用Pandas处理文本数据",
+  "description": "2000字详细说明",
+  "keywords": [
+    "Python", "文本分析", "pandas"
+  ],
+  "articleBody": "\n src: https://mp.weixin.qq.com/s/MmfEtyKaMqNn_Ik1oJtitQ\nauthor: 俊欣\n公众号: 关于数据分析与可视化\n 千聊Python课程 https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596\n今天我们来谈论一下pandas库当中文本数据的操作，希望大家再看完本篇文章之后会有不少的收获，我们大致会讲\n 创建一个包含文本数据的DataFrame 常用处理文本数据的方法的总结 正则表达式与DataFrame内部方法的结合  创建文本内容的数据 我们先来创建一个包含文本数据的DataFrame，来供我们后面使用\nimport pandas as pd df = pd.DataFrame({ \"姓\": [\"李\",\"王\",\"戴\", \"李\", \"张\"], \"名\": [\"华\",\"硕\",\"建业\", \"四\", \"三\"], \"户籍地址\": [\" 浙江省·宁波市 \", \" 浙江省·杭州市 \", \" 浙江省·丽水市 \", \" 浙江省·衢州市 \", \" 浙江省·湖州市 \"], \"微信ID\": [\"Tomoplplplut1248781\", \"Smopopo857\", \"Adahuhuifhhjfj\", \"Tull1945121\", \"ZPWERERTFD599557\"], \"邮箱地址\": [\"tom02159@163.com\", \"smitt7821@163.com\", \"adams623@163.com\", \"tull0305@163.com\", \"five7532@163.com\"] }) df | | 姓 | 名 | 户籍地址 | 微信ID | 邮箱地址 | |---:|:-----|:-----|:--------------|:--------------------|:------------------| | 0 | 李 | 华 | 浙江省·宁波市 | Tomoplplplut1248781 | tom02159@163.com | | 1 | 王 | 硕 | 浙江省·杭州市 | Smopopo857 | smitt7821@163.com | | 2 | 戴 | 建业 | 浙江省·丽水市 | Adahuhuifhhjfj | adams623@163.com | | 3 | 李 | 四 | 浙江省·衢州市 | Tull1945121 | tull0305@163.com | | 4 | 张 | 三 | 浙江省·湖州市 | ZPWERERTFD599557 | five7532@163.com | \n常用处理文本数据的方法总结 Python当中用来处理字符串数据的方法有很多，基本上都可以在DataFrame内部拿来使用，例如lower()方法和upper()方法，给字母大小写\ndf[\"微信ID\"].str.lower() 0 tomoplplplut1248781 1 smopopo857 2 adahuhuifhhjfj 3 tull1945121 4 zpwerertfd599557 Name: 微信ID, dtype: object df[\"微信ID\"].str.len() 0 19 1 10 2 14 3 11 4 16 Name: 微信ID, dtype: int64 当然我们看到户籍地址这一列中的数据有很多的空格\ndf[\"户籍地址\"] 0 浙江省·宁波市 1 浙江省·杭州市 2 浙江省·丽水市 3 浙江省·衢州市 4 浙江省·湖州市 Name: 户籍地址, dtype: object 我们可以使用处理字符串时的strip()方法\ndf[\"户籍地址\"].str.strip() 0 浙江省·宁波市 1 浙江省·杭州市 2 浙江省·丽水市 3 浙江省·衢州市 4 浙江省·湖州市 Name: 户籍地址, dtype: object 与之相类似的还有lstrip()方法以及rstrip()方法，这里就不做赘述。\n在字符串的处理过程当中，startswith()方法和endswith()方法也是用的非常的频繁，例如我们想要挑选出户籍地址是“宁波市”的数据，\ndf[\"户籍地址\"] = df[\"户籍地址\"].str.strip() df[df[\"户籍地址\"].str.endswith(\"宁波市\")] 姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 另外我们还可以使用replace()方法来实现当中的字符串的替换\ndf[\"户籍地址\"].str.replace(\"·\", \"--\") 0 浙江省--宁波市 1 浙江省--杭州市 2 浙江省--丽水市 3 浙江省--衢州市 4 浙江省--湖州市 Name: 户籍地址, dtype: object 那既然用到了replace()方法，那么split()方法也可以尝试一下\ndf[\"户籍地址\"].str.split(\"·\") 0 [浙江省, 宁波市] 1 [浙江省, 杭州市] 2 [浙江省, 丽水市] 3 [浙江省, 衢州市] 4 [浙江省, 湖州市] Name: 户籍地址, dtype: object 在经过spilit()方法的切割过之后就变成了列表的形式，然后可以通过get()方法或者[]来获取里面的元素，例如\ndf[\"户籍地址\"].str.split(\"·\").str.get(0) 或者\ndf[\"户籍地址\"].str.split(\"·\").str[0] 0 浙江省 1 浙江省 2 浙江省 3 浙江省 4 浙江省 Name: 户籍地址, dtype: object 那么获取列表当中的第二个元素也是同样的道理，当然我们也可以在split()方法当中添加expand=True这个参数，来将上面列表形式的数据转化成DataFrame格式\ndf[\"户籍地址\"].str.split(\"·\", expand=True) 0 1 0 浙江省 宁波市 1 浙江省 杭州市 2 浙江省 丽水市 3 浙江省 衢州市 4 浙江省 湖州市 同样地，我们可以在后面添加[]来获取我们想要的元素\ndf[\"户籍地址\"].str.split(\"·\", expand=True)[1] 0 宁波市 1 杭州市 2 丽水市 3 衢州市 4 湖州市 Name: 1, dtype: object \n正则表达式与DataFrame内部方法的结合 假如我们想要提取文本数据内部的一部分数据，可以结合正则表达式来使用，例如我们想要提取“微信ID”这一列当中的字母和数字，并且将两者分开来\ntwo_groups = \"([a-zA-Z]+)([0-9]+)\" df[\"微信ID\"].str.extract(two_groups, expand=True) 0 1 0 Tomoplplplut 1248781 1 Smopopo 857 2 NaN NaN 3 Tull 1945121 4 ZPWERERTFD 599557 当然了，如果想是要提取文本数据中的部分数据，可以直接在str方法后面添加索引，例如\ndf[\"邮箱地址\"].str[-8:] 0 @163.com 1 @163.com 2 @163.com 3 @163.com 4 @163.com Name: 邮箱地址, dtype: object 当然，从另外一个角度讲，正则表达式也可以帮助我们确认文本数据是否符合某种规律，\ntwo_groups = \"([a-zA-Z]+)([0-9]+)\" df[\"微信ID\"].str.match(two_groups) 0 True 1 True 2 False 3 True 4 True Name: 微信ID, dtype: bool 当中有一个为False，不满足字母+数字的规律，我们再进一步，将满足条件的数据提取出来\ndf[df[\"微信ID\"].str.match(two_groups)] 姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 1 王 硕 浙江省·杭州市 Smopopo857 smitt7821@163.com 3 李 四 浙江省·衢州市 Tull1945121 tull0305@163.com 4 张 三 浙江省·湖州市 ZPWERERTFD599557 five7532@163.com 针对文本数据而言，contains()方法也能够派上用场，例如下面的数据\n姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 1 王 硕 浙江省·杭州市 Smopopo857 smitt7821@163.com 2 戴 建业 浙江省·丽水市 Adahuhuifhhjfj adams623@163.com 3 李 四 浙江省·衢州市 Tull1945121 tull0305@163.com 4 张 三 浙江省·湖州市 ZPWERERTFD599557 five7532@163.com 5 黄 五 浙江省·宁波市 hunhunhu45652 1erdcvf127@16.com 我们用contains()来提取出户籍地址为“宁波市”的内容，可以这么做\ndf[df[\"户籍地址\"].str.contains(\"宁波市\")] 姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 5 黄 五 浙江省·宁波市 hunhunhu45652 1erdcvf127@16.com 暂时就这些了，下一篇原创的文章安排在周天，非技术方面的，期待一下？\n代码下载 https://github.com/hidadeng/DaDengAndHisPython/blob/master/文本数据处理Pandas篇.ipynb\n",
+  "wordCount" : "465",
+  "inLanguage": "en",
+  "image":"/images/blog/pandas.jpeg","datePublished": "2021-11-16T16:40:10+06:00",
+  "dateModified": "2021-11-16T16:40:10+06:00",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86pandas%E7%AF%87/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/blog" title="博文">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/categories/" title="类目">
+                    <span>类目</span>
+                </a>
+            </li>
+            <li>
+                <a href="mailto:thunderhit@qq.com" title="联系">
+                    <span>联系</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="/">Home</a>&nbsp;»&nbsp;<a href="/blog/">Blogs</a></div>
+    <h1 class="post-title">
+      使用Pandas处理文本数据
+    </h1>
+    <div class="post-description">
+      2000字详细说明
+    </div>
+    <div class="post-meta"><span title='2021-11-16 16:40:10 +0600 +0600'>2021-11-16</span>&nbsp;·&nbsp;3 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/pandas.jpeg" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/pandas.jpeg" alt=""></a>
+        
+</figure><div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#%e5%88%9b%e5%bb%ba%e6%96%87%e6%9c%ac%e5%86%85%e5%ae%b9%e7%9a%84%e6%95%b0%e6%8d%ae" aria-label="创建文本内容的数据">创建文本内容的数据</a></li>
+                <li>
+                    <a href="#%e5%b8%b8%e7%94%a8%e5%a4%84%e7%90%86%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%ae%e7%9a%84%e6%96%b9%e6%b3%95%e6%80%bb%e7%bb%93" aria-label="常用处理文本数据的方法总结">常用处理文本数据的方法总结</a></li>
+                <li>
+                    <a href="#%e6%ad%a3%e5%88%99%e8%a1%a8%e8%be%be%e5%bc%8f%e4%b8%8edataframe%e5%86%85%e9%83%a8%e6%96%b9%e6%b3%95%e7%9a%84%e7%bb%93%e5%90%88" aria-label="正则表达式与DataFrame内部方法的结合">正则表达式与DataFrame内部方法的结合</a></li>
+                <li>
+                    <a href="#%e4%bb%a3%e7%a0%81%e4%b8%8b%e8%bd%bd" aria-label="代码下载">代码下载</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><br>
+<blockquote>
+<p>src: <a href="https://mp.weixin.qq.com/s/MmfEtyKaMqNn_Ik1oJtitQ">https://mp.weixin.qq.com/s/MmfEtyKaMqNn_Ik1oJtitQ</a></p>
+<p>author: 俊欣</p>
+<p>公众号: 关于数据分析与可视化</p>
+</blockquote>
+<p>千聊Python课程  <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596</a></p>
+<br>
+<p>今天我们来谈论一下pandas库当中文本数据的操作，希望大家再看完本篇文章之后会有不少的收获，我们大致会讲</p>
+<ul>
+<li>创建一个包含文本数据的DataFrame</li>
+<li>常用处理文本数据的方法的总结</li>
+<li>正则表达式与DataFrame内部方法的结合</li>
+</ul>
+<br>
+<h2 id="创建文本内容的数据">创建文本内容的数据<a hidden class="anchor" aria-hidden="true" href="#创建文本内容的数据">#</a></h2>
+<p>我们先来创建一个包含文本数据的DataFrame，来供我们后面使用</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+   <span class="s2">&#34;姓&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;李&#34;</span><span class="p">,</span><span class="s2">&#34;王&#34;</span><span class="p">,</span><span class="s2">&#34;戴&#34;</span><span class="p">,</span> <span class="s2">&#34;李&#34;</span><span class="p">,</span> <span class="s2">&#34;张&#34;</span><span class="p">],</span>
+   <span class="s2">&#34;名&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;华&#34;</span><span class="p">,</span><span class="s2">&#34;硕&#34;</span><span class="p">,</span><span class="s2">&#34;建业&#34;</span><span class="p">,</span> <span class="s2">&#34;四&#34;</span><span class="p">,</span> <span class="s2">&#34;三&#34;</span><span class="p">],</span>
+   <span class="s2">&#34;户籍地址&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34; 浙江省·宁波市 &#34;</span><span class="p">,</span> <span class="s2">&#34;   浙江省·杭州市    &#34;</span><span class="p">,</span> <span class="s2">&#34;  浙江省·丽水市  &#34;</span><span class="p">,</span> <span class="s2">&#34;  浙江省·衢州市 &#34;</span><span class="p">,</span> <span class="s2">&#34;  浙江省·湖州市           &#34;</span><span class="p">],</span>
+   <span class="s2">&#34;微信ID&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;Tomoplplplut1248781&#34;</span><span class="p">,</span> <span class="s2">&#34;Smopopo857&#34;</span><span class="p">,</span> <span class="s2">&#34;Adahuhuifhhjfj&#34;</span><span class="p">,</span> <span class="s2">&#34;Tull1945121&#34;</span><span class="p">,</span> <span class="s2">&#34;ZPWERERTFD599557&#34;</span><span class="p">],</span>
+   <span class="s2">&#34;邮箱地址&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;tom02159@163.com&#34;</span><span class="p">,</span> <span class="s2">&#34;smitt7821@163.com&#34;</span><span class="p">,</span> <span class="s2">&#34;adams623@163.com&#34;</span><span class="p">,</span> <span class="s2">&#34;tull0305@163.com&#34;</span><span class="p">,</span> <span class="s2">&#34;five7532@163.com&#34;</span><span class="p">]</span>
+<span class="p">})</span>
+<span class="n">df</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">|    | 姓   | 名   | 户籍地址      | 微信ID              | 邮箱地址          |
+|---:|:-----|:-----|:--------------|:--------------------|:------------------|
+|  0 | 李   | 华   | 浙江省·宁波市 | Tomoplplplut1248781 | tom02159@163.com  |
+|  1 | 王   | 硕   | 浙江省·杭州市 | Smopopo857          | smitt7821@163.com |
+|  2 | 戴   | 建业 | 浙江省·丽水市 | Adahuhuifhhjfj      | adams623@163.com  |
+|  3 | 李   | 四   | 浙江省·衢州市 | Tull1945121         | tull0305@163.com  |
+|  4 | 张   | 三   | 浙江省·湖州市 | ZPWERERTFD599557    | five7532@163.com  |
+</code></pre></div><br>
+<h2 id="常用处理文本数据的方法总结">常用处理文本数据的方法总结<a hidden class="anchor" aria-hidden="true" href="#常用处理文本数据的方法总结">#</a></h2>
+<p>Python当中用来处理字符串数据的方法有很多，基本上都可以在DataFrame内部拿来使用，例如lower()方法和upper()方法，给字母大小写</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;微信ID&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0    tomoplplplut1248781
+1             smopopo857
+2         adahuhuifhhjfj
+3            tull1945121
+4       zpwerertfd599557
+Name: 微信ID, dtype: object
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;微信ID&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0    19
+1    10
+2    14
+3    11
+4    16
+Name: 微信ID, dtype: int64
+</code></pre></div><p>当然我们看到户籍地址这一列中的数据有很多的空格</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0                浙江省·宁波市 
+1             浙江省·杭州市    
+2               浙江省·丽水市  
+3                浙江省·衢州市 
+4      浙江省·湖州市           
+Name: 户籍地址, dtype: object
+</code></pre></div><p>我们可以使用处理字符串时的strip()方法</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0    浙江省·宁波市
+1    浙江省·杭州市
+2    浙江省·丽水市
+3    浙江省·衢州市
+4    浙江省·湖州市
+Name: 户籍地址, dtype: object
+</code></pre></div><p>与之相类似的还有lstrip()方法以及rstrip()方法，这里就不做赘述。</p>
+<p>在字符串的处理过程当中，startswith()方法和endswith()方法也是用的非常的频繁，例如我们想要挑选出户籍地址是“宁波市”的数据，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&#34;宁波市&#34;</span><span class="p">)]</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">   姓  名     户籍地址                 微信ID              邮箱地址
+0  李  华  浙江省·宁波市  Tomoplplplut1248781  tom02159@163.com
+</code></pre></div><p>另外我们还可以使用replace()方法来实现当中的字符串的替换</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&#34;·&#34;</span><span class="p">,</span> <span class="s2">&#34;--&#34;</span><span class="p">)</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0    浙江省--宁波市
+1    浙江省--杭州市
+2    浙江省--丽水市
+3    浙江省--衢州市
+4    浙江省--湖州市
+Name: 户籍地址, dtype: object
+</code></pre></div><p>那既然用到了replace()方法，那么split()方法也可以尝试一下</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&#34;·&#34;</span><span class="p">)</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0    [浙江省, 宁波市]
+1    [浙江省, 杭州市]
+2    [浙江省, 丽水市]
+3    [浙江省, 衢州市]
+4    [浙江省, 湖州市]
+Name: 户籍地址, dtype: object
+</code></pre></div><p>在经过spilit()方法的切割过之后就变成了列表的形式，然后可以通过get()方法或者[]来获取里面的元素，例如</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&#34;·&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+</code></pre></div><p>或者</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&#34;·&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0    浙江省
+1    浙江省
+2    浙江省
+3    浙江省
+4    浙江省
+Name: 户籍地址, dtype: object
+</code></pre></div><p>那么获取列表当中的第二个元素也是同样的道理，当然我们也可以在split()方法当中添加expand=True这个参数，来将上面列表形式的数据转化成DataFrame格式</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&#34;·&#34;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">      0    1
+0  浙江省  宁波市
+1  浙江省  杭州市
+2  浙江省  丽水市
+3  浙江省  衢州市
+4  浙江省  湖州市
+</code></pre></div><p>同样地，我们可以在后面添加[]来获取我们想要的元素</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&#34;·&#34;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0    宁波市
+1    杭州市
+2    丽水市
+3    衢州市
+4    湖州市
+Name: 1, dtype: object
+</code></pre></div><br>
+<h2 id="正则表达式与dataframe内部方法的结合">正则表达式与DataFrame内部方法的结合<a hidden class="anchor" aria-hidden="true" href="#正则表达式与dataframe内部方法的结合">#</a></h2>
+<p>假如我们想要提取文本数据内部的一部分数据，可以结合正则表达式来使用，例如我们想要提取“微信ID”这一列当中的字母和数字，并且将两者分开来</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">two_groups</span> <span class="o">=</span> <span class="s2">&#34;([a-zA-Z]+)([0-9]+)&#34;</span>
+<span class="n">df</span><span class="p">[</span><span class="s2">&#34;微信ID&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">two_groups</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">              0        1
+0  Tomoplplplut  1248781
+1       Smopopo      857
+2           NaN      NaN
+3          Tull  1945121
+4    ZPWERERTFD   599557
+</code></pre></div><p>当然了，如果想是要提取文本数据中的部分数据，可以直接在str方法后面添加索引，例如</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s2">&#34;邮箱地址&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="o">-</span><span class="mi">8</span><span class="p">:]</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0    @163.com
+1    @163.com
+2    @163.com
+3    @163.com
+4    @163.com
+Name: 邮箱地址, dtype: object
+</code></pre></div><p>当然，从另外一个角度讲，正则表达式也可以帮助我们确认文本数据是否符合某种规律，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">two_groups</span> <span class="o">=</span> <span class="s2">&#34;([a-zA-Z]+)([0-9]+)&#34;</span>
+<span class="n">df</span><span class="p">[</span><span class="s2">&#34;微信ID&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">two_groups</span><span class="p">)</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0     True
+1     True
+2    False
+3     True
+4     True
+Name: 微信ID, dtype: bool
+</code></pre></div><p>当中有一个为False，不满足字母+数字的规律，我们再进一步，将满足条件的数据提取出来</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&#34;微信ID&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">two_groups</span><span class="p">)]</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">   姓  名     户籍地址                 微信ID               邮箱地址
+0  李  华  浙江省·宁波市  Tomoplplplut1248781   tom02159@163.com
+1  王  硕  浙江省·杭州市           Smopopo857  smitt7821@163.com
+3  李  四  浙江省·衢州市          Tull1945121   tull0305@163.com
+4  张  三  浙江省·湖州市     ZPWERERTFD599557   five7532@163.com
+</code></pre></div><p>针对文本数据而言，contains()方法也能够派上用场，例如下面的数据</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">   姓   名                  户籍地址                 微信ID               邮箱地址
+0  李   华              浙江省·宁波市   Tomoplplplut1248781   tom02159@163.com
+1  王   硕           浙江省·杭州市               Smopopo857  smitt7821@163.com
+2  戴  建业             浙江省·丽水市         Adahuhuifhhjfj   adams623@163.com
+3  李   四              浙江省·衢州市           Tull1945121   tull0305@163.com
+4  张   三    浙江省·湖州市                ZPWERERTFD599557   five7532@163.com
+5  黄   五               浙江省·宁波市        hunhunhu45652  1erdcvf127@16.com
+</code></pre></div><p>我们用contains()来提取出户籍地址为“宁波市”的内容，可以这么做</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&#34;户籍地址&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&#34;宁波市&#34;</span><span class="p">)]</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">   姓  名     户籍地址                 微信ID               邮箱地址
+0  李  华  浙江省·宁波市  Tomoplplplut1248781   tom02159@163.com
+5  黄  五  浙江省·宁波市        hunhunhu45652  1erdcvf127@16.com
+</code></pre></div><p>暂时就这些了，下一篇原创的文章安排在周天，非技术方面的，期待一下？</p>
+<br>
+<h2 id="代码下载">代码下载<a hidden class="anchor" aria-hidden="true" href="#代码下载">#</a></h2>
+<p><a href="https://github.com/hidadeng/DaDengAndHisPython/blob/master/">https://github.com/hidadeng/DaDengAndHisPython/blob/master/</a>文本数据处理Pandas篇.ipynb</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="/tags/python/">Python</a></li>
+      <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/">文本分析</a></li>
+      <li><a href="/tags/pandas/">pandas</a></li>
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2021 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

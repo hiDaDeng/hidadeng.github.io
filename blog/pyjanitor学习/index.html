@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>pyjanitor数据分析清洁包 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="数据分析, Pandas, 第三方包" />
+<meta name="description" content="清洗数据，也简洁代码">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/pyjanitor%E5%AD%A6%E4%B9%A0/" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="pyjanitor数据分析清洁包" />
+<meta property="og:description" content="清洗数据，也简洁代码" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/pyjanitor%E5%AD%A6%E4%B9%A0/" />
+<meta property="og:image" content="/images/blog/pyjanitor%E5%8C%85.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2021-11-25T23:10:10&#43;06:00" />
+<meta property="article:modified_time" content="2021-11-25T23:10:10&#43;06:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/pyjanitor%E5%8C%85.png" />
+<meta name="twitter:title" content="pyjanitor数据分析清洁包"/>
+<meta name="twitter:description" content="清洗数据，也简洁代码"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "pyjanitor数据分析清洁包",
+      "item": "/blog/pyjanitor%E5%AD%A6%E4%B9%A0/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "pyjanitor数据分析清洁包",
+  "name": "pyjanitor数据分析清洁包",
+  "description": "清洗数据，也简洁代码",
+  "keywords": [
+    "数据分析", "Pandas", "第三方包"
+  ],
+  "articleBody": "pyjanitor是参照R语言janitor包语法，为Python量身定制的数据清洗包,即可清洗数据，又可让代码简洁干净。\n安装 !pip3 install pyjanitor \n为什么用janitor？ 数据预处理通常由一系列步骤组成，这些步骤涉及将原始数据转换为可理解/可用的格式。这一系列的步骤需要按照一定的顺序运行才能成功。我们以基础数据文件为起点，对其执行操作，例如删除空行/空行、用其他值替换它们、添加/重命名/删除数据列、过滤行等。更正式地说，这些步骤以及它们的关系和依赖关系通常被称为有向无环图 (DAG)。\npandas API 对 Python 数据科学生态系统非常宝贵，它实现了方法子集的方法链作为 API 的一部分。例如，重置索引 (.reset_index())、删除空值 (.dropna()) 等都是通过适当的 pd.DataFrame 方法调用来完成的。\n受 R 统计语言生态系统 dplyr 包的易用性和表达能力的启发，我们将 pyjanitor 开发为语法包，用于为 Pandas 用户表达数据处理 DAG。\n为了实现这一点，我们需要调用声明式的操作 替换为允许 逻辑顺序的方法链。让我们看看下面带注释的示例。首先，这里是数据清理路径的文字描述：\n 创建一个dataframe。 删除一列。 删除两个特定列中具有空值的行。 重命名另外两列。 添加一个新列。  让我们导入一些库并从本示例的一些示例数据开始：\n# Libraries import numpy as np import pandas as pd import janitor # Sample Data curated for this example company_sales = { 'SalesMonth': ['Jan', 'Feb', 'Mar', 'April'], 'Company1': [150.0, 200.0, 300.0, 400.0], 'Company2': [180.0, 250.0, np.nan, 500.0], 'Company3': [400.0, 500.0, 600.0, 675.0] } \n常见的Pandas实现方式 下面是传统的Pandas方式\n# The Pandas Way # 1. 创建一个dataframe df = pd.DataFrame(company_sales) # 2.删除一列。 Say 'Company1' del df['Company1'] # 3. 删除两个特定列中具有空值的行。 'Company2' and 'Company3' df = df.dropna(subset=['Company2', 'Company3']) # 4. 重命名另外两列。 将'Company2' 改为 'Amazon'； 将 'Company3' 改为 'Facebook' df = df.rename({'Company2': 'Amazon', 'Company3': 'Facebook'}, axis=1) # 5. 添加一个新列 'Google' df['Google'] = [450.0, 550.0, 800.0] df | | SalesMonth | Amazon | Facebook | Google | | ---: | :--------- | -----: | -------: | -----: | | 0 | Jan | 180 | 400 | 450 | | 1 | Feb | 250 | 500 | 550 | | 3 | April | 500 | 675 | 800 | \n稍微高级一点Pandas实现方式 稍微高级一点的用户可能会利用函数式 API：\ndf = ( pd.DataFrame(company_sales) .drop(columns=\"Company1\") .dropna(subset=[\"Company2\", \"Company3\"]) .rename(columns={\"Company2\": \"Amazon\", \"Company3\":\"Facebook\"}) .assign(Google=[450.0, 550.0, 800.0]) ) df | | SalesMonth | Amazon | Facebook | Google | | ---: | :--------- | -----: | -------: | -----: | | 0 | Jan | 180 | 400 | 450 | | 1 | Feb | 250 | 500 | 550 | | 3 | April | 500 | 675 | 800 | \nPyJanitor实现方式 借助pyjanitor库，我们可以使用方法名链式代码\ndf = ( pd.DataFrame(company_sales) .remove_columns(['Company1']) .dropna(subset=[\"Company2\", \"Company3\"]) .rename_column(\"Company2\", \"Amazon\") .rename_column(\"Company3\", \"Facebook\") .add_column(\"Google\", [450.0, 550.0, 800.0]) ) df | | SalesMonth | Amazon | Facebook | Google | | ---: | :--------- | -----: | -------: | -----: | | 0 | Jan | 180 | 400 | 450 | | 1 | Feb | 250 | 500 | 550 | | 3 | April | 500 | 675 | 800 | 因此，pyjanitor 的词源与“清洁度”有双重关系。 首先，它是关于使用方便的数据清理例程扩展 Pandas。 其次，它是关于为常见的 Pandas 例程提供更清晰、方法链接、基于动词的 API。\npyjanitor更多功能  清理列名（多索引是可能的！） 删除空行和列 识别重复条目 将列编码为分类 将数据拆分为特征和目标（用于机器学习） 添加、删除和重命名列 将多列合并为一列 日期转换（从 matlab、excel、unix）到 Python 日期时间格式 将具有分隔的分类值的单个列扩展为虚拟编码变量 基于分隔符连接和分离列 用于根据列上的查询过滤数据框的语法糖 金融、生物、化学、工程和 pyspark 的实验子模块  代码下载 https://github.com/hiDaDeng/DaDengAndHisPython/blob/master/20211125pyjanitor学习.ipynb\n",
+  "wordCount" : "364",
+  "inLanguage": "en",
+  "image":"/images/blog/pyjanitor%E5%8C%85.png","datePublished": "2021-11-25T23:10:10+06:00",
+  "dateModified": "2021-11-25T23:10:10+06:00",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/pyjanitor%E5%AD%A6%E4%B9%A0/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/blog" title="博文">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/categories/" title="类目">
+                    <span>类目</span>
+                </a>
+            </li>
+            <li>
+                <a href="mailto:thunderhit@qq.com" title="联系">
+                    <span>联系</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="/">Home</a>&nbsp;»&nbsp;<a href="/blog/">Blogs</a></div>
+    <h1 class="post-title">
+      pyjanitor数据分析清洁包
+    </h1>
+    <div class="post-description">
+      清洗数据，也简洁代码
+    </div>
+    <div class="post-meta"><span title='2021-11-25 23:10:10 +0600 +0600'>2021-11-23</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/pyjanitor%E5%8C%85.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/pyjanitor%E5%8C%85.png" alt=""></a>
+        
+</figure><div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#%e5%ae%89%e8%a3%85" aria-label="安装">安装</a></li>
+                <li>
+                    <a href="#%e4%b8%ba%e4%bb%80%e4%b9%88%e7%94%a8janitor" aria-label="为什么用janitor？">为什么用janitor？</a></li>
+                <li>
+                    <a href="#%e5%b8%b8%e8%a7%81%e7%9a%84pandas%e5%ae%9e%e7%8e%b0%e6%96%b9%e5%bc%8f" aria-label="常见的Pandas实现方式">常见的Pandas实现方式</a></li>
+                <li>
+                    <a href="#%e7%a8%8d%e5%be%ae%e9%ab%98%e7%ba%a7%e4%b8%80%e7%82%b9pandas%e5%ae%9e%e7%8e%b0%e6%96%b9%e5%bc%8f" aria-label="稍微高级一点Pandas实现方式">稍微高级一点Pandas实现方式</a></li>
+                <li>
+                    <a href="#pyjanitor%e5%ae%9e%e7%8e%b0%e6%96%b9%e5%bc%8f" aria-label="PyJanitor实现方式">PyJanitor实现方式</a></li>
+                <li>
+                    <a href="#pyjanitor%e6%9b%b4%e5%a4%9a%e5%8a%9f%e8%83%bd" aria-label="pyjanitor更多功能">pyjanitor更多功能</a></li>
+                <li>
+                    <a href="#%e4%bb%a3%e7%a0%81%e4%b8%8b%e8%bd%bd" aria-label="代码下载">代码下载</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><p>pyjanitor是参照R语言janitor包语法，为Python量身定制的数据清洗包,即可清洗数据，又可让代码简洁干净。</p>
+<h2 id="安装">安装<a hidden class="anchor" aria-hidden="true" href="#安装">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">pyjanitor</span>
+</code></pre></div><br>
+<h2 id="为什么用janitor">为什么用janitor？<a hidden class="anchor" aria-hidden="true" href="#为什么用janitor">#</a></h2>
+<p>数据预处理通常由一系列步骤组成，这些步骤涉及将原始数据转换为可理解/可用的格式。这一系列的步骤需要按照一定的顺序运行才能成功。我们以基础数据文件为起点，对其执行操作，例如删除空行/空行、用其他值替换它们、添加/重命名/删除数据列、过滤行等。更正式地说，这些步骤以及它们的关系和依赖关系通常被称为有向无环图 (DAG)。</p>
+<p>pandas API 对 Python 数据科学生态系统非常宝贵，它实现了方法子集的方法链作为 API 的一部分。例如，重置索引 (.reset_index())、删除空值 (.dropna()) 等都是通过适当的 pd.DataFrame 方法调用来完成的。</p>
+<p>受 R 统计语言生态系统 dplyr 包的易用性和表达能力的启发，我们将 pyjanitor 开发为语法包，用于为 Pandas 用户表达数据处理 DAG。</p>
+<p>为了实现这一点，我们需要调用声明式的操作 替换为允许 逻辑顺序的方法链。让我们看看下面带注释的示例。首先，这里是数据清理路径的文字描述：</p>
+<ol>
+<li>创建一个dataframe。</li>
+<li>删除一列。</li>
+<li>删除两个特定列中具有空值的行。</li>
+<li>重命名另外两列。</li>
+<li>添加一个新列。</li>
+</ol>
+<p>让我们导入一些库并从本示例的一些示例数据开始：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># Libraries</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">janitor</span>
+
+<span class="c1"># Sample Data curated for this example</span>
+<span class="n">company_sales</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;SalesMonth&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Jan&#39;</span><span class="p">,</span> <span class="s1">&#39;Feb&#39;</span><span class="p">,</span> <span class="s1">&#39;Mar&#39;</span><span class="p">,</span> <span class="s1">&#39;April&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;Company1&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">150.0</span><span class="p">,</span> <span class="mf">200.0</span><span class="p">,</span> <span class="mf">300.0</span><span class="p">,</span> <span class="mf">400.0</span><span class="p">],</span>
+    <span class="s1">&#39;Company2&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">180.0</span><span class="p">,</span> <span class="mf">250.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mf">500.0</span><span class="p">],</span>
+    <span class="s1">&#39;Company3&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">400.0</span><span class="p">,</span> <span class="mf">500.0</span><span class="p">,</span> <span class="mf">600.0</span><span class="p">,</span> <span class="mf">675.0</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div><br>
+<h2 id="常见的pandas实现方式">常见的Pandas实现方式<a hidden class="anchor" aria-hidden="true" href="#常见的pandas实现方式">#</a></h2>
+<p>下面是传统的Pandas方式</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># The Pandas Way</span>
+
+<span class="c1"># 1. 创建一个dataframe</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">company_sales</span><span class="p">)</span>
+
+<span class="c1"># 2.删除一列。 Say &#39;Company1&#39;</span>
+<span class="k">del</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Company1&#39;</span><span class="p">]</span>
+
+<span class="c1"># 3. 删除两个特定列中具有空值的行。 &#39;Company2&#39; and &#39;Company3&#39;</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Company2&#39;</span><span class="p">,</span> <span class="s1">&#39;Company3&#39;</span><span class="p">])</span>
+
+<span class="c1"># 4. 重命名另外两列。 将&#39;Company2&#39; 改为 &#39;Amazon&#39;； 将 &#39;Company3&#39; 改为 &#39;Facebook&#39;</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="s1">&#39;Company2&#39;</span><span class="p">:</span> <span class="s1">&#39;Amazon&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Company3&#39;</span><span class="p">:</span> <span class="s1">&#39;Facebook&#39;</span><span class="p">},</span>
+               <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># 5. 添加一个新列 &#39;Google&#39;</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;Google&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">450.0</span><span class="p">,</span> <span class="mf">550.0</span><span class="p">,</span> <span class="mf">800.0</span><span class="p">]</span>
+
+<span class="n">df</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-markdown" data-lang="markdown">|      | SalesMonth | Amazon | Facebook | Google |
+| ---: | :--------- | -----: | -------: | -----: |
+|    0 | Jan        |    180 |      400 |    450 |
+|    1 | Feb        |    250 |      500 |    550 |
+|    3 | April      |    500 |      675 |    800 |
+</code></pre></div><br>
+<h2 id="稍微高级一点pandas实现方式">稍微高级一点Pandas实现方式<a hidden class="anchor" aria-hidden="true" href="#稍微高级一点pandas实现方式">#</a></h2>
+<p>稍微高级一点的用户可能会利用函数式 API：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">company_sales</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">&#34;Company1&#34;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&#34;Company2&#34;</span><span class="p">,</span> <span class="s2">&#34;Company3&#34;</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&#34;Company2&#34;</span><span class="p">:</span> <span class="s2">&#34;Amazon&#34;</span><span class="p">,</span> <span class="s2">&#34;Company3&#34;</span><span class="p">:</span><span class="s2">&#34;Facebook&#34;</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">Google</span><span class="o">=</span><span class="p">[</span><span class="mf">450.0</span><span class="p">,</span> <span class="mf">550.0</span><span class="p">,</span> <span class="mf">800.0</span><span class="p">])</span>
+<span class="p">)</span>
+
+<span class="n">df</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-markdown" data-lang="markdown">|      | SalesMonth | Amazon | Facebook | Google |
+| ---: | :--------- | -----: | -------: | -----: |
+|    0 | Jan        |    180 |      400 |    450 |
+|    1 | Feb        |    250 |      500 |    550 |
+|    3 | April      |    500 |      675 |    800 |
+</code></pre></div><br>
+<h2 id="pyjanitor实现方式">PyJanitor实现方式<a hidden class="anchor" aria-hidden="true" href="#pyjanitor实现方式">#</a></h2>
+<p>借助pyjanitor库，我们可以使用方法名链式代码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">company_sales</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">remove_columns</span><span class="p">([</span><span class="s1">&#39;Company1&#39;</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&#34;Company2&#34;</span><span class="p">,</span> <span class="s2">&#34;Company3&#34;</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">rename_column</span><span class="p">(</span><span class="s2">&#34;Company2&#34;</span><span class="p">,</span> <span class="s2">&#34;Amazon&#34;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename_column</span><span class="p">(</span><span class="s2">&#34;Company3&#34;</span><span class="p">,</span> <span class="s2">&#34;Facebook&#34;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_column</span><span class="p">(</span><span class="s2">&#34;Google&#34;</span><span class="p">,</span> <span class="p">[</span><span class="mf">450.0</span><span class="p">,</span> <span class="mf">550.0</span><span class="p">,</span> <span class="mf">800.0</span><span class="p">])</span>
+
+<span class="p">)</span>
+
+<span class="n">df</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-markdown" data-lang="markdown">|      | SalesMonth | Amazon | Facebook | Google |
+| ---: | :--------- | -----: | -------: | -----: |
+|    0 | Jan        |    180 |      400 |    450 |
+|    1 | Feb        |    250 |      500 |    550 |
+|    3 | April      |    500 |      675 |    800 |
+</code></pre></div><p>因此，pyjanitor 的词源与“清洁度”有双重关系。 首先，它是关于使用方便的数据清理例程扩展 Pandas。 其次，它是关于为常见的 Pandas 例程提供更清晰、方法链接、基于动词的 API。</p>
+<br>
+<h2 id="pyjanitor更多功能">pyjanitor更多功能<a hidden class="anchor" aria-hidden="true" href="#pyjanitor更多功能">#</a></h2>
+<ul>
+<li>清理列名（多索引是可能的！）</li>
+<li>删除空行和列</li>
+<li>识别重复条目</li>
+<li>将列编码为分类</li>
+<li>将数据拆分为特征和目标（用于机器学习）</li>
+<li>添加、删除和重命名列</li>
+<li>将多列合并为一列</li>
+<li>日期转换（从 matlab、excel、unix）到 Python 日期时间格式</li>
+<li>将具有分隔的分类值的单个列扩展为虚拟编码变量</li>
+<li>基于分隔符连接和分离列</li>
+<li>用于根据列上的查询过滤数据框的语法糖</li>
+<li>金融、生物、化学、工程和 pyspark 的实验子模块</li>
+</ul>
+<br>
+<h2 id="代码下载">代码下载<a hidden class="anchor" aria-hidden="true" href="#代码下载">#</a></h2>
+<p><a href="https://github.com/hiDaDeng/DaDengAndHisPython/blob/master/20211125pyjanitor">https://github.com/hiDaDeng/DaDengAndHisPython/blob/master/20211125pyjanitor</a>学习.ipynb</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/">数据分析</a></li>
+      <li><a href="/tags/pandas/">pandas</a></li>
+      <li><a href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/">第三方包</a></li>
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2021 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
