@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>使用文本相似度可以识别变化的时间点 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="python, 第三方包, 文本分析" />
+<meta name="description" content="用漂亮国大统领报告(演讲)做政策连续性分析&amp;可视化">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/textsim/" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="使用文本相似度可以识别变化的时间点" />
+<meta property="og:description" content="用漂亮国大统领报告(演讲)做政策连续性分析&amp;可视化" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/textsim/" />
+<meta property="og:image" content="/images/blog/textSIMAmerica.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2021-12-30T12:43:10&#43;06:00" />
+<meta property="article:modified_time" content="2021-12-30T12:43:10&#43;06:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/textSIMAmerica.png" />
+<meta name="twitter:title" content="使用文本相似度可以识别变化的时间点"/>
+<meta name="twitter:description" content="用漂亮国大统领报告(演讲)做政策连续性分析&amp;可视化"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "使用文本相似度可以识别变化的时间点",
+      "item": "/blog/textsim/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "使用文本相似度可以识别变化的时间点",
+  "name": "使用文本相似度可以识别变化的时间点",
+  "description": "用漂亮国大统领报告(演讲)做政策连续性分析\u0026可视化",
+  "keywords": [
+    "python", "第三方包", "文本分析"
+  ],
+  "articleBody": "使用文本相似度可以识别变化的时间点，先配置环境\n代码下载 配置环境 !pip3 install scikit-learn==1.0 !pip3 install cntext==1.2 # 安装pyecharts可视化 !pip3 install pyecharts==1.6.2 !pip3 install pyecharts-javascripthon==0.0.6 !pip3 install pyecharts-jupyter-installer==0.0.3 !pip3 install pyecharts-snapshot==0.2.0 \n1. 查看数据 本次使用sotu数据集，收集了从1790年至2018年国情咨文文本，这是漂亮国大统领每年发表的演讲，用于描述国家过去的成就和未来面临的挑战。\nimport pandas as pd df = pd.read_csv('sotu.csv') #text2是text向下顺移1位的结果 df['text2']=df['text'].shift(1) #剔除空字符 df.dropna(inplace=True) df.tail(10)   两段文本的相似度可以通过cos计算\nfrom cntext.similarity import similarity_score text1 = 'Mr. Speaker, Mr. Vice President, members of' text2 = 'Thank you very much. Mr. Speaker, Mr. Vice' similarity_score(text1, text2) Run\n{'Sim_Cosine': 0.4629100498862757, 'Sim_Jaccard': 0.3, 'Sim_MinEdit': 16, 'Sim_Simple': 0.9619883040935673}  2. 相似度可视化 如果把很多个相邻文本(有时间先后顺序)依次计算相似度，可以绘制出曲线，我们根据自己的领域知识，就可以看出变化的时间点。\nfrom cntext.similarity import similarity_score cosines = [] for idx, row in df.iterrows(): text1 = df.loc[idx, 'text'] text2 = df.loc[idx, 'text2'] simi = similarity_score(text1, text2)['Sim_Cosine'] cosines.append(simi) cosines Run\n[0.42767330405703097, 0.39821498388325544, 0.410744931596176, 0.3844380358041578, 0.4116242706522565, 0.4169268094228332, 0.4249719376001671, .... 0.39065212923423315, 0.3763764307701755, 0.35307484669994105, 0.4119319787659037, 0.43053043053064594, 0.45219743197249296, 0.421723837550935, 0.427904362863808] 紧接着\nfrom pyecharts.charts import Line from pyecharts import options as opts from pyecharts.globals import CurrentConfig, NotebookType CurrentConfig.NOTEBOOK_TYPE = NotebookType.JUPYTER_NOTEBOOK line = Line() line.add_xaxis(xaxis_data=[str(y) for y in df['year'].values]) line.add_yaxis(\"本期与上期的相似度\", cosines, label_opts=opts.LabelOpts(is_show=False)) line.set_global_opts(title_opts=opts.TitleOpts(title=\"1790年至2018年国情咨文文本相似度\")) line.load_javascript() line.render('1790年至2018年国情咨文文本相似度可视化.html') line.render_notebook()   注意，横坐标显示的是当年报告 与 前一年报告 的对比相似度\n3. 图形解读 相似度越低，说明本期与前期相比，文本变化较大，在本场景中可能是漂亮国在大幅度调整政策。\n  在图中，我们最熟悉的时期是一战和二战，这个阶段在图中较长时间处于低位，漂亮国zf的政策处于战时状态。\n  漂亮国立国初期，相似度连线也长时间处于低位，体现了新国家正在探索为政之道。\n  漂亮国每4年选ju一次，那么换届年份，相似度也会比较低。\n  ",
+  "wordCount" : "163",
+  "inLanguage": "en",
+  "image":"/images/blog/textSIMAmerica.png","datePublished": "2021-12-30T12:43:10+06:00",
+  "dateModified": "2021-12-30T12:43:10+06:00",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/textsim/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/blog" title="博文">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="mailto:thunderhit@qq.com" title="联系">
+                    <span>联系</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/">Home</a>&nbsp;»&nbsp;<a href="/blog/">Blogs</a></div>
+    <h1 class="post-title">
+      使用文本相似度可以识别变化的时间点
+    </h1>
+    <div class="post-description">
+      用漂亮国大统领报告(演讲)做政策连续性分析&amp;可视化
+    </div>
+    <div class="post-meta"><span title='2021-12-30 12:43:10 +0600 +0600'>2021-12-30</span>&nbsp;·&nbsp;1 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/textSIMAmerica.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/textSIMAmerica.png" alt=""></a>
+        
+</figure><div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#%e4%bb%a3%e7%a0%81%e4%b8%8b%e8%bd%bdcodezip" aria-label="代码下载"><a href="code.zip">代码下载</a></a></li>
+                <li>
+                    <a href="#%e9%85%8d%e7%bd%ae%e7%8e%af%e5%a2%83" aria-label="配置环境">配置环境</a></li>
+                <li>
+                    <a href="#1-%e6%9f%a5%e7%9c%8b%e6%95%b0%e6%8d%ae" aria-label="1. 查看数据">1. 查看数据</a></li>
+                <li>
+                    <a href="#2-%e7%9b%b8%e4%bc%bc%e5%ba%a6%e5%8f%af%e8%a7%86%e5%8c%96" aria-label="2. 相似度可视化">2. 相似度可视化</a></li>
+                <li>
+                    <a href="#3-%e5%9b%be%e5%bd%a2%e8%a7%a3%e8%af%bb" aria-label="3. 图形解读">3. 图形解读</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><p>使用文本相似度可以识别变化的时间点，先配置环境</p>
+<h2 id="代码下载codezip"><a href="code.zip">代码下载</a><a hidden class="anchor" aria-hidden="true" href="#代码下载codezip">#</a></h2>
+<br>
+<h2 id="配置环境">配置环境<a hidden class="anchor" aria-hidden="true" href="#配置环境">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="o">==</span><span class="mf">1.0</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">cntext</span><span class="o">==</span><span class="mf">1.2</span> 
+
+<span class="c1"># 安装pyecharts可视化</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">pyecharts</span><span class="o">==</span><span class="mf">1.6.2</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">pyecharts</span><span class="o">-</span><span class="n">javascripthon</span><span class="o">==</span><span class="mf">0.0.6</span>              
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">pyecharts</span><span class="o">-</span><span class="n">jupyter</span><span class="o">-</span><span class="n">installer</span><span class="o">==</span><span class="mf">0.0.3</span>              
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">pyecharts</span><span class="o">-</span><span class="n">snapshot</span><span class="o">==</span><span class="mf">0.2.0</span> 
+</code></pre></div><br>
+<h2 id="1-查看数据">1. 查看数据<a hidden class="anchor" aria-hidden="true" href="#1-查看数据">#</a></h2>
+<p>本次使用sotu数据集，收集了从1790年至2018年国情咨文文本，这是漂亮国大统领每年发表的演讲，用于描述国家过去的成就和未来面临的挑战。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;sotu.csv&#39;</span><span class="p">)</span>
+<span class="c1">#text2是text向下顺移1位的结果</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;text2&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1">#剔除空字符</span>
+<span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><figure>
+    <img loading="lazy" src="img/df.png" width="800"/> 
+</figure>
+
+<p>两段文本的相似度可以通过cos计算</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">cntext.similarity</span> <span class="kn">import</span> <span class="n">similarity_score</span>
+
+<span class="n">text1</span> <span class="o">=</span> <span class="s1">&#39;Mr. Speaker, Mr. Vice President, members of&#39;</span>
+<span class="n">text2</span> <span class="o">=</span> <span class="s1">&#39;Thank you very much. Mr. Speaker, Mr. Vice&#39;</span>
+
+<span class="n">similarity_score</span><span class="p">(</span><span class="n">text1</span><span class="p">,</span> <span class="n">text2</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>{'Sim_Cosine': 0.4629100498862757,
+ 'Sim_Jaccard': 0.3,
+ 'Sim_MinEdit': 16,
+ 'Sim_Simple': 0.9619883040935673}
+</code></pre>
+<br>
+<h2 id="2-相似度可视化">2. 相似度可视化<a hidden class="anchor" aria-hidden="true" href="#2-相似度可视化">#</a></h2>
+<p>如果把很多个相邻文本(有时间先后顺序)依次计算相似度，可以绘制出曲线，我们根据自己的领域知识，就可以看出变化的时间点。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">cntext.similarity</span> <span class="kn">import</span> <span class="n">similarity_score</span>
+<span class="n">cosines</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+    <span class="n">text1</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">]</span>
+    <span class="n">text2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;text2&#39;</span><span class="p">]</span>
+    <span class="n">simi</span> <span class="o">=</span> <span class="n">similarity_score</span><span class="p">(</span><span class="n">text1</span><span class="p">,</span> <span class="n">text2</span><span class="p">)[</span><span class="s1">&#39;Sim_Cosine&#39;</span><span class="p">]</span>
+    <span class="n">cosines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">simi</span><span class="p">)</span>
+<span class="n">cosines</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[0.42767330405703097,
+ 0.39821498388325544,
+ 0.410744931596176,
+ 0.3844380358041578,
+ 0.4116242706522565,
+ 0.4169268094228332,
+ 0.4249719376001671,
+ ....
+ 0.39065212923423315,
+ 0.3763764307701755,
+ 0.35307484669994105,
+ 0.4119319787659037,
+ 0.43053043053064594,
+ 0.45219743197249296,
+ 0.421723837550935,
+ 0.427904362863808]
+</code></pre></div><p>紧接着</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pyecharts.charts</span> <span class="kn">import</span> <span class="n">Line</span>
+<span class="kn">from</span> <span class="nn">pyecharts</span> <span class="kn">import</span> <span class="n">options</span> <span class="k">as</span> <span class="n">opts</span>
+<span class="kn">from</span> <span class="nn">pyecharts.globals</span> <span class="kn">import</span> <span class="n">CurrentConfig</span><span class="p">,</span> <span class="n">NotebookType</span>
+<span class="n">CurrentConfig</span><span class="o">.</span><span class="n">NOTEBOOK_TYPE</span> <span class="o">=</span> <span class="n">NotebookType</span><span class="o">.</span><span class="n">JUPYTER_NOTEBOOK</span>
+
+<span class="n">line</span> <span class="o">=</span> <span class="n">Line</span><span class="p">()</span>
+
+<span class="n">line</span><span class="o">.</span><span class="n">add_xaxis</span><span class="p">(</span><span class="n">xaxis_data</span><span class="o">=</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">])</span>
+
+<span class="n">line</span><span class="o">.</span><span class="n">add_yaxis</span><span class="p">(</span><span class="s2">&#34;本期与上期的相似度&#34;</span><span class="p">,</span> 
+               <span class="n">cosines</span><span class="p">,</span> 
+               <span class="n">label_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">LabelOpts</span><span class="p">(</span><span class="n">is_show</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+<span class="n">line</span><span class="o">.</span><span class="n">set_global_opts</span><span class="p">(</span><span class="n">title_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">TitleOpts</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&#34;1790年至2018年国情咨文文本相似度&#34;</span><span class="p">))</span>
+
+<span class="n">line</span><span class="o">.</span><span class="n">load_javascript</span><span class="p">()</span>
+<span class="n">line</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s1">&#39;1790年至2018年国情咨文文本相似度可视化.html&#39;</span><span class="p">)</span>
+<span class="n">line</span><span class="o">.</span><span class="n">render_notebook</span><span class="p">()</span>
+</code></pre></div><figure>
+    <img loading="lazy" src="img/%e7%9b%b8%e4%bc%bc%e5%ba%a6%e8%b6%8b%e5%8a%bf.png" width="800"/> 
+</figure>
+
+<p>注意，横坐标显示的是当年报告 与 前一年报告 的对比相似度</p>
+<br>
+<h2 id="3-图形解读">3. 图形解读<a hidden class="anchor" aria-hidden="true" href="#3-图形解读">#</a></h2>
+<p>相似度越低，说明本期与前期相比，文本变化较大，在本场景中可能是漂亮国在大幅度调整政策。</p>
+<ol>
+<li>
+<p>在图中，我们最熟悉的时期是一战和二战，这个阶段在图中较长时间处于低位，漂亮国zf的政策处于战时状态。</p>
+</li>
+<li>
+<p>漂亮国立国初期，相似度连线也长时间处于低位，体现了新国家正在探索为政之道。</p>
+</li>
+<li>
+<p>漂亮国每4年选ju一次，那么换届年份，相似度也会比较低。</p>
+</li>
+</ol>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="/tags/python/">Python</a></li>
+      <li><a href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/">第三方包</a></li>
+      <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/">文本分析</a></li>
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2021 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
