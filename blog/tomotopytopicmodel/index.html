@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>tomotopy | 速度最快的LDA主题模型 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="python, 文本分析, 学术应用" />
+<meta name="description" content="代码下载 tomotopy简介？ tomotopy 是 tomoto（主题建模工具）的 Python 扩展，它是用 C&#43;&#43; 编写的基于 Gibbs 采样的主题模型库。支持的主题模型包括 LDA、DMR、HDP、MG-LDA、PA 和 HPA， 利用现代 CPU 的矢量化来最大化速度。
+https://github.com/bab2min/tomotopy
+下图中同样的数据集， tomotopy迭代200次，gensim迭代10次的情况下， tomotopy与gensim耗时对比图，由此可见tomotopy训练主题模型速度之快。 当前版本的 tomotopy 支持的主题模型包括
+ 潜在狄利克雷分配（LDAModel） 标记的 LDA（LLDA 模型） 部分标记的 LDA（PLDA 模型） 监督LDA（SLDA模型） Dirichlet 多项回归 (DMRModel) 广义狄利克雷多项回归 (GDMRModel) 分层狄利克雷过程 (HDPModel) 分层LDA（HLDA模型） 多粒 LDA（MGLDA 模型） 弹珠盘分配（PAModel） 分层 PA (HPAModel) 相关主题模型（CTModel） 动态主题模型 (DTModel) 基于伪文档的主题模型（PTModel）。  安装 !pip3 install tomotopy==0.12.2 !pip3 install pyLDAvis==3.3.1 目前，tomotopy 可以利用 AVX2、AVX 或 SSE2 SIMD 指令集来最大程度利用PC的性能。
+import tomotopy as tp tp.">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/tomotopytopicmodel/" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="tomotopy | 速度最快的LDA主题模型" />
+<meta property="og:description" content="代码下载 tomotopy简介？ tomotopy 是 tomoto（主题建模工具）的 Python 扩展，它是用 C&#43;&#43; 编写的基于 Gibbs 采样的主题模型库。支持的主题模型包括 LDA、DMR、HDP、MG-LDA、PA 和 HPA， 利用现代 CPU 的矢量化来最大化速度。
+https://github.com/bab2min/tomotopy
+下图中同样的数据集， tomotopy迭代200次，gensim迭代10次的情况下， tomotopy与gensim耗时对比图，由此可见tomotopy训练主题模型速度之快。 当前版本的 tomotopy 支持的主题模型包括
+ 潜在狄利克雷分配（LDAModel） 标记的 LDA（LLDA 模型） 部分标记的 LDA（PLDA 模型） 监督LDA（SLDA模型） Dirichlet 多项回归 (DMRModel) 广义狄利克雷多项回归 (GDMRModel) 分层狄利克雷过程 (HDPModel) 分层LDA（HLDA模型） 多粒 LDA（MGLDA 模型） 弹珠盘分配（PAModel） 分层 PA (HPAModel) 相关主题模型（CTModel） 动态主题模型 (DTModel) 基于伪文档的主题模型（PTModel）。  安装 !pip3 install tomotopy==0.12.2 !pip3 install pyLDAvis==3.3.1 目前，tomotopy 可以利用 AVX2、AVX 或 SSE2 SIMD 指令集来最大程度利用PC的性能。
+import tomotopy as tp tp." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/tomotopytopicmodel/" />
+<meta property="og:image" content="/images/blog/tomotopy%E5%BA%93.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2022-01-07T11:43:10&#43;06:00" />
+<meta property="article:modified_time" content="2022-01-07T11:43:10&#43;06:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/tomotopy%E5%BA%93.png" />
+<meta name="twitter:title" content="tomotopy | 速度最快的LDA主题模型"/>
+<meta name="twitter:description" content="代码下载 tomotopy简介？ tomotopy 是 tomoto（主题建模工具）的 Python 扩展，它是用 C&#43;&#43; 编写的基于 Gibbs 采样的主题模型库。支持的主题模型包括 LDA、DMR、HDP、MG-LDA、PA 和 HPA， 利用现代 CPU 的矢量化来最大化速度。
+https://github.com/bab2min/tomotopy
+下图中同样的数据集， tomotopy迭代200次，gensim迭代10次的情况下， tomotopy与gensim耗时对比图，由此可见tomotopy训练主题模型速度之快。 当前版本的 tomotopy 支持的主题模型包括
+ 潜在狄利克雷分配（LDAModel） 标记的 LDA（LLDA 模型） 部分标记的 LDA（PLDA 模型） 监督LDA（SLDA模型） Dirichlet 多项回归 (DMRModel) 广义狄利克雷多项回归 (GDMRModel) 分层狄利克雷过程 (HDPModel) 分层LDA（HLDA模型） 多粒 LDA（MGLDA 模型） 弹珠盘分配（PAModel） 分层 PA (HPAModel) 相关主题模型（CTModel） 动态主题模型 (DTModel) 基于伪文档的主题模型（PTModel）。  安装 !pip3 install tomotopy==0.12.2 !pip3 install pyLDAvis==3.3.1 目前，tomotopy 可以利用 AVX2、AVX 或 SSE2 SIMD 指令集来最大程度利用PC的性能。
+import tomotopy as tp tp."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "tomotopy | 速度最快的LDA主题模型",
+      "item": "/blog/tomotopytopicmodel/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "tomotopy | 速度最快的LDA主题模型",
+  "name": "tomotopy | 速度最快的LDA主题模型",
+  "description": "代码下载 tomotopy简介？ tomotopy 是 tomoto（主题建模工具）的 Python 扩展，它是用 C++ 编写的基于 Gibbs 采样的主题模型库。支持的主题模型包括 LDA、DMR、HDP、MG-LDA、PA 和 HPA， 利用现代 CPU 的矢量化来最大化速度。\nhttps://github.com/bab2min/tomotopy\n下图中同样的数据集， tomotopy迭代200次，gensim迭代10次的情况下， tomotopy与gensim耗时对比图，由此可见tomotopy训练主题模型速度之快。 当前版本的 tomotopy 支持的主题模型包括\n 潜在狄利克雷分配（LDAModel） 标记的 LDA（LLDA 模型） 部分标记的 LDA（PLDA 模型） 监督LDA（SLDA模型） Dirichlet 多项回归 (DMRModel) 广义狄利克雷多项回归 (GDMRModel) 分层狄利克雷过程 (HDPModel) 分层LDA（HLDA模型） 多粒 LDA（MGLDA 模型） 弹珠盘分配（PAModel） 分层 PA (HPAModel) 相关主题模型（CTModel） 动态主题模型 (DTModel) 基于伪文档的主题模型（PTModel）。  安装 !pip3 install tomotopy==0.12.2 !pip3 install pyLDAvis==3.3.1 目前，tomotopy 可以利用 AVX2、AVX 或 SSE2 SIMD 指令集来最大程度利用PC的性能。\nimport tomotopy as tp tp.",
+  "keywords": [
+    "python", "文本分析", "学术应用"
+  ],
+  "articleBody": "代码下载 tomotopy简介？ tomotopy 是 tomoto（主题建模工具）的 Python 扩展，它是用 C++ 编写的基于 Gibbs 采样的主题模型库。支持的主题模型包括 LDA、DMR、HDP、MG-LDA、PA 和 HPA， 利用现代 CPU 的矢量化来最大化速度。\nhttps://github.com/bab2min/tomotopy\n下图中同样的数据集， tomotopy迭代200次，gensim迭代10次的情况下， tomotopy与gensim耗时对比图，由此可见tomotopy训练主题模型速度之快。 当前版本的 tomotopy 支持的主题模型包括\n 潜在狄利克雷分配（LDAModel） 标记的 LDA（LLDA 模型） 部分标记的 LDA（PLDA 模型） 监督LDA（SLDA模型） Dirichlet 多项回归 (DMRModel) 广义狄利克雷多项回归 (GDMRModel) 分层狄利克雷过程 (HDPModel) 分层LDA（HLDA模型） 多粒 LDA（MGLDA 模型） 弹珠盘分配（PAModel） 分层 PA (HPAModel) 相关主题模型（CTModel） 动态主题模型 (DTModel) 基于伪文档的主题模型（PTModel）。  安装 !pip3 install tomotopy==0.12.2 !pip3 install pyLDAvis==3.3.1 目前，tomotopy 可以利用 AVX2、AVX 或 SSE2 SIMD 指令集来最大程度利用PC的性能。\nimport tomotopy as tp tp.isa Run\n'avx2'  如果 tp.isa 返回 None，则训练过程可能需要很长时间。\n1. 导入数据 准备一个自己很熟悉的数据disaster_news.csv，一共有332条，话题数K=5，（正常情况下K是需要探索的）。\nimport pandas as pd df = pd.read_csv('disaster_news.csv') df.head() 2. 整理数据 分词、去除停用词\nimport re import jieba from cntext import STOPWORDS_zh def segment(text): words = jieba.lcut(text) words = [w for w in words if w not in STOPWORDS_zh] return words test = \"云南永善县级地震已致人伤间民房受损中新网月日电据云南昭通市防震减灾局官方网站消息截至日时云南昭通永善县级地震已造成人受伤其中重伤人轻伤人已全部送医院救治民房受损户间倒塌户间个乡镇所学校不同程度受损目前被损毁电力交通通讯设施已全部抢通修复当地已调拨帐篷顶紧急转移万人月日时分云南昭通永善县发生里氏级地震震源深度公里当地震感强烈此外成都等四川多地也有明显震感\" print(segment(test)) ['云南', '永善县', '级', '地震', '已致', '伤间', '民房', '受损', '中新网', '日电', '云南', '昭通市', '防震', '减灾', '局', '官方网站', '消息', '日时', '云南', '昭通', '永善县', '级', '地震', '造成', '受伤', '重伤', '轻伤', '送', '医院', '救治', '民房', '受损', '户间', '倒塌', '户间', '乡镇', '学校', '不同', '程度', '受损', '目前', '损毁', '电力', '交通', '通讯', '设施', '抢通', '修复', '调拨', '帐篷', '顶', '紧急', '转移', '万人', '时分', '云南', '昭通', '永善县', '发生', '里氏', '级', '地震', '震源', '深度', '公里', '震感', '强烈', '成都', '四川', '多地', '明显', '震感']  df['words'] = df['text'].apply(segment) df.head() 3. 找到最佳K 正常的步骤应该认真对待这步，在一定区间范围内，根据模型得分找到合理的K。这里使用tomotopy提供的主题一致性coherence得分假装找一下。\n我们期望的图应该的topic coherence随着 number of topics增加而增加，然后到某个topic值趋于平稳。\ntomotopy每次运行得到的图形状不一样，为了保证运行结果具有可比性，设置了随机种子seed为555，你也可以根据需要改为自己需要的随机状态。(这里有点像炼丹)\ndef find_k(docs, min_k=1, max_k=20, min_df=2): #min_df 词语最少出现在2个文档中 import matplotlib.pyplot as plt scores = [] for k in range(min_k, max_k): #seed随机种子，保证在大邓这里运行结果与你运行的结果一样 mdl = tp.LDAModel(min_df=min_df, k=k, seed=555) for words in docs: if words: mdl.add_doc(words) mdl.train(20) coh = tp.coherence.Coherence(mdl) scores.append(coh.get_score()) #x = list(range(min_k, max_k - 1)) # 区间最右侧的值。注意：不能大于max_k #print(x) #print() plt.plot(range(min_k, max_k), scores) plt.xlabel(\"number of topics\") plt.ylabel(\"coherence\") plt.show() find_k(docs=df['words'], min_k=1, max_k=10, min_df=2) 4. 训练lda 使用tomotopy的LDA模型， 话题数K=5\nimport tomotopy as tp #初始化LDA mdl = tp.LDAModel(k=5, min_df=2, seed=555) for words in df['words']: #确认words 是 非空词语列表 if words: mdl.add_doc(words=words) #训练 mdl.train() #查看每个topic feature words for k in range(mdl.k): print('Top 10 words of topic #{}'.format(k)) print(mdl.get_topic_words(k, top_n=10)) print('\\n') Run\nTop 10 words of topic #0 [('一辆', 0.02751251682639122), ('事故', 0.021704642102122307), ('记者', 0.018342189490795135), ('死亡', 0.01650812290608883), ('造成', 0.014062701724469662), ('人员', 0.013909862376749516), ('现场', 0.013451346196234226), ('受伤', 0.012687151320278645), ('相撞', 0.011922957375645638), ('货车', 0.011922957375645638)]  ​ ​ Top 10 words of topic #1 ​ [(‘学生’, 0.02709135226905346), (‘食物中毒’, 0.02498047426342964), (‘出现’, 0.019175563007593155), (‘医院’, 0.016185153275728226), (‘事件’, 0.013546556234359741), (‘调查’, 0.013194743543863297), (‘年月日’, 0.012842929922044277), (‘治疗’, 0.012667023576796055), (‘症状’, 0.011787491850554943), (‘名’, 0.011259771883487701)]\n​ ​ Top 10 words of topic #2 ​ [(‘现场’, 0.018848909065127373), (‘发生’, 0.01677251048386097), (‘医院’, 0.015015557408332825), (‘起火’, 0.014216942712664604), (‘原因’, 0.012140544131398201), (‘目前’, 0.012140544131398201), (‘救治’, 0.01150165218859911), (‘进行’, 0.011022482998669147), (‘名’, 0.009425252676010132), (‘火势’, 0.009265529923141003)]\n​ ​ Top 10 words of topic #3 ​ [(‘发生’, 0.03348556533455849), (‘爆炸’, 0.022389251738786697), (‘造成’, 0.019663840532302856), (‘死亡’, 0.01713310182094574), (‘受伤’, 0.016938429325819016), (‘年月日’, 0.016354413703083992), (‘轿车’, 0.012655640952289104), (‘警方’, 0.012460969388484955), (‘袭击’, 0.012266295962035656), (‘事件’, 0.011487606912851334)]\n​ ​ Top 10 words of topic #4 ​ [(‘地震’, 0.047826822847127914), (‘发生’, 0.03555167838931084), (‘火灾’, 0.03140682727098465), (‘时分’, 0.020885275676846504), (‘级’, 0.015783920884132385), (‘时间’, 0.013870910741388798), (‘公里’, 0.013711493462324142), (‘人员伤亡’, 0.013073823414742947), (‘记者’, 0.013073823414742947), (‘震感’, 0.012276736088097095)]\n#查看话题模型信息 mdl.summary() | LDAModel (current version: 0.12.2) | 332 docs, 29749 words | Total Vocabs: 8428, Used Vocabs: 2984 | Entropy of words: 7.10665 | Entropy of term-weighted words: 7.10665 | Removed Vocabs:  | | Iterations: 10, Burn-in steps: 0 | Optimization Interval: 10 | Log-likelihood per word: -7.79934 | | tw: TermWeight.ONE | min_cf: 0 (minimum collection frequency of words) | min_df: 2 (minimum document frequency of words) | rm_top: 0 (the number of top words to be removed) | k: 5 (the number of topics between 1 ~ 32767) | alpha: [0.1] (hyperparameter of Dirichlet distribution for document-topic, given as a single `float` in case of symmetric prior and as a list with length `k` of `float` in case of asymmetric prior.) | eta: 0.01 (hyperparameter of Dirichlet distribution for topic-word) | seed: 555 (random seed) | trained in version 0.12.2 |  | alpha (Dirichlet prior on the per-document topic distributions) | [0.7143365 0.6852513 0.75089616 0.6204677 0.7040125 ] | eta (Dirichlet prior on the per-topic word distribution) | 0.01 |  | #0 (6513) : 一辆 事故 记者 死亡 造成 | #1 (5655) : 学生 食物中毒 出现 医院 事件 | #2 (6231) : 现场 发生 医院 起火 原因 | #3 (5107) : 发生 爆炸 造成 死亡 受伤 | #4 (6243) : 地震 发生 火灾 时分 级 |  topic解读 根据每个话题top10的特征词，5个话题解读为\n 交通事故| #0 (6513) : 一辆 事故 记者 死亡 造成 食品安全| #1 (5655) : 学生 食物中毒 出现 医院 事件 火灾新闻| #2 (6231) : 现场 发生 医院 起火 原因 恐怖袭击| #3 (5107) : 发生 爆炸 造成 死亡 受伤 地震灾害| #4 (6243) : 地震 发生 火灾 时分 级  5. 可视化 使用pyLDAvis\nimport pyLDAvis import numpy as np import warnings warnings.filterwarnings('ignore', category=Warning) #在notebook显示 pyLDAvis.enable_notebook() #获取pyldavis需要的参数 topic_term_dists = np.stack([mdl.get_topic_word_dist(k) for k in range(mdl.k)]) doc_topic_dists = np.stack([doc.get_topic_dist() for doc in mdl.docs]) doc_topic_dists /= doc_topic_dists.sum(axis=1, keepdims=True) doc_lengths = np.array([len(doc.words) for doc in mdl.docs]) vocab = list(mdl.used_vocabs) term_frequency = mdl.used_vocab_freq prepared_data = pyLDAvis.prepare( topic_term_dists, doc_topic_dists, doc_lengths, vocab, term_frequency, start_index=0, # tomotopy话题id从0开始，pyLDAvis话题id从1开始 sort_topics=False #注意：否则pyLDAvis与tomotopy内的话题无法一一对应。  ) #可视化结果存到html文件中 #pyLDAvis.save_html(prepared_data, 'ldavis.html') #notebook中显示 pyLDAvis.display(prepared_data) 6. 预测 预测某文档的话题\nimport jieba from cntext import STOPWORDS_zh #预测 doc = '云南永善县级地震已致伤间民房受损中新网日电云南昭通市防震减灾局官方网站消息日时云南昭通永善县级地震造成受伤重伤轻伤送医院救治民房受损户间倒塌户间乡镇学校不同程度受损目前损毁电力交通通讯设施抢通修复调拨帐篷顶紧急转移万人时分云南昭通永善县发生里氏级地震震源深度公里震感强烈成都四川多地明显震感' words = [w for w in jieba.lcut(doc) if w not in STOPWORDS_zh] #构造tomotopy需要的数据 doc_inst = mdl.make_doc(words=words) topic_dist, ll = mdl.infer(doc_inst) print(\"Topic Distribution for Unseen Docs: \", topic_dist) Topic Distribution for Unseen Docs: [0.11645161 0.10240361 0.5342029 0.03622254 0.21071935]  列表长度为5， 列表第三个数值(topic #2)数值最大，该文本最大的可能性是topic #2\n补充: 指定主题特征词 如果对数据比较了解，已经知道有一些主题，可以把比较明显的词语分配给指定的topic_id。\nmdl = tp.LDAModel(k=5, min_df=2, seed=555) for words in df['words']: if words: mdl.add_doc(words) #把word相撞 分配给topic_0, 权重设置为1， 其他topic权重设置为0.1 #注意这里的range(5) 5是对应的k值 mdl.set_word_prior('相撞', [1.0 if k == 0 else 0.1 for k in range(5)]) #把word地震 分配给topic_1, 权重设置为1， 其他topic权重设置为0.1 mdl.set_word_prior('地震', [1.0 if k == 1 else 0.1 for k in range(5)]) #把word火灾 分配给topic_2, 权重设置为1， 其他topic权重设置为0.1 mdl.set_word_prior('火灾', [1.0 if k == 2 else 0.1 for k in range(5)]) #把word中毒 分配给topic_3, 权重设置为1， 其他topic权重设置为0.1 mdl.set_word_prior('中毒', [1.0 if k == 3 else 0.1 for k in range(5)]) #把word袭击 分配给topic_4, 权重设置为1， 其他topic权重设置为0.1 mdl.set_word_prior('袭击', [1.0 if k == 4 else 0.1 for k in range(5)]) mdl.train() mdl.summary() | LDAModel (current version: 0.12.2) | 332 docs, 29749 words | Total Vocabs: 8428, Used Vocabs: 2984 | Entropy of words: 7.10665 | Entropy of term-weighted words: 7.10665 | Removed Vocabs:  | | Iterations: 10, Burn-in steps: 0 | Optimization Interval: 10 | Log-likelihood per word: -7.72251 | | tw: TermWeight.ONE | min_cf: 0 (minimum collection frequency of words) | min_df: 2 (minimum document frequency of words) | rm_top: 0 (the number of top words to be removed) | k: 5 (the number of topics between 1 ~ 32767) | alpha: [0.1] (hyperparameter of Dirichlet distribution for document-topic, given as a single `float` in case of symmetric prior and as a list with length `k` of `float` in case of asymmetric prior.) | eta: 0.01 (hyperparameter of Dirichlet distribution for topic-word) | seed: 555 (random seed) | trained in version 0.12.2 |  | alpha (Dirichlet prior on the per-document topic distributions) | [0.7106193 0.60264444 0.5734784 0.71375024 0.6234263 ] | eta (Dirichlet prior on the per-topic word distribution) | 0.01 |  | #0 (6599) : 一辆 事故 死亡 发生 造成 | #1 (6087) : 地震 发生 级 公里 年月日 | #2 (5892) : 火灾 发生 现场 大火 起火 | #3 (6402) : 医院 学生 食物中毒 出现 名 | #4 (4769) : 事件 发生 袭击 人员 工作 |  ",
+  "wordCount" : "1168",
+  "inLanguage": "en",
+  "image":"/images/blog/tomotopy%E5%BA%93.png","datePublished": "2022-01-07T11:43:10+06:00",
+  "dateModified": "2022-01-07T11:43:10+06:00",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/tomotopytopicmodel/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/blog" title="博文">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="mailto:thunderhit@qq.com" title="联系">
+                    <span>联系</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/">Home</a>&nbsp;»&nbsp;<a href="/blog/">Blogs</a></div>
+    <h1 class="post-title">
+      tomotopy | 速度最快的LDA主题模型
+    </h1>
+    <div class="post-meta"><span title='2022-01-07 11:43:10 +0600 +0600'>2022-01-07</span>&nbsp;·&nbsp;6 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/tomotopy%E5%BA%93.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/tomotopy%E5%BA%93.png" alt=""></a>
+        
+</figure><div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#%e4%bb%a3%e7%a0%81%e4%b8%8b%e8%bd%bdtomotopy_codezip" aria-label="代码下载"><a href="tomotopy_code.zip">代码下载</a></a></li>
+                <li>
+                    <a href="#tomotopy%e7%ae%80%e4%bb%8b" aria-label="tomotopy简介？">tomotopy简介？</a></li>
+                <li>
+                    <a href="#%e5%ae%89%e8%a3%85" aria-label="安装">安装</a></li>
+                <li>
+                    <a href="#1-%e5%af%bc%e5%85%a5%e6%95%b0%e6%8d%ae" aria-label="1. 导入数据">1. 导入数据</a></li>
+                <li>
+                    <a href="#2-%e6%95%b4%e7%90%86%e6%95%b0%e6%8d%ae" aria-label="2. 整理数据">2. 整理数据</a></li>
+                <li>
+                    <a href="#3-%e6%89%be%e5%88%b0%e6%9c%80%e4%bd%b3k" aria-label="3. 找到最佳K">3. 找到最佳K</a></li>
+                <li>
+                    <a href="#4-%e8%ae%ad%e7%bb%83lda" aria-label="4. 训练lda">4. 训练lda</a><ul>
+                        
+                <li>
+                    <a href="#topic%e8%a7%a3%e8%af%bb" aria-label="topic解读">topic解读</a></li></ul>
+                </li>
+                <li>
+                    <a href="#5-%e5%8f%af%e8%a7%86%e5%8c%96" aria-label="5. 可视化">5. 可视化</a></li>
+                <li>
+                    <a href="#6-%e9%a2%84%e6%b5%8b" aria-label="6. 预测">6. 预测</a></li>
+                <li>
+                    <a href="#%e8%a1%a5%e5%85%85-%e6%8c%87%e5%ae%9a%e4%b8%bb%e9%a2%98%e7%89%b9%e5%be%81%e8%af%8d" aria-label="补充: 指定主题特征词">补充: 指定主题特征词</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="代码下载tomotopy_codezip"><a href="tomotopy_code.zip">代码下载</a><a hidden class="anchor" aria-hidden="true" href="#代码下载tomotopy_codezip">#</a></h2>
+<br>
+<h2 id="tomotopy简介">tomotopy简介？<a hidden class="anchor" aria-hidden="true" href="#tomotopy简介">#</a></h2>
+<p>tomotopy 是 tomoto（主题建模工具）的 Python 扩展，它是用 C++ 编写的基于 Gibbs 采样的主题模型库。支持的主题模型包括 LDA、DMR、HDP、MG-LDA、PA 和 HPA， 利用现代 CPU 的矢量化来最大化速度。</p>
+<p><a href="https://github.com/bab2min/tomotopy">https://github.com/bab2min/tomotopy</a></p>
+<p><strong>下图中同样的数据集， tomotopy迭代200次，gensim迭代10次的情况下， tomotopy与gensim耗时对比图，由此可见tomotopy训练主题模型速度之快。</strong>
+<img loading="lazy" src="img/TomotopyVsGensim.png" alt=""  />
+</p>
+<p>当前版本的 tomotopy 支持的主题模型包括</p>
+<ul>
+<li>潜在狄利克雷分配（LDAModel）</li>
+<li>标记的 LDA（LLDA 模型）</li>
+<li>部分标记的 LDA（PLDA 模型）</li>
+<li>监督LDA（SLDA模型）</li>
+<li>Dirichlet 多项回归 (DMRModel)</li>
+<li>广义狄利克雷多项回归 (GDMRModel)</li>
+<li>分层狄利克雷过程 (HDPModel)</li>
+<li>分层LDA（HLDA模型）</li>
+<li>多粒 LDA（MGLDA 模型）</li>
+<li>弹珠盘分配（PAModel）</li>
+<li>分层 PA (HPAModel)</li>
+<li>相关主题模型（CTModel）</li>
+<li>动态主题模型 (DTModel)</li>
+<li>基于伪文档的主题模型（PTModel）。</li>
+</ul>
+<br>
+<h2 id="安装">安装<a hidden class="anchor" aria-hidden="true" href="#安装">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">tomotopy</span><span class="o">==</span><span class="mf">0.12.2</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">pyLDAvis</span><span class="o">==</span><span class="mf">3.3.1</span>  
+</code></pre></div><p>目前，tomotopy 可以利用 AVX2、AVX 或 SSE2 SIMD 指令集来最大程度利用PC的性能。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">tomotopy</span> <span class="k">as</span> <span class="nn">tp</span>
+
+<span class="n">tp</span><span class="o">.</span><span class="n">isa</span>
+</code></pre></div><p>Run</p>
+<pre><code>'avx2'
+</code></pre>
+<p>如果 tp.isa 返回 None，则训练过程可能需要很长时间。</p>
+<br>
+<h2 id="1-导入数据">1. 导入数据<a hidden class="anchor" aria-hidden="true" href="#1-导入数据">#</a></h2>
+<p>准备一个自己很熟悉的数据disaster_news.csv，一共有332条，话题数K=5，（正常情况下K是需要探索的）。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;disaster_news.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df1.png" alt=""  />
+</p>
+<br>
+<h2 id="2-整理数据">2. 整理数据<a hidden class="anchor" aria-hidden="true" href="#2-整理数据">#</a></h2>
+<p>分词、去除停用词</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">jieba</span>
+<span class="kn">from</span> <span class="nn">cntext</span> <span class="kn">import</span> <span class="n">STOPWORDS_zh</span>
+
+
+<span class="k">def</span> <span class="nf">segment</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STOPWORDS_zh</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">words</span>
+
+<span class="n">test</span> <span class="o">=</span> <span class="s2">&#34;云南永善县级地震已致人伤间民房受损中新网月日电据云南昭通市防震减灾局官方网站消息截至日时云南昭通永善县级地震已造成人受伤其中重伤人轻伤人已全部送医院救治民房受损户间倒塌户间个乡镇所学校不同程度受损目前被损毁电力交通通讯设施已全部抢通修复当地已调拨帐篷顶紧急转移万人月日时分云南昭通永善县发生里氏级地震震源深度公里当地震感强烈此外成都等四川多地也有明显震感&#34;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">segment</span><span class="p">(</span><span class="n">test</span><span class="p">))</span>
+</code></pre></div><pre><code>['云南', '永善县', '级', '地震', '已致', '伤间', '民房', '受损', '中新网', '日电', '云南', '昭通市', '防震', '减灾', '局', '官方网站', '消息', '日时', '云南', '昭通', '永善县', '级', '地震', '造成', '受伤', '重伤', '轻伤', '送', '医院', '救治', '民房', '受损', '户间', '倒塌', '户间', '乡镇', '学校', '不同', '程度', '受损', '目前', '损毁', '电力', '交通', '通讯', '设施', '抢通', '修复', '调拨', '帐篷', '顶', '紧急', '转移', '万人', '时分', '云南', '昭通', '永善县', '发生', '里氏', '级', '地震', '震源', '深度', '公里', '震感', '强烈', '成都', '四川', '多地', '明显', '震感']
+</code></pre>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<br>
+<h2 id="3-找到最佳k">3. 找到最佳K<a hidden class="anchor" aria-hidden="true" href="#3-找到最佳k">#</a></h2>
+<p>正常的步骤应该认真对待这步，在一定区间范围内，根据模型得分找到合理的K。这里使用tomotopy提供的主题一致性coherence得分假装找一下。</p>
+<p>我们期望的图应该的topic coherence随着 number of topics增加而增加，然后到某个topic值趋于平稳。</p>
+<p>tomotopy每次运行得到的图形状不一样，为了保证运行结果具有可比性，设置了随机种子seed为555，你也可以根据需要改为自己需要的随机状态。(这里有点像炼丹)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">find_k</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="n">min_k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_k</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="c1">#min_df 词语最少出现在2个文档中</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_k</span><span class="p">,</span> <span class="n">max_k</span><span class="p">):</span>
+        <span class="c1">#seed随机种子，保证在大邓这里运行结果与你运行的结果一样</span>
+        <span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">min_df</span><span class="o">=</span><span class="n">min_df</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">555</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">words</span><span class="p">:</span>
+                <span class="n">mdl</span><span class="o">.</span><span class="n">add_doc</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
+        <span class="n">mdl</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">coh</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">coherence</span><span class="o">.</span><span class="n">Coherence</span><span class="p">(</span><span class="n">mdl</span><span class="p">)</span>
+        <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coh</span><span class="o">.</span><span class="n">get_score</span><span class="p">())</span>
+
+    <span class="c1">#x = list(range(min_k, max_k - 1))  # 区间最右侧的值。注意：不能大于max_k</span>
+    <span class="c1">#print(x)</span>
+    <span class="c1">#print()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">min_k</span><span class="p">,</span> <span class="n">max_k</span><span class="p">),</span> <span class="n">scores</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&#34;number of topics&#34;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&#34;coherence&#34;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    
+    
+<span class="n">find_k</span><span class="p">(</span><span class="n">docs</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">],</span> <span class="n">min_k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/output_11_0.png" alt="png"  />
+</p>
+<br>
+<h2 id="4-训练lda">4. 训练lda<a hidden class="anchor" aria-hidden="true" href="#4-训练lda">#</a></h2>
+<p>使用tomotopy的LDA模型， 话题数K=5</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">tomotopy</span> <span class="k">as</span> <span class="nn">tp</span>
+
+<span class="c1">#初始化LDA</span>
+<span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">555</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">]:</span>
+    <span class="c1">#确认words 是 非空词语列表</span>
+    <span class="k">if</span> <span class="n">words</span><span class="p">:</span>
+        <span class="n">mdl</span><span class="o">.</span><span class="n">add_doc</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">)</span>
+
+<span class="c1">#训练</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+<span class="c1">#查看每个topic feature words</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Top 10 words of topic #</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">get_topic_words</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">top_n</span><span class="o">=</span><span class="mi">10</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>Top 10 words of topic #0
+[('一辆', 0.02751251682639122), ('事故', 0.021704642102122307), ('记者', 0.018342189490795135), ('死亡', 0.01650812290608883), ('造成', 0.014062701724469662), ('人员', 0.013909862376749516), ('现场', 0.013451346196234226), ('受伤', 0.012687151320278645), ('相撞', 0.011922957375645638), ('货车', 0.011922957375645638)]
+</code></pre>
+<p>​ <br>
+​    Top 10 words of topic #1
+​    [(&lsquo;学生&rsquo;, 0.02709135226905346), (&lsquo;食物中毒&rsquo;, 0.02498047426342964), (&lsquo;出现&rsquo;, 0.019175563007593155), (&lsquo;医院&rsquo;, 0.016185153275728226), (&lsquo;事件&rsquo;, 0.013546556234359741), (&lsquo;调查&rsquo;, 0.013194743543863297), (&lsquo;年月日&rsquo;, 0.012842929922044277), (&lsquo;治疗&rsquo;, 0.012667023576796055), (&lsquo;症状&rsquo;, 0.011787491850554943), (&lsquo;名&rsquo;, 0.011259771883487701)]</p>
+<p>​ <br>
+​    Top 10 words of topic #2
+​    [(&lsquo;现场&rsquo;, 0.018848909065127373), (&lsquo;发生&rsquo;, 0.01677251048386097), (&lsquo;医院&rsquo;, 0.015015557408332825), (&lsquo;起火&rsquo;, 0.014216942712664604), (&lsquo;原因&rsquo;, 0.012140544131398201), (&lsquo;目前&rsquo;, 0.012140544131398201), (&lsquo;救治&rsquo;, 0.01150165218859911), (&lsquo;进行&rsquo;, 0.011022482998669147), (&lsquo;名&rsquo;, 0.009425252676010132), (&lsquo;火势&rsquo;, 0.009265529923141003)]</p>
+<p>​ <br>
+​    Top 10 words of topic #3
+​    [(&lsquo;发生&rsquo;, 0.03348556533455849), (&lsquo;爆炸&rsquo;, 0.022389251738786697), (&lsquo;造成&rsquo;, 0.019663840532302856), (&lsquo;死亡&rsquo;, 0.01713310182094574), (&lsquo;受伤&rsquo;, 0.016938429325819016), (&lsquo;年月日&rsquo;, 0.016354413703083992), (&lsquo;轿车&rsquo;, 0.012655640952289104), (&lsquo;警方&rsquo;, 0.012460969388484955), (&lsquo;袭击&rsquo;, 0.012266295962035656), (&lsquo;事件&rsquo;, 0.011487606912851334)]</p>
+<p>​ <br>
+​    Top 10 words of topic #4
+​    [(&lsquo;地震&rsquo;, 0.047826822847127914), (&lsquo;发生&rsquo;, 0.03555167838931084), (&lsquo;火灾&rsquo;, 0.03140682727098465), (&lsquo;时分&rsquo;, 0.020885275676846504), (&lsquo;级&rsquo;, 0.015783920884132385), (&lsquo;时间&rsquo;, 0.013870910741388798), (&lsquo;公里&rsquo;, 0.013711493462324142), (&lsquo;人员伤亡&rsquo;, 0.013073823414742947), (&lsquo;记者&rsquo;, 0.013073823414742947), (&lsquo;震感&rsquo;, 0.012276736088097095)]</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#查看话题模型信息</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+</code></pre></div><pre><code>&lt;Basic Info&gt;
+| LDAModel (current version: 0.12.2)
+| 332 docs, 29749 words
+| Total Vocabs: 8428, Used Vocabs: 2984
+| Entropy of words: 7.10665
+| Entropy of term-weighted words: 7.10665
+| Removed Vocabs: &lt;NA&gt;
+|
+&lt;Training Info&gt;
+| Iterations: 10, Burn-in steps: 0
+| Optimization Interval: 10
+| Log-likelihood per word: -7.79934
+|
+&lt;Initial Parameters&gt;
+| tw: TermWeight.ONE
+| min_cf: 0 (minimum collection frequency of words)
+| min_df: 2 (minimum document frequency of words)
+| rm_top: 0 (the number of top words to be removed)
+| k: 5 (the number of topics between 1 ~ 32767)
+| alpha: [0.1] (hyperparameter of Dirichlet distribution for document-topic, given as a single `float` in case of symmetric prior and as a list with length `k` of `float` in case of asymmetric prior.)
+| eta: 0.01 (hyperparameter of Dirichlet distribution for topic-word)
+| seed: 555 (random seed)
+| trained in version 0.12.2
+|
+&lt;Parameters&gt;
+| alpha (Dirichlet prior on the per-document topic distributions)
+|  [0.7143365  0.6852513  0.75089616 0.6204677  0.7040125 ]
+| eta (Dirichlet prior on the per-topic word distribution)
+|  0.01
+|
+&lt;Topics&gt;
+| #0 (6513) : 一辆 事故 记者 死亡 造成
+| #1 (5655) : 学生 食物中毒 出现 医院 事件
+| #2 (6231) : 现场 发生 医院 起火 原因
+| #3 (5107) : 发生 爆炸 造成 死亡 受伤
+| #4 (6243) : 地震 发生 火灾 时分 级
+|
+</code></pre>
+<h3 id="topic解读">topic解读<a hidden class="anchor" aria-hidden="true" href="#topic解读">#</a></h3>
+<p>根据每个话题top10的特征词，5个话题解读为</p>
+<ul>
+<li>交通事故| #0 (6513) : 一辆 事故 记者 死亡 造成</li>
+<li>食品安全| #1 (5655) : 学生 食物中毒 出现 医院 事件</li>
+<li>火灾新闻| #2 (6231) : 现场 发生 医院 起火 原因</li>
+<li>恐怖袭击| #3 (5107) : 发生 爆炸 造成 死亡 受伤</li>
+<li>地震灾害| #4 (6243) : 地震 发生 火灾 时分 级</li>
+</ul>
+<br>
+<h2 id="5-可视化">5. 可视化<a hidden class="anchor" aria-hidden="true" href="#5-可视化">#</a></h2>
+<p>使用pyLDAvis</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pyLDAvis</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">Warning</span><span class="p">)</span>
+
+<span class="c1">#在notebook显示</span>
+<span class="n">pyLDAvis</span><span class="o">.</span><span class="n">enable_notebook</span><span class="p">()</span>
+
+<span class="c1">#获取pyldavis需要的参数</span>
+<span class="n">topic_term_dists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">mdl</span><span class="o">.</span><span class="n">get_topic_word_dist</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">k</span><span class="p">)])</span>
+<span class="n">doc_topic_dists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">doc</span><span class="o">.</span><span class="n">get_topic_dist</span><span class="p">()</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">mdl</span><span class="o">.</span><span class="n">docs</span><span class="p">])</span>
+<span class="n">doc_topic_dists</span> <span class="o">/=</span> <span class="n">doc_topic_dists</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">doc_lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">words</span><span class="p">)</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">mdl</span><span class="o">.</span><span class="n">docs</span><span class="p">])</span>
+<span class="n">vocab</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">used_vocabs</span><span class="p">)</span>
+<span class="n">term_frequency</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">used_vocab_freq</span>
+
+
+<span class="n">prepared_data</span> <span class="o">=</span> <span class="n">pyLDAvis</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span>
+    <span class="n">topic_term_dists</span><span class="p">,</span> 
+    <span class="n">doc_topic_dists</span><span class="p">,</span> 
+    <span class="n">doc_lengths</span><span class="p">,</span> 
+    <span class="n">vocab</span><span class="p">,</span> 
+    <span class="n">term_frequency</span><span class="p">,</span>
+    <span class="n">start_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1"># tomotopy话题id从0开始，pyLDAvis话题id从1开始</span>
+    <span class="n">sort_topics</span><span class="o">=</span><span class="kc">False</span> <span class="c1">#注意：否则pyLDAvis与tomotopy内的话题无法一一对应。 </span>
+<span class="p">)</span>
+
+
+<span class="c1">#可视化结果存到html文件中</span>
+<span class="c1">#pyLDAvis.save_html(prepared_data, &#39;ldavis.html&#39;)</span>
+
+<span class="c1">#notebook中显示</span>
+<span class="n">pyLDAvis</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">prepared_data</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/ldavis.png" alt=""  />
+</p>
+<br>
+<h2 id="6-预测">6. 预测<a hidden class="anchor" aria-hidden="true" href="#6-预测">#</a></h2>
+<p>预测某文档的话题</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
+<span class="kn">from</span> <span class="nn">cntext</span> <span class="kn">import</span> <span class="n">STOPWORDS_zh</span>
+
+<span class="c1">#预测</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="s1">&#39;云南永善县级地震已致伤间民房受损中新网日电云南昭通市防震减灾局官方网站消息日时云南昭通永善县级地震造成受伤重伤轻伤送医院救治民房受损户间倒塌户间乡镇学校不同程度受损目前损毁电力交通通讯设施抢通修复调拨帐篷顶紧急转移万人时分云南昭通永善县发生里氏级地震震源深度公里震感强烈成都四川多地明显震感&#39;</span>
+<span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STOPWORDS_zh</span><span class="p">]</span>
+
+<span class="c1">#构造tomotopy需要的数据</span>
+<span class="n">doc_inst</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">make_doc</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">)</span>
+<span class="n">topic_dist</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">infer</span><span class="p">(</span><span class="n">doc_inst</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&#34;Topic Distribution for Unseen Docs: &#34;</span><span class="p">,</span> <span class="n">topic_dist</span><span class="p">)</span>
+
+</code></pre></div><pre><code>Topic Distribution for Unseen Docs:  [0.11645161 0.10240361 0.5342029  0.03622254 0.21071935]
+</code></pre>
+<p>列表长度为5， 列表第三个数值(topic #2)数值最大，该文本最大的可能性是topic #2</p>
+<br>
+<h2 id="补充-指定主题特征词">补充: 指定主题特征词<a hidden class="anchor" aria-hidden="true" href="#补充-指定主题特征词">#</a></h2>
+<p>如果对数据比较了解，已经知道有一些主题，可以把比较明显的词语分配给指定的topic_id。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">555</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">words</span><span class="p">:</span>
+        <span class="n">mdl</span><span class="o">.</span><span class="n">add_doc</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
+
+<span class="c1">#把word相撞 分配给topic_0, 权重设置为1， 其他topic权重设置为0.1</span>
+<span class="c1">#注意这里的range(5) 5是对应的k值</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;相撞&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+<span class="c1">#把word地震 分配给topic_1, 权重设置为1， 其他topic权重设置为0.1</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;地震&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+<span class="c1">#把word火灾 分配给topic_2, 权重设置为1， 其他topic权重设置为0.1</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;火灾&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+<span class="c1">#把word中毒 分配给topic_3, 权重设置为1， 其他topic权重设置为0.1</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;中毒&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">3</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+<span class="c1">#把word袭击 分配给topic_4, 权重设置为1， 其他topic权重设置为0.1</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;袭击&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">4</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+
+<span class="n">mdl</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>  
+</code></pre></div><pre><code>&lt;Basic Info&gt;
+| LDAModel (current version: 0.12.2)
+| 332 docs, 29749 words
+| Total Vocabs: 8428, Used Vocabs: 2984
+| Entropy of words: 7.10665
+| Entropy of term-weighted words: 7.10665
+| Removed Vocabs: &lt;NA&gt;
+|
+&lt;Training Info&gt;
+| Iterations: 10, Burn-in steps: 0
+| Optimization Interval: 10
+| Log-likelihood per word: -7.72251
+|
+&lt;Initial Parameters&gt;
+| tw: TermWeight.ONE
+| min_cf: 0 (minimum collection frequency of words)
+| min_df: 2 (minimum document frequency of words)
+| rm_top: 0 (the number of top words to be removed)
+| k: 5 (the number of topics between 1 ~ 32767)
+| alpha: [0.1] (hyperparameter of Dirichlet distribution for document-topic, given as a single `float` in case of symmetric prior and as a list with length `k` of `float` in case of asymmetric prior.)
+| eta: 0.01 (hyperparameter of Dirichlet distribution for topic-word)
+| seed: 555 (random seed)
+| trained in version 0.12.2
+|
+&lt;Parameters&gt;
+| alpha (Dirichlet prior on the per-document topic distributions)
+|  [0.7106193  0.60264444 0.5734784  0.71375024 0.6234263 ]
+| eta (Dirichlet prior on the per-topic word distribution)
+|  0.01
+|
+&lt;Topics&gt;
+| #0 (6599) : 一辆 事故 死亡 发生 造成
+| #1 (6087) : 地震 发生 级 公里 年月日
+| #2 (5892) : 火灾 发生 现场 大火 起火
+| #3 (6402) : 医院 学生 食物中毒 出现 名
+| #4 (4769) : 事件 发生 袭击 人员 工作
+|
+</code></pre>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="/tags/python/">Python</a></li>
+      <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/">文本分析</a></li>
+      <li><a href="/tags/%E5%AD%A6%E6%9C%AF%E5%BA%94%E7%94%A8/">学术应用</a></li>
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2022 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
