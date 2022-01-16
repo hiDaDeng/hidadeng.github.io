@@ -11,6 +11,8 @@ https://hidadeng.github.io
 - [utterances](https://github.com/utterance/utterances) 留言功能
 - [浏览器首页](https://hidadeng.github.io/mkdocs/home/) 学术浏览器首页
 
+![](blog/blogcomments/img/首页.png)
+
 <br>
 
 ## 网站仓库
