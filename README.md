@@ -41,6 +41,7 @@ https://hidadeng.github.io
 ![](blog/blogcomments/img/留言.png)
 
 <br>
+
 ## 学术浏览器首页
 
 如果你也是经管背景，对Python感兴趣，可以点击收藏该[学术首页](https://hidadeng.github.io/mkdocs/home/)
