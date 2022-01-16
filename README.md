@@ -9,6 +9,7 @@ https://hidadeng.github.io
 - [PaperMod](https://github.com/adityatelange/hugo-PaperMod)网站主题风格
 - [MkDocs](https://github.com/mkdocs/mkdocs) 生成技术文档
 - [utterances](https://github.com/utterance/utterances) 留言功能
+- [浏览器首页](https://hidadeng.github.io/mkdocs/home/) 学术浏览器首页
 
 <br>
 
@@ -39,4 +40,11 @@ https://hidadeng.github.io
 博客使用[utterances](https://github.com/utterance/utterances)调用github仓库资源，用于存储评论数据。评论系统有点慢，需要先有github账户才可以使用。日常大家如果对Python感兴趣，有什么好的想法、资料，欢迎在博客中留言。
 ![](blog/blogcomments/img/留言.png)
 
+<br>
+## 学术浏览器首页
 
+如果你也是经管背景，对Python感兴趣，可以点击收藏该[学术首页](https://hidadeng.github.io/mkdocs/home/)
+
+如果想生成自己学科的学术首页，可以点击[制作方法](https://hidadeng.github.io/blog/浏览器首页/)查看diy详情
+
+![](blog/blogcomments/img/学术浏览器首页.png)
