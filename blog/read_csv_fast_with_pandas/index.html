@@ -5,9 +5,9 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
-<title>Pandas库 | 高速读取csv文件的方法 | 大邓和他的PYTHON</title>
-<meta name="keywords" content="" />
-<meta name="description" content="视觉文化分析的Python工具包">
+<title>大邓和他的PYTHON</title>
+<meta name="keywords" content="pandas数据分析, 高速读取csv文件" />
+<meta name="description" content="当遇到特别大的csv文件，例如500M，pandas读取会很慢。本文提供了新的解决办法">
 <meta name="author" content="大邓">
 <link rel="canonical" href="/blog/read_csv_fast_with_pandas/" />
 <link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
@@ -56,8 +56,8 @@
         }
 
     </style>
-</noscript><meta property="og:title" content="Pandas库 | 高速读取csv文件的方法" />
-<meta property="og:description" content="视觉文化分析的Python工具包" />
+</noscript><meta property="og:title" content="" />
+<meta property="og:description" content="当遇到特别大的csv文件，例如500M，pandas读取会很慢。本文提供了新的解决办法" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/blog/read_csv_fast_with_pandas/" />
 <meta property="og:image" content="/images/blog/everything-about-pandas.png" /><meta property="article:section" content="blog" />
@@ -66,8 +66,8 @@
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="/images/blog/everything-about-pandas.png" />
-<meta name="twitter:title" content="Pandas库 | 高速读取csv文件的方法"/>
-<meta name="twitter:description" content="视觉文化分析的Python工具包"/>
+<meta name="twitter:title" content=""/>
+<meta name="twitter:description" content="当遇到特别大的csv文件，例如500M，pandas读取会很慢。本文提供了新的解决办法"/>
 
 
 <script type="application/ld+json">
@@ -84,7 +84,7 @@
     {
       "@type": "ListItem",
       "position":  1 ,
-      "name": "Pandas库 | 高速读取csv文件的方法",
+      "name": "",
       "item": "/blog/read_csv_fast_with_pandas/"
     }
   ]
@@ -94,11 +94,11 @@
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "Pandas库 | 高速读取csv文件的方法",
-  "name": "Pandas库 | 高速读取csv文件的方法",
-  "description": "视觉文化分析的Python工具包",
+  "headline": "",
+  "name": "",
+  "description": "当遇到特别大的csv文件，例如500M，pandas读取会很慢。本文提供了新的解决办法",
   "keywords": [
-    "数据分析", "第三方包"
+    "pandas数据分析", "高速读取csv文件"
   ],
   "articleBody": "问题场景 当遇到特别大的csv文件，例如500M，pandas读取会很慢，在之前教程中要使用其他包另类的语法。现在只需更新pandas，加一个参数即可。\n在本文中，我们将介绍：\n Pandas 的默认 CSV读数据， v1.4 中引入的更快、更并行的 CSV解析器。 一种不同的方法可以使事情变得更快。 读取 CSV，默认方式  碰巧有一个 850MB 的 CSV 文件，这是使用 Pandas 加载它的默认方式：\n## 更新pandas !pip3 install --upgrade pandas import pandas as pd df = pd.read_csv(\"large.csv\") 下面是旧的pandas版本代码读数据所消耗时间\n0m13.245s\n使用pyarrow读csv 2022年1月份，刚刚发布的pandas1.4版本增加了arrow库的csv解析器。对了，该功能仍然处于试验阶段，不是默认解析器，但是足够快。下面是新版本用法\nimport pandas as pd df = pd.read_csv(\"large.csv\", engine=\"pyarrow\") 新版本代码读数据所消耗时间\n0m6.507s\n   CSV解析器 CPU运行时间     默认C 13.2s   PyArrow 6.5s    需要注意，如果你的数据分析项目已经使用了并行加速数据的读取，那么今天的新教程（pyarrow）并不会特别显著改善代码运行速度（十几倍加速），但至少可能提供有意义的加速（一倍左右）。\n重新思考 加载 CSV 基本上是一项繁重的工作：\n 需要分成几行。 需要用逗号分隔每一行。 需要处理字符串引用。 需要猜测（！）列的类型，除非您明确地将它们传递给 Pandas。 需要将字符串转换为整数、日期和其他非字符串类型。  所有这些都需要 CPU 时间。\n如果您从第三方获取 CSV，并且只处理一次，那么您对此无能为力。但是，如果您多次加载同一个 CSV 文件怎么办？或者，如果您是在数据处理管道的其他部分生成输入文件的人，该怎么办？\n您可以读取其他一些处理速度更快的文件格式，而不是读取 CSV。让我们看一个例子，使用 Parquet 数据格式。 Parquet 文件旨在快速读取：您不必像使用 CSV 那样进行大量解析。与 CSV 不同，其中列类型在文件读取时无需编码，在 Parquet 中，列的类型存储在实际文件中。\n首先，我们将 CSV 文件转换为 Parquet 文件；我们禁用压缩，因此我们正在与 CSV 进行更多的苹果对苹果的比较。当然，如果您是第一个生成文件的人，则不需要转换步骤，您可以直接将数据写入 Parquet。\nimport pandas as pd df = pd.read_csv(\"large.csv\") df.to_parquet(\"large.parquet\", compression=None) 现在我们的数据存在于large.parquet中，再读取large.parquet看看读取时间\nimport pandas as pd df = pd.read_parquet(\"large.parquet\", engine=\"fastparquet\") 2.441s\n   CSV解析器 CPU运行时间     默认C 13.2s   PyArrow 6.5s   fastparquet 2.4s    纯粹由 CPU 衡量，fastparquet 是迄今为止最快的。 这只是一个例子。 但显然阅读 Parquet 格式的效率要高得多。\n最好的文件格式不是 CSV CSV 是一种糟糕的格式。 除了解析效率低下之外，缺少类型数据意味着解析总是比具有实际列类型的结构化文件格式更容易出错和模棱两可。 因此，如果可以，请避免使用 CSV 并使用更好的格式，尽量选择其他高效类型，如 Parquet。\n如果你被 CSV 卡住了，考虑在 Pandas 1.4 中使用新的 PyArrow CSV 解析器； 你会得到很好的加速，特别是如果你的程序当前没有利用多个 CPU。\n",
   "wordCount" : "145",
@@ -204,11 +204,8 @@
     
     <div class="breadcrumbs"><a href="/">Home</a>&nbsp;»&nbsp;<a href="/blog/">Blogs</a></div>
     <h1 class="post-title">
-      Pandas库 | 高速读取csv文件的方法
+      
     </h1>
-    <div class="post-description">
-      视觉文化分析的Python工具包
-    </div>
     <div class="post-meta"><span title='2022-02-05 20:43:10 +0600 +0600'>2022-02-05</span>&nbsp;·&nbsp;1 min&nbsp;·&nbsp;大邓
 
 </div>

@@ -6,8 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
 <title>BERTopic 主题建模库 | 建议收藏   | 大邓和他的PYTHON</title>
-<meta name="keywords" content="" />
-<meta name="description" content="手把手教你如何使用BERT主题建模技术">
+<meta name="keywords" content="BERT, 文本分析, 主题建模, 话题分析, python, 经管科研, 代码" />
+<meta name="description" content="使用BERT主题建模技术,可以对经管等领域文本数据进行主题(话题)建模。效果堪比LDA，但比LDA智能">
 <meta name="author" content="大邓">
 <link rel="canonical" href="/blog/bertopic%E4%B8%BB%E9%A2%98%E5%BB%BA%E6%A8%A1/" />
 <link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
@@ -57,7 +57,7 @@
 
     </style>
 </noscript><meta property="og:title" content="BERTopic 主题建模库 | 建议收藏  " />
-<meta property="og:description" content="手把手教你如何使用BERT主题建模技术" />
+<meta property="og:description" content="使用BERT主题建模技术,可以对经管等领域文本数据进行主题(话题)建模。效果堪比LDA，但比LDA智能" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/blog/bertopic%E4%B8%BB%E9%A2%98%E5%BB%BA%E6%A8%A1/" />
 <meta property="og:image" content="/images/blog/maxresdefault.jpeg" /><meta property="article:section" content="blog" />
@@ -67,7 +67,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="/images/blog/maxresdefault.jpeg" />
 <meta name="twitter:title" content="BERTopic 主题建模库 | 建议收藏  "/>
-<meta name="twitter:description" content="手把手教你如何使用BERT主题建模技术"/>
+<meta name="twitter:description" content="使用BERT主题建模技术,可以对经管等领域文本数据进行主题(话题)建模。效果堪比LDA，但比LDA智能"/>
 
 
 <script type="application/ld+json">
@@ -96,9 +96,9 @@
   "@type": "BlogPosting",
   "headline": "BERTopic 主题建模库 | 建议收藏  ",
   "name": "BERTopic 主题建模库 | 建议收藏  ",
-  "description": "手把手教你如何使用BERT主题建模技术",
+  "description": "使用BERT主题建模技术,可以对经管等领域文本数据进行主题(话题)建模。效果堪比LDA，但比LDA智能",
   "keywords": [
-    "Python", "第三方包", "文本分析", "Bert", "主题建模"
+    "BERT", "文本分析", "主题建模", "话题分析", "python", "经管科研", "代码"
   ],
   "articleBody": "BERTopic 是一种主题建模技术，它利用 Transformer 和 c-TF-IDF 来创建密集的集群，允许轻松解释主题，同时在主题描述中保留重要词。\nBERTopic亮点\n 支持引导式Guided 支持（半）监督式 支持动态主题。 支持可视化  python3.7Ok， 3.8、3.9有问题,暂时无解。 https://github.com/MaartenGr/BERTopic/issues/392\n安装 !pip3 install bertopic==0.9.3 准备数据 这里使用的新闻数据集， 共2000条。 新闻类别涵 '娱乐', '教育', '游戏', '财经', '时政', '时尚', '科技', '体育', '家居', '房产' 这里假设大家不知道有10类新闻题材， 构建模型的时候不会用到label字段的数据。\nimport pandas as pd df = pd.read_csv('data/cnews.csv') df.head()   # 新闻题材 print(df.label.unique()) #记录数 print(len(df)) ['娱乐' '教育' '游戏' '财经' '时政' '时尚' '科技' '体育' '家居' '房产'] 2000  这里定义了一个清洗数据函数clean_text，需要注意BERTopic需要先将中文分词改造成类似英文文本格式（用空格间隔词语）\nimport re import jieba stoptext = open('data/stopwords.txt', encoding='utf-8').read() stopwords = stoptext.split('\\n') def clean_text(text): words = jieba.lcut(text) words = [w for w in words if w not in stopwords] return ' '.join(words) test = \"云南永善县级地震已致人伤间民房受损中新网月日电据云南昭通市防震减灾局官方网站消息截至日时云南昭通永善县级地震已造成人受伤其中重伤人轻伤人已全部送医院救治民房受损户间倒塌户间个乡镇所学校不同程度受损目前被损毁电力交通通讯设施已全部抢通修复当地已调拨帐篷顶紧急转移万人月日时分云南昭通永善县发生里氏级地震震源深度公里当地震感强烈此外成都等四川多地也有明显震感\" clean_text(test) '云南 永善县 级 地震 已致 伤间 民房 受损 中新网 月 日电 云南 昭通市 防震 减灾 局 官方网站 消息 截至 日时 云南 昭通 永善县 级 地震 受伤 重伤 轻伤 送 医院 救治 民房 受损 户间 倒塌 户间 乡镇 学校 程度 受损 损毁 电力 交通 通讯 设施 抢通 修复 当地 调拨 帐篷 紧急 转移 万人 月 日 时分 云南 昭通 永善县 发生 里氏 级 地震 震源 深度 公里 当地 震感 成都 四川 多地 震感'  对2000条数据进行clean_text，得到的结果存储到content字段中。\n我的macbook内存16G, 运行时间10s\ndf['content'] = df['text'].apply(clean_text) df.head()   训练Topic模型 文本分析步骤包括构建特征工程和训练，在本文中，直接使用spacy的中文词向量，省去了特征模型的学习时间。\n但这里需要\n 安装spacy 下载\u0026安装zh_core_web_sm中文词向量模型  具体配置方法请看【公众号: 大邓和他的Python】2021年10月29日 的推文 建议收藏 | nltk和spacy配置方法\nfrom bertopic import BERTopic import spacy zh_model = spacy.load(\"zh_core_web_sm\") topic_model = BERTopic(language=\"chinese (simplified)\", embedding_model=zh_model, calculate_probabilities=True, verbose=True) docs = df['content'].tolist() #2000条进行fit_transform需要1min topics, probs = topic_model.fit_transform(docs) 100%|██████████| 2000/2000 [01:31 \n主题模型方法  topic_model.get_topic_info 查看各主题信息 topic_model.find_topics(term, top_n=5) 查找term最有可能所属话题 topic_model.get_topic(0) 查看Topic 0的特征词 topic_model.visualize_topics() 话题间距离的可视化 topic_model.visualize_distribution(probs[0]) 查看某条文本的主题分布 topic_model.visualize_hierarchy(top_n_topics=20) 主题层次聚类可视化 topic_model.visualize_barchart(top_n_topics=6) 主题词条形图可视化 topic_model.visualize_heatmap(n_clusters=10) 主题相似度热力图 topic_model.visualize_term_rank() 可视化词语 topic_model.save() 保存主题模型  topic_model.get_topic_info()   similar_topics, similarity = topic_model.find_topics(\"美国\", top_n=5) similar_topics [0, 3, 1, 2, -1]  topic_model.get_topic(0) [('中国', 0.017740927481291097), ('美国', 0.009187523853389844), ('国际', 0.007387509919710244), ('北京', 0.006355315208051378), ('台湾', 0.004591519972746738), ('上海', 0.00398117373168178), ('电影', 0.003959013801339396), ('文化', 0.003635760343311582), ('主持人 韩悦', 0.003598325963444241), ('全球', 0.0034710750361063997)]  topic_model.visualize_topics()   visualize_topics 显示第一条新闻的主题概率分布\ntopic_model.visualize_distribution(probs[0])   为了理解主题的潜在层次结构，我们可以使用 scipy.cluster.hierarchy 创建聚类并可视化它们之间的关系。 这有助于合并相似主题，达到降低主题模型主题数量nr_topics。\ntopic_model.visualize_hierarchy(top_n_topics=20)   topic_model.visualize_barchart(top_n_topics=6, width = 1000, height= 800)   BERTopic可将主题以embeddings形式（向量）表示， 因此我们可以应用余弦相似度来创建相似度矩阵。 每两两主题可进行余弦计算，最终结果将是一个矩阵，显示主题间的相似程度。\ntopic_model.visualize_heatmap(n_clusters=10, width=1000, height=1000)   通过根据每个主题表示的 c-TF-IDF 分数创建条形图来可视化主题的选定词语。 从主题之间和主题内的相对 c-TF-IDF 分数中获得见解。 此外，可以轻松地将主题表示相互比较。\ntopic_model.visualize_term_rank()   更新主题模型 当您训练了一个模型并查看了代表它们的主题和单词时，您可能对表示不满意。 也许您忘记删除停用词，或者您想尝试不同的 n_gram_range。 我们可以使用函数 update_topics 使用 c-TF-IDF 的新参数更新主题表示。\n经过更新，topic_model得到了更新，\ntopic_model.update_topics(df.content.tolist(), topics, n_gram_range=(1, 3)) similar_topics, similarity = topic_model.find_topics(\"儿童\", top_n=5) similar_topics [11, 4, 7, -1, 2]  topic_model.get_topic(11) [('学生', 0.015023352605066086), ('儿童', 0.010260062682561771), ('投资', 0.00907917809925075), ('投资 移民', 0.008539711279754461), ('海外', 0.007267950590362874), ('学校', 0.006227402241189809), ('奖学金', 0.005431476690391167), ('留学人员', 0.00520544712332708), ('教师', 0.004945988616826368), ('联邦', 0.00465078395869278)]  # Save model #model.save(\"my_model\") # Load model #my_model = BERTopic.load(\"my_model\") \n压缩主题数 new_topics, new_probs = topic_model.reduce_topics(docs, topics, probs, nr_topics=10) 2021-10-28 12:28:01,976 - BERTopic - Reduced number of topics from 20 to 11  下载代码数据 https://github.com/hidadeng/DaDengAndHisPython/tree/master/20211029BERTopic主题模型\n总结 本文使用中文文本数据展示BERTopic部分功能，如果对英文数据感兴趣，可以前往 https://github.com/MaartenGr/BERTopic 深入学习。\n",
   "wordCount" : "425",
@@ -206,9 +206,6 @@
     <h1 class="post-title">
       BERTopic 主题建模库 | 建议收藏  
     </h1>
-    <div class="post-description">
-      手把手教你如何使用BERT主题建模技术
-    </div>
     <div class="post-meta"><span title='2021-10-26 16:40:10 +0600 +0600'>2021-10-26</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
 
 </div>
