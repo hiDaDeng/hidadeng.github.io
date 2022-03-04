@@ -8,7 +8,7 @@
 <title>使用Pandas处理文本数据 | 大邓和他的PYTHON</title>
 <meta name="keywords" content="Python, 文本分析, pandas" />
 <meta name="description" content="2000字详细说明">
-<meta name="author" content="大邓">
+<meta name="author" content="俊欣">
 <link rel="canonical" href="/blog/%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86pandas%E7%AF%87/" />
 <link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
 <script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
@@ -100,14 +100,14 @@
   "keywords": [
     "Python", "文本分析", "pandas"
   ],
-  "articleBody": "\n src: https://mp.weixin.qq.com/s/MmfEtyKaMqNn_Ik1oJtitQ\nauthor: 俊欣\n公众号: 关于数据分析与可视化\n 千聊Python课程 https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596\n今天我们来谈论一下pandas库当中文本数据的操作，希望大家再看完本篇文章之后会有不少的收获，我们大致会讲\n 创建一个包含文本数据的DataFrame 常用处理文本数据的方法的总结 正则表达式与DataFrame内部方法的结合  创建文本内容的数据 我们先来创建一个包含文本数据的DataFrame，来供我们后面使用\nimport pandas as pd df = pd.DataFrame({ \"姓\": [\"李\",\"王\",\"戴\", \"李\", \"张\"], \"名\": [\"华\",\"硕\",\"建业\", \"四\", \"三\"], \"户籍地址\": [\" 浙江省·宁波市 \", \" 浙江省·杭州市 \", \" 浙江省·丽水市 \", \" 浙江省·衢州市 \", \" 浙江省·湖州市 \"], \"微信ID\": [\"Tomoplplplut1248781\", \"Smopopo857\", \"Adahuhuifhhjfj\", \"Tull1945121\", \"ZPWERERTFD599557\"], \"邮箱地址\": [\"tom02159@163.com\", \"smitt7821@163.com\", \"adams623@163.com\", \"tull0305@163.com\", \"five7532@163.com\"] }) df | | 姓 | 名 | 户籍地址 | 微信ID | 邮箱地址 | |---:|:-----|:-----|:--------------|:--------------------|:------------------| | 0 | 李 | 华 | 浙江省·宁波市 | Tomoplplplut1248781 | tom02159@163.com | | 1 | 王 | 硕 | 浙江省·杭州市 | Smopopo857 | smitt7821@163.com | | 2 | 戴 | 建业 | 浙江省·丽水市 | Adahuhuifhhjfj | adams623@163.com | | 3 | 李 | 四 | 浙江省·衢州市 | Tull1945121 | tull0305@163.com | | 4 | 张 | 三 | 浙江省·湖州市 | ZPWERERTFD599557 | five7532@163.com | \n常用处理文本数据的方法总结 Python当中用来处理字符串数据的方法有很多，基本上都可以在DataFrame内部拿来使用，例如lower()方法和upper()方法，给字母大小写\ndf[\"微信ID\"].str.lower() 0 tomoplplplut1248781 1 smopopo857 2 adahuhuifhhjfj 3 tull1945121 4 zpwerertfd599557 Name: 微信ID, dtype: object df[\"微信ID\"].str.len() 0 19 1 10 2 14 3 11 4 16 Name: 微信ID, dtype: int64 当然我们看到户籍地址这一列中的数据有很多的空格\ndf[\"户籍地址\"] 0 浙江省·宁波市 1 浙江省·杭州市 2 浙江省·丽水市 3 浙江省·衢州市 4 浙江省·湖州市 Name: 户籍地址, dtype: object 我们可以使用处理字符串时的strip()方法\ndf[\"户籍地址\"].str.strip() 0 浙江省·宁波市 1 浙江省·杭州市 2 浙江省·丽水市 3 浙江省·衢州市 4 浙江省·湖州市 Name: 户籍地址, dtype: object 与之相类似的还有lstrip()方法以及rstrip()方法，这里就不做赘述。\n在字符串的处理过程当中，startswith()方法和endswith()方法也是用的非常的频繁，例如我们想要挑选出户籍地址是“宁波市”的数据，\ndf[\"户籍地址\"] = df[\"户籍地址\"].str.strip() df[df[\"户籍地址\"].str.endswith(\"宁波市\")] 姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 另外我们还可以使用replace()方法来实现当中的字符串的替换\ndf[\"户籍地址\"].str.replace(\"·\", \"--\") 0 浙江省--宁波市 1 浙江省--杭州市 2 浙江省--丽水市 3 浙江省--衢州市 4 浙江省--湖州市 Name: 户籍地址, dtype: object 那既然用到了replace()方法，那么split()方法也可以尝试一下\ndf[\"户籍地址\"].str.split(\"·\") 0 [浙江省, 宁波市] 1 [浙江省, 杭州市] 2 [浙江省, 丽水市] 3 [浙江省, 衢州市] 4 [浙江省, 湖州市] Name: 户籍地址, dtype: object 在经过spilit()方法的切割过之后就变成了列表的形式，然后可以通过get()方法或者[]来获取里面的元素，例如\ndf[\"户籍地址\"].str.split(\"·\").str.get(0) 或者\ndf[\"户籍地址\"].str.split(\"·\").str[0] 0 浙江省 1 浙江省 2 浙江省 3 浙江省 4 浙江省 Name: 户籍地址, dtype: object 那么获取列表当中的第二个元素也是同样的道理，当然我们也可以在split()方法当中添加expand=True这个参数，来将上面列表形式的数据转化成DataFrame格式\ndf[\"户籍地址\"].str.split(\"·\", expand=True) 0 1 0 浙江省 宁波市 1 浙江省 杭州市 2 浙江省 丽水市 3 浙江省 衢州市 4 浙江省 湖州市 同样地，我们可以在后面添加[]来获取我们想要的元素\ndf[\"户籍地址\"].str.split(\"·\", expand=True)[1] 0 宁波市 1 杭州市 2 丽水市 3 衢州市 4 湖州市 Name: 1, dtype: object \n正则表达式与DataFrame内部方法的结合 假如我们想要提取文本数据内部的一部分数据，可以结合正则表达式来使用，例如我们想要提取“微信ID”这一列当中的字母和数字，并且将两者分开来\ntwo_groups = \"([a-zA-Z]+)([0-9]+)\" df[\"微信ID\"].str.extract(two_groups, expand=True) 0 1 0 Tomoplplplut 1248781 1 Smopopo 857 2 NaN NaN 3 Tull 1945121 4 ZPWERERTFD 599557 当然了，如果想是要提取文本数据中的部分数据，可以直接在str方法后面添加索引，例如\ndf[\"邮箱地址\"].str[-8:] 0 @163.com 1 @163.com 2 @163.com 3 @163.com 4 @163.com Name: 邮箱地址, dtype: object 当然，从另外一个角度讲，正则表达式也可以帮助我们确认文本数据是否符合某种规律，\ntwo_groups = \"([a-zA-Z]+)([0-9]+)\" df[\"微信ID\"].str.match(two_groups) 0 True 1 True 2 False 3 True 4 True Name: 微信ID, dtype: bool 当中有一个为False，不满足字母+数字的规律，我们再进一步，将满足条件的数据提取出来\ndf[df[\"微信ID\"].str.match(two_groups)] 姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 1 王 硕 浙江省·杭州市 Smopopo857 smitt7821@163.com 3 李 四 浙江省·衢州市 Tull1945121 tull0305@163.com 4 张 三 浙江省·湖州市 ZPWERERTFD599557 five7532@163.com 针对文本数据而言，contains()方法也能够派上用场，例如下面的数据\n姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 1 王 硕 浙江省·杭州市 Smopopo857 smitt7821@163.com 2 戴 建业 浙江省·丽水市 Adahuhuifhhjfj adams623@163.com 3 李 四 浙江省·衢州市 Tull1945121 tull0305@163.com 4 张 三 浙江省·湖州市 ZPWERERTFD599557 five7532@163.com 5 黄 五 浙江省·宁波市 hunhunhu45652 1erdcvf127@16.com 我们用contains()来提取出户籍地址为“宁波市”的内容，可以这么做\ndf[df[\"户籍地址\"].str.contains(\"宁波市\")] 姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 5 黄 五 浙江省·宁波市 hunhunhu45652 1erdcvf127@16.com 暂时就这些了，下一篇原创的文章安排在周天，非技术方面的，期待一下？\n代码下载 https://github.com/hidadeng/DaDengAndHisPython/blob/master/文本数据处理Pandas篇.ipynb\n",
-  "wordCount" : "465",
+  "articleBody": "\n 点击上方图片购买课程    src: https://mp.weixin.qq.com/s/MmfEtyKaMqNn_Ik1oJtitQ\nauthor: 俊欣\n公众号: 关于数据分析与可视化\n 今天我们来谈论一下pandas库当中文本数据的操作，希望大家再看完本篇文章之后会有不少的收获，我们大致会讲\n 创建一个包含文本数据的DataFrame 常用处理文本数据的方法的总结 正则表达式与DataFrame内部方法的结合  创建文本内容的数据 我们先来创建一个包含文本数据的DataFrame，来供我们后面使用\nimport pandas as pd df = pd.DataFrame({ \"姓\": [\"李\",\"王\",\"戴\", \"李\", \"张\"], \"名\": [\"华\",\"硕\",\"建业\", \"四\", \"三\"], \"户籍地址\": [\" 浙江省·宁波市 \", \" 浙江省·杭州市 \", \" 浙江省·丽水市 \", \" 浙江省·衢州市 \", \" 浙江省·湖州市 \"], \"微信ID\": [\"Tomoplplplut1248781\", \"Smopopo857\", \"Adahuhuifhhjfj\", \"Tull1945121\", \"ZPWERERTFD599557\"], \"邮箱地址\": [\"tom02159@163.com\", \"smitt7821@163.com\", \"adams623@163.com\", \"tull0305@163.com\", \"five7532@163.com\"] }) df | | 姓 | 名 | 户籍地址 | 微信ID | 邮箱地址 | |---:|:-----|:-----|:--------------|:--------------------|:------------------| | 0 | 李 | 华 | 浙江省·宁波市 | Tomoplplplut1248781 | tom02159@163.com | | 1 | 王 | 硕 | 浙江省·杭州市 | Smopopo857 | smitt7821@163.com | | 2 | 戴 | 建业 | 浙江省·丽水市 | Adahuhuifhhjfj | adams623@163.com | | 3 | 李 | 四 | 浙江省·衢州市 | Tull1945121 | tull0305@163.com | | 4 | 张 | 三 | 浙江省·湖州市 | ZPWERERTFD599557 | five7532@163.com | \n常用处理文本数据的方法总结 Python当中用来处理字符串数据的方法有很多，基本上都可以在DataFrame内部拿来使用，例如lower()方法和upper()方法，给字母大小写\ndf[\"微信ID\"].str.lower() 0 tomoplplplut1248781 1 smopopo857 2 adahuhuifhhjfj 3 tull1945121 4 zpwerertfd599557 Name: 微信ID, dtype: object df[\"微信ID\"].str.len() 0 19 1 10 2 14 3 11 4 16 Name: 微信ID, dtype: int64 当然我们看到户籍地址这一列中的数据有很多的空格\ndf[\"户籍地址\"] 0 浙江省·宁波市 1 浙江省·杭州市 2 浙江省·丽水市 3 浙江省·衢州市 4 浙江省·湖州市 Name: 户籍地址, dtype: object 我们可以使用处理字符串时的strip()方法\ndf[\"户籍地址\"].str.strip() 0 浙江省·宁波市 1 浙江省·杭州市 2 浙江省·丽水市 3 浙江省·衢州市 4 浙江省·湖州市 Name: 户籍地址, dtype: object 与之相类似的还有lstrip()方法以及rstrip()方法，这里就不做赘述。\n在字符串的处理过程当中，startswith()方法和endswith()方法也是用的非常的频繁，例如我们想要挑选出户籍地址是“宁波市”的数据，\ndf[\"户籍地址\"] = df[\"户籍地址\"].str.strip() df[df[\"户籍地址\"].str.endswith(\"宁波市\")] 姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 另外我们还可以使用replace()方法来实现当中的字符串的替换\ndf[\"户籍地址\"].str.replace(\"·\", \"--\") 0 浙江省--宁波市 1 浙江省--杭州市 2 浙江省--丽水市 3 浙江省--衢州市 4 浙江省--湖州市 Name: 户籍地址, dtype: object 那既然用到了replace()方法，那么split()方法也可以尝试一下\ndf[\"户籍地址\"].str.split(\"·\") 0 [浙江省, 宁波市] 1 [浙江省, 杭州市] 2 [浙江省, 丽水市] 3 [浙江省, 衢州市] 4 [浙江省, 湖州市] Name: 户籍地址, dtype: object 在经过spilit()方法的切割过之后就变成了列表的形式，然后可以通过get()方法或者[]来获取里面的元素，例如\ndf[\"户籍地址\"].str.split(\"·\").str.get(0) 或者\ndf[\"户籍地址\"].str.split(\"·\").str[0] 0 浙江省 1 浙江省 2 浙江省 3 浙江省 4 浙江省 Name: 户籍地址, dtype: object 那么获取列表当中的第二个元素也是同样的道理，当然我们也可以在split()方法当中添加expand=True这个参数，来将上面列表形式的数据转化成DataFrame格式\ndf[\"户籍地址\"].str.split(\"·\", expand=True) 0 1 0 浙江省 宁波市 1 浙江省 杭州市 2 浙江省 丽水市 3 浙江省 衢州市 4 浙江省 湖州市 同样地，我们可以在后面添加[]来获取我们想要的元素\ndf[\"户籍地址\"].str.split(\"·\", expand=True)[1] 0 宁波市 1 杭州市 2 丽水市 3 衢州市 4 湖州市 Name: 1, dtype: object \n正则表达式与DataFrame内部方法的结合 假如我们想要提取文本数据内部的一部分数据，可以结合正则表达式来使用，例如我们想要提取“微信ID”这一列当中的字母和数字，并且将两者分开来\ntwo_groups = \"([a-zA-Z]+)([0-9]+)\" df[\"微信ID\"].str.extract(two_groups, expand=True) 0 1 0 Tomoplplplut 1248781 1 Smopopo 857 2 NaN NaN 3 Tull 1945121 4 ZPWERERTFD 599557 当然了，如果想是要提取文本数据中的部分数据，可以直接在str方法后面添加索引，例如\ndf[\"邮箱地址\"].str[-8:] 0 @163.com 1 @163.com 2 @163.com 3 @163.com 4 @163.com Name: 邮箱地址, dtype: object 当然，从另外一个角度讲，正则表达式也可以帮助我们确认文本数据是否符合某种规律，\ntwo_groups = \"([a-zA-Z]+)([0-9]+)\" df[\"微信ID\"].str.match(two_groups) 0 True 1 True 2 False 3 True 4 True Name: 微信ID, dtype: bool 当中有一个为False，不满足字母+数字的规律，我们再进一步，将满足条件的数据提取出来\ndf[df[\"微信ID\"].str.match(two_groups)] 姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 1 王 硕 浙江省·杭州市 Smopopo857 smitt7821@163.com 3 李 四 浙江省·衢州市 Tull1945121 tull0305@163.com 4 张 三 浙江省·湖州市 ZPWERERTFD599557 five7532@163.com 针对文本数据而言，contains()方法也能够派上用场，例如下面的数据\n姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 1 王 硕 浙江省·杭州市 Smopopo857 smitt7821@163.com 2 戴 建业 浙江省·丽水市 Adahuhuifhhjfj adams623@163.com 3 李 四 浙江省·衢州市 Tull1945121 tull0305@163.com 4 张 三 浙江省·湖州市 ZPWERERTFD599557 five7532@163.com 5 黄 五 浙江省·宁波市 hunhunhu45652 1erdcvf127@16.com 我们用contains()来提取出户籍地址为“宁波市”的内容，可以这么做\ndf[df[\"户籍地址\"].str.contains(\"宁波市\")] 姓 名 户籍地址 微信ID 邮箱地址 0 李 华 浙江省·宁波市 Tomoplplplut1248781 tom02159@163.com 5 黄 五 浙江省·宁波市 hunhunhu45652 1erdcvf127@16.com 暂时就这些了，下一篇原创的文章安排在周天，非技术方面的，期待一下？\n代码下载 https://github.com/hidadeng/DaDengAndHisPython/blob/master/文本数据处理Pandas篇.ipynb\n",
+  "wordCount" : "464",
   "inLanguage": "en",
   "image":"/images/blog/pandas.jpeg","datePublished": "2021-11-16T16:40:10+06:00",
   "dateModified": "2021-11-16T16:40:10+06:00",
   "author":{
     "@type": "Person",
-    "name": "大邓"
+    "name": "俊欣"
   },
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -206,7 +206,7 @@
     <h1 class="post-title">
       使用Pandas处理文本数据
     </h1>
-    <div class="post-meta"><span title='2021-11-16 16:40:10 +0600 +0600'>2021-11-16</span>&nbsp;·&nbsp;3 min&nbsp;·&nbsp;大邓
+    <div class="post-meta"><span title='2021-11-16 16:40:10 +0600 +0600'>2021-11-16</span>&nbsp;·&nbsp;3 min&nbsp;·&nbsp;俊欣
 
 </div>
   </header> 
@@ -235,12 +235,21 @@
 </div>
 
   <div class="post-content"><br>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="90%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<br>
+<br>
 <blockquote>
 <p>src: <a href="https://mp.weixin.qq.com/s/MmfEtyKaMqNn_Ik1oJtitQ">https://mp.weixin.qq.com/s/MmfEtyKaMqNn_Ik1oJtitQ</a></p>
 <p>author: 俊欣</p>
 <p>公众号: 关于数据分析与可视化</p>
 </blockquote>
-<p>千聊Python课程  <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596</a></p>
 <br>
 <p>今天我们来谈论一下pandas库当中文本数据的操作，希望大家再看完本篇文章之后会有不少的收获，我们大致会讲</p>
 <ul>
