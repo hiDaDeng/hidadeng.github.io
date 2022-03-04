@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
 <title>Clumper库|dplyr样式的Python包 | 大邓和他的PYTHON</title>
-<meta name="keywords" content="Python, 第三方包" />
+<meta name="keywords" content="" />
 <meta name="description" content="让数据分析更优雅">
 <meta name="author" content="大邓">
 <link rel="canonical" href="/blog/clumper/" />
@@ -100,7 +100,7 @@
   "keywords": [
     "Python", "第三方包"
   ],
-  "articleBody": "\nClumper可以用来处理嵌套样式的json数据结构。\n本文代码下载\nGetting Started 安装 !pip3 install clumper Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple Collecting clumper Downloading https://pypi.tuna.tsinghua.edu.cn/packages/70/62/0731ab9b48c91132aff487217980dcb147ffc0922a278adc05986f6a8d4b/clumper-0.2.13-py2.py3-none-any.whl (21 kB) Installing collected packages: clumper Successfully installed clumper-0.2.13 \u001b[33mWARNING: You are using pip version 20.0.2; however, version 21.1.2 is available. You should consider upgrading via the '/Library/Frameworks/Python.framework/Versions/3.7/bin/python3.7 -m pip install --upgrade pip' command.\u001b[0m  为了展示Clumper如何工作，我准备了pokemon.json， 由列表组成(该列表由多个字典组成)，下面是pokemon.json部分内容\nimport json with open('pokemon.json') as jsonf: pokemon = json.loads(jsonf.read()) pokemon[:2] [{'name': 'Bulbasaur', 'type': ['Grass', 'Poison'], 'total': 318, 'hp': 45, 'attack': 49}, {'name': 'Ivysaur', 'type': ['Grass', 'Poison'], 'total': 405, 'hp': 60, 'attack': 62}]  我们准备的pokemon.json列表中大概有800个字典，数量级刚刚好，不会因为太大导致电脑无法运行数据分析，也不会太小导致手动操作性价比更高。\nExample 基本操作 from clumper import Clumper list_of_dicts = [ {'a': 7, 'b': 2}, {'a': 2, 'b': 4}, {'a': 3, 'b': 6} ] (Clumper(list_of_dicts) .mutate(c=lambda d: d['a']+d['b']) .sort(lambda d: d['c']) .collect() ) [{'a': 2, 'b': 4, 'c': 6}, {'a': 7, 'b': 2, 'c': 9}, {'a': 3, 'b': 6, 'c': 9}]  代码解析 Step1\n首先使用mutate方法，该方法可以在每条记录中生成新变量。\n  结算结果仍为Clumper类\nStep2\n接下来对mutate之后的数据进行排序\n  得到的结果仍为Clumper类。\n从上面的小代码案例中，可以看到整套流程像是一个流水线车间，每一行就是一个生成环节，生产环节之间使用.连接起来。\nfrom clumper import Clumper (Clumper(pokemon) .keep(lambda d: len(d['type'])==1) #保留type长度为1的字典 .mutate(type=lambda d: d['type'][0], #type值从列表变为字符串 ratio=lambda d: d['attack']/d['hp']) #新建ratio .select('name', 'type', 'ratio') #字典最后只保留name， type， ratio三个字段 .sort(lambda d: d['ratio'], reverse=True) #按照ratio降序排列 .head(5) #只保留前5个 .collect() #转成列表显示 ) \nCommon Verbs Keep keep函数可以从原始数据中抽取符合指定条件的子集。   from clumper import Clumper list_dicts = [{'a': 1}, {'a': 2}, {'a': 3}, {'a': 4}] (Clumper(list_dicts) .keep(lambda d: d['a'] = 3) .collect() #试一试去掉.collect()后的效果 ) [{'a': 3}, {'a': 4}]  可以实现缺失值处理，以不同的方式实现pandas的.dropna()的功能。\nfrom clumper import Clumper data = [ {\"a\": 1, \"b\": 4}, {\"a\": 2, \"b\": 3}, {\"a\": 3, \"b\": 2}, {\"a\": 4}, ] #只保留含有b的字段 (Clumper(data) .keep(lambda d: 'b' in d.keys()) .collect() ) [{'a': 1, 'b': 4}, {'a': 2, 'b': 3}, {'a': 3, 'b': 2}]  Mutate mutate可以在每条记录中，创建新字段、改写旧字段。   from clumper import Clumper list_dicts = [ {'a': 1, 'b': 2}, {'a': 2, 'b': 3, 'c':4}, {'a': 1, 'b': 6}] #新建了c和s字段 (Clumper(list_dicts) .mutate(c=lambda d: d['a'] + d['b'], s=lambda d: d['a'] + d['b'] + d['c']) .collect() ) [{'a': 1, 'b': 2, 'c': 3, 's': 6}, {'a': 2, 'b': 3, 'c': 5, 's': 10}, {'a': 1, 'b': 6, 'c': 7, 's': 14}]  Sort sort可以实现排序   from clumper import Clumper list_dicts = [ {'a': 1, 'b': 2}, {'a': 3, 'b': 3}, {'a': 2, 'b': 1}] (Clumper(list_dicts) .sort(lambda d: d['b']) #默认升序 .collect() ) [{'a': 2, 'b': 1}, {'a': 1, 'b': 2}, {'a': 3, 'b': 3}]  Select select挑选每条记录中的某个(些)字段   from clumper import Clumper list_dicts = [ {'a': 1, 'b': 2}, {'a': 2, 'b': 3, 'c':4}, {'a': 1, 'b': 6}] (Clumper(list_dicts) .select('a') .collect() ) [{'a': 1}, {'a': 2}, {'a': 1}]  Drop 剔除某个（些）字段。   from clumper import Clumper list_dicts = [ {'a': 1, 'b': 2}, {'a': 2, 'b': 3, 'c':4}, {'a': 1, 'b': 6}] (Clumper(list_dicts) .drop('c') .collect() ) [{'a': 1, 'b': 2}, {'a': 2, 'b': 3}, {'a': 1, 'b': 6}]  GroupBy 根据某个（些）字段对数据集进行分组，得到不同Group类的集合。一般与.agg()方法联合使用。   from clumper import Clumper grade_dicts = [ {'gender': '男', 'grade': 98, 'name': '张三'}, {'gender': '女', 'grade': 88, 'name': '王五'}, {'gender': '女', 'grade': 99, 'name': '赵六'}, {'gender': '男', 'grade': 58, 'name': '李四'}] (Clumper(grade_dicts) .group_by(\"gender\") .groups==('gender', ) ) True  Ungroup GroupBy的反操作   from clumper import Clumper grade_dicts = [ {'gender': '男', 'grade': 98, 'name': '张三'}, {'gender': '女', 'grade': 88, 'name': '王五'}, {'gender': '女', 'grade': 99, 'name': '赵六'}, {'gender': '男', 'grade': 58, 'name': '李四'}] (Clumper(grade_dicts) .group_by(\"gender\") .ungroup().groups == tuple() ) True  \nAbout Groups Agg 聚合描述性统计方法\nagg如下图，可以理解成三个步骤，即group-split-summary   常用的描述性统计函数有： mean、count、unqiue、n_unique、sum、min和max\n求学生的平均成绩、最优和最差成绩\nfrom clumper import Clumper grade_dicts = [{'gender': '男', 'grade': 98, 'name': '张三'}, {'gender': '女', 'grade': 88, 'name': '王五'}, {'gender': '女', 'grade': 99, 'name': '赵六'}, {'gender': '男', 'grade': 58, 'name': '李四'}] (Clumper(grade_dicts) .agg(mean_grade=('grade', 'mean'), max_grade=('grade', 'max'), min_grade=('grade', 'min')) .collect() ) [{'mean_grade': 85.75, 'max_grade': 99, 'min_grade': 58}]  求男生和女生各自的平均成绩、最优和最差成绩\nfrom clumper import Clumper grade_dicts = [{'gender': '男', 'grade': 98, 'name': '张三'}, {'gender': '女', 'grade': 88, 'name': '王五'}, {'gender': '女', 'grade': 99, 'name': '赵六'}, {'gender': '男', 'grade': 58, 'name': '李四'}] (Clumper(grade_dicts) .group_by('gender') .agg(mean_grade=('grade', 'mean'), max_grade=('grade', 'max'), min_grade=('grade', 'min')) .collect()) [{'gender': '男', 'mean_grade': 78, 'max_grade': 98, 'min_grade': 58}, {'gender': '女', 'mean_grade': 93.5, 'max_grade': 99, 'min_grade': 88}]  Collect 一般Clumper函数返回的结果显示为Clumper类，是看不到具体内容的。\ncollect作用主要是展开显示。   剔除重复 剔除重复内容   from clumper import Clumper data = [{\"a\": 1}, {\"a\": 2}, {\"a\": 2}] (Clumper(data) .drop_duplicates() .collect() ) [{'a': 1}, {'a': 2}]   ### 什么是Group？ from clumper import Clumper list_dicts = [ {'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}, {'a': 5, 'grp': 'a'} ] (Clumper(list_dicts) .group_by('grp') )  当前的group以grp作为关键词   现在经过 .group_by('grp')操作后，说明你对每个grp组感兴趣。具体一点，一个组是{'grp': 'a'}, 另一个组是{'grp': 'b'}.\nAgg without groups   from clumper import Clumper list_dicts = [ {'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}, {'a': 5, 'grp': 'a'} ] (Clumper(list_dicts) .agg(s=('a', 'sum'), m=('a', 'mean')) .collect()) [{'s': 29, 'm': 5.8}]  with groups 分别计算组grp=a、组grp=b的sum和mean   from clumper import Clumper list_dicts = [ {'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}, {'a': 5, 'grp': 'a'} ] (Clumper(list_dicts) .group_by('grp') .agg(s=('a', 'sum'), m=('a', 'mean')) .collect()) [{'grp': 'a', 's': 18, 'm': 6}, {'grp': 'b', 's': 11, 'm': 5.5}]  agg内置的统计函数名 内置的统计函数，可直接通过字符串调用\n{ \"mean\": mean, \"count\": lambda d: len(d), \"unique\": lambda d: list(set(d)), \"n_unique\": lambda d: len(set(d)), \"sum\": sum, \"min\": min, \"max\": max, \"median\": median, \"var\": variance, \"std\": stdev, \"values\": lambda d: d, \"first\": lambda d: d[0], \"last\": lambda d: d[-1], } Transform .transform()与.agg()类似。主要的区别是transform处理过程中，记录数和字段数不会出现压缩。\nwithout groups   from clumper import Clumper data = [{\"a\": 6, \"grp\": \"a\"}, {\"a\": 2, \"grp\": \"b\"}, {\"a\": 7, \"grp\": \"a\"}, {\"a\": 9, \"grp\": \"b\"}, {\"a\": 5, \"grp\": \"a\"}] (Clumper(data) .transform(s=(\"a\", \"sum\"), u=(\"a\", \"unique\")) .collect()) [{'a': 6, 'grp': 'a', 's': 29, 'u': [2, 5, 6, 7, 9]}, {'a': 2, 'grp': 'b', 's': 29, 'u': [2, 5, 6, 7, 9]}, {'a': 7, 'grp': 'a', 's': 29, 'u': [2, 5, 6, 7, 9]}, {'a': 9, 'grp': 'b', 's': 29, 'u': [2, 5, 6, 7, 9]}, {'a': 5, 'grp': 'a', 's': 29, 'u': [2, 5, 6, 7, 9]}]  with groups   from clumper import Clumper data = [ {\"a\": 6, \"grp\": \"a\"}, {\"a\": 2, \"grp\": \"b\"}, {\"a\": 7, \"grp\": \"a\"}, {\"a\": 9, \"grp\": \"b\"}, {\"a\": 5, \"grp\": \"a\"} ] (Clumper(data) .group_by(\"grp\") .transform(s=(\"a\", \"sum\"), u=(\"a\", \"unique\")) .collect() ) [{'a': 6, 'grp': 'a', 's': 18, 'u': [5, 6, 7]}, {'a': 7, 'grp': 'a', 's': 18, 'u': [5, 6, 7]}, {'a': 5, 'grp': 'a', 's': 18, 'u': [5, 6, 7]}, {'a': 2, 'grp': 'b', 's': 11, 'u': [9, 2]}, {'a': 9, 'grp': 'b', 's': 11, 'u': [9, 2]}]  Mutate clumper库中的row_number可以给每条记录显示索引位置（第几个）。\nwithout groups   from clumper import Clumper from clumper.sequence import row_number list_dicts = [ {'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 4, 'grp': 'b'}, {'a': 5, 'grp': 'a'} ] (Clumper(list_dicts) .mutate(index=row_number()) .collect() ) [{'a': 6, 'grp': 'a', 'index': 1}, {'a': 2, 'grp': 'b', 'index': 2}, {'a': 7, 'grp': 'a', 'index': 3}, {'a': 4, 'grp': 'b', 'index': 4}, {'a': 5, 'grp': 'a', 'index': 5}]  with groups   from clumper import Clumper from clumper.sequence import row_number list_dicts = [ {'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 4, 'grp': 'b'}, {'a': 5, 'grp': 'a'} ] (Clumper(list_dicts) .group_by('grp') .mutate(index=row_number()) .collect() ) [{'a': 6, 'grp': 'a', 'index': 1}, {'a': 7, 'grp': 'a', 'index': 2}, {'a': 5, 'grp': 'a', 'index': 3}, {'a': 2, 'grp': 'b', 'index': 1}, {'a': 4, 'grp': 'b', 'index': 2}]  Sort 排序, 默认升序\nwithout groups   from clumper import Clumper list_dicts = [{'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}, {'a': 5, 'grp': 'a'}] (Clumper(list_dicts) #根据字段a进行排序  .sort(key=lambda d: d['a']) .collect()) [{'a': 2, 'grp': 'b'}, {'a': 5, 'grp': 'a'}, {'a': 6, 'grp': 'a'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}]  with groups   from clumper import Clumper list_dicts = [{'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}, {'a': 5, 'grp': 'a'}] (Clumper(list_dicts) .group_by('grp') .sort(key=lambda d: d['a']) .collect()) [{'a': 5, 'grp': 'a'}, {'a': 6, 'grp': 'a'}, {'a': 7, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 9, 'grp': 'b'}]  Ungroup 最后，如果你已经进行完了分组计算，想再次整合起来，取消分组状态，可以使用.ungroup()\n\nMerge Verbs  如果想将多个记录整理到一个记录中，有很多种实现方法。\nConcat 如果想垂直方向将多个记录堆叠，可以使用concat   from clumper import Clumper c1 = Clumper([{\"a\": 1}]) c2 = Clumper([{\"a\": 2}]) c3 = Clumper([{\"a\": 3}]) c1.concat(c2).collect() [{'a': 1}, {'a': 2}]  #等同于c1.concat(c2).concat(c3).collect() c1.concat(c2, c3).collect() [{'a': 1}, {'a': 2}, {'a': 3}]  Joins Joins类似于数学里的交集、并集的，大致有以下四种，   left join 左连接，以左为主，表示以table1为主，关联上table2的数据，结果显示table1的所有数据，然后table2显示的是和table1有交集部分的数据。   from clumper import Clumper left = Clumper([ {\"a\": 1, \"b\": 4}, {\"a\": 2, \"b\": 6}, {\"a\": 3, \"b\": 8}, ]) right = Clumper([ {\"c\": 9, \"b\": 4}, {\"c\": 8, \"b\": 5}, {\"c\": 7, \"b\": 6}, ]) #根据b进行左右两表的合并 result = left.inner_join(right, mapping={\"b\": \"b\"}) result.collect() [{'a': 1, 'b': 4, 'c': 9}, {'a': 2, 'b': 6, 'c': 7}]  inner join 内连接， 交集\n  from clumper import Clumper left = Clumper([ {\"a\": 1, \"b\":4}, {\"a\": 2, \"b\":6}, {\"a\": 3, \"b\":8}, ]) right = Clumper([ {\"c\": 9, \"b\":4}, {\"c\": 8, \"b\":5}, {\"c\": 7, \"b\":6}, ]) result = left.inner_join(right, mapping={\"b\": \"b\"}) result.collect() [{'a': 1, 'b': 4, 'c': 9}, {'a': 2, 'b': 6, 'c': 7}]   \nNested Data 由于嵌套数据序列确实具有各种形状和大小，因此该库提供了各种方法来帮助您将数据重塑为不同的格式。 本文档将演示这些方法的工作原理。\nExplode 炸裂（展开）   from clumper import Clumper data = [{'gender': '男', 'grade': [80, 99], 'name':['张三', '李四']}] (Clumper(data) .explode('name', 'grade') .collect() ) [{'gender': '男', 'grade': 80, 'name': '张三'}, {'gender': '男', 'grade': 99, 'name': '张三'}, {'gender': '男', 'grade': 80, 'name': '李四'}, {'gender': '男', 'grade': 99, 'name': '李四'}]  from clumper import Clumper data = [{'gender': '男', 'grade': [80, 99], 'name':['张三', '李四']}] #.explode('name', 'grade')略微有些区别 #请查看两者运行结果 (Clumper(data) .explode(item='name', val='grade') .collect() ) [{'gender': '男', 'item': '张三', 'val': 80}, {'gender': '男', 'item': '张三', 'val': 99}, {'gender': '男', 'item': '李四', 'val': 80}, {'gender': '男', 'item': '李四', 'val': 99}]  Unpack 与explode类似   from clumper import Clumper list_dicts = { 'a': 1, 'rows': [{'b': 2, 'c': 3}, {'b': 3}, {'b': 4}] } (Clumper(list_dicts) .unpack('rows') .collect() ) [{'a': 1, 'b': 2, 'c': 3}, {'a': 1, 'b': 3}, {'a': 1, 'b': 4}]  Flatten keys   from clumper import Clumper data = { 'feature_1': {'propery_1': 1, 'property_2': 2}, 'feature_2': {'propery_1': 3, 'property_2': 4}, 'feature_3': {'propery_1': 5, 'property_2': 6}, } (Clumper(data, listify=False) .flatten_keys() .collect() ) [{'propery_1': 1, 'property_2': 2, 'key': 'feature_1'}, {'propery_1': 3, 'property_2': 4, 'key': 'feature_2'}, {'propery_1': 5, 'property_2': 6, 'key': 'feature_3'}]  \nSummary Methods Clumper支持常用的统计性方法，诸如mean、max、min等\nmean   from clumper import Clumper list_of_dicts = [ {'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7} ] Clumper(list_of_dicts).mean(\"a\") 3.5  Clumper(list_of_dicts).mean(\"b\") 6.666666666666667  count 统计记录数   from clumper import Clumper list_of_dicts = [ {'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7} ] #含有a的一共有多少条记录 Clumper(list_of_dicts).count(\"a\") 4  Clumper(list_of_dicts).count(\"b\") 3  unique 汇总某字段不重样的值的种类，如[a, b, a, a]，经过unique后，返回[a, b]   from clumper import Clumper list_of_dicts = [{'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7}] Clumper(list_of_dicts).unique(\"a\") [2, 3, 7]  Clumper(list_of_dicts).unique(\"b\") [6, 7]  n_unique 统计某字段对应的值一种有多少种   from clumper import Clumper list_of_dicts = [ {'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7} ] Clumper(list_of_dicts).n_unique(\"a\") 3  Clumper(list_of_dicts).n_unique(\"b\") 2  min   from clumper import Clumper list_of_dicts = [{'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7}] Clumper(list_of_dicts).min(\"a\") 2  Clumper(list_of_dicts).min(\"b\") 6  max   from clumper import Clumper list_of_dicts = [{'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7}] Clumper(list_of_dicts).max(\"a\") 7  Clumper(list_of_dicts).max(\"b\") 7  ",
+  "articleBody": "\nClumper可以用来处理嵌套样式的json数据结构。\n本文代码下载\nGetting Started 安装 !pip3 install clumper Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple Collecting clumper Downloading https://pypi.tuna.tsinghua.edu.cn/packages/70/62/0731ab9b48c91132aff487217980dcb147ffc0922a278adc05986f6a8d4b/clumper-0.2.13-py2.py3-none-any.whl (21 kB) Installing collected packages: clumper Successfully installed clumper-0.2.13 \u001b[33mWARNING: You are using pip version 20.0.2; however, version 21.1.2 is available. You should consider upgrading via the '/Library/Frameworks/Python.framework/Versions/3.7/bin/python3.7 -m pip install --upgrade pip' command.\u001b[0m  为了展示Clumper如何工作，我准备了pokemon.json， 由列表组成(该列表由多个字典组成)，下面是pokemon.json部分内容\nimport json with open('pokemon.json') as jsonf: pokemon = json.loads(jsonf.read()) pokemon[:2] [{'name': 'Bulbasaur', 'type': ['Grass', 'Poison'], 'total': 318, 'hp': 45, 'attack': 49}, {'name': 'Ivysaur', 'type': ['Grass', 'Poison'], 'total': 405, 'hp': 60, 'attack': 62}]  我们准备的pokemon.json列表中大概有800个字典，数量级刚刚好，不会因为太大导致电脑无法运行数据分析，也不会太小导致手动操作性价比更高。\nExample 基本操作 from clumper import Clumper list_of_dicts = [ {'a': 7, 'b': 2}, {'a': 2, 'b': 4}, {'a': 3, 'b': 6} ] (Clumper(list_of_dicts) .mutate(c=lambda d: d['a']+d['b']) .sort(lambda d: d['c']) .collect() ) [{'a': 2, 'b': 4, 'c': 6}, {'a': 7, 'b': 2, 'c': 9}, {'a': 3, 'b': 6, 'c': 9}]  代码解析 Step1\n首先使用mutate方法，该方法可以在每条记录中生成新变量。\n 结算结果仍为Clumper类\nStep2\n接下来对mutate之后的数据进行排序\n 得到的结果仍为Clumper类。\n从上面的小代码案例中，可以看到整套流程像是一个流水线车间，每一行就是一个生成环节，生产环节之间使用.连接起来。\nfrom clumper import Clumper (Clumper(pokemon) .keep(lambda d: len(d['type'])==1) #保留type长度为1的字典 .mutate(type=lambda d: d['type'][0], #type值从列表变为字符串 ratio=lambda d: d['attack']/d['hp']) #新建ratio .select('name', 'type', 'ratio') #字典最后只保留name， type， ratio三个字段 .sort(lambda d: d['ratio'], reverse=True) #按照ratio降序排列 .head(5) #只保留前5个 .collect() #转成列表显示 ) \nCommon Verbs Keep keep函数可以从原始数据中抽取符合指定条件的子集。  from clumper import Clumper list_dicts = [{'a': 1}, {'a': 2}, {'a': 3}, {'a': 4}] (Clumper(list_dicts) .keep(lambda d: d['a'] = 3) .collect() #试一试去掉.collect()后的效果 ) [{'a': 3}, {'a': 4}]  可以实现缺失值处理，以不同的方式实现pandas的.dropna()的功能。\nfrom clumper import Clumper data = [ {\"a\": 1, \"b\": 4}, {\"a\": 2, \"b\": 3}, {\"a\": 3, \"b\": 2}, {\"a\": 4}, ] #只保留含有b的字段 (Clumper(data) .keep(lambda d: 'b' in d.keys()) .collect() ) [{'a': 1, 'b': 4}, {'a': 2, 'b': 3}, {'a': 3, 'b': 2}]  Mutate mutate可以在每条记录中，创建新字段、改写旧字段。  from clumper import Clumper list_dicts = [ {'a': 1, 'b': 2}, {'a': 2, 'b': 3, 'c':4}, {'a': 1, 'b': 6}] #新建了c和s字段 (Clumper(list_dicts) .mutate(c=lambda d: d['a'] + d['b'], s=lambda d: d['a'] + d['b'] + d['c']) .collect() ) [{'a': 1, 'b': 2, 'c': 3, 's': 6}, {'a': 2, 'b': 3, 'c': 5, 's': 10}, {'a': 1, 'b': 6, 'c': 7, 's': 14}]  Sort sort可以实现排序  from clumper import Clumper list_dicts = [ {'a': 1, 'b': 2}, {'a': 3, 'b': 3}, {'a': 2, 'b': 1}] (Clumper(list_dicts) .sort(lambda d: d['b']) #默认升序 .collect() ) [{'a': 2, 'b': 1}, {'a': 1, 'b': 2}, {'a': 3, 'b': 3}]  Select select挑选每条记录中的某个(些)字段  from clumper import Clumper list_dicts = [ {'a': 1, 'b': 2}, {'a': 2, 'b': 3, 'c':4}, {'a': 1, 'b': 6}] (Clumper(list_dicts) .select('a') .collect() ) [{'a': 1}, {'a': 2}, {'a': 1}]  Drop 剔除某个（些）字段。  from clumper import Clumper list_dicts = [ {'a': 1, 'b': 2}, {'a': 2, 'b': 3, 'c':4}, {'a': 1, 'b': 6}] (Clumper(list_dicts) .drop('c') .collect() ) [{'a': 1, 'b': 2}, {'a': 2, 'b': 3}, {'a': 1, 'b': 6}]  GroupBy 根据某个（些）字段对数据集进行分组，得到不同Group类的集合。一般与.agg()方法联合使用。  from clumper import Clumper grade_dicts = [ {'gender': '男', 'grade': 98, 'name': '张三'}, {'gender': '女', 'grade': 88, 'name': '王五'}, {'gender': '女', 'grade': 99, 'name': '赵六'}, {'gender': '男', 'grade': 58, 'name': '李四'}] (Clumper(grade_dicts) .group_by(\"gender\") .groups==('gender', ) ) True  Ungroup GroupBy的反操作  from clumper import Clumper grade_dicts = [ {'gender': '男', 'grade': 98, 'name': '张三'}, {'gender': '女', 'grade': 88, 'name': '王五'}, {'gender': '女', 'grade': 99, 'name': '赵六'}, {'gender': '男', 'grade': 58, 'name': '李四'}] (Clumper(grade_dicts) .group_by(\"gender\") .ungroup().groups == tuple() ) True  \nAbout Groups Agg 聚合描述性统计方法\nagg如下图，可以理解成三个步骤，即group-split-summary  常用的描述性统计函数有： mean、count、unqiue、n_unique、sum、min和max\n求学生的平均成绩、最优和最差成绩\nfrom clumper import Clumper grade_dicts = [{'gender': '男', 'grade': 98, 'name': '张三'}, {'gender': '女', 'grade': 88, 'name': '王五'}, {'gender': '女', 'grade': 99, 'name': '赵六'}, {'gender': '男', 'grade': 58, 'name': '李四'}] (Clumper(grade_dicts) .agg(mean_grade=('grade', 'mean'), max_grade=('grade', 'max'), min_grade=('grade', 'min')) .collect() ) [{'mean_grade': 85.75, 'max_grade': 99, 'min_grade': 58}]  求男生和女生各自的平均成绩、最优和最差成绩\nfrom clumper import Clumper grade_dicts = [{'gender': '男', 'grade': 98, 'name': '张三'}, {'gender': '女', 'grade': 88, 'name': '王五'}, {'gender': '女', 'grade': 99, 'name': '赵六'}, {'gender': '男', 'grade': 58, 'name': '李四'}] (Clumper(grade_dicts) .group_by('gender') .agg(mean_grade=('grade', 'mean'), max_grade=('grade', 'max'), min_grade=('grade', 'min')) .collect()) [{'gender': '男', 'mean_grade': 78, 'max_grade': 98, 'min_grade': 58}, {'gender': '女', 'mean_grade': 93.5, 'max_grade': 99, 'min_grade': 88}]  Collect 一般Clumper函数返回的结果显示为Clumper类，是看不到具体内容的。\ncollect作用主要是展开显示。  剔除重复 剔除重复内容  from clumper import Clumper data = [{\"a\": 1}, {\"a\": 2}, {\"a\": 2}] (Clumper(data) .drop_duplicates() .collect() ) [{'a': 1}, {'a': 2}]   ### 什么是Group？ from clumper import Clumper list_dicts = [ {'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}, {'a': 5, 'grp': 'a'} ] (Clumper(list_dicts) .group_by('grp') )  当前的group以grp作为关键词  现在经过 .group_by('grp')操作后，说明你对每个grp组感兴趣。具体一点，一个组是{'grp': 'a'}, 另一个组是{'grp': 'b'}.\nAgg without groups  from clumper import Clumper list_dicts = [ {'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}, {'a': 5, 'grp': 'a'} ] (Clumper(list_dicts) .agg(s=('a', 'sum'), m=('a', 'mean')) .collect()) [{'s': 29, 'm': 5.8}]  with groups 分别计算组grp=a、组grp=b的sum和mean  from clumper import Clumper list_dicts = [ {'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}, {'a': 5, 'grp': 'a'} ] (Clumper(list_dicts) .group_by('grp') .agg(s=('a', 'sum'), m=('a', 'mean')) .collect()) [{'grp': 'a', 's': 18, 'm': 6}, {'grp': 'b', 's': 11, 'm': 5.5}]  agg内置的统计函数名 内置的统计函数，可直接通过字符串调用\n{ \"mean\": mean, \"count\": lambda d: len(d), \"unique\": lambda d: list(set(d)), \"n_unique\": lambda d: len(set(d)), \"sum\": sum, \"min\": min, \"max\": max, \"median\": median, \"var\": variance, \"std\": stdev, \"values\": lambda d: d, \"first\": lambda d: d[0], \"last\": lambda d: d[-1], } Transform .transform()与.agg()类似。主要的区别是transform处理过程中，记录数和字段数不会出现压缩。\nwithout groups  from clumper import Clumper data = [{\"a\": 6, \"grp\": \"a\"}, {\"a\": 2, \"grp\": \"b\"}, {\"a\": 7, \"grp\": \"a\"}, {\"a\": 9, \"grp\": \"b\"}, {\"a\": 5, \"grp\": \"a\"}] (Clumper(data) .transform(s=(\"a\", \"sum\"), u=(\"a\", \"unique\")) .collect()) [{'a': 6, 'grp': 'a', 's': 29, 'u': [2, 5, 6, 7, 9]}, {'a': 2, 'grp': 'b', 's': 29, 'u': [2, 5, 6, 7, 9]}, {'a': 7, 'grp': 'a', 's': 29, 'u': [2, 5, 6, 7, 9]}, {'a': 9, 'grp': 'b', 's': 29, 'u': [2, 5, 6, 7, 9]}, {'a': 5, 'grp': 'a', 's': 29, 'u': [2, 5, 6, 7, 9]}]  with groups  from clumper import Clumper data = [ {\"a\": 6, \"grp\": \"a\"}, {\"a\": 2, \"grp\": \"b\"}, {\"a\": 7, \"grp\": \"a\"}, {\"a\": 9, \"grp\": \"b\"}, {\"a\": 5, \"grp\": \"a\"} ] (Clumper(data) .group_by(\"grp\") .transform(s=(\"a\", \"sum\"), u=(\"a\", \"unique\")) .collect() ) [{'a': 6, 'grp': 'a', 's': 18, 'u': [5, 6, 7]}, {'a': 7, 'grp': 'a', 's': 18, 'u': [5, 6, 7]}, {'a': 5, 'grp': 'a', 's': 18, 'u': [5, 6, 7]}, {'a': 2, 'grp': 'b', 's': 11, 'u': [9, 2]}, {'a': 9, 'grp': 'b', 's': 11, 'u': [9, 2]}]  Mutate clumper库中的row_number可以给每条记录显示索引位置（第几个）。\nwithout groups  from clumper import Clumper from clumper.sequence import row_number list_dicts = [ {'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 4, 'grp': 'b'}, {'a': 5, 'grp': 'a'} ] (Clumper(list_dicts) .mutate(index=row_number()) .collect() ) [{'a': 6, 'grp': 'a', 'index': 1}, {'a': 2, 'grp': 'b', 'index': 2}, {'a': 7, 'grp': 'a', 'index': 3}, {'a': 4, 'grp': 'b', 'index': 4}, {'a': 5, 'grp': 'a', 'index': 5}]  with groups  from clumper import Clumper from clumper.sequence import row_number list_dicts = [ {'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 4, 'grp': 'b'}, {'a': 5, 'grp': 'a'} ] (Clumper(list_dicts) .group_by('grp') .mutate(index=row_number()) .collect() ) [{'a': 6, 'grp': 'a', 'index': 1}, {'a': 7, 'grp': 'a', 'index': 2}, {'a': 5, 'grp': 'a', 'index': 3}, {'a': 2, 'grp': 'b', 'index': 1}, {'a': 4, 'grp': 'b', 'index': 2}]  Sort 排序, 默认升序\nwithout groups  from clumper import Clumper list_dicts = [{'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}, {'a': 5, 'grp': 'a'}] (Clumper(list_dicts) #根据字段a进行排序  .sort(key=lambda d: d['a']) .collect()) [{'a': 2, 'grp': 'b'}, {'a': 5, 'grp': 'a'}, {'a': 6, 'grp': 'a'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}]  with groups  from clumper import Clumper list_dicts = [{'a': 6, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 7, 'grp': 'a'}, {'a': 9, 'grp': 'b'}, {'a': 5, 'grp': 'a'}] (Clumper(list_dicts) .group_by('grp') .sort(key=lambda d: d['a']) .collect()) [{'a': 5, 'grp': 'a'}, {'a': 6, 'grp': 'a'}, {'a': 7, 'grp': 'a'}, {'a': 2, 'grp': 'b'}, {'a': 9, 'grp': 'b'}]  Ungroup 最后，如果你已经进行完了分组计算，想再次整合起来，取消分组状态，可以使用.ungroup()\n\nMerge Verbs  如果想将多个记录整理到一个记录中，有很多种实现方法。\nConcat 如果想垂直方向将多个记录堆叠，可以使用concat  from clumper import Clumper c1 = Clumper([{\"a\": 1}]) c2 = Clumper([{\"a\": 2}]) c3 = Clumper([{\"a\": 3}]) c1.concat(c2).collect() [{'a': 1}, {'a': 2}]  #等同于c1.concat(c2).concat(c3).collect() c1.concat(c2, c3).collect() [{'a': 1}, {'a': 2}, {'a': 3}]  Joins Joins类似于数学里的交集、并集的，大致有以下四种，  left join 左连接，以左为主，表示以table1为主，关联上table2的数据，结果显示table1的所有数据，然后table2显示的是和table1有交集部分的数据。  from clumper import Clumper left = Clumper([ {\"a\": 1, \"b\": 4}, {\"a\": 2, \"b\": 6}, {\"a\": 3, \"b\": 8}, ]) right = Clumper([ {\"c\": 9, \"b\": 4}, {\"c\": 8, \"b\": 5}, {\"c\": 7, \"b\": 6}, ]) #根据b进行左右两表的合并 result = left.inner_join(right, mapping={\"b\": \"b\"}) result.collect() [{'a': 1, 'b': 4, 'c': 9}, {'a': 2, 'b': 6, 'c': 7}]  inner join 内连接， 交集\n from clumper import Clumper left = Clumper([ {\"a\": 1, \"b\":4}, {\"a\": 2, \"b\":6}, {\"a\": 3, \"b\":8}, ]) right = Clumper([ {\"c\": 9, \"b\":4}, {\"c\": 8, \"b\":5}, {\"c\": 7, \"b\":6}, ]) result = left.inner_join(right, mapping={\"b\": \"b\"}) result.collect() [{'a': 1, 'b': 4, 'c': 9}, {'a': 2, 'b': 6, 'c': 7}]   \nNested Data 由于嵌套数据序列确实具有各种形状和大小，因此该库提供了各种方法来帮助您将数据重塑为不同的格式。 本文档将演示这些方法的工作原理。\nExplode 炸裂（展开）  from clumper import Clumper data = [{'gender': '男', 'grade': [80, 99], 'name':['张三', '李四']}] (Clumper(data) .explode('name', 'grade') .collect() ) [{'gender': '男', 'grade': 80, 'name': '张三'}, {'gender': '男', 'grade': 99, 'name': '张三'}, {'gender': '男', 'grade': 80, 'name': '李四'}, {'gender': '男', 'grade': 99, 'name': '李四'}]  from clumper import Clumper data = [{'gender': '男', 'grade': [80, 99], 'name':['张三', '李四']}] #.explode('name', 'grade')略微有些区别 #请查看两者运行结果 (Clumper(data) .explode(item='name', val='grade') .collect() ) [{'gender': '男', 'item': '张三', 'val': 80}, {'gender': '男', 'item': '张三', 'val': 99}, {'gender': '男', 'item': '李四', 'val': 80}, {'gender': '男', 'item': '李四', 'val': 99}]  Unpack 与explode类似  from clumper import Clumper list_dicts = { 'a': 1, 'rows': [{'b': 2, 'c': 3}, {'b': 3}, {'b': 4}] } (Clumper(list_dicts) .unpack('rows') .collect() ) [{'a': 1, 'b': 2, 'c': 3}, {'a': 1, 'b': 3}, {'a': 1, 'b': 4}]  Flatten keys  from clumper import Clumper data = { 'feature_1': {'propery_1': 1, 'property_2': 2}, 'feature_2': {'propery_1': 3, 'property_2': 4}, 'feature_3': {'propery_1': 5, 'property_2': 6}, } (Clumper(data, listify=False) .flatten_keys() .collect() ) [{'propery_1': 1, 'property_2': 2, 'key': 'feature_1'}, {'propery_1': 3, 'property_2': 4, 'key': 'feature_2'}, {'propery_1': 5, 'property_2': 6, 'key': 'feature_3'}]  \nSummary Methods Clumper支持常用的统计性方法，诸如mean、max、min等\nmean  from clumper import Clumper list_of_dicts = [ {'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7} ] Clumper(list_of_dicts).mean(\"a\") 3.5  Clumper(list_of_dicts).mean(\"b\") 6.666666666666667  count 统计记录数  from clumper import Clumper list_of_dicts = [ {'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7} ] #含有a的一共有多少条记录 Clumper(list_of_dicts).count(\"a\") 4  Clumper(list_of_dicts).count(\"b\") 3  unique 汇总某字段不重样的值的种类，如[a, b, a, a]，经过unique后，返回[a, b]  from clumper import Clumper list_of_dicts = [{'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7}] Clumper(list_of_dicts).unique(\"a\") [2, 3, 7]  Clumper(list_of_dicts).unique(\"b\") [6, 7]  n_unique 统计某字段对应的值一种有多少种  from clumper import Clumper list_of_dicts = [ {'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7} ] Clumper(list_of_dicts).n_unique(\"a\") 3  Clumper(list_of_dicts).n_unique(\"b\") 2  min  from clumper import Clumper list_of_dicts = [{'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7}] Clumper(list_of_dicts).min(\"a\") 2  Clumper(list_of_dicts).min(\"b\") 6  max  from clumper import Clumper list_of_dicts = [{'a': 7}, {'a': 2, 'b': 7}, {'a': 3, 'b': 6}, {'a': 2, 'b': 7}] Clumper(list_of_dicts).max(\"a\") 7  Clumper(list_of_dicts).max(\"b\") 7  ",
   "wordCount" : "1742",
   "inLanguage": "en",
   "image":"/images/blog/How-to-Use-Pythons-filter__Watermarked.de0ab33d1dbe.jpg","datePublished": "2021-06-22T16:40:10+06:00",
@@ -123,6 +123,15 @@
   }
 }
 </script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
 </head>
 
 <body class="" id="top">
@@ -399,15 +408,23 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 <h3 id="代码解析">代码解析<a hidden class="anchor" aria-hidden="true" href="#代码解析">#</a></h3>
 <p><strong>Step1</strong></p>
 <p>首先使用<strong>mutate</strong>方法，该方法可以在每条记录中生成新变量。</p>
-<figure>
-    <img loading="lazy" src="img/first-mutate.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/first-mutate.png" width="800" />
+    
+    
 </figure>
 
 <p>结算结果仍为Clumper类</p>
 <p><strong>Step2</strong></p>
 <p>接下来对mutate之后的数据进行排序</p>
-<figure>
-    <img loading="lazy" src="img/then-sort.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/then-sort.png" width="800" />
+    
+    
 </figure>
 
 <p>得到的结果仍为Clumper类。</p>
@@ -427,8 +444,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 <h2 id="common-verbs">Common Verbs<a hidden class="anchor" aria-hidden="true" href="#common-verbs">#</a></h2>
 <h3 id="keep">Keep<a hidden class="anchor" aria-hidden="true" href="#keep">#</a></h3>
 <p>keep函数可以从原始数据中抽取符合指定条件的子集。
-<figure>
-    <img loading="lazy" src="img/keep.png"/> 
+
+<figure >
+    
+        <img src="img/keep.png" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -466,8 +487,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h3 id="mutate">Mutate<a hidden class="anchor" aria-hidden="true" href="#mutate">#</a></h3>
 <p>mutate可以在每条记录中，创建新字段、改写旧字段。
-<figure>
-    <img loading="lazy" src="img/mutate.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/mutate.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -489,8 +514,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h3 id="sort">Sort<a hidden class="anchor" aria-hidden="true" href="#sort">#</a></h3>
 <p>sort可以实现排序
-<figure>
-    <img loading="lazy" src="img/sort.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/sort.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -510,8 +539,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h3 id="select">Select<a hidden class="anchor" aria-hidden="true" href="#select">#</a></h3>
 <p>select挑选每条记录中的某个(些)字段
-<figure>
-    <img loading="lazy" src="img/select.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/select.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -531,8 +564,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h3 id="drop">Drop<a hidden class="anchor" aria-hidden="true" href="#drop">#</a></h3>
 <p>剔除某个（些）字段。
-<figure>
-    <img loading="lazy" src="img/drop.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/drop.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -552,8 +589,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h3 id="groupby">GroupBy<a hidden class="anchor" aria-hidden="true" href="#groupby">#</a></h3>
 <p>根据某个（些）字段对数据集进行分组，得到不同Group类的集合。一般与<code>.agg()</code>方法联合使用。
-<figure>
-    <img loading="lazy" src="img/groupby.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/groupby.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -572,8 +613,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h3 id="ungroup">Ungroup<a hidden class="anchor" aria-hidden="true" href="#ungroup">#</a></h3>
 <p>GroupBy的反操作
-<figure>
-    <img loading="lazy" src="img/ungroup.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/ungroup.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -595,8 +640,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 <h3 id="agg">Agg<a hidden class="anchor" aria-hidden="true" href="#agg">#</a></h3>
 <p>聚合描述性统计方法</p>
 <p>agg如下图，可以理解成三个步骤，即group-&gt;split-&gt;summary
-<figure>
-    <img loading="lazy" src="img/split-apply-combine.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/split-apply-combine.png" width="800" />
+    
+    
 </figure>
 </p>
 <p>常用的描述性统计函数有： <code>mean、count、unqiue、n_unique、sum、min和max</code></p>
@@ -636,14 +685,22 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 <h3 id="collect">Collect<a hidden class="anchor" aria-hidden="true" href="#collect">#</a></h3>
 <p>一般Clumper函数返回的结果显示为Clumper类，是看不到具体内容的。</p>
 <p>collect作用主要是展开显示。
-<figure>
-    <img loading="lazy" src="img/collect.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/collect.png" width="800" />
+    
+    
 </figure>
 </p>
 <h3 id="剔除重复">剔除重复<a hidden class="anchor" aria-hidden="true" href="#剔除重复">#</a></h3>
 <p>剔除重复内容
-<figure>
-    <img loading="lazy" src="img/drop_duplicates.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/drop_duplicates.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -673,15 +730,23 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre></div><pre><code>&lt;Clumper groups=('grp',) len=5 @0x103cb0290&gt;
 </code></pre>
 <p>当前的group以grp作为关键词
-<figure>
-    <img loading="lazy" src="img/add_grp.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/add_grp.png" width="800" />
+    
+    
 </figure>
 </p>
 <p>现在经过 <code>.group_by('grp')</code>操作后，说明你对每个grp组感兴趣。具体一点，一个组是<code>{'grp': 'a'}</code>, 另一个组是<code>{'grp': 'b'}.</code></p>
 <h3 id="agg-1">Agg<a hidden class="anchor" aria-hidden="true" href="#agg-1">#</a></h3>
 <h4 id="without-groups">without groups<a hidden class="anchor" aria-hidden="true" href="#without-groups">#</a></h4>
-<figure>
-    <img loading="lazy" src="img/agg-without-group.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/agg-without-group.png" width="800" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -702,8 +767,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h4 id="with-groups">with groups<a hidden class="anchor" aria-hidden="true" href="#with-groups">#</a></h4>
 <p>分别计算组grp=a、组grp=b的sum和mean
-<figure>
-    <img loading="lazy" src="img/agg-with-group.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/agg-with-group.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -744,8 +813,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre></div><h3 id="transform">Transform<a hidden class="anchor" aria-hidden="true" href="#transform">#</a></h3>
 <p><code>.transform()</code>与<code>.agg()</code>类似。主要的区别是transform处理过程中，记录数和字段数不会出现压缩。</p>
 <h4 id="without-groups-1">without groups<a hidden class="anchor" aria-hidden="true" href="#without-groups-1">#</a></h4>
-<figure>
-    <img loading="lazy" src="img/transform-without-groups.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/transform-without-groups.png" width="800" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -767,8 +840,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 {'a': 5, 'grp': 'a', 's': 29, 'u': [2, 5, 6, 7, 9]}]
 </code></pre>
 <h4 id="with-groups-1">with groups<a hidden class="anchor" aria-hidden="true" href="#with-groups-1">#</a></h4>
-<figure>
-    <img loading="lazy" src="img/transform-with-groups.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/transform-with-groups.png" width="800" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -796,8 +873,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 <h3 id="mutate-1">Mutate<a hidden class="anchor" aria-hidden="true" href="#mutate-1">#</a></h3>
 <p>clumper库中的<code>row_number</code>可以给每条记录显示索引位置（第几个）。</p>
 <h4 id="without-groups-2">without groups<a hidden class="anchor" aria-hidden="true" href="#without-groups-2">#</a></h4>
-<figure>
-    <img loading="lazy" src="img/mutate-without-group.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/mutate-without-group.png" width="800" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -822,8 +903,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
  {'a': 5, 'grp': 'a', 'index': 5}]
 </code></pre>
 <h4 id="with-groups-2">with groups<a hidden class="anchor" aria-hidden="true" href="#with-groups-2">#</a></h4>
-<figure>
-    <img loading="lazy" src="img/mutate-with-group.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/mutate-with-group.png" width="800" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -851,8 +936,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 <h3 id="sort-1">Sort<a hidden class="anchor" aria-hidden="true" href="#sort-1">#</a></h3>
 <p>排序, 默认升序</p>
 <h4 id="without-groups-3">without groups<a hidden class="anchor" aria-hidden="true" href="#without-groups-3">#</a></h4>
-<figure>
-    <img loading="lazy" src="img/sort-no-group.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/sort-no-group.png" width="800" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -873,8 +962,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 {'a': 9, 'grp': 'b'}]
 </code></pre>
 <h4 id="with-groups-3">with groups<a hidden class="anchor" aria-hidden="true" href="#with-groups-3">#</a></h4>
-<figure>
-    <img loading="lazy" src="img/sort-with-group.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/sort-with-group.png" width="800" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -903,8 +996,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 <p>如果想将多个记录整理到一个记录中，有很多种实现方法。</p>
 <h3 id="concat">Concat<a hidden class="anchor" aria-hidden="true" href="#concat">#</a></h3>
 <p>如果想垂直方向将多个记录堆叠，可以使用concat
-<figure>
-    <img loading="lazy" src="img/concat.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/concat.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -922,14 +1019,22 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h3 id="joins">Joins<a hidden class="anchor" aria-hidden="true" href="#joins">#</a></h3>
 <p>Joins类似于数学里的交集、并集的，大致有以下四种，
-<figure>
-    <img loading="lazy" src="img/LeftRight.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/LeftRight.png" width="800" />
+    
+    
 </figure>
 </p>
 <h4 id="left-join">left join<a hidden class="anchor" aria-hidden="true" href="#left-join">#</a></h4>
 <p>左连接，以左为主，表示以table1为主，关联上table2的数据，结果显示table1的所有数据，然后table2显示的是和table1有交集部分的数据。
-<figure>
-    <img loading="lazy" src="img/left_join.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/left_join.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -953,8 +1058,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h4 id="inner-join">inner join<a hidden class="anchor" aria-hidden="true" href="#inner-join">#</a></h4>
 <p>内连接， 交集</p>
-<figure>
-    <img loading="lazy" src="img/inner_join.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/inner_join.png" width="800" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -982,8 +1091,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 <p>由于嵌套数据序列确实具有各种形状和大小，因此该库提供了各种方法来帮助您将数据重塑为不同的格式。 本文档将演示这些方法的工作原理。</p>
 <h3 id="explode">Explode<a hidden class="anchor" aria-hidden="true" href="#explode">#</a></h3>
 <p>炸裂（展开）
-<figure>
-    <img loading="lazy" src="img/explode.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/explode.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -1021,8 +1134,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h3 id="unpack">Unpack<a hidden class="anchor" aria-hidden="true" href="#unpack">#</a></h3>
 <p>与explode类似
-<figure>
-    <img loading="lazy" src="img/unpack.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/unpack.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -1041,8 +1158,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 {'a': 1, 'b': 4}]
 </code></pre>
 <h3 id="flatten-keys">Flatten keys<a hidden class="anchor" aria-hidden="true" href="#flatten-keys">#</a></h3>
-<figure>
-    <img loading="lazy" src="img/flatten_keys.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/flatten_keys.png" width="800" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -1066,8 +1187,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 <h2 id="summary-methods">Summary Methods<a hidden class="anchor" aria-hidden="true" href="#summary-methods">#</a></h2>
 <p>Clumper支持常用的统计性方法，诸如mean、max、min等</p>
 <h3 id="mean">mean<a hidden class="anchor" aria-hidden="true" href="#mean">#</a></h3>
-<figure>
-    <img loading="lazy" src="img/mean.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/mean.png" width="800" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -1087,8 +1212,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h3 id="count">count<a hidden class="anchor" aria-hidden="true" href="#count">#</a></h3>
 <p>统计记录数
-<figure>
-    <img loading="lazy" src="img/count.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/count.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -1109,8 +1238,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h3 id="unique">unique<a hidden class="anchor" aria-hidden="true" href="#unique">#</a></h3>
 <p>汇总某字段不重样的值的种类，如<code>[a, b, a, a]</code>，经过unique后，返回<code>[a, b]</code>
-<figure>
-    <img loading="lazy" src="img/unique.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/unique.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -1128,8 +1261,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre>
 <h3 id="n_unique">n_unique<a hidden class="anchor" aria-hidden="true" href="#n_unique">#</a></h3>
 <p>统计某字段对应的值一种有多少种
-<figure>
-    <img loading="lazy" src="img/nunique.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/nunique.png" width="800" />
+    
+    
 </figure>
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -1148,8 +1285,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre></div><pre><code>2
 </code></pre>
 <h3 id="min">min<a hidden class="anchor" aria-hidden="true" href="#min">#</a></h3>
-<figure>
-    <img loading="lazy" src="img/min.png"/> 
+
+<figure >
+    
+        <img src="img/min.png" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
@@ -1166,8 +1307,12 @@ You should consider upgrading via the '/Library/Frameworks/Python.framework/Vers
 </code></pre></div><pre><code>6
 </code></pre>
 <h3 id="max">max<a hidden class="anchor" aria-hidden="true" href="#max">#</a></h3>
-<figure>
-    <img loading="lazy" src="img/max.png" width="800"/> 
+
+<figure >
+    
+        <img src="img/max.png" width="800" />
+    
+    
 </figure>
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clumper</span> <span class="kn">import</span> <span class="n">Clumper</span>
