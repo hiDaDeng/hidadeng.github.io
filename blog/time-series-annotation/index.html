@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>使用altair绘制漂亮的股票价格趋势图 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="altair, 股票价格趋势图, 可视化" />
+<meta name="description" content="使用altair绘制漂亮的股票价格趋势图">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/time-series-annotation/" />
+<meta name="baidu-site-verification" content="code-xTk1LSyjvt" />
+<meta name="360-site-verification" content="dc00b42cd1d4e0fcaa5edfd27394f9cd" />
+<meta name="sogou-site-verification" content="3HDeo612Pl" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="使用altair绘制漂亮的股票价格趋势图" />
+<meta property="og:description" content="使用altair绘制漂亮的股票价格趋势图" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/time-series-annotation/" />
+<meta property="og:image" content="/images/blog/altair_stock_evolution.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2022-03-27T10:43:10&#43;06:00" />
+<meta property="article:modified_time" content="2022-03-27T10:43:10&#43;06:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/altair_stock_evolution.png" />
+<meta name="twitter:title" content="使用altair绘制漂亮的股票价格趋势图"/>
+<meta name="twitter:description" content="使用altair绘制漂亮的股票价格趋势图"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "使用altair绘制漂亮的股票价格趋势图",
+      "item": "/blog/time-series-annotation/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "使用altair绘制漂亮的股票价格趋势图",
+  "name": "使用altair绘制漂亮的股票价格趋势图",
+  "description": "使用altair绘制漂亮的股票价格趋势图",
+  "keywords": [
+    "altair", "股票价格趋势图", "可视化"
+  ],
+  "articleBody": " 点击上方图片购买课程    点击   使用altair绘制漂亮的股票价格趋势图, 直接上代码。\n安装 !pip3 install altair \n案例数据 这里使用vega_datasets中提供的数据做测试，返回的结果是dataframe类型的数据。\nfrom vega_datasets import data def get_data(): source = data.stocks() source = source[source.date.gt(\"2004-01-01\")] return source get_data()  .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  symbol date price     49 MSFT 2004-02-01 21.77   50 MSFT 2004-03-01 20.46   51 MSFT 2004-04-01 21.45   52 MSFT 2004-05-01 21.53   53 MSFT 2004-06-01 23.44   ... ... ... ...   555 AAPL 2009-11-01 199.91   556 AAPL 2009-12-01 210.73   557 AAPL 2010-01-01 192.06   558 AAPL 2010-02-01 204.62   559 AAPL 2010-03-01 223.02    364 rows × 3 columns\n 完整代码 import altair as alt import pandas as pd from vega_datasets import data from vega_datasets import data def get_data(): source = data.stocks() source = source[source.date.gt(\"2004-01-01\")] return source def get_chart(df): hover = alt.selection_single( fields=[\"date\"], nearest=True, on=\"mouseover\", empty=\"none\", ) lines = ( alt.Chart(df, title=\"股票价格趋势\") .mark_line() .encode( x=\"date\", y=\"price\", color=\"symbol\", # strokeDash=\"symbol\", ) ) # Draw points on the line, and highlight based on selection points = lines.transform_filter(hover).mark_circle(size=65) # Draw a rule at the location of the selection tooltips = ( alt.Chart(df) .mark_rule() .encode( x=\"yearmonthdate(date)\", y=\"price\", opacity=alt.condition(hover, alt.value(0.3), alt.value(0)), tooltip=[ alt.Tooltip(\"date\", title=\"日期\"), alt.Tooltip(\"price\", title=\"价格 (USD)\"), ], ) .add_selection(hover) ) return (lines + points + tooltips).interactive() # Original time series chart. Omitted `get_chart` for clarity chart = get_chart(get_data()) # Input annotations ANNOTATIONS = [ (\"Mar 01, 2008\", \"Pretty good day for GOOG\"), (\"Dec 01, 2007\", \"Something's going wrong for GOOG \u0026 AAPL\"), (\"Nov 01, 2008\", \"Market starts again thanks to...\"), (\"Dec 01, 2009\", \"Small crash for GOOG after...\"), ] # Create a chart with annotations annotations_df = pd.DataFrame(ANNOTATIONS, columns=[\"date\", \"event\"]) annotations_df.date = pd.to_datetime(annotations_df.date) annotations_df[\"y\"] = 0 annotation_layer = ( alt.Chart(annotations_df) .mark_text(size=15, text=ticker, dx=ticker_dx, dy=ticker_dy, align=\"center\") .encode( x=\"date:T\", y=alt.Y(\"y:Q\"), tooltip=[\"event\"], ) .interactive() ) (chart + annotation_layer).interactive() Run\n代码下载 出处 https://share.streamlit.io/streamlit/example-app-time-series-annotation/main\n 点击上方图片购买课程   ",
+  "wordCount" : "296",
+  "inLanguage": "en",
+  "image":"/images/blog/altair_stock_evolution.png","datePublished": "2022-03-27T10:43:10+06:00",
+  "dateModified": "2022-03-27T10:43:10+06:00",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/time-series-annotation/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/blog" title="博文">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="mailto:thunderhit@qq.com" title="联系">
+                    <span>联系</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/">Home</a>&nbsp;»&nbsp;<a href="/blog/">Blogs</a></div>
+    <h1 class="post-title">
+      使用altair绘制漂亮的股票价格趋势图
+    </h1>
+    <div class="post-meta"><span title='2022-03-27 10:43:10 +0600 +0600'>2022-03-27</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
+
+</div>
+
+    <div>
+      <br>
+      <ul class="post-tags">
+        <li><a href="/tags/python/">Python</a></li>
+        <li><a href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/">可视化</a></li>
+      </ul>
+    </div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/altair_stock_evolution.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/altair_stock_evolution.png" alt=""></a>
+        
+</figure><div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#%e5%ae%89%e8%a3%85" aria-label="安装">安装</a></li>
+                <li>
+                    <a href="#%e6%a1%88%e4%be%8b%e6%95%b0%e6%8d%ae" aria-label="案例数据">案例数据</a></li>
+                <li>
+                    <a href="#%e5%ae%8c%e6%95%b4%e4%bb%a3%e7%a0%81" aria-label="完整代码">完整代码</a></li>
+                <li>
+                    <a href="#%e4%bb%a3%e7%a0%81%e4%b8%8b%e8%bd%bdtime-series-annotationzip" aria-label="代码下载"><a href="time-series-annotation.zip">代码下载</a></a></li>
+                <li>
+                    <a href="#%e5%87%ba%e5%a4%84" aria-label="出处">出处</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<br>
+<div style="text-align: center;">
+<figure >
+    <a href="https://share.streamlit.io/streamlit/example-app-time-series-annotation/main">
+        <img src="img/stockevolution.svg" width="100%" />
+    </a>
+    <figcaption><small><i>点击</i></small></figcaption>
+</figure>
+</div>
+<p>使用altair绘制漂亮的股票价格趋势图, 直接上代码。</p>
+<br>
+<h2 id="安装">安装<a hidden class="anchor" aria-hidden="true" href="#安装">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">altair</span>
+</code></pre></div><br>
+<h2 id="案例数据">案例数据<a hidden class="anchor" aria-hidden="true" href="#案例数据">#</a></h2>
+<p>这里使用vega_datasets中提供的数据做测试，返回的结果是dataframe类型的数据。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">vega_datasets</span> <span class="kn">import</span> <span class="n">data</span>
+
+<span class="k">def</span> <span class="nf">get_data</span><span class="p">():</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">stocks</span><span class="p">()</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="n">source</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="s2">&#34;2004-01-01&#34;</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">source</span>
+
+<span class="n">get_data</span><span class="p">()</span>
+</code></pre></div><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+<p></style></p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>symbol</th>
+      <th>date</th>
+      <th>price</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>49</th>
+      <td>MSFT</td>
+      <td>2004-02-01</td>
+      <td>21.77</td>
+    </tr>
+    <tr>
+      <th>50</th>
+      <td>MSFT</td>
+      <td>2004-03-01</td>
+      <td>20.46</td>
+    </tr>
+    <tr>
+      <th>51</th>
+      <td>MSFT</td>
+      <td>2004-04-01</td>
+      <td>21.45</td>
+    </tr>
+    <tr>
+      <th>52</th>
+      <td>MSFT</td>
+      <td>2004-05-01</td>
+      <td>21.53</td>
+    </tr>
+    <tr>
+      <th>53</th>
+      <td>MSFT</td>
+      <td>2004-06-01</td>
+      <td>23.44</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>555</th>
+      <td>AAPL</td>
+      <td>2009-11-01</td>
+      <td>199.91</td>
+    </tr>
+    <tr>
+      <th>556</th>
+      <td>AAPL</td>
+      <td>2009-12-01</td>
+      <td>210.73</td>
+    </tr>
+    <tr>
+      <th>557</th>
+      <td>AAPL</td>
+      <td>2010-01-01</td>
+      <td>192.06</td>
+    </tr>
+    <tr>
+      <th>558</th>
+      <td>AAPL</td>
+      <td>2010-02-01</td>
+      <td>204.62</td>
+    </tr>
+    <tr>
+      <th>559</th>
+      <td>AAPL</td>
+      <td>2010-03-01</td>
+      <td>223.02</td>
+    </tr>
+  </tbody>
+</table>
+<p>364 rows × 3 columns</p>
+</div>
+<br>
+<h2 id="完整代码">完整代码<a hidden class="anchor" aria-hidden="true" href="#完整代码">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">altair</span> <span class="k">as</span> <span class="nn">alt</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">vega_datasets</span> <span class="kn">import</span> <span class="n">data</span>
+<span class="kn">from</span> <span class="nn">vega_datasets</span> <span class="kn">import</span> <span class="n">data</span>
+
+<span class="k">def</span> <span class="nf">get_data</span><span class="p">():</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">stocks</span><span class="p">()</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="n">source</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="s2">&#34;2004-01-01&#34;</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">source</span>
+
+<span class="k">def</span> <span class="nf">get_chart</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">hover</span> <span class="o">=</span> <span class="n">alt</span><span class="o">.</span><span class="n">selection_single</span><span class="p">(</span>
+        <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&#34;date&#34;</span><span class="p">],</span>
+        <span class="n">nearest</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">on</span><span class="o">=</span><span class="s2">&#34;mouseover&#34;</span><span class="p">,</span>
+        <span class="n">empty</span><span class="o">=</span><span class="s2">&#34;none&#34;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">alt</span><span class="o">.</span><span class="n">Chart</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&#34;股票价格趋势&#34;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">mark_line</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">encode</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="s2">&#34;date&#34;</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="s2">&#34;price&#34;</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s2">&#34;symbol&#34;</span><span class="p">,</span>
+            <span class="c1"># strokeDash=&#34;symbol&#34;,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Draw points on the line, and highlight based on selection</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">transform_filter</span><span class="p">(</span><span class="n">hover</span><span class="p">)</span><span class="o">.</span><span class="n">mark_circle</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">65</span><span class="p">)</span>
+
+    <span class="c1"># Draw a rule at the location of the selection</span>
+    <span class="n">tooltips</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">alt</span><span class="o">.</span><span class="n">Chart</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">mark_rule</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">encode</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="s2">&#34;yearmonthdate(date)&#34;</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="s2">&#34;price&#34;</span><span class="p">,</span>
+            <span class="n">opacity</span><span class="o">=</span><span class="n">alt</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span><span class="n">hover</span><span class="p">,</span> <span class="n">alt</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mf">0.3</span><span class="p">),</span> <span class="n">alt</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">0</span><span class="p">)),</span>
+            <span class="n">tooltip</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">alt</span><span class="o">.</span><span class="n">Tooltip</span><span class="p">(</span><span class="s2">&#34;date&#34;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&#34;日期&#34;</span><span class="p">),</span>
+                <span class="n">alt</span><span class="o">.</span><span class="n">Tooltip</span><span class="p">(</span><span class="s2">&#34;price&#34;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&#34;价格 (USD)&#34;</span><span class="p">),</span>
+            <span class="p">],</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">add_selection</span><span class="p">(</span><span class="n">hover</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">lines</span> <span class="o">+</span> <span class="n">points</span> <span class="o">+</span> <span class="n">tooltips</span><span class="p">)</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+
+
+<span class="c1"># Original time series chart. Omitted `get_chart` for clarity</span>
+<span class="n">chart</span> <span class="o">=</span> <span class="n">get_chart</span><span class="p">(</span><span class="n">get_data</span><span class="p">())</span>
+
+<span class="c1"># Input annotations</span>
+<span class="n">ANNOTATIONS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&#34;Mar 01, 2008&#34;</span><span class="p">,</span> <span class="s2">&#34;Pretty good day for GOOG&#34;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&#34;Dec 01, 2007&#34;</span><span class="p">,</span> <span class="s2">&#34;Something&#39;s going wrong for GOOG &amp; AAPL&#34;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&#34;Nov 01, 2008&#34;</span><span class="p">,</span> <span class="s2">&#34;Market starts again thanks to...&#34;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&#34;Dec 01, 2009&#34;</span><span class="p">,</span> <span class="s2">&#34;Small crash for GOOG after...&#34;</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="c1"># Create a chart with annotations</span>
+<span class="n">annotations_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">ANNOTATIONS</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&#34;date&#34;</span><span class="p">,</span> <span class="s2">&#34;event&#34;</span><span class="p">])</span>
+<span class="n">annotations_df</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">annotations_df</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+<span class="n">annotations_df</span><span class="p">[</span><span class="s2">&#34;y&#34;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">annotation_layer</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">alt</span><span class="o">.</span><span class="n">Chart</span><span class="p">(</span><span class="n">annotations_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">mark_text</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">ticker</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">ticker_dx</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">ticker_dy</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="s2">&#34;center&#34;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">encode</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="s2">&#34;date:T&#34;</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">alt</span><span class="o">.</span><span class="n">Y</span><span class="p">(</span><span class="s2">&#34;y:Q&#34;</span><span class="p">),</span>
+        <span class="n">tooltip</span><span class="o">=</span><span class="p">[</span><span class="s2">&#34;event&#34;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+<span class="p">)</span>
+
+
+
+<span class="p">(</span><span class="n">chart</span> <span class="o">+</span> <span class="n">annotation_layer</span><span class="p">)</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/stockevolution.svg" alt=""  />
+</p>
+<br>
+<h2 id="代码下载time-series-annotationzip"><a href="time-series-annotation.zip">代码下载</a><a hidden class="anchor" aria-hidden="true" href="#代码下载time-series-annotationzip">#</a></h2>
+<br>
+<h2 id="出处">出处<a hidden class="anchor" aria-hidden="true" href="#出处">#</a></h2>
+<p><a href="https://share.streamlit.io/streamlit/example-app-time-series-annotation/main">https://share.streamlit.io/streamlit/example-app-time-series-annotation/main</a></p>
+<br>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+
+
+  </div>
+
+  <footer class="post-footer">
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2022 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
