@@ -50,6 +50,7 @@ class Config {
 			'taobao/': {urlPrefix: 'https://ebay.com/sch/?_nkw='},
 			'youtube/': {urlPrefix: 'https://youtube.com/results?search_query='},
 			'bilibili/': {urlPrefix: 'https://search.bilibili.com/all?keyword='},
+			'微信公众号/': {urlPrefix: 'https://mp.weixin.qq.com/'},
 			'github/': {urlPrefix: 'https://github.com/search?q='},
 			"scihub/": {urlPrefix: 'https://sci-hub.ru/'},
 			"arxiv/": {urlPrefix: "https://arxiv.org/search/?searchtype=all&abstracts=show&order=-announced_date_first&size=50&query="},
