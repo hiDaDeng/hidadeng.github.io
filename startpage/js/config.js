@@ -34,6 +34,8 @@ class Config {
 
 	getQuickSearchData() {
 		const quickSearchData = {
+			"baidu/": {urlPrefix: "https://www.baidu.com/s?wd="},
+			"google/": {urlPrefix: "https://www.google.com/search?q="},
 			"scholar/": {urlPrefix: "https://scholar.google.com/scholar?q="},
 			"book/": {urlPrefix: "https://www.douban.com/search?cat=1001&q="},
 			'r/': {urlPrefix: 'https://reddit.com/r/'},
@@ -63,6 +65,13 @@ class Config {
 	getSearchEngines() {
 
 		const searchEngines = {
+			'Baidu':	{
+				name: 'Baidu',
+				icon: 'baidu',
+				prefix: 'https://www.baidu.com/s?wd='
+			},
+
+			,
 			'GoogleScholar':	{
 				name: 'Google Scholar',
 				icon: 'google-scholar',
