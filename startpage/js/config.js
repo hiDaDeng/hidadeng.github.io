@@ -34,6 +34,7 @@ class Config {
 
 	getQuickSearchData() {
 		const quickSearchData = {
+			"mdnice/": {urlPrefix: "https://editor.mdnice.com/"},
 			"baidu/": {urlPrefix: "https://www.baidu.com/s?wd="},
 			"google/": {urlPrefix: "https://www.google.com/search?q="},
 			"scholar/": {urlPrefix: "https://scholar.google.com/scholar?q="},
