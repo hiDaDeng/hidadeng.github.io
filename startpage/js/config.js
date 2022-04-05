@@ -71,7 +71,6 @@ class Config {
 				prefix: 'https://www.baidu.com/s?wd='
 			},
 
-			,
 			'GoogleScholar':	{
 				name: 'Google Scholar',
 				icon: 'google-scholar',
