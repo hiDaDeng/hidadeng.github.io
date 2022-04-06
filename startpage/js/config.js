@@ -253,6 +253,12 @@ class Config {
 				category: 'Academic Search Engine'
 			},  
 			{
+				site: 'EBSCO',
+				icon: 'ebsco',
+				url: 'https://search.ebscohost.com/',
+				category: 'Academic Search Engine'
+			}, 
+			{
 				site: 'iVPN',
 				icon: 'hitvpn',
 				url: 'http://ids-hit-edu-cn-s.ivpn.hit.edu.cn/',
