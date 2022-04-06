@@ -251,7 +251,13 @@ class Config {
 				icon: 'google-scholar',
 				url: 'https://scholar.google.com/',
 				category: 'Academic Search Engine'
-			},
+			},  
+			{
+				site: 'iVPN',
+				icon: 'hitvpn',
+				url: 'http://ids-hit-edu-cn-s.ivpn.hit.edu.cn/',
+				category: 'Academic Search Engine'
+			}, 
 
 			{
 				site: '开源arXiv',
