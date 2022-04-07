@@ -35,6 +35,7 @@ class Config {
 	getQuickSearchData() {
 		const quickSearchData = {
 			"mdnice/": {urlPrefix: "https://editor.mdnice.com/"},
+			"list/": {urlPrefix: "https://hidadeng.github.io/list/"},
 			"baidu/": {urlPrefix: "https://www.baidu.com/s?wd="},
 			"google/": {urlPrefix: "https://www.google.com/search?q="},
 			"scholar/": {urlPrefix: "https://scholar.google.com/scholar?q="},
@@ -252,6 +253,14 @@ class Config {
 				url: 'https://scholar.google.com/',
 				category: 'Academic Search Engine'
 			},  
+
+			{
+				site: '期刊分类',
+				icon: 'list',
+				url: 'https://hidadeng.github.io/list/',
+				category: 'Academic Search Engine'
+			},
+
 			{
 				site: 'EBSCO',
 				icon: 'ebsco',
