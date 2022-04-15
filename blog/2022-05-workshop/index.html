@@ -231,39 +231,100 @@ onload="renderMathInElement(document.body);"></script>
 <figure class="entry-cover"><a href="/images/bg/workshop7.png" target="_blank"
             rel="noopener noreferrer"><img loading="lazy" src="/images/bg/workshop7.png" alt=""></a>
         
-</figure><div class="toc">
-    <details >
-        <summary accesskey="c" title="(Alt + C)">
-            <span class="details">Table of Contents</span>
-        </summary>
+</figure><aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
 
-        <div class="inner"><ul>
-                <li>
-                    <a href="#%e5%85%b3%e4%ba%8e%e6%88%91%e4%bb%ac" aria-label="关于我们">关于我们</a></li>
-                <li>
-                    <a href="#%e5%b7%a5%e4%bd%9c%e5%9d%8a%e8%af%a6%e6%83%85%e9%a1%b5" aria-label="工作坊详情页">工作坊详情页</a></li>
-                <li>
-                    <a href="#%e6%8e%88%e8%af%be%e6%96%b9%e5%bc%8f" aria-label="授课方式">授课方式</a></li>
-                <li>
-                    <a href="#%e6%8a%a5%e5%90%8d%e4%bf%a1%e6%81%af" aria-label="报名信息">报名信息</a><ul>
-                        
-                <li>
-                    <a href="#%e8%b4%b9%e7%94%a8" aria-label="费用">费用</a></li>
-                <li>
-                    <a href="#%e4%bc%98%e6%83%a0%e6%94%bf%e7%ad%96" aria-label="优惠政策">优惠政策</a></li>
-                <li>
-                    <a href="#%e6%8a%a5%e5%90%8d%e6%97%b6%e9%97%b4" aria-label="报名时间">报名时间</a></li>
-                <li>
-                    <a href="#%e6%8a%a5%e5%90%8d%e5%92%a8%e8%af%a2" aria-label="报名咨询">报名咨询</a></li>
-                <li>
-                    <a href="#%e7%bc%b4%e8%b4%b9%e4%bf%a1%e6%81%af" aria-label="缴费信息">缴费信息</a>
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e5%85%b3%e4%ba%8e%e6%88%91%e4%bb%ac" aria-label="关于我们">关于我们</a></li>
+                    <li>
+                        <a href="#%e5%b7%a5%e4%bd%9c%e5%9d%8a%e8%af%a6%e6%83%85%e9%a1%b5" aria-label="工作坊详情页">工作坊详情页</a></li>
+                    <li>
+                        <a href="#%e6%8e%88%e8%af%be%e6%96%b9%e5%bc%8f" aria-label="授课方式">授课方式</a></li>
+                    <li>
+                        <a href="#%e6%8a%a5%e5%90%8d%e4%bf%a1%e6%81%af" aria-label="报名信息">报名信息</a><ul>
+                            
+                    <li>
+                        <a href="#%e8%b4%b9%e7%94%a8" aria-label="费用">费用</a></li>
+                    <li>
+                        <a href="#%e4%bc%98%e6%83%a0%e6%94%bf%e7%ad%96" aria-label="优惠政策">优惠政策</a></li>
+                    <li>
+                        <a href="#%e6%8a%a5%e5%90%8d%e6%97%b6%e9%97%b4" aria-label="报名时间">报名时间</a></li>
+                    <li>
+                        <a href="#%e6%8a%a5%e5%90%8d%e5%92%a8%e8%af%a2" aria-label="报名咨询">报名咨询</a></li>
+                    <li>
+                        <a href="#%e7%bc%b4%e8%b4%b9%e4%bf%a1%e6%81%af" aria-label="缴费信息">缴费信息</a>
+                    </li>
+                </ul>
                 </li>
-            </ul>
-            </li>
-            </ul>
-        </div>
-    </details>
-</div>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
 
   <div class="post-content"><p>大家好，五一劳动节假期我们将迎来了新的一期“结构模型、DSGE、Stata实证前沿、空间计量、Python数据挖掘”工作坊，欢迎大家报名参加。我们将分七次为大家介绍本次工作坊的详细内容，敬请期待。</p>
 <br>

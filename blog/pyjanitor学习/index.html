@@ -232,32 +232,93 @@ onload="renderMathInElement(document.body);"></script>
 <figure class="entry-cover"><a href="/images/blog/pyjanitor%E5%8C%85.png" target="_blank"
             rel="noopener noreferrer"><img loading="lazy" src="/images/blog/pyjanitor%E5%8C%85.png" alt=""></a>
         
-</figure><div class="toc">
-    <details >
-        <summary accesskey="c" title="(Alt + C)">
-            <span class="details">Table of Contents</span>
-        </summary>
+</figure><aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
 
-        <div class="inner"><ul>
-                <li>
-                    <a href="#%e5%ae%89%e8%a3%85" aria-label="安装">安装</a></li>
-                <li>
-                    <a href="#%e4%b8%ba%e4%bb%80%e4%b9%88%e7%94%a8janitor" aria-label="为什么用janitor？">为什么用janitor？</a></li>
-                <li>
-                    <a href="#%e5%b8%b8%e8%a7%81%e7%9a%84pandas%e5%ae%9e%e7%8e%b0%e6%96%b9%e5%bc%8f" aria-label="常见的Pandas实现方式">常见的Pandas实现方式</a></li>
-                <li>
-                    <a href="#%e7%a8%8d%e5%be%ae%e9%ab%98%e7%ba%a7%e4%b8%80%e7%82%b9pandas%e5%ae%9e%e7%8e%b0%e6%96%b9%e5%bc%8f" aria-label="稍微高级一点Pandas实现方式">稍微高级一点Pandas实现方式</a></li>
-                <li>
-                    <a href="#pyjanitor%e5%ae%9e%e7%8e%b0%e6%96%b9%e5%bc%8f" aria-label="PyJanitor实现方式">PyJanitor实现方式</a></li>
-                <li>
-                    <a href="#pyjanitor%e6%9b%b4%e5%a4%9a%e5%8a%9f%e8%83%bd" aria-label="pyjanitor更多功能">pyjanitor更多功能</a></li>
-                <li>
-                    <a href="#%e4%bb%a3%e7%a0%81%e4%b8%8b%e8%bd%bd" aria-label="代码下载">代码下载</a>
-                </li>
-            </ul>
-        </div>
-    </details>
-</div>
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e5%ae%89%e8%a3%85" aria-label="安装">安装</a></li>
+                    <li>
+                        <a href="#%e4%b8%ba%e4%bb%80%e4%b9%88%e7%94%a8janitor" aria-label="为什么用janitor？">为什么用janitor？</a></li>
+                    <li>
+                        <a href="#%e5%b8%b8%e8%a7%81%e7%9a%84pandas%e5%ae%9e%e7%8e%b0%e6%96%b9%e5%bc%8f" aria-label="常见的Pandas实现方式">常见的Pandas实现方式</a></li>
+                    <li>
+                        <a href="#%e7%a8%8d%e5%be%ae%e9%ab%98%e7%ba%a7%e4%b8%80%e7%82%b9pandas%e5%ae%9e%e7%8e%b0%e6%96%b9%e5%bc%8f" aria-label="稍微高级一点Pandas实现方式">稍微高级一点Pandas实现方式</a></li>
+                    <li>
+                        <a href="#pyjanitor%e5%ae%9e%e7%8e%b0%e6%96%b9%e5%bc%8f" aria-label="PyJanitor实现方式">PyJanitor实现方式</a></li>
+                    <li>
+                        <a href="#pyjanitor%e6%9b%b4%e5%a4%9a%e5%8a%9f%e8%83%bd" aria-label="pyjanitor更多功能">pyjanitor更多功能</a></li>
+                    <li>
+                        <a href="#%e4%bb%a3%e7%a0%81%e4%b8%8b%e8%bd%bd" aria-label="代码下载">代码下载</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
 
   <div class="post-content"><div style="text-align: center;">
 <figure >

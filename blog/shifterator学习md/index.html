@@ -233,34 +233,95 @@ onload="renderMathInElement(document.body);"></script>
 <figure class="entry-cover"><a href="/images/blog/shift_sentiment_detailed_full1.png" target="_blank"
             rel="noopener noreferrer"><img loading="lazy" src="/images/blog/shift_sentiment_detailed_full1.png" alt=""></a>
         
-</figure><div class="toc">
-    <details >
-        <summary accesskey="c" title="(Alt + C)">
-            <span class="details">Table of Contents</span>
-        </summary>
+</figure><aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
 
-        <div class="inner"><ul>
-                <li>
-                    <a href="#%e5%ae%89%e8%a3%85" aria-label="安装">安装</a></li>
-                <li>
-                    <a href="#%e5%af%bc%e5%85%a5%e6%95%b0%e6%8d%ae" aria-label="导入数据">导入数据</a></li>
-                <li>
-                    <a href="#%e5%87%86%e5%a4%87%e4%b8%a4%e7%bb%84%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%ae" aria-label="准备两组文本数据">准备两组文本数据</a></li>
-                <li>
-                    <a href="#%e6%97%a0%e8%81%8a%e7%9a%84%e4%bc%a0%e7%bb%9f%e7%bb%98%e5%9b%be" aria-label="无聊的传统绘图">无聊的传统绘图</a></li>
-                <li>
-                    <a href="#%e4%bd%bf%e7%94%a8shifterator%e7%bb%98%e5%88%b6%e8%af%8d%e7%a7%bb%e5%9b%be" aria-label="使用Shifterator绘制词移图">使用Shifterator绘制词移图</a><ul>
-                        
-                <li>
-                    <a href="#%e7%86%b5%e7%a7%bb%e5%9b%beentropy-shift" aria-label="熵移图Entropy shift">熵移图Entropy shift</a></li></ul>
-                </li>
-                <li>
-                    <a href="#%e6%80%bb%e7%bb%93" aria-label="总结">总结</a>
-                </li>
-            </ul>
-        </div>
-    </details>
-</div>
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e5%ae%89%e8%a3%85" aria-label="安装">安装</a></li>
+                    <li>
+                        <a href="#%e5%af%bc%e5%85%a5%e6%95%b0%e6%8d%ae" aria-label="导入数据">导入数据</a></li>
+                    <li>
+                        <a href="#%e5%87%86%e5%a4%87%e4%b8%a4%e7%bb%84%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%ae" aria-label="准备两组文本数据">准备两组文本数据</a></li>
+                    <li>
+                        <a href="#%e6%97%a0%e8%81%8a%e7%9a%84%e4%bc%a0%e7%bb%9f%e7%bb%98%e5%9b%be" aria-label="无聊的传统绘图">无聊的传统绘图</a></li>
+                    <li>
+                        <a href="#%e4%bd%bf%e7%94%a8shifterator%e7%bb%98%e5%88%b6%e8%af%8d%e7%a7%bb%e5%9b%be" aria-label="使用Shifterator绘制词移图">使用Shifterator绘制词移图</a><ul>
+                            
+                    <li>
+                        <a href="#%e7%86%b5%e7%a7%bb%e5%9b%beentropy-shift" aria-label="熵移图Entropy shift">熵移图Entropy shift</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e6%80%bb%e7%bb%93" aria-label="总结">总结</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
 
   <div class="post-content"><div style="text-align: center;">
 <figure >

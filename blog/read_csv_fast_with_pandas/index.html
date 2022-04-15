@@ -231,26 +231,87 @@ onload="renderMathInElement(document.body);"></script>
 <figure class="entry-cover"><a href="/images/blog/everything-about-pandas.png" target="_blank"
             rel="noopener noreferrer"><img loading="lazy" src="/images/blog/everything-about-pandas.png" alt=""></a>
         
-</figure><div class="toc">
-    <details >
-        <summary accesskey="c" title="(Alt + C)">
-            <span class="details">Table of Contents</span>
-        </summary>
+</figure><aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
 
-        <div class="inner"><ul>
-                <li>
-                    <a href="#%e9%97%ae%e9%a2%98%e5%9c%ba%e6%99%af" aria-label="问题场景">问题场景</a></li>
-                <li>
-                    <a href="#%e4%bd%bf%e7%94%a8pyarrow%e8%af%bbcsv" aria-label="使用pyarrow读csv">使用pyarrow读csv</a></li>
-                <li>
-                    <a href="#%e9%87%8d%e6%96%b0%e6%80%9d%e8%80%83" aria-label="重新思考">重新思考</a></li>
-                <li>
-                    <a href="#%e6%9c%80%e5%a5%bd%e7%9a%84%e6%96%87%e4%bb%b6%e6%a0%bc%e5%bc%8f%e4%b8%8d%e6%98%af-csv" aria-label="最好的文件格式不是 CSV">最好的文件格式不是 CSV</a>
-                </li>
-            </ul>
-        </div>
-    </details>
-</div>
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e9%97%ae%e9%a2%98%e5%9c%ba%e6%99%af" aria-label="问题场景">问题场景</a></li>
+                    <li>
+                        <a href="#%e4%bd%bf%e7%94%a8pyarrow%e8%af%bbcsv" aria-label="使用pyarrow读csv">使用pyarrow读csv</a></li>
+                    <li>
+                        <a href="#%e9%87%8d%e6%96%b0%e6%80%9d%e8%80%83" aria-label="重新思考">重新思考</a></li>
+                    <li>
+                        <a href="#%e6%9c%80%e5%a5%bd%e7%9a%84%e6%96%87%e4%bb%b6%e6%a0%bc%e5%bc%8f%e4%b8%8d%e6%98%af-csv" aria-label="最好的文件格式不是 CSV">最好的文件格式不是 CSV</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
 
   <div class="post-content"><h2 id="问题场景">问题场景<a hidden class="anchor" aria-hidden="true" href="#问题场景">#</a></h2>
 <p>当遇到特别大的csv文件，例如500M，pandas读取会很慢，在之前教程中要使用其他包另类的语法。现在只需更新pandas，加一个参数即可。</p>

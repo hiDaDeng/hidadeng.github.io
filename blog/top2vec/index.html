@@ -232,42 +232,103 @@ onload="renderMathInElement(document.body);"></script>
 <figure class="entry-cover"><a href="/images/blog/top2vec.png" target="_blank"
             rel="noopener noreferrer"><img loading="lazy" src="/images/blog/top2vec.png" alt=""></a>
         
-</figure><div class="toc">
-    <details >
-        <summary accesskey="c" title="(Alt + C)">
-            <span class="details">Table of Contents</span>
-        </summary>
+</figure><aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
 
-        <div class="inner"><ul>
-                <li>
-                    <a href="#1-%e5%af%bc%e5%85%a5%e6%95%b0%e6%8d%ae" aria-label="1. 导入数据">1. 导入数据</a></li>
-                <li>
-                    <a href="#2-%e6%b8%85%e6%b4%97%e6%95%b0%e6%8d%ae" aria-label="2. 清洗数据">2. 清洗数据</a></li>
-                <li>
-                    <a href="#3-%e8%ae%ad%e7%bb%83%e6%a8%a1%e5%9e%8b" aria-label="3. 训练模型">3. 训练模型</a></li>
-                <li>
-                    <a href="#4-get_topics" aria-label="4. get_topics">4. get_topics</a></li>
-                <li>
-                    <a href="#5-get_documents_topics" aria-label="5. get_documents_topics">5. get_documents_topics</a></li>
-                <li>
-                    <a href="#6-search_topics" aria-label="6. search_topics">6. search_topics</a></li>
-                <li>
-                    <a href="#7-query_topics" aria-label="7. query_topics">7. query_topics</a></li>
-                <li>
-                    <a href="#8-search_documents_by_keywords" aria-label="8. search_documents_by_keywords">8. search_documents_by_keywords</a></li>
-                <li>
-                    <a href="#9-search_documents_by_topic" aria-label="9. search_documents_by_topic">9. search_documents_by_topic</a></li>
-                <li>
-                    <a href="#10-get_topic_hierarchy" aria-label="10. get_topic_hierarchy">10. get_topic_hierarchy</a></li>
-                <li>
-                    <a href="#11-similar_words" aria-label="11. similar_words">11. similar_words</a></li>
-                <li>
-                    <a href="#12-save" aria-label="12. save">12. save</a>
-                </li>
-            </ul>
-        </div>
-    </details>
-</div>
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#1-%e5%af%bc%e5%85%a5%e6%95%b0%e6%8d%ae" aria-label="1. 导入数据">1. 导入数据</a></li>
+                    <li>
+                        <a href="#2-%e6%b8%85%e6%b4%97%e6%95%b0%e6%8d%ae" aria-label="2. 清洗数据">2. 清洗数据</a></li>
+                    <li>
+                        <a href="#3-%e8%ae%ad%e7%bb%83%e6%a8%a1%e5%9e%8b" aria-label="3. 训练模型">3. 训练模型</a></li>
+                    <li>
+                        <a href="#4-get_topics" aria-label="4. get_topics">4. get_topics</a></li>
+                    <li>
+                        <a href="#5-get_documents_topics" aria-label="5. get_documents_topics">5. get_documents_topics</a></li>
+                    <li>
+                        <a href="#6-search_topics" aria-label="6. search_topics">6. search_topics</a></li>
+                    <li>
+                        <a href="#7-query_topics" aria-label="7. query_topics">7. query_topics</a></li>
+                    <li>
+                        <a href="#8-search_documents_by_keywords" aria-label="8. search_documents_by_keywords">8. search_documents_by_keywords</a></li>
+                    <li>
+                        <a href="#9-search_documents_by_topic" aria-label="9. search_documents_by_topic">9. search_documents_by_topic</a></li>
+                    <li>
+                        <a href="#10-get_topic_hierarchy" aria-label="10. get_topic_hierarchy">10. get_topic_hierarchy</a></li>
+                    <li>
+                        <a href="#11-similar_words" aria-label="11. similar_words">11. similar_words</a></li>
+                    <li>
+                        <a href="#12-save" aria-label="12. save">12. save</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
 
   <div class="post-content"><div style="text-align: center;">
 <figure >

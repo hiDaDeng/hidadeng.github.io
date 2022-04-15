@@ -218,42 +218,103 @@ onload="renderMathInElement(document.body);"></script>
     <div>
       <br>
     </div>
-  </header> <div class="toc">
-    <details >
-        <summary accesskey="c" title="(Alt + C)">
-            <span class="details">Table of Contents</span>
-        </summary>
+  </header> <aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
 
-        <div class="inner"><ul>
-                <li>
-                    <a href="#a%e6%9c%9f%e5%88%8a" aria-label="A&#43;期刊">A+期刊</a><ul>
-                        
-                <li>
-                    <a href="#%e5%9b%bd%e9%99%85%e8%87%aa%e7%84%b6%e5%9f%ba%e9%87%91%e5%a7%94%e8%ae%a4%e5%ae%9a%e7%9a%8430%e6%9c%ac" aria-label="国际自然基金委认定的30本">国际自然基金委认定的30本</a><ul>
-                        <ul>
-                        <ul>
-                        
-                <li>
-                    <a href="#a" aria-label="A">A</a></li>
-                <li>
-                    <a href="#b" aria-label="B">B</a></li></ul>
-                    </ul>
-                    </ul>
-                </li>
-                <li>
-                    <a href="#utd24" aria-label="UTD24">UTD24</a></li></ul>
-                </li>
-                <li>
-                    <a href="#a1%e6%9c%9f%e5%88%8a" aria-label="A1期刊">A1期刊</a></li>
-                <li>
-                    <a href="#a2%e6%9c%9f%e5%88%8a" aria-label="A2期刊">A2期刊</a></li>
-                <li>
-                    <a href="#%e9%9d%9e%e5%88%86%e7%b1%bb%e5%88%97%e8%a1%a8%e6%9c%9f%e5%88%8a" aria-label="非分类列表期刊">非分类列表期刊</a>
-                </li>
-            </ul>
-        </div>
-    </details>
-</div>
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#a%e6%9c%9f%e5%88%8a" aria-label="A&#43;期刊">A+期刊</a><ul>
+                            
+                    <li>
+                        <a href="#%e5%9b%bd%e9%99%85%e8%87%aa%e7%84%b6%e5%9f%ba%e9%87%91%e5%a7%94%e8%ae%a4%e5%ae%9a%e7%9a%8430%e6%9c%ac" aria-label="国际自然基金委认定的30本">国际自然基金委认定的30本</a><ul>
+                            <ul>
+                            <ul>
+                            
+                    <li>
+                        <a href="#a" aria-label="A">A</a></li>
+                    <li>
+                        <a href="#b" aria-label="B">B</a></li></ul>
+                        </ul>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#utd24" aria-label="UTD24">UTD24</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#a1%e6%9c%9f%e5%88%8a" aria-label="A1期刊">A1期刊</a></li>
+                    <li>
+                        <a href="#a2%e6%9c%9f%e5%88%8a" aria-label="A2期刊">A2期刊</a></li>
+                    <li>
+                        <a href="#%e9%9d%9e%e5%88%86%e7%b1%bb%e5%88%97%e8%a1%a8%e6%9c%9f%e5%88%8a" aria-label="非分类列表期刊">非分类列表期刊</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
 
   <div class="post-content"><h1 id="a期刊">A+期刊<a hidden class="anchor" aria-hidden="true" href="#a期刊">#</a></h1>
 <table>

@@ -231,30 +231,91 @@ onload="renderMathInElement(document.body);"></script>
 <figure class="entry-cover"><a href="/images/blog/best_practice.jpg" target="_blank"
             rel="noopener noreferrer"><img loading="lazy" src="/images/blog/best_practice.jpg" alt=""></a>
         
-</figure><div class="toc">
-    <details >
-        <summary accesskey="c" title="(Alt + C)">
-            <span class="details">Table of Contents</span>
-        </summary>
+</figure><aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
 
-        <div class="inner"><ul>
-                <li>
-                    <a href="#1-%e5%8f%aa%e7%bb%98%e5%88%b6%e7%9b%b8%e5%85%b3%e7%b3%bb%e6%95%b0%e7%9f%a9%e9%98%b5%e7%9a%84%e4%b8%8b%e4%b8%89%e8%a7%92%e9%83%a8%e5%88%86" aria-label="1. 只绘制相关系数矩阵的下三角部分">1. 只绘制相关系数矩阵的下三角部分</a></li>
-                <li>
-                    <a href="#2-value_counts%e8%80%83%e8%99%91%e7%bc%ba%e5%a4%b1%e5%80%bc" aria-label="2. value_counts考虑缺失值">2. value_counts考虑缺失值</a></li>
-                <li>
-                    <a href="#3-%e4%bd%bf%e7%94%a8pandas%e7%9a%84styler" aria-label="3. 使用Pandas的Styler">3. 使用Pandas的Styler</a></li>
-                <li>
-                    <a href="#4-matplotlib%e9%bb%98%e8%ae%a4%e5%85%a8%e5%b1%80%e8%ae%be%e7%bd%ae" aria-label="4. matplotlib默认全局设置">4. matplotlib默认全局设置</a></li>
-                <li>
-                    <a href="#5-pandas%e5%85%a8%e5%b1%80%e8%ae%be%e7%bd%ae" aria-label="5. Pandas全局设置">5. Pandas全局设置</a></li>
-                <li>
-                    <a href="#6-%e4%bb%a3%e7%a0%81%e8%8e%b7%e5%8f%96" aria-label="6. 代码获取">6. 代码获取</a>
-                </li>
-            </ul>
-        </div>
-    </details>
-</div>
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#1-%e5%8f%aa%e7%bb%98%e5%88%b6%e7%9b%b8%e5%85%b3%e7%b3%bb%e6%95%b0%e7%9f%a9%e9%98%b5%e7%9a%84%e4%b8%8b%e4%b8%89%e8%a7%92%e9%83%a8%e5%88%86" aria-label="1. 只绘制相关系数矩阵的下三角部分">1. 只绘制相关系数矩阵的下三角部分</a></li>
+                    <li>
+                        <a href="#2-value_counts%e8%80%83%e8%99%91%e7%bc%ba%e5%a4%b1%e5%80%bc" aria-label="2. value_counts考虑缺失值">2. value_counts考虑缺失值</a></li>
+                    <li>
+                        <a href="#3-%e4%bd%bf%e7%94%a8pandas%e7%9a%84styler" aria-label="3. 使用Pandas的Styler">3. 使用Pandas的Styler</a></li>
+                    <li>
+                        <a href="#4-matplotlib%e9%bb%98%e8%ae%a4%e5%85%a8%e5%b1%80%e8%ae%be%e7%bd%ae" aria-label="4. matplotlib默认全局设置">4. matplotlib默认全局设置</a></li>
+                    <li>
+                        <a href="#5-pandas%e5%85%a8%e5%b1%80%e8%ae%be%e7%bd%ae" aria-label="5. Pandas全局设置">5. Pandas全局设置</a></li>
+                    <li>
+                        <a href="#6-%e4%bb%a3%e7%a0%81%e8%8e%b7%e5%8f%96" aria-label="6. 代码获取">6. 代码获取</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
 
   <div class="post-content"><div style="text-align: center;">
 <figure >
