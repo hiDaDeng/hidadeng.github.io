@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>backtrader库|简单均线买入卖出策略 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="量化, 第三方包, 金融" />
+<meta name="description" content="忙活几年不亏不赚可还行">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/backtrader_demo/" />
+<meta name="baidu-site-verification" content="code-xTk1LSyjvt" />
+<meta name="360-site-verification" content="dc00b42cd1d4e0fcaa5edfd27394f9cd" />
+<meta name="sogou-site-verification" content="3HDeo612Pl" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="backtrader库|简单均线买入卖出策略" />
+<meta property="og:description" content="忙活几年不亏不赚可还行" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/backtrader_demo/" />
+<meta property="og:image" content="/images/blog/pythonfinance.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2021-12-03T20:40:10&#43;06:00" />
+<meta property="article:modified_time" content="2021-12-03T20:40:10&#43;06:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/pythonfinance.png" />
+<meta name="twitter:title" content="backtrader库|简单均线买入卖出策略"/>
+<meta name="twitter:description" content="忙活几年不亏不赚可还行"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "backtrader库|简单均线买入卖出策略",
+      "item": "/blog/backtrader_demo/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "backtrader库|简单均线买入卖出策略",
+  "name": "backtrader库|简单均线买入卖出策略",
+  "description": "忙活几年不亏不赚可还行",
+  "keywords": [
+    "量化", "第三方包", "金融"
+  ],
+  "articleBody": "Backtrader是用于量化回测的python框架，作者是德国人Daniel Rodriguez。相比于zipline等量化回测平台，backtrader是一个易懂、易上手的量化投资框架，今天我们试着用Backtrader进行简单的均线买入卖出量化策略回溯，即5日均线上穿20日均线，则表示股票处于强势，买入。反之，处于弱势，卖出。\n下载 点击下载本文代码数据\n安装 pip3 install backtrader \n快速入门   买入：MA5上穿MA20， 即五日价格移动平均线(MA5)和二十日价格移动平均线(MA20)， 最近处于涨势\n  卖出：MA20下穿MA5， 即五日价格移动平均线(MA5)和二十日价格移动平均线(MA20)， 最近处于涨势\n  import datetime import backtrader as bt if __name__ == \"__main__\": #初始化 cerebro = bt.Cerebro() #设定初始资金 cerebro.broker.setcash(100000.0) #策略执行前的资金 print('启动资金: {}'.format(cerebro.broker.getvalue())) #策略执行 cerebro.run() #策略执行前的资金 print('启动资金: {}'.format(cerebro.broker.getvalue())) 启动资金: 100000.0 启动资金: 100000.0  每次股票交易，证券经纪人会收取一定的佣金，如万三（每一万元交易收三元）即0.003\ncerebro.broker.setcommission(0.003) 交易会有最小的购买/卖出份额，一般一手100股\ncerebro.addsizer(bt.sizers.FixedSize, stake=100) \n加载数据   前复权：保持当前价格不变，将历史价格进行增减，从而使股价连续。 前复权用来看盘非常方便，能一眼看出股价的历史走势，叠加各种技术指标也比较顺畅，是各种行情软件默认的复权方式。 这种方法虽然很常见，但也有两个缺陷需要注意。\n 为了保证当前价格不变，每次股票除权除息，均需要重新调整历史价格，因此其历史价格是时变的。 这会导致在不同时点看到的历史前复权价可能出现差异。 对于有持续分红的公司来说，前复权价可能出现负值。    后复权 ：保证历史价格不变，在每次股票权益事件发生后，调整当前的股票价格。 后复权价格和真实股票价格可能差别较大，不适合用来看盘。 其优点在于，可以被看作投资者的长期财富增长曲线，反映投资者的真实收益率情况。\n  在量化投资研究中普遍采用后复权数据，使用 https://github.com/mpquant/Ashare 下载的股票数据\nBacktrader将数据集称作数据流Data Feeds, 默认数据集是yahoo的股票数据，通过以下代码即可加载:\n# 创建数据 data = bt.feeds.YahooFinanceCSVData( dataname='sz000725.csv', datetime=0, open=1, high=2, low=3, close=4, volume=5, dtformat=('%Y-%m-%d'), fromdate = datetime.datetime(2014, 7, 11), todate = datetime.datetime(2021, 12, 1) ) \n添加指标 backtrader中内置了许多计算值表，比如移动平滑线、MACD、RSI等等， 我们这一篇文章仅需要移动平均线MA， 设置方法如下\nself.sma5 = bt.indicators.MovingAverageSimple(self.datas[0], period=5) self.sma20 = bt.indicators.MovingAverageSimple(self.datas[0], period=20) datas[0]是第一个数据集， period是指多少天的移动平均线，比如5，则返回MA5的相关数据。\n构建策略 使用backtrader构建策略是一件很简单的事情， 继承backtrader的策略类，并重写部分方法，就能实现策略。比如\n 重写属于我们自己的log函数 均线金叉死叉策略  class TestStrategy(bt.Strategy): \"\"\" 继承并构建自己的策略 \"\"\" def log(self, txt, dt=None, doprint=False): \"日志函数，用于统一输出日志格式\" if doprint: dt = dt or self.datas[0].datetime.date(0) print('{}, {}'.format(dt.isoformat(), txt)) def __init__(self): # 初始化相关数据 self.dataclose = self.datas[0].close self.order = None self.buyprice = None self.buycomm = None # 移动平均线初始化 self.sma5 = bt.indicators.MovingAverageSimple(self.datas[0], period=5) self.sma20 = bt.indicators.MovingAverageSimple(self.datas[0], period=20) def notify_order(self, order): \"\"\" 订单状态处理 Arguments: order {object}-- 订单状态 \"\"\" if order.status in [order.Submitted, order.Accepted]: # 如订单已被处理，则不用做任何事情 return # 检查订单是否完成 if order.status in [order.Completed]: if order.isbuy(): self.buyprice = order.executed.price self.buycomm = order.executed.comm self.bar_executed = len(self) # 订单因为缺少资金之类的原因被拒绝执行 elif order.status in [order.Canceled, order.Margin, order.Rejected]: self.log('Order Canceled/Margin/Rejected') # 订单状态处理完成，设为空 self.order = None def notify_trade(self, trade): \"\"\" 交易成果 Arguments: trade {object}-- 交易状态 \"\"\" if not trade.isclosed: return # 显示交易的毛利率和净利润 self.log('OPERATION PROFIT, GROSS {}, NET {}'.format(trade.pnl, trade.pnlcomm), doprint=True) def next(self): ''' 下一次执行 ''' # 记录收盘价 self.log('Close, {}'.format(self.dataclose[0])) # 是否正在下单，如果是的话不能提交第二次订单 if self.order: return # 是否已经买入 if not self.position: # 还没买，如果 MA5  MA10 说明涨势，买入 if self.sma5[0]  self.sma20[0]: self.order = self.buy() else: # 已经买了，如果 MA5 if self.sma5[0]  self.sma20[0]: self.order = self.sell() #def stop(self): #self.log(u'(金叉死叉有用吗) Ending Value {}'.format(self.broker.getvalue()), doprint=True) \n策略回测 为了验证我们开头提到的策略，咱使用了 京东方sz000725 在2014年7月11日至今2021年12月3日的股票数据，将数据命名为sz000725.csv, 我们先用pandas审查下csv\nimport pandas as pd df = pd.read_csv('data/sz000725.csv') df.head() | | Unnamed: 0 | date | open | high | low | close | volume | |---:|-------------:|------------:|-------:|-------:|------:|--------:|------------:| | 0 | 0 | 2.01407e+07 | 2.17 | 2.2 | 2.16 | 2.19 | 7.49341e+07 | | 1 | 1 | 2.01407e+07 | 2.18 | 2.2 | 2.17 | 2.2 | 8.10931e+07 | | 2 | 2 | 2.01407e+07 | 2.19 | 2.21 | 2.18 | 2.2 | 8.19694e+07 | | 3 | 3 | 2.01407e+07 | 2.2 | 2.21 | 2.19 | 2.21 | 7.96481e+07 | | 4 | 4 | 2.01407e+07 | 2.2 | 2.21 | 2.19 | 2.21 | 8.75106e+07 | 在backtrader中，使用GenericCSVData函数来加载csv，需要注明日期始末、open/high/low/close/volume等字段在csv中的列数(第几列，从0开始，0表示第一列)\nimport backtrader as bt import datetime if __name__ == \"__main__\": # 初始化模型 cerebro = bt.Cerebro() init_cash = 100000.0 fromdate = datetime.datetime(2014, 7, 11) todate = datetime.datetime(2021, 12, 3) #构建策略 strategy = cerebro.addstrategy(TestStrategy) #每次买100股 cerebro.addsizer(bt.sizers.FixedSize, stake=100) #加载数据到模型 data = bt.feeds.GenericCSVData( dataname='data/sz000725.csv', fromdate=fromdate, todate=todate, dtformat='%Y%m%d', datetime=1, open=2, high=3, low=4, close=5, volume=6 ) cerebro.adddata(data) # 设定初始资金和佣金 cerebro.broker.setcash(init_cash) cerebro.broker.setcommission(0.003) print('会不会玩了个寂寞？') #策略执行前的资金 print('启动资金: {}'.format(cerebro.broker.getvalue())) #策略执行 cerebro.run() #策略结束时的资金 print('策略结束时资金: {}'.format(cerebro.broker.getvalue())) duration_year = (todate-fromdate).days/360 end_value = cerebro.broker.getvalue() roi = pow(end_value/init_cash, 1/duration_year)-1 print('策略年华收益率: {}%'.format(roi*100)) 会不会玩了个寂寞？ 启动资金: 100000.0 2014-08-27, OPERATION PROFIT, GROSS -3.000000000000025, NET -4.365000000000025 2014-10-28, OPERATION PROFIT, GROSS 10.999999999999988, NET 9.568999999999988 2014-11-24, OPERATION PROFIT, GROSS -4.0000000000000036, NET -5.584000000000003 2015-01-15, OPERATION PROFIT, GROSS 52.0, NET 50.242 2015-05-08, OPERATION PROFIT, GROSS 113.00000000000003, NET 110.82500000000003 2015-07-02, OPERATION PROFIT, GROSS 25.0, NET 22.075 2015-08-25, OPERATION PROFIT, GROSS -96.0, NET -98.076 2015-11-03, OPERATION PROFIT, GROSS -8.999999999999986, NET -10.760999999999985 2015-11-30, OPERATION PROFIT, GROSS -16.000000000000014, NET -17.812000000000015 2015-12-31, OPERATION PROFIT, GROSS -8.999999999999986, NET -10.820999999999986 2016-03-14, OPERATION PROFIT, GROSS -10.999999999999988, NET -12.514999999999988 2016-04-14, OPERATION PROFIT, GROSS 0.0, NET -1.548 2016-06-16, OPERATION PROFIT, GROSS -6.000000000000005, NET -7.404000000000005 2016-07-28, OPERATION PROFIT, GROSS 0.0, NET -1.404 2016-09-08, OPERATION PROFIT, GROSS 8.000000000000007, NET 6.566000000000007 2016-12-19, OPERATION PROFIT, GROSS 31.999999999999986, NET 30.421999999999986 2017-02-10, OPERATION PROFIT, GROSS 14.000000000000012, NET 12.110000000000012 2017-02-20, OPERATION PROFIT, GROSS -4.999999999999982, NET -6.940999999999982 2017-03-06, OPERATION PROFIT, GROSS -10.999999999999988, NET -12.976999999999988 2017-05-12, OPERATION PROFIT, GROSS 44.99999999999997, NET 42.86699999999997 2017-06-01, OPERATION PROFIT, GROSS -22.00000000000002, NET -24.38200000000002 2017-07-13, OPERATION PROFIT, GROSS -14.000000000000012, NET -16.406000000000013 2017-09-18, OPERATION PROFIT, GROSS -2.9999999999999805, NET -5.31899999999998 2017-11-27, OPERATION PROFIT, GROSS 153.00000000000003, NET 150.12900000000002 2018-01-08, OPERATION PROFIT, GROSS -8.000000000000007, NET -11.360000000000007 2018-02-01, OPERATION PROFIT, GROSS 2.000000000000046, NET -1.6419999999999533 2018-03-23, OPERATION PROFIT, GROSS -25.0, NET -28.303 2018-08-07, OPERATION PROFIT, GROSS -12.00000000000001, NET -14.124000000000011 2018-09-04, OPERATION PROFIT, GROSS -27.0, NET -29.115000000000002 2018-11-26, OPERATION PROFIT, GROSS -14.000000000000012, NET -15.668000000000012 2019-01-29, OPERATION PROFIT, GROSS -4.999999999999982, NET -6.598999999999982 2019-03-15, OPERATION PROFIT, GROSS 70.00000000000001, NET 67.90000000000002 2019-04-12, OPERATION PROFIT, GROSS -15.99999999999997, NET -18.35799999999997 2019-04-29, OPERATION PROFIT, GROSS -14.999999999999991, NET -17.34299999999999 2019-06-06, OPERATION PROFIT, GROSS -5.000000000000027, NET -7.043000000000027 2019-06-19, OPERATION PROFIT, GROSS 4.999999999999982, NET 2.9509999999999823 2019-08-07, OPERATION PROFIT, GROSS 36.999999999999964, NET 34.84299999999996 2019-08-30, OPERATION PROFIT, GROSS -10.999999999999988, NET -13.282999999999987 2019-09-27, OPERATION PROFIT, GROSS -41.99999999999995, NET -44.35799999999995 2020-02-04, OPERATION PROFIT, GROSS 30.00000000000003, NET 27.67200000000003 2020-03-06, OPERATION PROFIT, GROSS 9.999999999999964, NET 7.017999999999965 2020-05-28, OPERATION PROFIT, GROSS -25.0, NET -27.301000000000002 2020-07-21, OPERATION PROFIT, GROSS 54.999999999999986, NET 52.25499999999999 2020-09-14, OPERATION PROFIT, GROSS 52.999999999999936, NET 50.002999999999936 2020-10-19, OPERATION PROFIT, GROSS -5.999999999999961, NET -8.98199999999996 2020-12-10, OPERATION PROFIT, GROSS 2.000000000000046, NET -1.083999999999954 2021-02-02, OPERATION PROFIT, GROSS 66.00000000000001, NET 62.454000000000015 2021-03-03, OPERATION PROFIT, GROSS -13.000000000000078, NET -16.67500000000008 2021-03-11, OPERATION PROFIT, GROSS -33.999999999999986, NET -37.64199999999999 2021-05-12, OPERATION PROFIT, GROSS 31.00000000000005, NET 27.12700000000005 2021-07-06, OPERATION PROFIT, GROSS -33.00000000000001, NET -36.717000000000006 2021-07-26, OPERATION PROFIT, GROSS -34.999999999999964, NET -38.70499999999996 2021-09-17, OPERATION PROFIT, GROSS -21.999999999999975, NET -25.467999999999975 2021-11-22, OPERATION PROFIT, GROSS -7.000000000000028, NET -9.979000000000028 策略结束时资金: 100120.964 策略年华收益率: 0.016108152552885002%  策略可视化 from backtrader_plotting import Bokeh from backtrader_plotting.schemes import Tradimo b = Bokeh(style='bar', plot_mode='single', scheme=Tradimo()) cerebro.plot(b)    了解课程  点击上方图片购买课程   点击进入详情页\n",
+  "wordCount" : "878",
+  "inLanguage": "en",
+  "image":"/images/blog/pythonfinance.png","datePublished": "2021-12-03T20:40:10+06:00",
+  "dateModified": "2021-12-03T20:40:10+06:00",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/backtrader_demo/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="mailto:thunderhit@qq.com" title="联系" target="_blank">
+                    <span>联系</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      backtrader库|简单均线买入卖出策略
+    </h1>
+    <div class="post-meta"><span title='2021-12-03 20:40:10 +0600 +0600'>2021-12-03</span>&nbsp;·&nbsp;5 min&nbsp;·&nbsp;大邓
+
+</div>
+
+    <div>
+      <br>
+      <ul class="post-tags">
+        <li><a href="/tags/%E9%87%8F%E5%8C%96/" target='_blank'>量化</a></li>
+        <li><a href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/" target='_blank'>第三方包</a></li>
+        <li><a href="/tags/%E9%87%91%E8%9E%8D/" target='_blank'>金融</a></li>
+      </ul>
+    </div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/pythonfinance.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/pythonfinance.png" alt=""></a>
+        
+</figure><aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e4%b8%8b%e8%bd%bd" aria-label="下载">下载</a></li>
+                    <li>
+                        <a href="#%e5%ae%89%e8%a3%85" aria-label="安装">安装</a></li>
+                    <li>
+                        <a href="#%e5%bf%ab%e9%80%9f%e5%85%a5%e9%97%a8" aria-label="快速入门">快速入门</a></li>
+                    <li>
+                        <a href="#%e5%8a%a0%e8%bd%bd%e6%95%b0%e6%8d%ae" aria-label="加载数据">加载数据</a></li>
+                    <li>
+                        <a href="#%e6%b7%bb%e5%8a%a0%e6%8c%87%e6%a0%87" aria-label="添加指标">添加指标</a></li>
+                    <li>
+                        <a href="#%e6%9e%84%e5%bb%ba%e7%ad%96%e7%95%a5" aria-label="构建策略">构建策略</a></li>
+                    <li>
+                        <a href="#%e7%ad%96%e7%95%a5%e5%9b%9e%e6%b5%8b" aria-label="策略回测">策略回测</a></li>
+                    <li>
+                        <a href="#%e7%ad%96%e7%95%a5%e5%8f%af%e8%a7%86%e5%8c%96" aria-label="策略可视化">策略可视化</a></li>
+                    <li>
+                        <a href="#%e4%ba%86%e8%a7%a3%e8%af%be%e7%a8%8b" aria-label="了解课程">了解课程</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><p>Backtrader是用于量化回测的python框架，作者是德国人Daniel Rodriguez。相比于zipline等量化回测平台，backtrader是一个易懂、易上手的量化投资框架，今天我们试着用Backtrader进行简单的均线买入卖出量化策略回溯，即5日均线上穿20日均线，则表示股票处于强势，买入。反之，处于弱势，卖出。</p>
+<br>
+<h2 id="下载">下载<a hidden class="anchor" aria-hidden="true" href="#下载">#</a></h2>
+<p><a href="backtrader_code.zip"><strong>点击下载本文代码数据</strong></a></p>
+<br>
+<h2 id="安装">安装<a hidden class="anchor" aria-hidden="true" href="#安装">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install backtrader
+</code></pre></div><br>
+<h2 id="快速入门">快速入门<a hidden class="anchor" aria-hidden="true" href="#快速入门">#</a></h2>
+<br>
+<ul>
+<li>
+<p><strong>买入</strong>：MA5上穿MA20， 即五日价格移动平均线(MA5)和二十日价格移动平均线(MA20)， 最近处于涨势</p>
+</li>
+<li>
+<p><strong>卖出</strong>：MA20下穿MA5， 即五日价格移动平均线(MA5)和二十日价格移动平均线(MA20)， 最近处于涨势</p>
+</li>
+</ul>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="kn">import</span> <span class="nn">backtrader</span> <span class="k">as</span> <span class="nn">bt</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+    <span class="c1">#初始化</span>
+    <span class="n">cerebro</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Cerebro</span><span class="p">()</span>
+
+    <span class="c1">#设定初始资金</span>
+    <span class="n">cerebro</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">setcash</span><span class="p">(</span><span class="mf">100000.0</span><span class="p">)</span>
+
+    <span class="c1">#策略执行前的资金</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;启动资金: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cerebro</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()))</span>
+
+    <span class="c1">#策略执行</span>
+    <span class="n">cerebro</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+    <span class="c1">#策略执行前的资金</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;启动资金: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cerebro</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()))</span>
+</code></pre></div><pre><code>启动资金: 100000.0
+启动资金: 100000.0
+</code></pre>
+<p>每次股票交易，证券经纪人会收取一定的佣金，如万三（每一万元交易收三元）即0.003</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">cerebro</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">setcommission</span><span class="p">(</span><span class="mf">0.003</span><span class="p">)</span>
+</code></pre></div><p>交易会有最小的购买/卖出份额，一般一手100股</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">cerebro</span><span class="o">.</span><span class="n">addsizer</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">sizers</span><span class="o">.</span><span class="n">FixedSize</span><span class="p">,</span> <span class="n">stake</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</code></pre></div><br>
+<h2 id="加载数据">加载数据<a hidden class="anchor" aria-hidden="true" href="#加载数据">#</a></h2>
+<ul>
+<li>
+<p><strong>前复权</strong>：保持当前价格不变，将历史价格进行增减，从而使股价连续。 前复权用来看盘非常方便，能一眼看出股价的历史走势，叠加各种技术指标也比较顺畅，是各种行情软件默认的复权方式。 这种方法虽然很常见，但也有两个缺陷需要注意。</p>
+<ul>
+<li>为了保证当前价格不变，每次股票除权除息，均需要重新调整历史价格，因此其历史价格是时变的。 这会导致在不同时点看到的历史前复权价可能出现差异。</li>
+<li>对于有持续分红的公司来说，前复权价可能出现负值。</li>
+</ul>
+</li>
+<li>
+<p><strong>后复权</strong> ：保证历史价格不变，在每次股票权益事件发生后，调整当前的股票价格。 后复权价格和真实股票价格可能差别较大，不适合用来看盘。 其优点在于，可以被看作投资者的长期财富增长曲线，反映投资者的真实收益率情况。</p>
+</li>
+</ul>
+<p>在量化投资研究中普遍采用后复权数据，使用 <a href="https://github.com/mpquant/Ashare">https://github.com/mpquant/Ashare</a> 下载的股票数据</p>
+<p>Backtrader将数据集称作数据流Data Feeds, 默认数据集是yahoo的股票数据，通过以下代码即可加载:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 创建数据</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">feeds</span><span class="o">.</span><span class="n">YahooFinanceCSVData</span><span class="p">(</span>
+    <span class="n">dataname</span><span class="o">=</span><span class="s1">&#39;sz000725.csv&#39;</span><span class="p">,</span>
+    <span class="n">datetime</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="nb">open</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">low</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">close</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">volume</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">dtformat</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">),</span>
+    <span class="n">fromdate</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span>
+    <span class="n">todate</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><br>
+<h2 id="添加指标">添加指标<a hidden class="anchor" aria-hidden="true" href="#添加指标">#</a></h2>
+<p>backtrader中内置了许多计算值表，比如移动平滑线、MACD、RSI等等， 我们这一篇文章仅需要移动平均线MA， 设置方法如下</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="bp">self</span><span class="o">.</span><span class="n">sma5</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">indicators</span><span class="o">.</span><span class="n">MovingAverageSimple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datas</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">period</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">sma20</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">indicators</span><span class="o">.</span><span class="n">MovingAverageSimple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datas</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">period</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>datas[0]是第一个数据集， period是指多少天的移动平均线，比如5，则返回MA5的相关数据。</p>
+<br>
+<h2 id="构建策略">构建策略<a hidden class="anchor" aria-hidden="true" href="#构建策略">#</a></h2>
+<p>使用backtrader构建策略是一件很简单的事情， 继承backtrader的策略类，并重写部分方法，就能实现策略。比如</p>
+<ul>
+<li>重写属于我们自己的log函数</li>
+<li>均线金叉死叉策略</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">TestStrategy</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">    继承并构建自己的策略
+</span><span class="s2">    &#34;&#34;&#34;</span>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">txt</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">doprint</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="s2">&#34;日志函数，用于统一输出日志格式&#34;</span>
+        <span class="k">if</span> <span class="n">doprint</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">datas</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span> <span class="n">txt</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># 初始化相关数据</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataclose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datas</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">close</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buyprice</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buycomm</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># 移动平均线初始化</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sma5</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">indicators</span><span class="o">.</span><span class="n">MovingAverageSimple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datas</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">period</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sma20</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">indicators</span><span class="o">.</span><span class="n">MovingAverageSimple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datas</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">period</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">notify_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">        订单状态处理
+</span><span class="s2">        Arguments:
+</span><span class="s2">            order </span><span class="si">{object}</span><span class="s2"> -- 订单状态
+</span><span class="s2">        &#34;&#34;&#34;</span>
+        <span class="k">if</span> <span class="n">order</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">[</span><span class="n">order</span><span class="o">.</span><span class="n">Submitted</span><span class="p">,</span> <span class="n">order</span><span class="o">.</span><span class="n">Accepted</span><span class="p">]:</span>
+            <span class="c1"># 如订单已被处理，则不用做任何事情</span>
+            <span class="k">return</span>
+
+        <span class="c1"># 检查订单是否完成</span>
+        <span class="k">if</span> <span class="n">order</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">[</span><span class="n">order</span><span class="o">.</span><span class="n">Completed</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">order</span><span class="o">.</span><span class="n">isbuy</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">buyprice</span> <span class="o">=</span> <span class="n">order</span><span class="o">.</span><span class="n">executed</span><span class="o">.</span><span class="n">price</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">buycomm</span> <span class="o">=</span> <span class="n">order</span><span class="o">.</span><span class="n">executed</span><span class="o">.</span><span class="n">comm</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bar_executed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># 订单因为缺少资金之类的原因被拒绝执行</span>
+        <span class="k">elif</span> <span class="n">order</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">[</span><span class="n">order</span><span class="o">.</span><span class="n">Canceled</span><span class="p">,</span> <span class="n">order</span><span class="o">.</span><span class="n">Margin</span><span class="p">,</span> <span class="n">order</span><span class="o">.</span><span class="n">Rejected</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s1">&#39;Order Canceled/Margin/Rejected&#39;</span><span class="p">)</span>
+
+        <span class="c1"># 订单状态处理完成，设为空</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">notify_trade</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trade</span><span class="p">):</span>
+        <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">        交易成果
+</span><span class="s2">        Arguments:
+</span><span class="s2">            trade </span><span class="si">{object}</span><span class="s2"> -- 交易状态
+</span><span class="s2">        &#34;&#34;&#34;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">trade</span><span class="o">.</span><span class="n">isclosed</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># 显示交易的毛利率和净利润</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s1">&#39;OPERATION PROFIT, GROSS </span><span class="si">{}</span><span class="s1">, NET </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">trade</span><span class="o">.</span><span class="n">pnl</span><span class="p">,</span> <span class="n">trade</span><span class="o">.</span><span class="n">pnlcomm</span><span class="p">),</span> <span class="n">doprint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s1">&#39;&#39;&#39; 下一次执行 &#39;&#39;&#39;</span>
+
+        <span class="c1"># 记录收盘价</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s1">&#39;Close, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataclose</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+        <span class="c1"># 是否正在下单，如果是的话不能提交第二次订单</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># 是否已经买入</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">:</span>
+            <span class="c1"># 还没买，如果 MA5 &gt; MA10 说明涨势，买入</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sma5</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sma20</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># 已经买了，如果 MA5 &lt; MA10 ，说明跌势，卖出</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sma5</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sma20</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sell</span><span class="p">()</span>
+
+    <span class="c1">#def stop(self):</span>
+        <span class="c1">#self.log(u&#39;(金叉死叉有用吗) Ending Value {}&#39;.format(self.broker.getvalue()), doprint=True)</span>
+</code></pre></div><br>
+<h2 id="策略回测">策略回测<a hidden class="anchor" aria-hidden="true" href="#策略回测">#</a></h2>
+<p>为了验证我们开头提到的策略，咱使用了 京东方sz000725 在2014年7月11日至今2021年12月3日的股票数据，将数据命名为sz000725.csv, 我们先用pandas审查下csv</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/sz000725.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">|    |   Unnamed: 0 |        date |   open |   high |   low |   close |      volume |
+|---:|-------------:|------------:|-------:|-------:|------:|--------:|------------:|
+|  0 |            0 | 2.01407e+07 |   2.17 |   2.2  |  2.16 |    2.19 | 7.49341e+07 |
+|  1 |            1 | 2.01407e+07 |   2.18 |   2.2  |  2.17 |    2.2  | 8.10931e+07 |
+|  2 |            2 | 2.01407e+07 |   2.19 |   2.21 |  2.18 |    2.2  | 8.19694e+07 |
+|  3 |            3 | 2.01407e+07 |   2.2  |   2.21 |  2.19 |    2.21 | 7.96481e+07 |
+|  4 |            4 | 2.01407e+07 |   2.2  |   2.21 |  2.19 |    2.21 | 8.75106e+07 |
+</code></pre></div><p>在backtrader中，使用GenericCSVData函数来加载csv，需要注明日期始末、open/high/low/close/volume等字段在csv中的列数(第几列，从0开始，0表示第一列)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">backtrader</span> <span class="k">as</span> <span class="nn">bt</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+    <span class="c1"># 初始化模型</span>
+    <span class="n">cerebro</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Cerebro</span><span class="p">()</span>
+    <span class="n">init_cash</span> <span class="o">=</span> <span class="mf">100000.0</span>
+    <span class="n">fromdate</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">11</span><span class="p">)</span>
+    <span class="n">todate</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="c1">#构建策略</span>
+    <span class="n">strategy</span> <span class="o">=</span> <span class="n">cerebro</span><span class="o">.</span><span class="n">addstrategy</span><span class="p">(</span><span class="n">TestStrategy</span><span class="p">)</span>
+
+    <span class="c1">#每次买100股</span>
+    <span class="n">cerebro</span><span class="o">.</span><span class="n">addsizer</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">sizers</span><span class="o">.</span><span class="n">FixedSize</span><span class="p">,</span> <span class="n">stake</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+    <span class="c1">#加载数据到模型</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">feeds</span><span class="o">.</span><span class="n">GenericCSVData</span><span class="p">(</span>
+        <span class="n">dataname</span><span class="o">=</span><span class="s1">&#39;data/sz000725.csv&#39;</span><span class="p">,</span>
+        <span class="n">fromdate</span><span class="o">=</span><span class="n">fromdate</span><span class="p">,</span>
+        <span class="n">todate</span><span class="o">=</span><span class="n">todate</span><span class="p">,</span>
+        <span class="n">dtformat</span><span class="o">=</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+        <span class="n">datetime</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="nb">open</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">high</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">low</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">close</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="n">volume</span><span class="o">=</span><span class="mi">6</span>
+    <span class="p">)</span>
+
+    <span class="n">cerebro</span><span class="o">.</span><span class="n">adddata</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># 设定初始资金和佣金</span>
+    <span class="n">cerebro</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">setcash</span><span class="p">(</span><span class="n">init_cash</span><span class="p">)</span>
+    <span class="n">cerebro</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">setcommission</span><span class="p">(</span><span class="mf">0.003</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;会不会玩了个寂寞？&#39;</span><span class="p">)</span>
+    <span class="c1">#策略执行前的资金</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;启动资金: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cerebro</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()))</span>
+
+    <span class="c1">#策略执行</span>
+    <span class="n">cerebro</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+    <span class="c1">#策略结束时的资金</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;策略结束时资金: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cerebro</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()))</span>
+
+    <span class="n">duration_year</span> <span class="o">=</span> <span class="p">(</span><span class="n">todate</span><span class="o">-</span><span class="n">fromdate</span><span class="p">)</span><span class="o">.</span><span class="n">days</span><span class="o">/</span><span class="mi">360</span>
+    <span class="n">end_value</span> <span class="o">=</span> <span class="n">cerebro</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+    <span class="n">roi</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">end_value</span><span class="o">/</span><span class="n">init_cash</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">duration_year</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;策略年华收益率: </span><span class="si">{}</span><span class="s1">%&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">roi</span><span class="o">*</span><span class="mi">100</span><span class="p">))</span>
+
+</code></pre></div><pre><code>会不会玩了个寂寞？
+启动资金: 100000.0
+2014-08-27, OPERATION PROFIT, GROSS -3.000000000000025, NET -4.365000000000025
+2014-10-28, OPERATION PROFIT, GROSS 10.999999999999988, NET 9.568999999999988
+2014-11-24, OPERATION PROFIT, GROSS -4.0000000000000036, NET -5.584000000000003
+2015-01-15, OPERATION PROFIT, GROSS 52.0, NET 50.242
+2015-05-08, OPERATION PROFIT, GROSS 113.00000000000003, NET 110.82500000000003
+2015-07-02, OPERATION PROFIT, GROSS 25.0, NET 22.075
+2015-08-25, OPERATION PROFIT, GROSS -96.0, NET -98.076
+2015-11-03, OPERATION PROFIT, GROSS -8.999999999999986, NET -10.760999999999985
+2015-11-30, OPERATION PROFIT, GROSS -16.000000000000014, NET -17.812000000000015
+2015-12-31, OPERATION PROFIT, GROSS -8.999999999999986, NET -10.820999999999986
+2016-03-14, OPERATION PROFIT, GROSS -10.999999999999988, NET -12.514999999999988
+2016-04-14, OPERATION PROFIT, GROSS 0.0, NET -1.548
+2016-06-16, OPERATION PROFIT, GROSS -6.000000000000005, NET -7.404000000000005
+2016-07-28, OPERATION PROFIT, GROSS 0.0, NET -1.404
+2016-09-08, OPERATION PROFIT, GROSS 8.000000000000007, NET 6.566000000000007
+2016-12-19, OPERATION PROFIT, GROSS 31.999999999999986, NET 30.421999999999986
+2017-02-10, OPERATION PROFIT, GROSS 14.000000000000012, NET 12.110000000000012
+2017-02-20, OPERATION PROFIT, GROSS -4.999999999999982, NET -6.940999999999982
+2017-03-06, OPERATION PROFIT, GROSS -10.999999999999988, NET -12.976999999999988
+2017-05-12, OPERATION PROFIT, GROSS 44.99999999999997, NET 42.86699999999997
+2017-06-01, OPERATION PROFIT, GROSS -22.00000000000002, NET -24.38200000000002
+2017-07-13, OPERATION PROFIT, GROSS -14.000000000000012, NET -16.406000000000013
+2017-09-18, OPERATION PROFIT, GROSS -2.9999999999999805, NET -5.31899999999998
+2017-11-27, OPERATION PROFIT, GROSS 153.00000000000003, NET 150.12900000000002
+2018-01-08, OPERATION PROFIT, GROSS -8.000000000000007, NET -11.360000000000007
+2018-02-01, OPERATION PROFIT, GROSS 2.000000000000046, NET -1.6419999999999533
+2018-03-23, OPERATION PROFIT, GROSS -25.0, NET -28.303
+2018-08-07, OPERATION PROFIT, GROSS -12.00000000000001, NET -14.124000000000011
+2018-09-04, OPERATION PROFIT, GROSS -27.0, NET -29.115000000000002
+2018-11-26, OPERATION PROFIT, GROSS -14.000000000000012, NET -15.668000000000012
+2019-01-29, OPERATION PROFIT, GROSS -4.999999999999982, NET -6.598999999999982
+2019-03-15, OPERATION PROFIT, GROSS 70.00000000000001, NET 67.90000000000002
+2019-04-12, OPERATION PROFIT, GROSS -15.99999999999997, NET -18.35799999999997
+2019-04-29, OPERATION PROFIT, GROSS -14.999999999999991, NET -17.34299999999999
+2019-06-06, OPERATION PROFIT, GROSS -5.000000000000027, NET -7.043000000000027
+2019-06-19, OPERATION PROFIT, GROSS 4.999999999999982, NET 2.9509999999999823
+2019-08-07, OPERATION PROFIT, GROSS 36.999999999999964, NET 34.84299999999996
+2019-08-30, OPERATION PROFIT, GROSS -10.999999999999988, NET -13.282999999999987
+2019-09-27, OPERATION PROFIT, GROSS -41.99999999999995, NET -44.35799999999995
+2020-02-04, OPERATION PROFIT, GROSS 30.00000000000003, NET 27.67200000000003
+2020-03-06, OPERATION PROFIT, GROSS 9.999999999999964, NET 7.017999999999965
+2020-05-28, OPERATION PROFIT, GROSS -25.0, NET -27.301000000000002
+2020-07-21, OPERATION PROFIT, GROSS 54.999999999999986, NET 52.25499999999999
+2020-09-14, OPERATION PROFIT, GROSS 52.999999999999936, NET 50.002999999999936
+2020-10-19, OPERATION PROFIT, GROSS -5.999999999999961, NET -8.98199999999996
+2020-12-10, OPERATION PROFIT, GROSS 2.000000000000046, NET -1.083999999999954
+2021-02-02, OPERATION PROFIT, GROSS 66.00000000000001, NET 62.454000000000015
+2021-03-03, OPERATION PROFIT, GROSS -13.000000000000078, NET -16.67500000000008
+2021-03-11, OPERATION PROFIT, GROSS -33.999999999999986, NET -37.64199999999999
+2021-05-12, OPERATION PROFIT, GROSS 31.00000000000005, NET 27.12700000000005
+2021-07-06, OPERATION PROFIT, GROSS -33.00000000000001, NET -36.717000000000006
+2021-07-26, OPERATION PROFIT, GROSS -34.999999999999964, NET -38.70499999999996
+2021-09-17, OPERATION PROFIT, GROSS -21.999999999999975, NET -25.467999999999975
+2021-11-22, OPERATION PROFIT, GROSS -7.000000000000028, NET -9.979000000000028
+策略结束时资金: 100120.964
+策略年华收益率: 0.016108152552885002%
+</code></pre>
+<br>
+<h2 id="策略可视化">策略可视化<a hidden class="anchor" aria-hidden="true" href="#策略可视化">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">backtrader_plotting</span> <span class="kn">import</span> <span class="n">Bokeh</span>
+<span class="kn">from</span> <span class="nn">backtrader_plotting.schemes</span> <span class="kn">import</span> <span class="n">Tradimo</span>
+
+<span class="n">b</span> <span class="o">=</span> <span class="n">Bokeh</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="n">plot_mode</span><span class="o">=</span><span class="s1">&#39;single&#39;</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="n">Tradimo</span><span class="p">())</span>
+<span class="n">cerebro</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</code></pre></div>
+<figure >
+    
+        <img src="img/1.png" width="100%" />
+    
+    
+</figure>
+
+
+<figure >
+    
+        <img src="img/1.png" width="100%" />
+    
+    
+</figure>
+
+<br>
+<h2 id="了解课程">了解课程<a hidden class="anchor" aria-hidden="true" href="#了解课程">#</a></h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+
+
+  </div>
+
+  <footer class="post-footer">
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2022 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

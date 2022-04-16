@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>文本数据: 展开、过滤和分块 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="文本分析了解, 词袋法, tf-idf, 特征工程, 经管科研, Python" />
+<meta name="description" content=" TF-IDF刻画参与者信息的“新且熟悉” ,构建参与者文化网络">
+<meta name="author" content="kkejili">
+<link rel="canonical" href="/blog/text_features_tutorial/" />
+<meta name="baidu-site-verification" content="code-xTk1LSyjvt" />
+<meta name="360-site-verification" content="dc00b42cd1d4e0fcaa5edfd27394f9cd" />
+<meta name="sogou-site-verification" content="3HDeo612Pl" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="文本数据: 展开、过滤和分块" />
+<meta property="og:description" content=" TF-IDF刻画参与者信息的“新且熟悉” ,构建参与者文化网络" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/text_features_tutorial/" />
+<meta property="og:image" content="/images/blog/textFeature.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2021-12-28T10:43:10&#43;06:00" />
+<meta property="article:modified_time" content="2021-12-28T10:43:10&#43;06:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/textFeature.png" />
+<meta name="twitter:title" content="文本数据: 展开、过滤和分块"/>
+<meta name="twitter:description" content=" TF-IDF刻画参与者信息的“新且熟悉” ,构建参与者文化网络"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "文本数据: 展开、过滤和分块",
+      "item": "/blog/text_features_tutorial/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "文本数据: 展开、过滤和分块",
+  "name": "文本数据: 展开、过滤和分块",
+  "description": " TF-IDF刻画参与者信息的“新且熟悉” ,构建参与者文化网络",
+  "keywords": [
+    "文本分析了解", "词袋法", "tf-idf", "特征工程", "经管科研", "Python"
+  ],
+  "articleBody": "前段时间发现apachecn在github上翻译了一本和特征工程相关的书籍：《Feature Engineering for Machine Learning》，中文名为《面向机器学习的特征工程》。\nFeature_Engineering_for_Machine_Learning.pdf\n三、文本数据: 展开、过滤和分块  译者：@kkejili\n校对者：@HeYun\n 如果让你来设计一个算法来分析以下段落，你会怎么做？\nEmma knocked on the door. No answer. She knocked again and waited. There was a large maple tree next to the house. Emma looked up the tree and saw a giant raven perched at the treetop. Under the afternoon sun, the raven gleamed magnificently. Its beak was hard and pointed, its claws sharp and strong. It looked regal and imposing. It reigned the tree it stood on. The raven was looking straight at Emma with its beady black eyes. Emma felt slightly intimidated. She took a step back from the door and tentatively said, “hello?” 复制ErrorOK! 该段包含很多信息。我们知道它谈到了到一个名叫Emma的人和一只乌鸦。这里有一座房子和一棵树，艾玛正想进屋，却看到了乌鸦。这只华丽的乌鸦注意到艾玛，她有点害怕，但正在尝试交流。\n那么，这些信息的哪些部分是我们应该提取的显着特征？首先，提取主要角色艾玛和乌鸦的名字似乎是个好主意。接下来，注意房子，门和树的布置可能也很好。关于乌鸦的描述呢？Emma的行为呢，敲门，退后一步，打招呼呢？\n本章介绍文本特征工程的基础知识。我们从词袋（bags of words）开始，这是基于字数统计的最简单的文本功能。一个非常相关的变换是 tf-idf，它本质上是一种特征缩放技术。它将被我在（下一篇）章节进行全面讨论。本章首先讨论文本特征提取，然后讨论如何过滤和清洗这些特征。\nBag of X：把自然文本变成平面向量 无论是构建机器学习模型还是特征工程，其结果应该是通俗易懂的。简单的事情很容易尝试，可解释的特征和模型相比于复杂的更易于调试。简单和可解释的功能并不总是会得到最精确的模型。但从简单开始就是一个好主意，仅在绝对必要时我们可以增加其复杂性。\n对于文本数据，我们可以从称为 BOW 的字数统计开始。字数统计表中并没有特别费力来寻找\"Emma\"或乌鸦这样有趣的实体。但是这两个词在该段落中被重复提到，并且它们在这里的计数比诸如\"hello\"之类的随机词更高。对于此类简单的文档分类任务，字数统计通常比较适用。它也可用于信息检索，其目标是检索与输入文本相关的文档集。这两个任务都很好解释词级特征，因为某些特定词的存在可能是本文档主题内容的重要指标。\n词袋 在词袋特征中，文本文档被转换成向量。（向量只是 n 个数字的集合。）向量包含词汇表中每个单词可能出现的数目。 如果单词\"aardvark\"在文档中出现三次，则该特征向量在与该单词对应的位置上的计数为 3。 如果词汇表中的单词没有出现在文档中，则计数为零。 例如，“这是一只小狗，它是非常可爱”的句子具有如图所示的 BOW 表示\n 图 3-1 转换词成向量描述图\nBOW 将文本文档转换为平面向量。 它是“平面的”，因为它不包含任何原始的文本结构。 原文是一系列词语。但是词袋向量并没有序列；它只是记得每个单词在文本中出现多少次。 它不代表任何词层次结构的概念。 例如，“动物”的概念包括“狗”，“猫”，“乌鸦”等。但是在一个词袋表示中，这些词都是矢量的相同元素。\n 图 3-2 两个等效的词向量，向量中单词的排序不重要，只要它在数据集中的个数和文档中出现数量是一致的。\n重要的是特征空间中数据的几何形状。 在一个词袋矢量中，每个单词成为矢量的一个维度。如果词汇表中有 n 个单词，则文档将成为n维空间中的一个点。 很难想象二维或三维以外的任何物体的几何形状，所以我们必须使用我们的想象力。 图3-3显示了我们的例句在对应于“小狗”和“可爱”两个维度的特征空间中的样子。\n 图 3-3 特征空间中文本文档的图示\n 图 3-4 三维特征空间\n图 3-3 和图 3-4 描绘了特征空间中的数据向量。 坐标轴表示单个单词，它们是词袋表示下的特征，空间中的点表示数据点（文本文档）。 有时在数据空间中查看特征向量也是有益的。 特征向量包含每个数据点中特征的值。 轴表示单个数据点和点表示特征向量。 图 3-5 展示了一个例子。 通过对文本文档进行词袋特征化，一个特征是一个词，一个特征向量包含每个文档中这个词的计数。 这样，一个单词被表示为一个“一个词向量”。正如我们将在第 4 章中看到的那样，这些文档词向量来自词袋向量的转置矩阵。\n Bag-of-N-gram Bag-of-N-gram 或者 bag-of-ngram 是 BOW 的自然延伸。 n-gram 是 n 个有序的记号（token）。一个词基本上是一个 1-gram，也被称为一元模型。当它被标记后，计数机制可以将单个词进行计数，或将重叠序列计数为 n-gram。例如，\"Emma knocked on the door\"这句话会产生 n-gram，如\"Emma knocked\"，\"knocked on\"，\"on the\"，\"the door\"。 N-gram 保留了文本的更多原始序列结构，故 bag-of-ngram可以提供更多信息。但是，这是有代价的。理论上，用 k 个独特的词，可能有 k 个独立的 2-gram（也称为 bigram）。在实践中，并不是那么多，因为不是每个单词后都可以跟一个单词。尽管如此，通常有更多不同的 n-gram（n  1）比单词更多。这意味着词袋会更大并且有稀疏的特征空间。这也意味着 n-gram 计算，存储和建模的成本会变高。n 越大，信息越丰富，成本越高。\n为了说明随着 n 增加 n-gram 的数量如何增加，我们来计算纽约时报文章数据集上的 n-gram。我们使用 Pandas 和 scikit-learn 中的CountVectorizer转换器来计算前 10,000 条评论的 n-gram。\n import pandas  import json  from sklearn.feature_extraction.text import CountVectorizer # Load the first 10,000 reviews   f = open('data/yelp/v6/yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_review.json')  js = []  for i in range(10000): ... js.append(json.loads(f.readline()))  f.close()  review_df = pd.DataFrame(js) # Create feature transformers for unigram, bigram, and trigram.  # The default ignores single-character words, which is useful in practice because it trims  # uninformative words. But we explicitly include them in this example for illustration purposes.   bow_converter = CountVectorizer(token_pattern='(?u)\\\\b\\\\w+\\\\b')  bigram_converter = CountVectorizer(ngram_range=(2,2), token_pattern='(?u)\\\\b\\\\w+\\\\b')  trigram_converter = CountVectorizer(ngram_range=(3,3), token_pattern='(?u)\\\\b\\\\w+\\\\b') # Fit the transformers and look at vocabulary size   bow_converter.fit(review_df['text'])  words = bow_converter.get_feature_names()  bigram_converter.fit(review_df['text'])  bigram = bigram_converter.get_feature_names()  trigram_converter.fit(review_df['text'])  trigram = trigram_converter.get_feature_names()  print (len(words), len(bigram), len(trigram)) 26047 346301 847545 # Sneak a peek at the ngram themselves  words[:10] ['0', '00', '000', '0002', '00am', '00ish', '00pm', '01', '01am', '02']  bigram[-10:] ['zucchinis at', 'zucchinis took', 'zucchinis we', 'zuma over', 'zuppa di', 'zuppa toscana', 'zuppe di', 'zurich and', 'zz top', 'à la']  trigram[:10] ['0 10 definitely', '0 2 also', '0 25 per', '0 3 miles', '0 30 a', '0 30 everything', '0 30 lb', '0 35 tip', '0 5 curry', '0 5 pork'] 复制ErrorOK!   图3-6 Number of unique n-gram in the first 10,000 reviews of the Yelp dataset\n过滤清洗特征 我们如何清晰地将信号从噪声中分离出来？ 通过过滤，使用原始标记化和计数来生成简单词表或 n-gram 列表的技术变得更加可用。 短语检测，我们将在下面讨论，可以看作是一个特别的 bigram 过滤器。 以下是执行过滤的几种方法。\n停用词 分类和检索通常不需要对文本有深入的理解。 例如，在\"Emma knocked on the door\"一句中，\"on\"和\"the\"这两个词没有包含很多信息。 代词、冠词和介词大部分时间并没有显示出其价值。流行的 Python NLP 软件包 NLTK 包含许多语言的语言学家定义的停用词列表。 （您将需要安装 NLTK 并运行nltk.download()来获取所有的好东西。）各种停用词列表也可以在网上找到。 例如，这里有一些来自英语停用词的示例词\nSample words from the nltk stopword list a, about, above, am, an, been, didn’t, couldn’t, i’d, i’ll, itself, let’s, myself, our, they, through, when’s, whom, ... 复制ErrorOK! 请注意，该列表包含撇号，并且这些单词没有大写。 为了按原样使用它，标记化过程不得去掉撇号，并且这些词需要转换为小写。\n基于频率的过滤 停用词表是一种去除空洞特征常用词的方法。还有其他更统计的方法来理解“常用词”的概念。在搭配提取中，我们看到依赖于手动定义的方法，以及使用统计的方法。同样的想法也适用于文字过滤。我们也可以使用频率统计。\n高频词 频率统计对滤除语料库专用常用词以及通用停用词很有用。例如，纽约时报文章数据集中经常出现“纽约时报”和其中单个单词。“议院”这个词经常出现在加拿大议会辩论的Hansard语料库中的“众议院”一词中，这是一种用于统计机器翻译的流行数据集，因为它包含所有文档的英文和法文版本。这些词在普通语言中有意义，但不在语料库中。手动定义的停用词列表将捕获一般停用词，但不是语料库特定的停用词。\n表 3-1 列出了 Yelp 评论数据集中最常用的 40 个单词。在这里，频率被认为是它们出现在文件（评论）中的数量，而不是它们在文件中的数量。正如我们所看到的，该列表涵盖了许多停用词。它也包含一些惊喜。\"s\"和\"t\"在列表中，因为我们使用撇号作为标记化分隔符，并且诸如\"Mary's\"或\"did not\"之类的词被解析为\"Mary s\"和\"didn t\"。词\"good\"，\"food\"和\"great\"分别出现在三分之一的评论中。但我们可能希望保留它们，因为它们对于情感分析或业务分类非常有用。\n 最常用的单词最可以揭示问题，并突出显示通常有用的单词通常在该语料库中曾出现过多次。 例如，纽约时报语料库中最常见的词是“时代”。实际上，它有助于将基于频率的过滤与停用词列表结合起来。还有一个棘手的问题，即何处放置截止点。 不幸的是这里没有统一的答案。在大多数情况下截断还需手动确定，并且在数据集改变时可能需要重新检查。\n稀有词 根据任务的不同，可能还需要筛选出稀有词。对于统计模型而言，仅出现在一个或两个文档中的单词更像噪声而非有用信息。例如，假设任务是根据他们的 Yelp 评论对企业进行分类，并且单个评论包含\"gobbledygook\"这个词。基于这一个词，我们将如何说明这家企业是餐厅，美容院还是一间酒吧？即使我们知道在这种情况下的这种生意发生在酒吧，它也会对于其他包含\"gobbledygook\"这个词的评论来说，这可能是一个错误。\n不仅稀有词不可靠，而且还会产生计算开销。这套 160 万个 Yelp 评论包含 357,481 个独特单词（用空格和标点符号表示），其中 189,915 只出现在一次评论中，41,162 次出现在两次评论中。超过 60% 的词汇很少发生。这是一种所谓的重尾分布，在现实世界的数据中非常普遍。许多统计机器学习模型的训练时间随着特征数量线性地变化，并且一些模型是二次的或更差的。稀有词汇会产生大量的计算和存储成本，而不会带来额外的收益。\n根据字数统计，可以很容易地识别和修剪稀有词。或者，他们的计数可以汇总到一个特殊的垃圾箱中，可以作为附加功能。图3-7展示了一个短文档中的表示形式，该短文档包含一些常用单词和两个稀有词\"gobbledygook\"和\"zylophant\"。通常单词保留自己的计数，可以通过停用词列表或其他频率进一步过滤方法。这些难得的单词会失去他们的身份并被分组到垃圾桶功能中.\n 由于在计算整个语料库之前不会知道哪些词很少，因此需要收集垃圾桶功能作为后处理步骤。\n由于本书是关于特征工程的，因此我们将重点放在特征上。但稀有概念也适用于数据点。如果文本文档很短，那么它可能不包含有用的信息，并且在训练模型时不应使用该信息。\n应用此规则时必须谨慎。维基百科转储包含许多不完整的存根，可能安全过滤。另一方面，推文本身就很短，并且需要其他特征和建模技巧。\n词干解析（Stemming） 简单解析的一个问题是同一个单词的不同变体会被计算为单独的单词。例如，\"flower\"和\"flowers\"在技术上是不同的记号，\"swimmer\"，\"swimming\"和\"swim\"也是如此，尽管它们的含义非常接近。如果所有这些不同的变体都映射到同一个单词，那将会很好。\n词干解析是一项 NLP 任务，试图将单词切分为基本的语言词干形式。有不同的方法。有些基于语言规则，其他基于观察统计。被称为词形化的算法的一个子类将词性标注和语言规则结合起来。\nPorter stemmer 是英语中使用最广泛的免费词干工具。原来的程序是用 ANSI C 编写的，但是很多其他程序包已经封装它来提供对其他语言的访问。尽管其他语言的努力正在进行，但大多数词干工具专注于英语。\n以下是通过 NLTK Python 包运行 Porter stemmer 的示例。正如我们所看到的，它处理了大量的情况，包括将\"sixties\"和\"sixty\"转变为同一根\"sixti\"。但这并不完美。单词\"goes\"映射到\"goe\"，而\"go\"映射到它自己。\n import nltk  stemmer = nltk.stem.porter.PorterStemmer()  stemmer.stem('flowers') u'lemon'  stemmer.stem('zeroes') u'zero'  stemmer.stem('stemmer') u'stem'  stemmer.stem('sixties') u'sixti'  stemmer.stem('sixty') u'sixty'  stemmer.stem('goes') u'goe'  stemmer.stem('go') u'go' 复制ErrorOK! 词干解析的确有一个计算成本。 最终收益是否大于成本取决于应用程序。\n含义的原子：从单词到 N-gram 到短语 词袋的概念很简单。但是，一台电脑怎么知道一个词是什么？文本文档以数字形式表示为一个字符串，基本上是一系列字符。也可能会遇到 JSON blob 或 HTML 页面形式的半结构化文本。但即使添加了标签和结构，基本单位仍然是一个字符串。如何将字符串转换为一系列的单词？这涉及解析和标记化的任务，我们将在下面讨论。\n解析和分词 当字符串包含的不仅仅是纯文本时，解析是必要的。例如，如果原始数据是网页，电子邮件或某种类型的日志，则它包含额外的结构。人们需要决定如何处理日志中的标记，页眉，页脚或无趣的部分。如果文档是网页，则解析器需要处理 URL。如果是电子邮件，则可能需要特殊字段，例如 From，To 和 Subject 需要被特别处理，否则，这些标题将作为最终计数中的普通单词统计，这可能没有用处。\n解析后，文档的纯文本部分可以通过标记。这将字符串（一系列字符）转换为一系列记号。然后可以将每个记号计为一个单词。分词器需要知道哪些字符表示一个记号已经结束，另一个正在开始。空格字符通常是好的分隔符，正如标点符号一样。如果文本包含推文，则不应将井号（#）用作分隔符（也称为分隔符）。\n有时，分析需要使用句子而不是整个文档。例如，n-gram 是一个句子的概括，不应超出句子范围。更复杂的文本特征化方法，如 word2vec 也适用于句子或段落。在这些情况下，需要首先将文档解析为句子，然后将每个句子进一步标记为单词。\n字符串对象 字符串对象有各种编码，如 ASCII 或 Unicode。纯英文文本可以用 ASCII 编码。 一般语言需要 Unicode。 如果文档包含非 ASCII 字符，则确保分词器可以处理该特定编码。否则，结果将不正确。\n短语检测的搭配提取 连续的记号能立即被转化成词表和 n-gram。但从语义上讲，我们更习惯于理解短语，而不是 n-gram。在计算自然语言处理中，有用短语的概念被称为搭配。用 Manning 和 Schütze（1999：141）的话来说：“搭配是一个由两个或两个以上单词组成的表达，它们对应于某种常规的说话方式。”\n搭配比其部分的总和更有意义。例如，\"strong tea\"具有超越\"great physical strength\"和\"tea\"的不同含义，因此被认为是搭配。另一方面，“可爱的小狗”这个短语恰恰意味着它的部分总和：“可爱”和“小狗”。因此，它不被视为搭配。\n搭配不一定是连续的序列。\"Emma knocked on the door\"一词被认为包含搭配\"knock door\"，因此不是每一个搭配都是一个 n-gram。相反，并不是每个 n-gram 都被认为是一个有意义的搭配。\n由于搭配不仅仅是其部分的总和，它们的含义也不能通过单个单词计数来充分表达。作为一种表现形式，词袋不足。袋子的 ngram 也是有问题的，因为它们捕获了太多无意义的序列（考虑\"this is in the bag-of-ngram example\"），而没有足够的有意义的序列。\n搭配作为功能很有用。但是，如何从文本中发现并提取它们呢？一种方法是预先定义它们。如果我们努力尝试，我们可能会找到各种语言的全面成语列表，我们可以通过文本查看任何匹配。这将是非常昂贵的，但它会工作。如果语料库是非常特定领域的并且包含深奥的术语，那么这可能是首选的方法。但是这个列表需要大量的手动管理，并且需要不断更新语料库。例如，分析推文，博客和文章可能不太现实。\n自从统计 NLP 过去二十年出现以来，人们越来越多地选择用于查找短语的统计方法。统计搭配提取方法不是建立固定的短语和惯用语言列表，而是依赖不断发展的数据来揭示当今流行的语言。\n基于频率的方法 一个简单的黑魔法是频繁发生的 n-gram。这种方法的问题是最常发生的，这种可能不是最有用的。 表 3-2 显示了整个 Yelp 评论数据集中最流行的 bigram（n=2）。 正如我们所知的，按文件计数排列的最常见的十大常见术语是非常通用的术语，并不包含太多含义。\n 用于搭配提取的假设检验 原始流行度计数（Raw popularity count）是一个比较粗糙的方法。我们必须找到更聪慧的统计数据才能够轻松挑选出有意义的短语。关键的想法是看两个单词是否经常出现在一起。回答这个问题的统计机制被称为假设检验。\n假设检验是将噪音数据归结为“是”或“否”的答案。它涉及将数据建模为从随机分布中抽取的样本。随机性意味着人们永远无法 100% 的确定答案；总会有异常的机会。所以答案附在概率上。例如，假设检验的结果可能是“这两个数据集来自同一分布，其概率为 95%”。对于假设检验的温和介绍，请参阅可汗学院关于假设检验和 p 值的教程。\n在搭配提取的背景下，多年来已经提出了许多假设检验。最成功的方法之一是基于似然比检验（Dunning，1993）。对于给定的一对单词，该方法测试两个假设观察的数据集。假设 1（原假设）表示，词语 1 独立于词语 2 出现。另一种说法是说，看到词语1对我们是否看到词语2没有影响。假设 2（备选假设）说，看到词 1 改变了看到单词 2 的可能性。我们采用备选假设来暗示这两个单词形成一个共同的短语。因此，短语检测（也称为搭配提取）的似然比检验提出了以下问题：给定文本语料库中观察到的单词出现更可能是从两个单词彼此独立出现的模型中生成的，或者模型中两个词的概率纠缠？\n这是有用的。让我们算一点。（数学非常精确和简洁地表达事物，但它确实需要与自然语言完全不同的分析器。）\n 似然函数L(Data; H)表示在单词对的独立模型或非独立模型下观察数据集中词频的概率。为了计算这个概率，我们必须对如何生成数据做出另一个假设。最简单的数据生成模型是二项模型，其中对于数据集中的每个单词，我们抛出一个硬币，并且如果硬币朝上出现，我们插入我们的特殊单词，否则插入其他单词。在此策略下，特殊词的出现次数遵循二项分布。二项分布完全由词的总数，词的出现次数和词首概率决定。\n似然比检验分析常用短语的算法收益如下。\n  计算所有单体词的出现概率：p(w)。\n  计算所有唯一双元的条件成对词发生概率：p(W2 × W1)\n  计算所有唯一的双对数似然比对数。\n  根据它们的似然比排序双字节。\n  以最小似然比值作为特征。\n  掌握似然比测试 关键在于测试比较的不是概率参数本身，而是在这些参数（以及假设的数据生成模型）下观察数据的概率。可能性是统计学习的关键原则之一。但是在你看到它的前几次，这绝对是一个令人困惑的问题。一旦你确定了逻辑，它就变得直观了。\n还有另一种基于点互信息的统计方法。但它对真实世界文本语料库中常见的罕见词很敏感。因此它不常用，我们不会在这里展示它。\n请注意，搭配抽取的所有统计方法，无论是使用原始频率，假设测试还是点对点互信息，都是通过过滤候选词组列表来进行操作的。生成这种清单的最简单和最便宜的方法是计算 n-gram。它可能产生不连续的序列，但是它们计算成本颇高。在实践中，即使是连续 n-gram，人们也很少超过 bi-gram 或 tri-gram，因为即使在过滤之后，它们的数量也很多。为了生成更长的短语，还有其他方法，如分块或与词性标注相结合。\n分块（Chunking）和词性标注（part-of-Speech Tagging） 分块比 n-gram 要复杂一点，因为它基于词性，基于规则的模型形成了记号序列。\n例如，我们可能最感兴趣的是在问题中找到所有名词短语，其中文本的实体，主题最为有趣。 为了找到这个，我们使用词性标记每个作品，然后检查该标记的邻域以查找词性分组或“块”。 定义单词到词类的模型通常是语言特定的。 几种开源 Python 库（如 NLTK，Spacy 和 TextBlob）具有多种语言模型。\n为了说明 Python 中的几个库如何使用词性标注非常简单地进行分块，我们再次使用 Yelp 评论数据集。 我们将使用 spacy 和 TextBlob 来评估词类以找到名词短语。\n import pandas as pd  import json # Load the first 10 reviews   f = open('data/yelp/v6/yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_review.json')  js = []  for i in range(10): js.append(json.loads(f.readline()))  f.close()  review_df = pd.DataFrame(js) ## First we'll walk through spaCy's functions   import spacy # preload the language model   nlp = spacy.load('en') # We can create a Pandas Series of spaCy nlp variables   doc_df = review_df['text'].apply(nlp) # spaCy gives you fine grained parts of speech using: (.pos_)  # and coarse grained parts of speech using: (.tag_)   for doc in doc_df[4]: print([doc.text, doc.pos_, doc.tag_]) Got VERB VBP a DET DT letter NOUN NN in ADP IN the DET DT mail NOUN NN last ADJ JJ week NOUN NN that ADJ WDT said VERB VBD Dr. PROPN NNP Goldberg PROPN NNP is VERB VBZ moving VERB VBG to ADP IN Arizona PROPN NNP to PART TO take VERB VB a DET DT new ADJ JJ position NOUN NN there ADV RB in ADP IN June PROPN NNP . PUNCT . SPACE SP He PRON PRP will VERB MD be VERB VB missed VERB VBN very ADV RB much ADV RB . PUNCT . SPACE SP I PRON PRP think VERB VBP finding VERB VBG a DET DT new ADJ JJ doctor NOUN NN in ADP IN NYC PROPN NNP that ADP IN you PRON PRP actually ADV RB like INTJ UH might VERB MD almost ADV RB be VERB VB as ADV RB awful ADJ JJ as ADP IN trying VERB VBG to PART TO find VERB VB a DET DT date NOUN NN ! PUNCT . # spaCy also does some basic noun chunking for us   print([chunk for chunk in doc_df[4].noun_chunks]) [a letter, the mail, Dr. Goldberg, Arizona, a new position, June, He, I, a new doctor, NYC, you, a date] #####  ## We can do the same feature transformations using Textblob   from textblob import TextBlob # The default tagger in TextBlob uses the PatternTagger, which is fine for our example.  # You can also specify the NLTK tagger, which works better for incomplete sentences.   blob_df = review_df['text'].apply(TextBlob)  blob_df[4].tags [('Got', 'NNP'), ('a', 'DT'), ('letter', 'NN'), ('in', 'IN'), ('the', 'DT'), ('mail', 'NN'), ('last', 'JJ'), ('week', 'NN'), ('that', 'WDT'), ('said', 'VBD'), ('Dr.', 'NNP'), ('Goldberg', 'NNP'), ('is', 'VBZ'), ('moving', 'VBG'), ('to', 'TO'), ('Arizona', 'NNP'), ('to', 'TO'), ('take', 'VB'), ('a', 'DT'), ('new', 'JJ'), ('position', 'NN'), ('there', 'RB'), ('in', 'IN'), ('June', 'NNP'), ('He', 'PRP'), ('will', 'MD'), ('be', 'VB'), ('missed', 'VBN'), ('very', 'RB'), ('much', 'JJ'), ('I', 'PRP'), ('think', 'VBP'), ('finding', 'VBG'), ('a', 'DT'), ('new', 'JJ'), ('doctor', 'NN'), ('in', 'IN'), ('NYC', 'NNP'), ('that', 'IN'), ('you', 'PRP'), ('actually', 'RB'), ('like', 'IN'), ('might', 'MD'), ('almost', 'RB'), ('be', 'VB'), ('as', 'RB'), ('awful', 'JJ'), ('as', 'IN'), ('trying', 'VBG'), ('to', 'TO'), ('find', 'VB'), ('a', 'DT'), ('date', 'NN')]  print([np for np in blob_df[4].noun_phrases]) ['got', 'goldberg', 'arizona', 'new position', 'june', 'new doctor', 'nyc' 复制ErrorOK! 你可以看到每个库找到的名词短语有些不同。spacy 包含英语中的常见单词，如\"a\"和\"the\"，而 TextBlob 则删除这些单词。这反映了规则引擎的差异，它驱使每个库都认为是“名词短语”。 你也可以写你的词性关系来定义你正在寻找的块。使用 Python 进行自然语言处理可以深入了解从头开始用 Python 进行分块。\n总结 词袋模型易于理解和计算，对分类和搜索任务很有用。但有时单个单词太简单，不足以将文本中的某些信息封装起来。为了解决这个问题，人们寄希望于比较长的序列。Bag-of-ngram 是 BOW 的自然概括，这个概念仍然容于理解，而且它的计算开销这就像 BOW 一样容易。\nBag of-ngram 生成更多不同的 ngram。它增加了特征存储成本，以及模型训练和预测阶段的计算成本。虽然数据点的数量保持不变，但特征空间的维度现在更大。因此数据密度更为稀疏。n 越高，存储和计算成本越高，数据越稀疏。由于这些原因，较长的 n-gram 并不总是会使模型精度的得到提高（或任何其他性能指标）。人们通常在n = 2或 3 时停止。较少的 n-gram 很少被使用。\n防止稀疏性和成本增加的一种方法是过滤 n-gram 并保留最有意义的短语。这是搭配抽取的目标。理论上，搭配（或短语）可以在文本中形成非连续的标记序列。然而，在实践中，寻找非连续词组的计算成本要高得多并且没有太多的收益。因此搭配抽取通常从一个候选人名单中开始，并利用统计方法对他们进行过滤。\n所有这些方法都将一系列文本标记转换为一组断开的计数。与一个序列相比，一个集合的结构要少得多；他们导致平面特征向量。\n在本章中，我们用简单的语言描述文本特征化技术。这些技术将一段充满丰富语义结构的自然语言文本转化为一个简单的平面向量。我们讨论一些常用的过滤技术来降低向量维度。我们还引入了 ngram 和搭配抽取作为方法，在平面向量中添加更多的结构。下一章将详细介绍另一种常见的文本特征化技巧，称为 tf-idf。随后的章节将讨论更多方法将结构添加回平面向量。\n参考文献 Dunning, Ted. 1993. “Accurate methods for the statistics of surprise and\ncoincidence.” ACM Journal of Computational Linguistics, special issue on using large corpora , 19:1 (61—74).\n“Hypothesis Testing and p-Values.” Khan Academy, accessed May 31,\n2016,https://www.khanacademy.org/math/probability/statistics-inferential/hypothesis-testing/v/hypothesis-testing-and-p-values.\nManning,Christopher D. and Hinrich Schütze. 1999. Foundations of StatisticalNatural Language Processing . Cambridge, Massachusettes: MIT Press.\nSometimes people call it the document “vector.” The vector extends from the original and ends at the specified point. For our purposes, “vector” and “point” are the same thing.\n\n了解课程  点击上方图片购买课程   点击进入详情页\n",
+  "wordCount" : "1313",
+  "inLanguage": "en",
+  "image":"/images/blog/textFeature.png","datePublished": "2021-12-28T10:43:10+06:00",
+  "dateModified": "2021-12-28T10:43:10+06:00",
+  "author":{
+    "@type": "Person",
+    "name": "kkejili"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/text_features_tutorial/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="mailto:thunderhit@qq.com" title="联系" target="_blank">
+                    <span>联系</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      文本数据: 展开、过滤和分块
+    </h1>
+    <div class="post-meta"><span title='2021-12-28 10:43:10 +0600 +0600'>2021-12-28</span>&nbsp;·&nbsp;7 min&nbsp;·&nbsp;kkejili
+
+</div>
+
+    <div>
+      <br>
+      <ul class="post-tags">
+        <li><a href="/tags/python/" target='_blank'>python</a></li>
+        <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/" target='_blank'>文本分析</a></li>
+        <li><a href="/tags/%E5%AD%A6%E6%9C%AF%E5%BA%94%E7%94%A8/" target='_blank'>学术应用</a></li>
+      </ul>
+    </div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/textFeature.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/textFeature.png" alt=""></a>
+        
+</figure><aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e4%b8%89%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%ae-%e5%b1%95%e5%bc%80%e8%bf%87%e6%bb%a4%e5%92%8c%e5%88%86%e5%9d%97httpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e4%b8%89%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%ae-%e5%b1%95%e5%bc%80%e8%bf%87%e6%bb%a4%e5%92%8c%e5%88%86%e5%9d%97" aria-label="三、文本数据: 展开、过滤和分块"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E4%B8%89%E3%80%81%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE-%E5%B1%95%E5%BC%80%E3%80%81%E8%BF%87%E6%BB%A4%E5%92%8C%E5%88%86%E5%9D%97">三、文本数据: 展开、过滤和分块</a></a></li>
+                    <li>
+                        <a href="#bag-of-x%e6%8a%8a%e8%87%aa%e7%84%b6%e6%96%87%e6%9c%ac%e5%8f%98%e6%88%90%e5%b9%b3%e9%9d%a2%e5%90%91%e9%87%8fhttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeidbag-of-x%e6%8a%8a%e8%87%aa%e7%84%b6%e6%96%87%e6%9c%ac%e5%8f%98%e6%88%90%e5%b9%b3%e9%9d%a2%e5%90%91%e9%87%8f" aria-label="Bag of X：把自然文本变成平面向量"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=bag-of-x%EF%BC%9A%E6%8A%8A%E8%87%AA%E7%84%B6%E6%96%87%E6%9C%AC%E5%8F%98%E6%88%90%E5%B9%B3%E9%9D%A2%E5%90%91%E9%87%8F">Bag of X：把自然文本变成平面向量</a></a></li>
+                    <li>
+                        <a href="#%e8%af%8d%e8%a2%8bhttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e8%af%8d%e8%a2%8b" aria-label="词袋"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E8%AF%8D%E8%A2%8B">词袋</a></a></li>
+                    <li>
+                        <a href="#bag-of-n-gramhttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeidbag-of-n-gram" aria-label="Bag-of-N-gram"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=bag-of-n-gram">Bag-of-N-gram</a></a><ul>
+                            
+                    <li>
+                        <a href="#%e8%bf%87%e6%bb%a4%e6%b8%85%e6%b4%97%e7%89%b9%e5%be%81httpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e8%bf%87%e6%bb%a4%e6%b8%85%e6%b4%97%e7%89%b9%e5%be%81" aria-label="过滤清洗特征"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E8%BF%87%E6%BB%A4%E6%B8%85%E6%B4%97%E7%89%B9%E5%BE%81">过滤清洗特征</a></a></li>
+                    <li>
+                        <a href="#%e5%81%9c%e7%94%a8%e8%af%8dhttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e5%81%9c%e7%94%a8%e8%af%8d" aria-label="停用词"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%81%9C%E7%94%A8%E8%AF%8D">停用词</a></a></li>
+                    <li>
+                        <a href="#%e5%9f%ba%e4%ba%8e%e9%a2%91%e7%8e%87%e7%9a%84%e8%bf%87%e6%bb%a4httpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e5%9f%ba%e4%ba%8e%e9%a2%91%e7%8e%87%e7%9a%84%e8%bf%87%e6%bb%a4" aria-label="基于频率的过滤"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%9F%BA%E4%BA%8E%E9%A2%91%E7%8E%87%E7%9A%84%E8%BF%87%E6%BB%A4">基于频率的过滤</a></a></li>
+                    <li>
+                        <a href="#%e9%ab%98%e9%a2%91%e8%af%8dhttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e9%ab%98%e9%a2%91%e8%af%8d" aria-label="高频词"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E9%AB%98%E9%A2%91%E8%AF%8D">高频词</a></a></li>
+                    <li>
+                        <a href="#%e7%a8%80%e6%9c%89%e8%af%8dhttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e7%a8%80%e6%9c%89%e8%af%8d" aria-label="稀有词"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E7%A8%80%E6%9C%89%E8%AF%8D">稀有词</a></a></li>
+                    <li>
+                        <a href="#%e8%af%8d%e5%b9%b2%e8%a7%a3%e6%9e%90stemminghttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e8%af%8d%e5%b9%b2%e8%a7%a3%e6%9e%90stemming" aria-label="词干解析（Stemming）"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E8%AF%8D%E5%B9%B2%E8%A7%A3%E6%9E%90%EF%BC%88stemming%EF%BC%89">词干解析（Stemming）</a></a></li>
+                    <li>
+                        <a href="#%e5%90%ab%e4%b9%89%e7%9a%84%e5%8e%9f%e5%ad%90%e4%bb%8e%e5%8d%95%e8%af%8d%e5%88%b0-n-gram-%e5%88%b0%e7%9f%ad%e8%af%adhttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e5%90%ab%e4%b9%89%e7%9a%84%e5%8e%9f%e5%ad%90%e4%bb%8e%e5%8d%95%e8%af%8d%e5%88%b0-n-gram-%e5%88%b0%e7%9f%ad%e8%af%ad" aria-label="含义的原子：从单词到 N-gram 到短语"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%90%AB%E4%B9%89%E7%9A%84%E5%8E%9F%E5%AD%90%EF%BC%9A%E4%BB%8E%E5%8D%95%E8%AF%8D%E5%88%B0-n-gram-%E5%88%B0%E7%9F%AD%E8%AF%AD">含义的原子：从单词到 N-gram 到短语</a></a></li>
+                    <li>
+                        <a href="#%e8%a7%a3%e6%9e%90%e5%92%8c%e5%88%86%e8%af%8dhttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e8%a7%a3%e6%9e%90%e5%92%8c%e5%88%86%e8%af%8d" aria-label="解析和分词"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E8%A7%A3%E6%9E%90%E5%92%8C%E5%88%86%E8%AF%8D">解析和分词</a></a></li>
+                    <li>
+                        <a href="#%e5%ad%97%e7%ac%a6%e4%b8%b2%e5%af%b9%e8%b1%a1httpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e5%ad%97%e7%ac%a6%e4%b8%b2%e5%af%b9%e8%b1%a1" aria-label="字符串对象"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%AF%B9%E8%B1%A1">字符串对象</a></a></li>
+                    <li>
+                        <a href="#%e7%9f%ad%e8%af%ad%e6%a3%80%e6%b5%8b%e7%9a%84%e6%90%ad%e9%85%8d%e6%8f%90%e5%8f%96httpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e7%9f%ad%e8%af%ad%e6%a3%80%e6%b5%8b%e7%9a%84%e6%90%ad%e9%85%8d%e6%8f%90%e5%8f%96" aria-label="短语检测的搭配提取"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E7%9F%AD%E8%AF%AD%E6%A3%80%E6%B5%8B%E7%9A%84%E6%90%AD%E9%85%8D%E6%8F%90%E5%8F%96">短语检测的搭配提取</a></a></li>
+                    <li>
+                        <a href="#%e5%9f%ba%e4%ba%8e%e9%a2%91%e7%8e%87%e7%9a%84%e6%96%b9%e6%b3%95httpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e5%9f%ba%e4%ba%8e%e9%a2%91%e7%8e%87%e7%9a%84%e6%96%b9%e6%b3%95" aria-label="基于频率的方法"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%9F%BA%E4%BA%8E%E9%A2%91%E7%8E%87%E7%9A%84%E6%96%B9%E6%B3%95">基于频率的方法</a></a></li>
+                    <li>
+                        <a href="#%e7%94%a8%e4%ba%8e%e6%90%ad%e9%85%8d%e6%8f%90%e5%8f%96%e7%9a%84%e5%81%87%e8%ae%be%e6%a3%80%e9%aa%8chttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e7%94%a8%e4%ba%8e%e6%90%ad%e9%85%8d%e6%8f%90%e5%8f%96%e7%9a%84%e5%81%87%e8%ae%be%e6%a3%80%e9%aa%8c" aria-label="用于搭配提取的假设检验"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E7%94%A8%E4%BA%8E%E6%90%AD%E9%85%8D%E6%8F%90%E5%8F%96%E7%9A%84%E5%81%87%E8%AE%BE%E6%A3%80%E9%AA%8C">用于搭配提取的假设检验</a></a></li>
+                    <li>
+                        <a href="#%e6%8e%8c%e6%8f%a1%e4%bc%bc%e7%84%b6%e6%af%94%e6%b5%8b%e8%af%95httpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e6%8e%8c%e6%8f%a1%e4%bc%bc%e7%84%b6%e6%af%94%e6%b5%8b%e8%af%95" aria-label="掌握似然比测试"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E6%8E%8C%E6%8F%A1%E4%BC%BC%E7%84%B6%E6%AF%94%E6%B5%8B%E8%AF%95">掌握似然比测试</a></a></li>
+                    <li>
+                        <a href="#%e5%88%86%e5%9d%97chunking%e5%92%8c%e8%af%8d%e6%80%a7%e6%a0%87%e6%b3%a8part-of-speech-tagginghttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e5%88%86%e5%9d%97chunking%e5%92%8c%e8%af%8d%e6%80%a7%e6%a0%87%e6%b3%a8part-of-speech-tagging" aria-label="分块（Chunking）和词性标注（part-of-Speech Tagging）"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%88%86%E5%9D%97%EF%BC%88chunking%EF%BC%89%E5%92%8C%E8%AF%8D%E6%80%A7%E6%A0%87%E6%B3%A8%EF%BC%88part-of-speech-tagging%EF%BC%89">分块（Chunking）和词性标注（part-of-Speech Tagging）</a></a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e6%80%bb%e7%bb%93httpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e6%80%bb%e7%bb%93" aria-label="总结"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E6%80%BB%E7%BB%93">总结</a></a></li>
+                    <li>
+                        <a href="#%e5%8f%82%e8%80%83%e6%96%87%e7%8c%aehttpfe4mlapachecnorgdocs3%e6%96%87%e6%9c%ac%e6%95%b0%e6%8d%aeid%e5%8f%82%e8%80%83%e6%96%87%e7%8c%ae" aria-label="参考文献"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE">参考文献</a></a></li>
+                    <li>
+                        <a href="#%e4%ba%86%e8%a7%a3%e8%af%be%e7%a8%8b" aria-label="了解课程">了解课程</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><p>前段时间发现apachecn在github上翻译了一本和特征工程相关的书籍：《Feature Engineering for Machine Learning》，中文名为《面向机器学习的特征工程》。</p>
+<p><a href="Feature_Engineering_for_Machine_Learning.pdf">Feature_Engineering_for_Machine_Learning.pdf</a></p>
+<h2 id="三文本数据-展开过滤和分块httpfe4mlapachecnorgdocs3文本数据id三文本数据-展开过滤和分块"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E4%B8%89%E3%80%81%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE-%E5%B1%95%E5%BC%80%E3%80%81%E8%BF%87%E6%BB%A4%E5%92%8C%E5%88%86%E5%9D%97">三、文本数据: 展开、过滤和分块</a><a hidden class="anchor" aria-hidden="true" href="#三文本数据-展开过滤和分块httpfe4mlapachecnorgdocs3文本数据id三文本数据-展开过滤和分块">#</a></h2>
+<blockquote>
+<p>译者：<a href="https://github.com/kkejili">@kkejili</a></p>
+<p>校对者：<a href="https://github.com/KyrieHee">@HeYun</a></p>
+</blockquote>
+<p>如果让你来设计一个算法来分析以下段落，你会怎么做？</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Emma knocked on the door. No answer. She knocked again and waited. There was a large maple tree next to the house. Emma looked up the tree and saw a giant raven perched at the treetop. Under the afternoon sun, the raven gleamed magnificently. Its beak was hard and pointed, its claws sharp and strong. It looked regal and imposing. It reigned the tree it stood on. The raven was looking straight at Emma with its beady black eyes. Emma felt slightly intimidated. She took a step back from the door and tentatively said, “hello?” 复制ErrorOK!
+</code></pre></div><p>该段包含很多信息。我们知道它谈到了到一个名叫Emma的人和一只乌鸦。这里有一座房子和一棵树，艾玛正想进屋，却看到了乌鸦。这只华丽的乌鸦注意到艾玛，她有点害怕，但正在尝试交流。</p>
+<p>那么，这些信息的哪些部分是我们应该提取的显着特征？首先，提取主要角色艾玛和乌鸦的名字似乎是个好主意。接下来，注意房子，门和树的布置可能也很好。关于乌鸦的描述呢？Emma的行为呢，敲门，退后一步，打招呼呢？</p>
+<p>本章介绍文本特征工程的基础知识。我们从词袋（bags of words）开始，这是基于字数统计的最简单的文本功能。一个非常相关的变换是 tf-idf，它本质上是一种特征缩放技术。它将被我在（下一篇）章节进行全面讨论。本章首先讨论文本特征提取，然后讨论如何过滤和清洗这些特征。</p>
+<br>
+<h2 id="bag-of-x把自然文本变成平面向量httpfe4mlapachecnorgdocs3文本数据idbag-of-x把自然文本变成平面向量"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=bag-of-x%EF%BC%9A%E6%8A%8A%E8%87%AA%E7%84%B6%E6%96%87%E6%9C%AC%E5%8F%98%E6%88%90%E5%B9%B3%E9%9D%A2%E5%90%91%E9%87%8F">Bag of X：把自然文本变成平面向量</a><a hidden class="anchor" aria-hidden="true" href="#bag-of-x把自然文本变成平面向量httpfe4mlapachecnorgdocs3文本数据idbag-of-x把自然文本变成平面向量">#</a></h2>
+<p>无论是构建机器学习模型还是特征工程，其结果应该是通俗易懂的。简单的事情很容易尝试，可解释的特征和模型相比于复杂的更易于调试。简单和可解释的功能并不总是会得到最精确的模型。但从简单开始就是一个好主意，仅在绝对必要时我们可以增加其复杂性。</p>
+<p>对于文本数据，我们可以从称为 BOW 的字数统计开始。字数统计表中并没有特别费力来寻找<code>&quot;Emma&quot;</code>或乌鸦这样有趣的实体。但是这两个词在该段落中被重复提到，并且它们在这里的计数比诸如<code>&quot;hello&quot;</code>之类的随机词更高。对于此类简单的文档分类任务，字数统计通常比较适用。它也可用于信息检索，其目标是检索与输入文本相关的文档集。这两个任务都很好解释词级特征，因为某些特定词的存在可能是本文档主题内容的重要指标。</p>
+<br>
+<h2 id="词袋httpfe4mlapachecnorgdocs3文本数据id词袋"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E8%AF%8D%E8%A2%8B">词袋</a><a hidden class="anchor" aria-hidden="true" href="#词袋httpfe4mlapachecnorgdocs3文本数据id词袋">#</a></h2>
+<p>在词袋特征中，文本文档被转换成向量。（向量只是 n 个数字的集合。）向量包含词汇表中每个单词可能出现的数目。 如果单词<code>&quot;aardvark&quot;</code>在文档中出现三次，则该特征向量在与该单词对应的位置上的计数为 3。 如果词汇表中的单词没有出现在文档中，则计数为零。 例如，“这是一只小狗，它是非常可爱”的句子具有如图所示的 BOW 表示</p>
+
+<figure >
+    
+        <img src="img/3-1.png" width="100%" />
+    
+    
+</figure>
+
+<p>图 3-1 转换词成向量描述图</p>
+<p>BOW 将文本文档转换为平面向量。 它是“平面的”，因为它不包含任何原始的文本结构。 原文是一系列词语。但是词袋向量并没有序列；它只是记得每个单词在文本中出现多少次。 它不代表任何词层次结构的概念。 例如，“动物”的概念包括“狗”，“猫”，“乌鸦”等。但是在一个词袋表示中，这些词都是矢量的相同元素。</p>
+
+<figure >
+    
+        <img src="img/3-2.png" width="100%" />
+    
+    
+</figure>
+
+<p>图 3-2 两个等效的词向量，向量中单词的排序不重要，只要它在数据集中的个数和文档中出现数量是一致的。</p>
+<p>重要的是特征空间中数据的几何形状。 在一个词袋矢量中，每个单词成为矢量的一个维度。如果词汇表中有 n 个单词，则文档将成为n维空间中的一个点。 很难想象二维或三维以外的任何物体的几何形状，所以我们必须使用我们的想象力。 图3-3显示了我们的例句在对应于“小狗”和“可爱”两个维度的特征空间中的样子。</p>
+
+<figure >
+    
+        <img src="img/3-3.png" width="100%" />
+    
+    
+</figure>
+
+<p>图 3-3 特征空间中文本文档的图示</p>
+
+<figure >
+    
+        <img src="img/3-4.png" width="100%" />
+    
+    
+</figure>
+
+<p>图 3-4 三维特征空间</p>
+<p>图 3-3 和图 3-4 描绘了特征空间中的数据向量。 坐标轴表示单个单词，它们是词袋表示下的特征，空间中的点表示数据点（文本文档）。 有时在数据空间中查看特征向量也是有益的。 特征向量包含每个数据点中特征的值。 轴表示单个数据点和点表示特征向量。 图 3-5 展示了一个例子。 通过对文本文档进行词袋特征化，一个特征是一个词，一个特征向量包含每个文档中这个词的计数。 这样，一个单词被表示为一个“一个词向量”。正如我们将在第 4 章中看到的那样，这些文档词向量来自词袋向量的转置矩阵。</p>
+
+<figure >
+    
+        <img src="img/3-5.png" width="100%" />
+    
+    
+</figure>
+
+<br>
+<h2 id="bag-of-n-gramhttpfe4mlapachecnorgdocs3文本数据idbag-of-n-gram"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=bag-of-n-gram">Bag-of-N-gram</a><a hidden class="anchor" aria-hidden="true" href="#bag-of-n-gramhttpfe4mlapachecnorgdocs3文本数据idbag-of-n-gram">#</a></h2>
+<p>Bag-of-N-gram 或者 bag-of-ngram 是 BOW 的自然延伸。 n-gram 是 n 个有序的记号（token）。一个词基本上是一个 1-gram，也被称为一元模型。当它被标记后，计数机制可以将单个词进行计数，或将重叠序列计数为 n-gram。例如，<code>&quot;Emma knocked on the door&quot;</code>这句话会产生 n-gram，如<code>&quot;Emma knocked&quot;</code>，<code>&quot;knocked on&quot;</code>，<code>&quot;on the&quot;</code>，<code>&quot;the door&quot;</code>。 N-gram 保留了文本的更多原始序列结构，故 bag-of-ngram可以提供更多信息。但是，这是有代价的。理论上，用 k 个独特的词，可能有 k 个独立的 2-gram（也称为 bigram）。在实践中，并不是那么多，因为不是每个单词后都可以跟一个单词。尽管如此，通常有更多不同的 n-gram（n &gt; 1）比单词更多。这意味着词袋会更大并且有稀疏的特征空间。这也意味着 n-gram 计算，存储和建模的成本会变高。n 越大，信息越丰富，成本越高。</p>
+<p>为了说明随着 n 增加 n-gram 的数量如何增加，我们来计算纽约时报文章数据集上的 n-gram。我们使用 Pandas 和 scikit-learn 中的<code>CountVectorizer</code>转换器来计算前 10,000 条评论的 n-gram。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">pandas</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">json</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="kn">import</span> <span class="n">CountVectorizer</span> 
+<span class="c1"># Load the first 10,000 reviews </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;data/yelp/v6/yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_review.json&#39;</span><span class="p">)</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">js</span> <span class="o">=</span> <span class="p">[]</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">):</span> 
+<span class="o">...</span> <span class="n">js</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()))</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">review_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">js</span><span class="p">)</span> 
+<span class="c1"># Create feature transformers for unigram, bigram, and trigram. </span>
+<span class="c1"># The default ignores single-character words, which is useful in practice because it trims </span>
+<span class="c1"># uninformative words. But we explicitly include them in this example for illustration purposes. </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">bow_converter</span> <span class="o">=</span> <span class="n">CountVectorizer</span><span class="p">(</span><span class="n">token_pattern</span><span class="o">=</span><span class="s1">&#39;(?u)</span><span class="se">\\</span><span class="s1">b</span><span class="se">\\</span><span class="s1">w+</span><span class="se">\\</span><span class="s1">b&#39;</span><span class="p">)</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">bigram_converter</span> <span class="o">=</span> <span class="n">CountVectorizer</span><span class="p">(</span><span class="n">ngram_range</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="n">token_pattern</span><span class="o">=</span><span class="s1">&#39;(?u)</span><span class="se">\\</span><span class="s1">b</span><span class="se">\\</span><span class="s1">w+</span><span class="se">\\</span><span class="s1">b&#39;</span><span class="p">)</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">trigram_converter</span> <span class="o">=</span> <span class="n">CountVectorizer</span><span class="p">(</span><span class="n">ngram_range</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">token_pattern</span><span class="o">=</span><span class="s1">&#39;(?u)</span><span class="se">\\</span><span class="s1">b</span><span class="se">\\</span><span class="s1">w+</span><span class="se">\\</span><span class="s1">b&#39;</span><span class="p">)</span> 
+<span class="c1"># Fit the transformers and look at vocabulary size </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">bow_converter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">review_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">])</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">words</span> <span class="o">=</span> <span class="n">bow_converter</span><span class="o">.</span><span class="n">get_feature_names</span><span class="p">()</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">bigram_converter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">review_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">])</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">bigram</span> <span class="o">=</span> <span class="n">bigram_converter</span><span class="o">.</span><span class="n">get_feature_names</span><span class="p">()</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">trigram_converter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">review_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">])</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">trigram</span> <span class="o">=</span> <span class="n">trigram_converter</span><span class="o">.</span><span class="n">get_feature_names</span><span class="p">()</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">bigram</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">trigram</span><span class="p">))</span> 
+<span class="mi">26047</span> <span class="mi">346301</span> <span class="mi">847545</span> 
+<span class="c1"># Sneak a peek at the ngram themselves</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">words</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span> 
+<span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;00&#39;</span><span class="p">,</span> <span class="s1">&#39;000&#39;</span><span class="p">,</span> <span class="s1">&#39;0002&#39;</span><span class="p">,</span> <span class="s1">&#39;00am&#39;</span><span class="p">,</span> <span class="s1">&#39;00ish&#39;</span><span class="p">,</span> <span class="s1">&#39;00pm&#39;</span><span class="p">,</span> <span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="s1">&#39;01am&#39;</span><span class="p">,</span> <span class="s1">&#39;02&#39;</span><span class="p">]</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">bigram</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]</span> 
+<span class="p">[</span><span class="s1">&#39;zucchinis at&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;zucchinis took&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;zucchinis we&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;zuma over&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;zuppa di&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;zuppa toscana&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;zuppe di&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;zurich and&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;zz top&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;à la&#39;</span><span class="p">]</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">trigram</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span> 
+<span class="p">[</span><span class="s1">&#39;0 10 definitely&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;0 2 also&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;0 25 per&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;0 3 miles&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;0 30 a&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;0 30 everything&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;0 30 lb&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;0 35 tip&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;0 5 curry&#39;</span><span class="p">,</span> 
+<span class="s1">&#39;0 5 pork&#39;</span><span class="p">]</span> <span class="n">复制ErrorOK</span><span class="err">!</span>
+</code></pre></div>
+<figure >
+    
+        <img src="img/3-6.png" width="100%" />
+    
+    
+</figure>
+
+<p>图3-6 Number of unique n-gram in the first 10,000 reviews of the Yelp dataset</p>
+<br>
+<h3 id="过滤清洗特征httpfe4mlapachecnorgdocs3文本数据id过滤清洗特征"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E8%BF%87%E6%BB%A4%E6%B8%85%E6%B4%97%E7%89%B9%E5%BE%81">过滤清洗特征</a><a hidden class="anchor" aria-hidden="true" href="#过滤清洗特征httpfe4mlapachecnorgdocs3文本数据id过滤清洗特征">#</a></h3>
+<p>我们如何清晰地将信号从噪声中分离出来？ 通过过滤，使用原始标记化和计数来生成简单词表或 n-gram 列表的技术变得更加可用。 短语检测，我们将在下面讨论，可以看作是一个特别的 bigram 过滤器。 以下是执行过滤的几种方法。</p>
+<br>
+<h3 id="停用词httpfe4mlapachecnorgdocs3文本数据id停用词"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%81%9C%E7%94%A8%E8%AF%8D">停用词</a><a hidden class="anchor" aria-hidden="true" href="#停用词httpfe4mlapachecnorgdocs3文本数据id停用词">#</a></h3>
+<p>分类和检索通常不需要对文本有深入的理解。 例如，在<code>&quot;Emma knocked on the door&quot;</code>一句中，<code>&quot;on&quot;</code>和<code>&quot;the&quot;</code>这两个词没有包含很多信息。 代词、冠词和介词大部分时间并没有显示出其价值。流行的 Python NLP 软件包 NLTK 包含许多语言的语言学家定义的停用词列表。 （您将需要安装 NLTK 并运行<code>nltk.download()</code>来获取所有的好东西。）各种停用词列表也可以在网上找到。 例如，这里有一些来自英语停用词的示例词</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Sample words from the nltk stopword list
+a, about, above, am, an, been, didn’t, couldn’t, i’d, i’ll, itself, let’s, myself, our, they, through, when’s, whom, ... 复制ErrorOK!
+</code></pre></div><p>请注意，该列表包含撇号，并且这些单词没有大写。 为了按原样使用它，标记化过程不得去掉撇号，并且这些词需要转换为小写。</p>
+<br>
+<h3 id="基于频率的过滤httpfe4mlapachecnorgdocs3文本数据id基于频率的过滤"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%9F%BA%E4%BA%8E%E9%A2%91%E7%8E%87%E7%9A%84%E8%BF%87%E6%BB%A4">基于频率的过滤</a><a hidden class="anchor" aria-hidden="true" href="#基于频率的过滤httpfe4mlapachecnorgdocs3文本数据id基于频率的过滤">#</a></h3>
+<p>停用词表是一种去除空洞特征常用词的方法。还有其他更统计的方法来理解“常用词”的概念。在搭配提取中，我们看到依赖于手动定义的方法，以及使用统计的方法。同样的想法也适用于文字过滤。我们也可以使用频率统计。</p>
+<br>
+<h3 id="高频词httpfe4mlapachecnorgdocs3文本数据id高频词"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E9%AB%98%E9%A2%91%E8%AF%8D">高频词</a><a hidden class="anchor" aria-hidden="true" href="#高频词httpfe4mlapachecnorgdocs3文本数据id高频词">#</a></h3>
+<p>频率统计对滤除语料库专用常用词以及通用停用词很有用。例如，纽约时报文章数据集中经常出现“纽约时报”和其中单个单词。“议院”这个词经常出现在加拿大议会辩论的Hansard语料库中的“众议院”一词中，这是一种用于统计机器翻译的流行数据集，因为它包含所有文档的英文和法文版本。这些词在普通语言中有意义，但不在语料库中。手动定义的停用词列表将捕获一般停用词，但不是语料库特定的停用词。</p>
+<p>表 3-1 列出了 Yelp 评论数据集中最常用的 40 个单词。在这里，频率被认为是它们出现在文件（评论）中的数量，而不是它们在文件中的数量。正如我们所看到的，该列表涵盖了许多停用词。它也包含一些惊喜。<code>&quot;s&quot;</code>和<code>&quot;t&quot;</code>在列表中，因为我们使用撇号作为标记化分隔符，并且诸如<code>&quot;Mary's&quot;</code>或<code>&quot;did not&quot;</code>之类的词被解析为<code>&quot;Mary s&quot;</code>和<code>&quot;didn t&quot;</code>。词<code>&quot;good&quot;</code>，<code>&quot;food&quot;</code>和<code>&quot;great&quot;</code>分别出现在三分之一的评论中。但我们可能希望保留它们，因为它们对于情感分析或业务分类非常有用。</p>
+
+<figure >
+    
+        <img src="img/biao.png" width="100%" />
+    
+    
+</figure>
+
+<p>最常用的单词最可以揭示问题，并突出显示通常有用的单词通常在该语料库中曾出现过多次。 例如，纽约时报语料库中最常见的词是“时代”。实际上，它有助于将基于频率的过滤与停用词列表结合起来。还有一个棘手的问题，即何处放置截止点。 不幸的是这里没有统一的答案。在大多数情况下截断还需手动确定，并且在数据集改变时可能需要重新检查。</p>
+<br>
+<h3 id="稀有词httpfe4mlapachecnorgdocs3文本数据id稀有词"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E7%A8%80%E6%9C%89%E8%AF%8D">稀有词</a><a hidden class="anchor" aria-hidden="true" href="#稀有词httpfe4mlapachecnorgdocs3文本数据id稀有词">#</a></h3>
+<p>根据任务的不同，可能还需要筛选出稀有词。对于统计模型而言，仅出现在一个或两个文档中的单词更像噪声而非有用信息。例如，假设任务是根据他们的 Yelp 评论对企业进行分类，并且单个评论包含<code>&quot;gobbledygook&quot;</code>这个词。基于这一个词，我们将如何说明这家企业是餐厅，美容院还是一间酒吧？即使我们知道在这种情况下的这种生意发生在酒吧，它也会对于其他包含<code>&quot;gobbledygook&quot;</code>这个词的评论来说，这可能是一个错误。</p>
+<p>不仅稀有词不可靠，而且还会产生计算开销。这套 160 万个 Yelp 评论包含 357,481 个独特单词（用空格和标点符号表示），其中 189,915 只出现在一次评论中，41,162 次出现在两次评论中。超过 60% 的词汇很少发生。这是一种所谓的重尾分布，在现实世界的数据中非常普遍。许多统计机器学习模型的训练时间随着特征数量线性地变化，并且一些模型是二次的或更差的。稀有词汇会产生大量的计算和存储成本，而不会带来额外的收益。</p>
+<p>根据字数统计，可以很容易地识别和修剪稀有词。或者，他们的计数可以汇总到一个特殊的垃圾箱中，可以作为附加功能。图3-7展示了一个短文档中的表示形式，该短文档包含一些常用单词和两个稀有词<code>&quot;gobbledygook&quot;</code>和<code>&quot;zylophant&quot;</code>。通常单词保留自己的计数，可以通过停用词列表或其他频率进一步过滤方法。这些难得的单词会失去他们的身份并被分组到垃圾桶功能中.</p>
+
+<figure >
+    
+        <img src="img/3-7.png" width="100%" />
+    
+    
+</figure>
+
+<p>由于在计算整个语料库之前不会知道哪些词很少，因此需要收集垃圾桶功能作为后处理步骤。</p>
+<p>由于本书是关于特征工程的，因此我们将重点放在特征上。但稀有概念也适用于数据点。如果文本文档很短，那么它可能不包含有用的信息，并且在训练模型时不应使用该信息。</p>
+<p>应用此规则时必须谨慎。维基百科转储包含许多不完整的存根，可能安全过滤。另一方面，推文本身就很短，并且需要其他特征和建模技巧。</p>
+<br>
+<h3 id="词干解析stemminghttpfe4mlapachecnorgdocs3文本数据id词干解析stemming"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E8%AF%8D%E5%B9%B2%E8%A7%A3%E6%9E%90%EF%BC%88stemming%EF%BC%89">词干解析（Stemming）</a><a hidden class="anchor" aria-hidden="true" href="#词干解析stemminghttpfe4mlapachecnorgdocs3文本数据id词干解析stemming">#</a></h3>
+<p>简单解析的一个问题是同一个单词的不同变体会被计算为单独的单词。例如，<code>&quot;flower&quot;</code>和<code>&quot;flowers&quot;</code>在技术上是不同的记号，<code>&quot;swimmer&quot;</code>，<code>&quot;swimming&quot;</code>和<code>&quot;swim&quot;</code>也是如此，尽管它们的含义非常接近。如果所有这些不同的变体都映射到同一个单词，那将会很好。</p>
+<p>词干解析是一项 NLP 任务，试图将单词切分为基本的语言词干形式。有不同的方法。有些基于语言规则，其他基于观察统计。被称为词形化的算法的一个子类将词性标注和语言规则结合起来。</p>
+<p>Porter stemmer 是英语中使用最广泛的免费词干工具。原来的程序是用 ANSI C 编写的，但是很多其他程序包已经封装它来提供对其他语言的访问。尽管其他语言的努力正在进行，但大多数词干工具专注于英语。</p>
+<p>以下是通过 NLTK Python 包运行 Porter stemmer 的示例。正如我们所看到的，它处理了大量的情况，包括将<code>&quot;sixties&quot;</code>和<code>&quot;sixty&quot;</code>转变为同一根<code>&quot;sixti&quot;</code>。但这并不完美。单词<code>&quot;goes&quot;</code>映射到<code>&quot;goe&quot;</code>，而<code>&quot;go&quot;</code>映射到它自己。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">nltk</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">stemmer</span> <span class="o">=</span> <span class="n">nltk</span><span class="o">.</span><span class="n">stem</span><span class="o">.</span><span class="n">porter</span><span class="o">.</span><span class="n">PorterStemmer</span><span class="p">()</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">stemmer</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="s1">&#39;flowers&#39;</span><span class="p">)</span> 
+<span class="sa">u</span><span class="s1">&#39;lemon&#39;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">stemmer</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="s1">&#39;zeroes&#39;</span><span class="p">)</span> 
+<span class="sa">u</span><span class="s1">&#39;zero&#39;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">stemmer</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="s1">&#39;stemmer&#39;</span><span class="p">)</span> 
+<span class="sa">u</span><span class="s1">&#39;stem&#39;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">stemmer</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="s1">&#39;sixties&#39;</span><span class="p">)</span> 
+<span class="sa">u</span><span class="s1">&#39;sixti&#39;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">stemmer</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="s1">&#39;sixty&#39;</span><span class="p">)</span> 
+<span class="sa">u</span><span class="s1">&#39;sixty&#39;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">stemmer</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="s1">&#39;goes&#39;</span><span class="p">)</span> 
+<span class="sa">u</span><span class="s1">&#39;goe&#39;</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">stemmer</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="s1">&#39;go&#39;</span><span class="p">)</span> 
+<span class="sa">u</span><span class="s1">&#39;go&#39;</span> <span class="n">复制ErrorOK</span><span class="err">!</span>
+</code></pre></div><p>词干解析的确有一个计算成本。 最终收益是否大于成本取决于应用程序。</p>
+<br>
+<h3 id="含义的原子从单词到-n-gram-到短语httpfe4mlapachecnorgdocs3文本数据id含义的原子从单词到-n-gram-到短语"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%90%AB%E4%B9%89%E7%9A%84%E5%8E%9F%E5%AD%90%EF%BC%9A%E4%BB%8E%E5%8D%95%E8%AF%8D%E5%88%B0-n-gram-%E5%88%B0%E7%9F%AD%E8%AF%AD">含义的原子：从单词到 N-gram 到短语</a><a hidden class="anchor" aria-hidden="true" href="#含义的原子从单词到-n-gram-到短语httpfe4mlapachecnorgdocs3文本数据id含义的原子从单词到-n-gram-到短语">#</a></h3>
+<p>词袋的概念很简单。但是，一台电脑怎么知道一个词是什么？文本文档以数字形式表示为一个字符串，基本上是一系列字符。也可能会遇到 JSON blob 或 HTML 页面形式的半结构化文本。但即使添加了标签和结构，基本单位仍然是一个字符串。如何将字符串转换为一系列的单词？这涉及解析和标记化的任务，我们将在下面讨论。</p>
+<br>
+<h3 id="解析和分词httpfe4mlapachecnorgdocs3文本数据id解析和分词"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E8%A7%A3%E6%9E%90%E5%92%8C%E5%88%86%E8%AF%8D">解析和分词</a><a hidden class="anchor" aria-hidden="true" href="#解析和分词httpfe4mlapachecnorgdocs3文本数据id解析和分词">#</a></h3>
+<p>当字符串包含的不仅仅是纯文本时，解析是必要的。例如，如果原始数据是网页，电子邮件或某种类型的日志，则它包含额外的结构。人们需要决定如何处理日志中的标记，页眉，页脚或无趣的部分。如果文档是网页，则解析器需要处理 URL。如果是电子邮件，则可能需要特殊字段，例如 From，To 和 Subject 需要被特别处理，否则，这些标题将作为最终计数中的普通单词统计，这可能没有用处。</p>
+<p>解析后，文档的纯文本部分可以通过标记。这将字符串（一系列字符）转换为一系列记号。然后可以将每个记号计为一个单词。分词器需要知道哪些字符表示一个记号已经结束，另一个正在开始。空格字符通常是好的分隔符，正如标点符号一样。如果文本包含推文，则不应将井号（<code>#</code>）用作分隔符（也称为分隔符）。</p>
+<p>有时，分析需要使用句子而不是整个文档。例如，n-gram 是一个句子的概括，不应超出句子范围。更复杂的文本特征化方法，如 word2vec 也适用于句子或段落。在这些情况下，需要首先将文档解析为句子，然后将每个句子进一步标记为单词。</p>
+<br>
+<h3 id="字符串对象httpfe4mlapachecnorgdocs3文本数据id字符串对象"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%AF%B9%E8%B1%A1">字符串对象</a><a hidden class="anchor" aria-hidden="true" href="#字符串对象httpfe4mlapachecnorgdocs3文本数据id字符串对象">#</a></h3>
+<p>字符串对象有各种编码，如 ASCII 或 Unicode。纯英文文本可以用 ASCII 编码。 一般语言需要 Unicode。 如果文档包含非 ASCII 字符，则确保分词器可以处理该特定编码。否则，结果将不正确。</p>
+<br>
+<h3 id="短语检测的搭配提取httpfe4mlapachecnorgdocs3文本数据id短语检测的搭配提取"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E7%9F%AD%E8%AF%AD%E6%A3%80%E6%B5%8B%E7%9A%84%E6%90%AD%E9%85%8D%E6%8F%90%E5%8F%96">短语检测的搭配提取</a><a hidden class="anchor" aria-hidden="true" href="#短语检测的搭配提取httpfe4mlapachecnorgdocs3文本数据id短语检测的搭配提取">#</a></h3>
+<p>连续的记号能立即被转化成词表和 n-gram。但从语义上讲，我们更习惯于理解短语，而不是 n-gram。在计算自然语言处理中，有用短语的概念被称为搭配。用 Manning 和 Schütze（1999：141）的话来说：“搭配是一个由两个或两个以上单词组成的表达，它们对应于某种常规的说话方式。”</p>
+<p>搭配比其部分的总和更有意义。例如，<code>&quot;strong tea&quot;</code>具有超越<code>&quot;great physical strength&quot;</code>和<code>&quot;tea&quot;</code>的不同含义，因此被认为是搭配。另一方面，“可爱的小狗”这个短语恰恰意味着它的部分总和：“可爱”和“小狗”。因此，它不被视为搭配。</p>
+<p>搭配不一定是连续的序列。<code>&quot;Emma knocked on the door&quot;</code>一词被认为包含搭配<code>&quot;knock door&quot;</code>，因此不是每一个搭配都是一个 n-gram。相反，并不是每个 n-gram 都被认为是一个有意义的搭配。</p>
+<p>由于搭配不仅仅是其部分的总和，它们的含义也不能通过单个单词计数来充分表达。作为一种表现形式，词袋不足。袋子的 ngram 也是有问题的，因为它们捕获了太多无意义的序列（考虑<code>&quot;this is in the bag-of-ngram example&quot;</code>），而没有足够的有意义的序列。</p>
+<p>搭配作为功能很有用。但是，如何从文本中发现并提取它们呢？一种方法是预先定义它们。如果我们努力尝试，我们可能会找到各种语言的全面成语列表，我们可以通过文本查看任何匹配。这将是非常昂贵的，但它会工作。如果语料库是非常特定领域的并且包含深奥的术语，那么这可能是首选的方法。但是这个列表需要大量的手动管理，并且需要不断更新语料库。例如，分析推文，博客和文章可能不太现实。</p>
+<p>自从统计 NLP 过去二十年出现以来，人们越来越多地选择用于查找短语的统计方法。统计搭配提取方法不是建立固定的短语和惯用语言列表，而是依赖不断发展的数据来揭示当今流行的语言。</p>
+<br>
+<h3 id="基于频率的方法httpfe4mlapachecnorgdocs3文本数据id基于频率的方法"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%9F%BA%E4%BA%8E%E9%A2%91%E7%8E%87%E7%9A%84%E6%96%B9%E6%B3%95">基于频率的方法</a><a hidden class="anchor" aria-hidden="true" href="#基于频率的方法httpfe4mlapachecnorgdocs3文本数据id基于频率的方法">#</a></h3>
+<p>一个简单的黑魔法是频繁发生的 n-gram。这种方法的问题是最常发生的，这种可能不是最有用的。 表 3-2 显示了整个 Yelp 评论数据集中最流行的 bigram（<code>n=2</code>）。 正如我们所知的，按文件计数排列的最常见的十大常见术语是非常通用的术语，并不包含太多含义。</p>
+
+<figure >
+    
+        <img src="img/biaod.png" width="100%" />
+    
+    
+</figure>
+
+<br>
+<h3 id="用于搭配提取的假设检验httpfe4mlapachecnorgdocs3文本数据id用于搭配提取的假设检验"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E7%94%A8%E4%BA%8E%E6%90%AD%E9%85%8D%E6%8F%90%E5%8F%96%E7%9A%84%E5%81%87%E8%AE%BE%E6%A3%80%E9%AA%8C">用于搭配提取的假设检验</a><a hidden class="anchor" aria-hidden="true" href="#用于搭配提取的假设检验httpfe4mlapachecnorgdocs3文本数据id用于搭配提取的假设检验">#</a></h3>
+<p>原始流行度计数（Raw popularity count）是一个比较粗糙的方法。我们必须找到更聪慧的统计数据才能够轻松挑选出有意义的短语。关键的想法是看两个单词是否经常出现在一起。回答这个问题的统计机制被称为假设检验。</p>
+<p>假设检验是将噪音数据归结为“是”或“否”的答案。它涉及将数据建模为从随机分布中抽取的样本。随机性意味着人们永远无法 100% 的确定答案；总会有异常的机会。所以答案附在概率上。例如，假设检验的结果可能是“这两个数据集来自同一分布，其概率为 95%”。对于假设检验的温和介绍，请参阅可汗学院关于假设检验和 p 值的教程。</p>
+<p>在搭配提取的背景下，多年来已经提出了许多假设检验。最成功的方法之一是基于似然比检验（Dunning，1993）。对于给定的一对单词，该方法测试两个假设观察的数据集。假设 1（原假设）表示，词语 1 独立于词语 2 出现。另一种说法是说，看到词语1对我们是否看到词语2没有影响。假设 2（备选假设）说，看到词 1 改变了看到单词 2 的可能性。我们采用备选假设来暗示这两个单词形成一个共同的短语。因此，短语检测（也称为搭配提取）的似然比检验提出了以下问题：给定文本语料库中观察到的单词出现更可能是从两个单词彼此独立出现的模型中生成的，或者模型中两个词的概率纠缠？</p>
+<p>这是有用的。让我们算一点。（数学非常精确和简洁地表达事物，但它确实需要与自然语言完全不同的分析器。）</p>
+
+<figure >
+    
+        <img src="img/gongshi.png" width="100%" />
+    
+    
+</figure>
+
+<p>似然函数<code>L(Data; H)</code>表示在单词对的独立模型或非独立模型下观察数据集中词频的概率。为了计算这个概率，我们必须对如何生成数据做出另一个假设。最简单的数据生成模型是二项模型，其中对于数据集中的每个单词，我们抛出一个硬币，并且如果硬币朝上出现，我们插入我们的特殊单词，否则插入其他单词。在此策略下，特殊词的出现次数遵循二项分布。二项分布完全由词的总数，词的出现次数和词首概率决定。</p>
+<p>似然比检验分析常用短语的算法收益如下。</p>
+<ol>
+<li>
+<p>计算所有单体词的出现概率：<code>p(w)</code>。</p>
+</li>
+<li>
+<p>计算所有唯一双元的条件成对词发生概率：<code>p(W2 × W1)</code></p>
+</li>
+<li>
+<p>计算所有唯一的双对数似然比对数。</p>
+</li>
+<li>
+<p>根据它们的似然比排序双字节。</p>
+</li>
+<li>
+<p>以最小似然比值作为特征。</p>
+<br>
+</li>
+</ol>
+<h3 id="掌握似然比测试httpfe4mlapachecnorgdocs3文本数据id掌握似然比测试"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E6%8E%8C%E6%8F%A1%E4%BC%BC%E7%84%B6%E6%AF%94%E6%B5%8B%E8%AF%95">掌握似然比测试</a><a hidden class="anchor" aria-hidden="true" href="#掌握似然比测试httpfe4mlapachecnorgdocs3文本数据id掌握似然比测试">#</a></h3>
+<p>关键在于测试比较的不是概率参数本身，而是在这些参数（以及假设的数据生成模型）下观察数据的概率。可能性是统计学习的关键原则之一。但是在你看到它的前几次，这绝对是一个令人困惑的问题。一旦你确定了逻辑，它就变得直观了。</p>
+<p>还有另一种基于点互信息的统计方法。但它对真实世界文本语料库中常见的罕见词很敏感。因此它不常用，我们不会在这里展示它。</p>
+<p>请注意，搭配抽取的所有统计方法，无论是使用原始频率，假设测试还是点对点互信息，都是通过过滤候选词组列表来进行操作的。生成这种清单的最简单和最便宜的方法是计算 n-gram。它可能产生不连续的序列，但是它们计算成本颇高。在实践中，即使是连续 n-gram，人们也很少超过 bi-gram 或 tri-gram，因为即使在过滤之后，它们的数量也很多。为了生成更长的短语，还有其他方法，如分块或与词性标注相结合。</p>
+<br>
+<h3 id="分块chunking和词性标注part-of-speech-tagginghttpfe4mlapachecnorgdocs3文本数据id分块chunking和词性标注part-of-speech-tagging"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%88%86%E5%9D%97%EF%BC%88chunking%EF%BC%89%E5%92%8C%E8%AF%8D%E6%80%A7%E6%A0%87%E6%B3%A8%EF%BC%88part-of-speech-tagging%EF%BC%89">分块（Chunking）和词性标注（part-of-Speech Tagging）</a><a hidden class="anchor" aria-hidden="true" href="#分块chunking和词性标注part-of-speech-tagginghttpfe4mlapachecnorgdocs3文本数据id分块chunking和词性标注part-of-speech-tagging">#</a></h3>
+<p>分块比 n-gram 要复杂一点，因为它基于词性，基于规则的模型形成了记号序列。</p>
+<p>例如，我们可能最感兴趣的是在问题中找到所有名词短语，其中文本的实体，主题最为有趣。 为了找到这个，我们使用词性标记每个作品，然后检查该标记的邻域以查找词性分组或“块”。 定义单词到词类的模型通常是语言特定的。 几种开源 Python 库（如 NLTK，Spacy 和 TextBlob）具有多种语言模型。</p>
+<p>为了说明 Python 中的几个库如何使用词性标注非常简单地进行分块，我们再次使用 Yelp 评论数据集。 我们将使用 spacy 和 TextBlob 来评估词类以找到名词短语。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">json</span> 
+<span class="c1"># Load the first 10 reviews </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;data/yelp/v6/yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_review.json&#39;</span><span class="p">)</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">js</span> <span class="o">=</span> <span class="p">[]</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span> 
+<span class="n">js</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()))</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">review_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">js</span><span class="p">)</span> 
+<span class="c1">## First we&#39;ll walk through spaCy&#39;s functions </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">spacy</span> 
+<span class="c1"># preload the language model </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">nlp</span> <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;en&#39;</span><span class="p">)</span> 
+<span class="c1"># We can create a Pandas Series of spaCy nlp variables </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">doc_df</span> <span class="o">=</span> <span class="n">review_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">nlp</span><span class="p">)</span> 
+<span class="c1"># spaCy gives you fine grained parts of speech using: (.pos_) </span>
+<span class="c1"># and coarse grained parts of speech using: (.tag_) </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">doc_df</span><span class="p">[</span><span class="mi">4</span><span class="p">]:</span> 
+<span class="nb">print</span><span class="p">([</span><span class="n">doc</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">doc</span><span class="o">.</span><span class="n">pos_</span><span class="p">,</span> <span class="n">doc</span><span class="o">.</span><span class="n">tag_</span><span class="p">])</span> 
+<span class="n">Got</span> <span class="n">VERB</span> <span class="n">VBP</span> 
+<span class="n">a</span> <span class="n">DET</span> <span class="n">DT</span> 
+<span class="n">letter</span> <span class="n">NOUN</span> <span class="n">NN</span> 
+<span class="ow">in</span> <span class="n">ADP</span> <span class="n">IN</span> 
+<span class="n">the</span> <span class="n">DET</span> <span class="n">DT</span> 
+<span class="n">mail</span> <span class="n">NOUN</span> <span class="n">NN</span> 
+<span class="n">last</span> <span class="n">ADJ</span> <span class="n">JJ</span> 
+<span class="n">week</span> <span class="n">NOUN</span> <span class="n">NN</span> 
+<span class="n">that</span> <span class="n">ADJ</span> <span class="n">WDT</span> 
+<span class="n">said</span> <span class="n">VERB</span> <span class="n">VBD</span> 
+<span class="n">Dr</span><span class="o">.</span> <span class="n">PROPN</span> <span class="n">NNP</span> 
+<span class="n">Goldberg</span> <span class="n">PROPN</span> <span class="n">NNP</span> 
+<span class="ow">is</span> <span class="n">VERB</span> <span class="n">VBZ</span> 
+<span class="n">moving</span> <span class="n">VERB</span> <span class="n">VBG</span> 
+<span class="n">to</span> <span class="n">ADP</span> <span class="n">IN</span> 
+<span class="n">Arizona</span> <span class="n">PROPN</span> <span class="n">NNP</span> 
+<span class="n">to</span> <span class="n">PART</span> <span class="n">TO</span> 
+<span class="n">take</span> <span class="n">VERB</span> <span class="n">VB</span> 
+<span class="n">a</span> <span class="n">DET</span> <span class="n">DT</span> 
+<span class="n">new</span> <span class="n">ADJ</span> <span class="n">JJ</span> 
+<span class="n">position</span> <span class="n">NOUN</span> <span class="n">NN</span> 
+<span class="n">there</span> <span class="n">ADV</span> <span class="n">RB</span> 
+<span class="ow">in</span> <span class="n">ADP</span> <span class="n">IN</span> 
+<span class="n">June</span> <span class="n">PROPN</span> <span class="n">NNP</span> 
+<span class="o">.</span> <span class="n">PUNCT</span> <span class="o">.</span> 
+<span class="n">SPACE</span> <span class="n">SP</span> 
+<span class="n">He</span> <span class="n">PRON</span> <span class="n">PRP</span> 
+<span class="n">will</span> <span class="n">VERB</span> <span class="n">MD</span> 
+<span class="n">be</span> <span class="n">VERB</span> <span class="n">VB</span> 
+<span class="n">missed</span> <span class="n">VERB</span> <span class="n">VBN</span> 
+<span class="n">very</span> <span class="n">ADV</span> <span class="n">RB</span> 
+<span class="n">much</span> <span class="n">ADV</span> <span class="n">RB</span> 
+<span class="o">.</span> <span class="n">PUNCT</span> <span class="o">.</span> 
+<span class="n">SPACE</span> <span class="n">SP</span> 
+<span class="n">I</span> <span class="n">PRON</span> <span class="n">PRP</span> 
+<span class="n">think</span> <span class="n">VERB</span> <span class="n">VBP</span> 
+<span class="n">finding</span> <span class="n">VERB</span> <span class="n">VBG</span> 
+<span class="n">a</span> <span class="n">DET</span> <span class="n">DT</span> 
+<span class="n">new</span> <span class="n">ADJ</span> <span class="n">JJ</span> 
+<span class="n">doctor</span> <span class="n">NOUN</span> <span class="n">NN</span> 
+<span class="ow">in</span> <span class="n">ADP</span> <span class="n">IN</span> 
+<span class="n">NYC</span> <span class="n">PROPN</span> <span class="n">NNP</span> 
+<span class="n">that</span> <span class="n">ADP</span> <span class="n">IN</span> 
+<span class="n">you</span> <span class="n">PRON</span> <span class="n">PRP</span> 
+<span class="n">actually</span> <span class="n">ADV</span> <span class="n">RB</span> 
+<span class="n">like</span> <span class="n">INTJ</span> <span class="n">UH</span> 
+<span class="n">might</span> <span class="n">VERB</span> <span class="n">MD</span> 
+<span class="n">almost</span> <span class="n">ADV</span> <span class="n">RB</span> 
+<span class="n">be</span> <span class="n">VERB</span> <span class="n">VB</span> 
+<span class="k">as</span> <span class="n">ADV</span> <span class="n">RB</span> 
+<span class="n">awful</span> <span class="n">ADJ</span> <span class="n">JJ</span> 
+<span class="k">as</span> <span class="n">ADP</span> <span class="n">IN</span> 
+<span class="n">trying</span> <span class="n">VERB</span> <span class="n">VBG</span> 
+<span class="n">to</span> <span class="n">PART</span> <span class="n">TO</span> 
+<span class="n">find</span> <span class="n">VERB</span> <span class="n">VB</span> 
+<span class="n">a</span> <span class="n">DET</span> <span class="n">DT</span> 
+<span class="n">date</span> <span class="n">NOUN</span> <span class="n">NN</span> 
+<span class="err">!</span> <span class="n">PUNCT</span> <span class="o">.</span> 
+<span class="c1"># spaCy also does some basic noun chunking for us </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">([</span><span class="n">chunk</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">doc_df</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">noun_chunks</span><span class="p">])</span> 
+<span class="p">[</span><span class="n">a</span> <span class="n">letter</span><span class="p">,</span> <span class="n">the</span> <span class="n">mail</span><span class="p">,</span> <span class="n">Dr</span><span class="o">.</span> <span class="n">Goldberg</span><span class="p">,</span> <span class="n">Arizona</span><span class="p">,</span> <span class="n">a</span> <span class="n">new</span> <span class="n">position</span><span class="p">,</span> <span class="n">June</span><span class="p">,</span> <span class="n">He</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">a</span> <span class="n">new</span> <span class="n">doctor</span><span class="p">,</span> <span class="n">NYC</span><span class="p">,</span> <span class="n">you</span><span class="p">,</span> <span class="n">a</span> <span class="n">date</span><span class="p">]</span> 
+<span class="c1">##### </span>
+<span class="c1">## We can do the same feature transformations using Textblob </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">textblob</span> <span class="kn">import</span> <span class="n">TextBlob</span> 
+<span class="c1"># The default tagger in TextBlob uses the PatternTagger, which is fine for our example. </span>
+<span class="c1"># You can also specify the NLTK tagger, which works better for incomplete sentences. </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">blob_df</span> <span class="o">=</span> <span class="n">review_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">TextBlob</span><span class="p">)</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">blob_df</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">tags</span> 
+<span class="p">[(</span><span class="s1">&#39;Got&#39;</span><span class="p">,</span> <span class="s1">&#39;NNP&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;DT&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;letter&#39;</span><span class="p">,</span> <span class="s1">&#39;NN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;IN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;DT&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;mail&#39;</span><span class="p">,</span> <span class="s1">&#39;NN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;last&#39;</span><span class="p">,</span> <span class="s1">&#39;JJ&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="s1">&#39;NN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;that&#39;</span><span class="p">,</span> <span class="s1">&#39;WDT&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;said&#39;</span><span class="p">,</span> <span class="s1">&#39;VBD&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;Dr.&#39;</span><span class="p">,</span> <span class="s1">&#39;NNP&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;Goldberg&#39;</span><span class="p">,</span> <span class="s1">&#39;NNP&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;VBZ&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;moving&#39;</span><span class="p">,</span> <span class="s1">&#39;VBG&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;TO&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;Arizona&#39;</span><span class="p">,</span> <span class="s1">&#39;NNP&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;TO&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;take&#39;</span><span class="p">,</span> <span class="s1">&#39;VB&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;DT&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;new&#39;</span><span class="p">,</span> <span class="s1">&#39;JJ&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;position&#39;</span><span class="p">,</span> <span class="s1">&#39;NN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;there&#39;</span><span class="p">,</span> <span class="s1">&#39;RB&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;IN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;June&#39;</span><span class="p">,</span> <span class="s1">&#39;NNP&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;He&#39;</span><span class="p">,</span> <span class="s1">&#39;PRP&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;will&#39;</span><span class="p">,</span> <span class="s1">&#39;MD&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;be&#39;</span><span class="p">,</span> <span class="s1">&#39;VB&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;missed&#39;</span><span class="p">,</span> <span class="s1">&#39;VBN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;very&#39;</span><span class="p">,</span> <span class="s1">&#39;RB&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;much&#39;</span><span class="p">,</span> <span class="s1">&#39;JJ&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="s1">&#39;PRP&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;think&#39;</span><span class="p">,</span> <span class="s1">&#39;VBP&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;finding&#39;</span><span class="p">,</span> <span class="s1">&#39;VBG&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;DT&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;new&#39;</span><span class="p">,</span> <span class="s1">&#39;JJ&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;doctor&#39;</span><span class="p">,</span> <span class="s1">&#39;NN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;IN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;NYC&#39;</span><span class="p">,</span> <span class="s1">&#39;NNP&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;that&#39;</span><span class="p">,</span> <span class="s1">&#39;IN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;you&#39;</span><span class="p">,</span> <span class="s1">&#39;PRP&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;actually&#39;</span><span class="p">,</span> <span class="s1">&#39;RB&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;like&#39;</span><span class="p">,</span> <span class="s1">&#39;IN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;might&#39;</span><span class="p">,</span> <span class="s1">&#39;MD&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;almost&#39;</span><span class="p">,</span> <span class="s1">&#39;RB&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;be&#39;</span><span class="p">,</span> <span class="s1">&#39;VB&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;as&#39;</span><span class="p">,</span> <span class="s1">&#39;RB&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;awful&#39;</span><span class="p">,</span> <span class="s1">&#39;JJ&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;as&#39;</span><span class="p">,</span> <span class="s1">&#39;IN&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;trying&#39;</span><span class="p">,</span> <span class="s1">&#39;VBG&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;TO&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;find&#39;</span><span class="p">,</span> <span class="s1">&#39;VB&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;DT&#39;</span><span class="p">),</span> 
+<span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;NN&#39;</span><span class="p">)]</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">([</span><span class="n">np</span> <span class="k">for</span> <span class="n">np</span> <span class="ow">in</span> <span class="n">blob_df</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">noun_phrases</span><span class="p">])</span> 
+<span class="p">[</span><span class="s1">&#39;got&#39;</span><span class="p">,</span> <span class="s1">&#39;goldberg&#39;</span><span class="p">,</span> <span class="s1">&#39;arizona&#39;</span><span class="p">,</span> <span class="s1">&#39;new position&#39;</span><span class="p">,</span> <span class="s1">&#39;june&#39;</span><span class="p">,</span> <span class="s1">&#39;new doctor&#39;</span><span class="p">,</span> <span class="s1">&#39;nyc&#39;</span> <span class="n">复制ErrorOK</span><span class="err">!</span>
+</code></pre></div><p>你可以看到每个库找到的名词短语有些不同。spacy 包含英语中的常见单词，如<code>&quot;a&quot;</code>和<code>&quot;the&quot;</code>，而 TextBlob 则删除这些单词。这反映了规则引擎的差异，它驱使每个库都认为是“名词短语”。 你也可以写你的词性关系来定义你正在寻找的块。使用 Python 进行自然语言处理可以深入了解从头开始用 Python 进行分块。</p>
+<br>
+<h2 id="总结httpfe4mlapachecnorgdocs3文本数据id总结"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E6%80%BB%E7%BB%93">总结</a><a hidden class="anchor" aria-hidden="true" href="#总结httpfe4mlapachecnorgdocs3文本数据id总结">#</a></h2>
+<p>词袋模型易于理解和计算，对分类和搜索任务很有用。但有时单个单词太简单，不足以将文本中的某些信息封装起来。为了解决这个问题，人们寄希望于比较长的序列。Bag-of-ngram 是 BOW 的自然概括，这个概念仍然容于理解，而且它的计算开销这就像 BOW 一样容易。</p>
+<p>Bag of-ngram 生成更多不同的 ngram。它增加了特征存储成本，以及模型训练和预测阶段的计算成本。虽然数据点的数量保持不变，但特征空间的维度现在更大。因此数据密度更为稀疏。n 越高，存储和计算成本越高，数据越稀疏。由于这些原因，较长的 n-gram 并不总是会使模型精度的得到提高（或任何其他性能指标）。人们通常在<code>n = 2</code>或 3 时停止。较少的 n-gram 很少被使用。</p>
+<p>防止稀疏性和成本增加的一种方法是过滤 n-gram 并保留最有意义的短语。这是搭配抽取的目标。理论上，搭配（或短语）可以在文本中形成非连续的标记序列。然而，在实践中，寻找非连续词组的计算成本要高得多并且没有太多的收益。因此搭配抽取通常从一个候选人名单中开始，并利用统计方法对他们进行过滤。</p>
+<p>所有这些方法都将一系列文本标记转换为一组断开的计数。与一个序列相比，一个集合的结构要少得多；他们导致平面特征向量。</p>
+<p>在本章中，我们用简单的语言描述文本特征化技术。这些技术将一段充满丰富语义结构的自然语言文本转化为一个简单的平面向量。我们讨论一些常用的过滤技术来降低向量维度。我们还引入了 ngram 和搭配抽取作为方法，在平面向量中添加更多的结构。下一章将详细介绍另一种常见的文本特征化技巧，称为 tf-idf。随后的章节将讨论更多方法将结构添加回平面向量。</p>
+<br>
+<h2 id="参考文献httpfe4mlapachecnorgdocs3文本数据id参考文献"><a href="http://fe4ml.apachecn.org/#/docs/3.%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE?id=%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE">参考文献</a><a hidden class="anchor" aria-hidden="true" href="#参考文献httpfe4mlapachecnorgdocs3文本数据id参考文献">#</a></h2>
+<p>Dunning, Ted. 1993. “Accurate methods for the statistics of surprise and</p>
+<p>coincidence.” ACM Journal of Computational Linguistics, special issue on using large corpora , 19:1 (61—74).</p>
+<p>“Hypothesis Testing and p-Values.” Khan Academy, accessed May 31,</p>
+<p>2016,https://www.khanacademy.org/math/probability/statistics-inferential/hypothesis-testing/v/hypothesis-testing-and-p-values.</p>
+<p>Manning,Christopher D. and Hinrich Schütze. 1999. Foundations of StatisticalNatural Language Processing . Cambridge, Massachusettes: MIT Press.</p>
+<p>Sometimes people call it the document “vector.” The vector extends from the original and ends at the specified point. For our purposes, “vector” and “point” are the same thing.</p>
+<p><br><br></p>
+<h2 id="了解课程">了解课程<a hidden class="anchor" aria-hidden="true" href="#了解课程">#</a></h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+
+
+  </div>
+
+  <footer class="post-footer">
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2022 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

@@ -1,0 +1,234 @@
+---
+title: "如何在Rmarkdown中调用Python代码"
+author: "邓旭东"
+date: "7/26/2020"
+output: 
+    html_document:
+        toc: true # table of content true
+        toc_float: True
+        collapsed: TRUE
+        toc_depth: 3  
+        number_sections: yes
+        smooth_scroll: T 
+        theme: readable  
+        highlight: pygments  
+        df_print: paged 
+        keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Python和R是一对数据科学两大语言，在互联互通的路上，我感觉R更加的积极。还记得之前 **Python中调用R的库-rpy2**， 在Python使用R语言语法还是有些不自然。在R中调用Python体验十分棒，一起跟我看看吧。
+
+reticulate包是可以让R语言非常流畅自然联通Python的关键。
+
+# Rmarkdown预备知识
+Rmarkdown很像jupyter notbeook和markdown的结合。
+
+- 代码块
+- markdon文本
+
+## 代码块
+在Rmarkdown中的代码块的开始都是以三引号、{}和语言名为标志，以三引号结尾。
+
+```
+library(ggplot2)
+ggplot(mpg, aes(x=displ, y=cty))+
+  geom_point()
+```
+
+```{r}
+library(ggplot2)
+ggplot(mpg, aes(x=displ, y=cty))+
+  geom_point()
+```
+
+后面设置好reticulate包后，就可以在Rmarkdown中使用python代码块，
+
+```
+import pandas as pd
+df = pd.read_csv('test.csv')
+df.head()
+```
+
+
+
+
+
+## markdown文本
+文本部分全部支持markdown语法，这里不做赘述。
+
+
+
+# 安装
+
+```
+install.packages("reticulate")
+```
+
+
+# 环境设置
+当我们在R代码块中设置好Python环境，就可以在Rmarkdown中跑Python代码。
+
+## 查询Python
+首先我们需要知道Python安装路径，可以在**命令行**中逐行执行下面代码
+
+```
+python3
+import sys
+sys.executable
+```
+
+我的mac电脑的Python安装路径为
+
+```
+/Library/Frameworks/Python.framework/Versions/3.7/bin/python3
+```
+
+## 指定Python
+执行下方的代码(路径改为自己的Python安装路径)
+
+```{r}
+library(reticulate)
+
+use_python('/Library/Frameworks/Python.framework/Versions/3.7/bin/python3')
+```
+
+执行代码后，我们就可以愉快的使用Python代码
+
+# 运行Python代码
+在Rmarkdown中写Python代码块
+
+## 作图
+
+```{python}
+import numpy as np 
+import matplotlib.pyplot as plt 
+# 计算正弦曲线上点的 x 和 y 坐标
+x = np.arange(0,  3  * np.pi,  0.1) 
+y = np.sin(x)
+plt.title("sine wave form")  
+# 使用 matplotlib 来绘制点
+plt.plot(x, y) 
+plt.show()
+```
+
+
+## 读取csv
+
+```{python}
+import pandas as pd
+
+df = pd.read_csv("test.csv", encoding="gbk")
+df.head()
+```
+
+返回的df是Python对象，我们可以看到表格不好看，这是R中的Python对象。
+
+# 在R代码块中调用Python变量(对象)
+刚刚讲的都是在Rmakdown中运行Python代码块，并不是在R代码块中运行Python代码或者调用Python变量。
+
+## py$python_variable_name
+R代码块中调用Python方法
+
+py$python_variable_name
+
+- py相当于Python中的对象
+- $ 相当于Python中的**点**
+- python_variable_name 是Python代码块中的变量名
+
+比如在上文中Python的变量df，在R中调用
+
+```{r}
+py$df
+```
+
+现在调用Python对象df时，R会默认将其转为R对象，所以内容一样，样式似乎变好看了。
+
+# R代码块中导入Python库
+
+使用os库的listdir函数查询当前项目文件夹内的文件列表
+
+```{python}
+import os
+
+os.listdir()
+```
+
+在R代码块中实现上方的Python功能，如下，很简单
+
+```{r}
+library(reticulate)
+
+#导入库
+os <- import("os")
+
+#os库的listdir函数
+os$listdir()
+```
+
+
+可以发现
+- ``import("os)``代替了``import os``
+- ``$``代替了``.``
+- ``<-`` 代替了 ``=``
+
+再熟悉一下
+
+
+```{r}
+library(reticulate)
+pd <- import("pandas")
+df2 <- pd$read_csv("test.csv", encoding="gbk")
+df2
+```
+
+需要注意的是，在R代码块中执行Python代码时，默认会将Python对象转为R对象。
+
+## source_python()
+使用reticulate包中的source_python('py文件路径')可以导入py文件中的变量，这样就可以在R代码块中使用外部变量。例如我在data.py中准备A和B两个字符串
+
+```
+A = '我是张三,'
+B = '来自河北'
+```
+
+在R代码块中运行data.py
+
+```{r}
+library(reticulate)
+
+source_python("data.py")
+print(A)
+print(B)
+paste0(A, B)
+```
+
+## py_run_file()
+
+在R代码块中运行项目文件夹中的test.py文件
+
+```{r}
+library(reticulate)
+py_run_file("test.py")
+```
+
+
+
+# 数据类型对比
+
+| R | Python | Examples |
+| ---| ---| --- |
+|Single-element vector | Scalar | `1`, `1L`, `TRUE`, `"foo"` |
+| Multi-element vector   | List              | `c(1.0, 2.0, 3.0)`, `c(1L, 2L, 3L)`              |
+| List of multiple types | Tuple             | `list(1L, TRUE, "foo")`                          |
+| Named list             | Dict              | `list(a = 1L, b = 2.0)`, `dict(x = x_data)`      |
+| Matrix/Array           | NumPy ndarray     | `matrix(c(1,2,3,4), nrow = 2, ncol = 2)`         |
+| Data Frame             | Pandas DataFrame  | `data.frame(x = c(1,2,3), y = c("a", "b", "c"))` |
+| Function               | Python function   | `function(x) x + 1`                              |
+| NULL, TRUE, FALSE      | None, True, False | `NULL`, `TRUE`, `FALSE`                          |
+
+
+
