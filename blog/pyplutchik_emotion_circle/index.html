@@ -103,8 +103,8 @@
   "keywords": [
     "Python可视化", "文本分析", "经管社科", "数据挖掘", "心理学"
   ],
-  "articleBody": "越来越多的社交网络学者， 为测量情绪， 基于心理学家 Robert Plutchik 提出的模型（通常简称为“Plutchik轮”，人类的情绪一共有8大类）制作了大量的情绪可视化作品。在某种程度上，Plutchik轮可以看做情绪指纹，例如不同的电影题材在8类情绪的分布是不一样的。\n  今天介绍 PyPlutchik，这是一个 Python 库，专门用于在文本或语料库中可视化 Plutchik 的情绪。 PyPlutchik 绘制 Plutchik 的花朵，每个情感花瓣的大小取决于语料库中检测到或注释了多少情感，也代表每个情感花瓣的三个强度程度。\n安装 pip3 install pyplutchik \nUsage from pyplutchik import plutchik emotions = {'joy': 0.6, 'trust': 0.4, 'fear': 0.1, 'surprise': 0.7, 'sadness': 0.1, 'disgust': 0.5, 'anger': 0.4, 'anticipation': 0.6} plutchik(emotions) \n功能特性 PyPlutchik 提供了一个即插即用的工具，用于在文本或语料库中定量表示 Plutchik 的情绪。 它尊重 Plutchik 轮中每个花瓣的原始颜色和空间位移。\n在 Pyplutchik 中，用户可以只传递一个字典作为唯一参数，其中字典的键必须是 8 种基本情绪。 每个值必须是 ∈ [0, 1]。\n  每类情绪存在三种强度，下表是Pyplutchik的8大类情绪三种强度汇总。\n用户还可以给每个情绪传入一个长度是3的列表，依次表示情绪在低、中、高三种强度的程度，数值0 和 1 之间。\n   Lower intensity Emotion Higher intensity     Annoyance Anger Rage   Interest Anticipation Vigilance   Serenity Joy Ecstasy   Acceptance Trust Admiration   Apprehension Fear Terror   Distraction Surprise Amazement   Pensiveness Sadness Grief   Boredom Disgust Loathing      PyPlutchik 也可表征用户数据中的主要二元、次要二元、二元和相反的情绪。 它会自动从字典的关键字中了解用户想要显示什么样的二元组。\n  绘图技巧 可以专注于情绪子集，不会忽视其他情绪，将情绪列表作为参数“highlight_emotions”的值传递：\n强调某些情绪   我们可以比较同一亚马逊语料库的不同子组，将我们的可视化并排放置，并仅突出显示愤怒、厌恶和恐惧的花瓣，以轻松发现这些负面情绪在 5 星评论中的表现如何低于 1 星评论 .\n强调某些情绪   或者可以隐藏坐标、刻度和标签，只绘制花瓣，使用参数 show_coordinates = False 和 show_ticklabels = False。下图是imdb不同电影的情绪轮\n强调某些情绪   查看文档 有关所有参数的文档和示例库，请参见文档\n文档下载\n🔥 PyPlutchik 2.0 即将推出！ 新功能包括从文本中提取情感并检查非主题词典。 敬请期待……🔥\n说明 如果使用PyPlutchik，请在文献中说明，格式如下\nSemeraro A, Vilella S, Ruffo G (2021) PyPlutchik: Visualising and comparing emotion-annotated corpora PLOS ONE 16(9):e0256503.https://doi.org/10.1371/journal.pone.0256503 \nSemeraro的研究   #the-canvas { border: 1px solid black; direction: ltr; width: 100%; height: auto; display: none; } #paginator { display: none; text-align: center; margin-bottom: 10px; } #loadingWrapper { display: none; justify-content: center; align-items: center; width: 100%; height: 350px; } #loading { display: inline-block; width: 50px; height: 50px; border: 3px solid #d2d0d0;; border-radius: 50%; border-top-color: #383838; animation: spin 1s ease-in-out infinite; -webkit-animation: spin 1s ease-in-out infinite; } @keyframes spin { to { -webkit-transform: rotate(360deg); } } @-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); } }  Previous Next Page:  /       window.onload = function() { var url = \"\\/\" + '220107538.pdf'; var hidePaginator = \"\" === \"true\"; var hideLoader = \"\" === \"true\"; var selectedPageNum = parseInt(\"3\") || 1; var pdfjsLib = window['pdfjs-dist/build/pdf']; pdfjsLib.GlobalWorkerOptions.workerSrc = \"\\/\" + '/js/pdf-js/build/pdf.worker.js'; var pdfDoc = null, pageNum = selectedPageNum, pageRendering = false, pageNumPending = null, scale = 3, canvas = document.getElementById('the-canvas'), ctx = canvas.getContext('2d'), paginator = document.getElementById(\"paginator\"), loadingWrapper = document.getElementById('loadingWrapper'); showPaginator(); showLoader(); function renderPage(num) { pageRendering = true; pdfDoc.getPage(num).then(function(page) { var viewport = page.getViewport({scale: scale}); canvas.height = viewport.height; canvas.width = viewport.width; var renderContext = { canvasContext: ctx, viewport: viewport }; var renderTask = page.render(renderContext); renderTask.promise.then(function() { pageRendering = false; showContent(); if (pageNumPending !== null) { renderPage(pageNumPending); pageNumPending = null; } }); }); document.getElementById('page_num').textContent = num; } function showContent() { loadingWrapper.style.display = 'none'; canvas.style.display = 'block'; } function showLoader() { if(hideLoader) return loadingWrapper.style.display = 'flex'; canvas.style.display = 'none'; } function showPaginator() { if(hidePaginator) return paginator.style.display = 'block'; } function queueRenderPage(num) { if (pageRendering) { pageNumPending = num; } else { renderPage(num); } } function onPrevPage() { if (pageNum = pdfDoc.numPages) { return; } pageNum++; queueRenderPage(pageNum); } document.getElementById('next').addEventListener('click', onNextPage); pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) { pdfDoc = pdfDoc_; var numPages = pdfDoc.numPages; document.getElementById('page_count').textContent = numPages; if(pageNum  numPages) { pageNum = numPages } renderPage(pageNum); }); }  --- Semeraro, Alfonso, Salvatore Vilella, Giancarlo Ruffo, and Massimo Stella. \"Writing about COVID-19 vaccines: Emotional profiling unravels how mainstream and alternative press framed AstraZeneca, Pfizer and vaccination campaigns.\" *arXiv preprint arXiv:2201.07538* (2022).  摘要: 自 2020 年 11 月宣布 COVID-19 疫苗以来，媒体和社交媒体对 COVID-19 疫苗进行了大量辩论。由于大多数研究都集中在社交媒体中的 COVID-19 虚假信息上，与其他来源相比，主流新闻媒体如何构建 COVID-19 叙述很少受到关注。为了填补这一空白，我们使用认知网络科学和自然语言处理来重建 5745 条关于 COVID-19 疫苗的新闻的随时间变化的语义和情感框架。我们的数据集涵盖了 8 个月内的 17 个网点，其中包括在 Facebook（500 万总股数）和 Twitter（20 万股总股数）上大量转发的意大利新闻文章。我们发现主流消息来源构建“疫苗/疫苗”的总体概念的方式始终具有高度的信任/预期和较少的厌恶。在替代来源构建 COVID-19 疫苗的方式中，这些情绪严重缺失。在疫苗的特定实例中发现了更多差异。另类新闻包括以强烈的悲伤来描述阿斯利康疫苗的标题，而主流标题中没有。与“阿斯利康”相比，主流新闻最初将“辉瑞”与副作用（例如“过敏”、“反应”、“发烧”）相关联更多。随着后一种疫苗的暂停，在 2021 年 3 月 15 日，我们发现了一种语义/情感转变：即使是主流文章标题都将“阿斯利康”框定为在语义上更丰富与副作用的负面关联，而“辉瑞”则经历了积极的效价转变，主要与其更高的效率有关。血栓形成与可怕的概念联想一起进入了疫苗的框架，而死亡这个词经历了情感转变，在替代标题中转向恐惧，在主流标题中失去了希望的内涵，缺乏预期。我们的发现揭示了媒体采用的围绕 COVID-19 疫苗的情感叙述的关键方面，强调了了解替代媒体和主流媒体如何报道疫苗接种新闻的必要性。 Keywords: natural language processing, text analysis, complex networks, cognitive network science, COVID-19, COVID-19 vaccines        了解课程  点击上方图片购买课程   点击进入详情页\n",
-  "wordCount" : "522",
+  "articleBody": "越来越多的社交网络学者， 为测量情绪， 基于心理学家 Robert Plutchik 提出的模型（通常简称为“Plutchik轮”，人类的情绪一共有8大类）制作了大量的情绪可视化作品。在某种程度上，Plutchik轮可以看做情绪指纹，例如不同的电影题材在8类情绪的分布是不一样的。\n  今天介绍 PyPlutchik，这是一个 Python 库，专门用于在文本或语料库中可视化 Plutchik 的情绪。 PyPlutchik 绘制 Plutchik 的花朵，每个情感花瓣的大小取决于语料库中检测到或注释了多少情感，也代表每个情感花瓣的三个强度程度。\n安装 pip3 install pyplutchik \nUsage from pyplutchik import plutchik emotions = {'joy': 0.6, 'trust': 0.4, 'fear': 0.1, 'surprise': 0.7, 'sadness': 0.1, 'disgust': 0.5, 'anger': 0.4, 'anticipation': 0.6} plutchik(emotions) \n功能特性 PyPlutchik 提供了一个即插即用的工具，用于在文本或语料库中定量表示 Plutchik 的情绪。 它尊重 Plutchik 轮中每个花瓣的原始颜色和空间位移。\n在 Pyplutchik 中，用户可以只传递一个字典作为唯一参数，其中字典的键必须是 8 种基本情绪。 每个值必须是 ∈ [0, 1]。\n  每类情绪存在三种强度，下表是Pyplutchik的8大类情绪三种强度汇总。\n用户还可以给每个情绪传入一个长度是3的列表，依次表示情绪在低、中、高三种强度的程度，数值0 和 1 之间。\n   Lower intensity Emotion Higher intensity     Annoyance Anger Rage   Interest Anticipation Vigilance   Serenity Joy Ecstasy   Acceptance Trust Admiration   Apprehension Fear Terror   Distraction Surprise Amazement   Pensiveness Sadness Grief   Boredom Disgust Loathing      PyPlutchik 也可表征用户数据中的主要二元、次要二元、二元和相反的情绪。 它会自动从字典的关键字中了解用户想要显示什么样的二元组。\n  绘图技巧 可以专注于情绪子集，不会忽视其他情绪，将情绪列表作为参数“highlight_emotions”的值传递：\n强调某些情绪   我们可以比较同一亚马逊语料库的不同子组，将我们的可视化并排放置，并仅突出显示愤怒、厌恶和恐惧的花瓣，以轻松发现这些负面情绪在 5 星评论中的表现如何低于 1 星评论 .\n强调某些情绪   或者可以隐藏坐标、刻度和标签，只绘制花瓣，使用参数 show_coordinates = False 和 show_ticklabels = False。下图是imdb不同电影的情绪轮\n强调某些情绪   查看文档 有关所有参数的文档和示例库，请参见文档\n文档下载\n🔥 PyPlutchik 2.0 即将推出！ 新功能包括从文本中提取情感并检查非主题词典。 敬请期待……🔥\n说明 如果使用PyPlutchik，请在文献中说明，格式如下\nSemeraro A, Vilella S, Ruffo G (2021) PyPlutchik: Visualising and comparing emotion-annotated corpora PLOS ONE 16(9):e0256503.https://doi.org/10.1371/journal.pone.0256503 \nSemeraro的研究 Semeraro, Alfonso, Salvatore Vilella, Giancarlo Ruffo, and Massimo Stella. \"Writing about COVID-19 vaccines: Emotional profiling unravels how mainstream and alternative press framed AstraZeneca, Pfizer and vaccination campaigns.\" *arXiv preprint arXiv:2201.07538* (2022).  摘要: 自 2020 年 11 月宣布 COVID-19 疫苗以来，媒体和社交媒体对 COVID-19 疫苗进行了大量辩论。由于大多数研究都集中在社交媒体中的 COVID-19 虚假信息上，与其他来源相比，主流新闻媒体如何构建 COVID-19 叙述很少受到关注。为了填补这一空白，我们使用认知网络科学和自然语言处理来重建 5745 条关于 COVID-19 疫苗的新闻的随时间变化的语义和情感框架。我们的数据集涵盖了 8 个月内的 17 个网点，其中包括在 Facebook（500 万总股数）和 Twitter（20 万股总股数）上大量转发的意大利新闻文章。我们发现主流消息来源构建“疫苗/疫苗”的总体概念的方式始终具有高度的信任/预期和较少的厌恶。在替代来源构建 COVID-19 疫苗的方式中，这些情绪严重缺失。在疫苗的特定实例中发现了更多差异。另类新闻包括以强烈的悲伤来描述阿斯利康疫苗的标题，而主流标题中没有。与“阿斯利康”相比，主流新闻最初将“辉瑞”与副作用（例如“过敏”、“反应”、“发烧”）相关联更多。随着后一种疫苗的暂停，在 2021 年 3 月 15 日，我们发现了一种语义/情感转变：即使是主流文章标题都将“阿斯利康”框定为在语义上更丰富与副作用的负面关联，而“辉瑞”则经历了积极的效价转变，主要与其更高的效率有关。血栓形成与可怕的概念联想一起进入了疫苗的框架，而死亡这个词经历了情感转变，在替代标题中转向恐惧，在主流标题中失去了希望的内涵，缺乏预期。我们的发现揭示了媒体采用的围绕 COVID-19 疫苗的情感叙述的关键方面，强调了了解替代媒体和主流媒体如何报道疫苗接种新闻的必要性。 Keywords: natural language processing, text analysis, complex networks, cognitive network science, COVID-19, COVID-19 vaccines        了解课程  点击上方图片购买课程   点击进入详情页\n",
+  "wordCount" : "229",
   "inLanguage": "en",
   "image":"/images/blog/PyPlutchik.png","datePublished": "2022-04-03T10:43:10+06:00",
   "dateModified": "2022-04-03T10:43:10+06:00",
@@ -221,23 +221,60 @@ onload="renderMathInElement(document.body);"></script>
     <h1 class="post-title">
       PyPlutchik库 | 可视化文本的情绪轮(情绪指纹)
     </h1>
-    <div class="post-meta"><span title='2022-04-03 10:43:10 +0600 +0600'>2022-04-03</span>&nbsp;·&nbsp;3 min&nbsp;·&nbsp;大邓
+    <div class="post-meta"><span title='2022-04-03 10:43:10 +0600 +0600'>2022-04-03</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
 
 </div>
-
-    <div>
-      <br>
-      <ul class="post-tags">
-        <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/" target='_blank'>文本分析</a></li>
-        <li><a href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/" target='_blank'>第三方包</a></li>
-        <li><a href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/" target='_blank'>可视化</a></li>
-      </ul>
-    </div>
   </header> 
 <figure class="entry-cover"><a href="/images/blog/PyPlutchik.png" target="_blank"
             rel="noopener noreferrer"><img loading="lazy" src="/images/blog/PyPlutchik.png" alt=""></a>
         
-</figure><aside id="toc-container" class="toc-container wide">
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on twitter"
+        href="https://twitter.com/intent/tweet/?text=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29&amp;url=%2fblog%2fpyplutchik_emotion_circle%2f&amp;hashtags=%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e7%ac%ac%e4%b8%89%e6%96%b9%e5%8c%85%2c%e5%8f%af%e8%a7%86%e5%8c%96">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2fpyplutchik_emotion_circle%2f&amp;title=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29&amp;summary=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29&amp;source=%2fblog%2fpyplutchik_emotion_circle%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2fpyplutchik_emotion_circle%2f&title=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2fpyplutchik_emotion_circle%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on whatsapp"
+        href="https://api.whatsapp.com/send?text=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29%20-%20%2fblog%2fpyplutchik_emotion_circle%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on telegram"
+        href="https://telegram.me/share/url?text=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29&amp;url=%2fblog%2fpyplutchik_emotion_circle%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
     <div class="toc">
         <details  open>
             <summary accesskey="c" title="(Alt + C)">
@@ -470,7 +507,7 @@ onload="renderMathInElement(document.body);"></script>
 </div>
 <br>
 <h2 id="查看文档">查看文档<a hidden class="anchor" aria-hidden="true" href="#查看文档">#</a></h2>
-<p>有关所有参数的文档和示例库，请参见<a href="Documentation.md">文档</a></p>
+<p>有关所有参数的文档和示例库，请参见<a href="Documentation.html">文档</a></p>
 <p><a href="PyPlutchik.zip"><strong>文档下载</strong></a></p>
 <p>🔥 PyPlutchik 2.0 即将推出！ 新功能包括从文本中提取情感并检查非主题词典。 敬请期待……🔥</p>
 <br>
@@ -479,201 +516,6 @@ onload="renderMathInElement(document.body);"></script>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Semeraro A, Vilella S, Ruffo G (2021) PyPlutchik: Visualising and comparing emotion-annotated corpora PLOS ONE 16(9):e0256503.https://doi.org/10.1371/journal.pone.0256503
 </code></pre></div><br>
 <h2 id="semeraro的研究">Semeraro的研究<a hidden class="anchor" aria-hidden="true" href="#semeraro的研究">#</a></h2>
-<!---<script src= '/js/pdf-js/build/pdf.js'></script>
-<style>
-#the-canvas {
-  border: 1px solid black;
-  direction: ltr;
-  width: 100%;
-  height: auto;
-  display: none;
-}
-
-#paginator {
-  display: none;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-#loadingWrapper {
-  display: none;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 350px;
-}
-
-#loading {
-  display: inline-block;
-  width: 50px;
-  height: 50px;
-  border: 3px solid #d2d0d0;;
-  border-radius: 50%;
-  border-top-color: #383838;
-  animation: spin 1s ease-in-out infinite;
-  -webkit-animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to { -webkit-transform: rotate(360deg); }
-}
-@-webkit-keyframes spin {
-  to { -webkit-transform: rotate(360deg); }
-}
-</style>
-
-<div id="paginator">
-    <button id="prev">Previous</button>
-    <button id="next">Next</button>
-    &nbsp; &nbsp;
-    <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
-</div>
-<div id="embed-pdf-container">
-    <div id="loadingWrapper">
-      <div id="loading"></div>
-    </div>
-    <canvas id="the-canvas"></canvas>
-</div>
-
-<script type="text/javascript">
-window.onload = function() {
-
-
-var url = "\/" + '220107538.pdf';
-
-var hidePaginator = "" === "true";
-var hideLoader = "" === "true";
-var selectedPageNum = parseInt("3") || 1;
-
-
-var pdfjsLib = window['pdfjs-dist/build/pdf'];
-
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = "\/" + '/js/pdf-js/build/pdf.worker.js';
-
-
-var pdfDoc = null,
-    pageNum = selectedPageNum,
-    pageRendering = false,
-    pageNumPending = null,
-    scale = 3,
-    canvas = document.getElementById('the-canvas'),
-    ctx = canvas.getContext('2d'),
-    paginator = document.getElementById("paginator"),
-    loadingWrapper = document.getElementById('loadingWrapper');
-
-
-
-showPaginator();
-showLoader();
-
-
-
-function renderPage(num) {
-  pageRendering = true;
-  
-  pdfDoc.getPage(num).then(function(page) {
-    var viewport = page.getViewport({scale: scale});
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
-
-    
-    var renderContext = {
-      canvasContext: ctx,
-      viewport: viewport
-    };
-    var renderTask = page.render(renderContext);
-
-    
-    renderTask.promise.then(function() {
-      pageRendering = false;
-      showContent();
-      
-      if (pageNumPending !== null) {
-        
-        renderPage(pageNumPending);
-        pageNumPending = null;
-      }
-    });
-  });
-
-  
-  document.getElementById('page_num').textContent = num;
-}
-
-
-
-function showContent() {
-  loadingWrapper.style.display = 'none';
-  canvas.style.display = 'block';
-}
-
-
-
-function showLoader() {
-  if(hideLoader) return
-  loadingWrapper.style.display = 'flex';
-  canvas.style.display = 'none';
-}
-
-
-
-function showPaginator() {
-  if(hidePaginator) return
-  paginator.style.display = 'block';
-}
-
-
-
-function queueRenderPage(num) {
-  if (pageRendering) {
-    pageNumPending = num;
-  } else {
-    renderPage(num);
-  }
-}
-
-
-
-function onPrevPage() {
-  if (pageNum <= 1) {
-    return;
-  }
-  pageNum--;
-  queueRenderPage(pageNum);
-}
-document.getElementById('prev').addEventListener('click', onPrevPage);
-
-
-
-function onNextPage() {
-  if (pageNum >= pdfDoc.numPages) {
-    return;
-  }
-  pageNum++;
-  queueRenderPage(pageNum);
-}
-document.getElementById('next').addEventListener('click', onNextPage);
-
-
-
-pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
-  pdfDoc = pdfDoc_;
-  var numPages = pdfDoc.numPages;
-  document.getElementById('page_count').textContent = numPages;
-  
-  
-  if(pageNum > numPages) {
-    pageNum = numPages
-  }
-
-  
-  renderPage(pageNum);
-});
-}
-
-</script>
---->
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Semeraro, Alfonso, Salvatore Vilella, Giancarlo Ruffo, and Massimo Stella. &#34;Writing about COVID-19 vaccines: Emotional profiling unravels how mainstream and alternative press framed AstraZeneca, Pfizer and vaccination campaigns.&#34; *arXiv preprint arXiv:2201.07538* (2022).
 </code></pre></div><ul>
 <li><strong>摘要</strong>: 自 2020 年 11 月宣布 COVID-19 疫苗以来，媒体和社交媒体对 COVID-19 疫苗进行了大量辩论。由于大多数研究都集中在社交媒体中的 COVID-19 虚假信息上，与其他来源相比，主流新闻媒体如何构建 COVID-19 叙述很少受到关注。为了填补这一空白，我们使用认知网络科学和自然语言处理来重建 5745 条关于 COVID-19 疫苗的新闻的随时间变化的语义和情感框架。我们的数据集涵盖了 8 个月内的 17 个网点，其中包括在 Facebook（500 万总股数）和 Twitter（20 万股总股数）上大量转发的意大利新闻文章。我们发现主流消息来源构建“疫苗/疫苗”的总体概念的方式始终具有高度的信任/预期和较少的厌恶。在替代来源构建 COVID-19 疫苗的方式中，这些情绪严重缺失。在疫苗的特定实例中发现了更多差异。另类新闻包括以强烈的悲伤来描述阿斯利康疫苗的标题，而主流标题中没有。与“阿斯利康”相比，主流新闻最初将“辉瑞”与副作用（例如“过敏”、“反应”、“发烧”）相关联更多。随着后一种疫苗的暂停，在 2021 年 3 月 15 日，我们发现了一种语义/情感转变：即使是主流文章标题都将“阿斯利康”框定为在语义上更丰富与副作用的负面关联，而“辉瑞”则经历了积极的效价转变，主要与其更高的效率有关。血栓形成与可怕的概念联想一起进入了疫苗的框架，而死亡这个词经历了情感转变，在替代标题中转向恐惧，在主流标题中失去了希望的内涵，缺乏预期。我们的发现揭示了媒体采用的围绕 COVID-19 疫苗的情感叙述的关键方面，强调了了解替代媒体和主流媒体如何报道疫苗接种新闻的必要性。</li>
@@ -720,6 +562,62 @@ pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
 
   <footer class="post-footer">
 
+
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/" target='_blank'>文本分析</a></li>
+        <li><a href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/" target='_blank'>第三方包</a></li>
+        <li><a href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/" target='_blank'>可视化</a></li>
+      </ul>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on twitter"
+        href="https://twitter.com/intent/tweet/?text=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29&amp;url=%2fblog%2fpyplutchik_emotion_circle%2f&amp;hashtags=%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e7%ac%ac%e4%b8%89%e6%96%b9%e5%8c%85%2c%e5%8f%af%e8%a7%86%e5%8c%96">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2fpyplutchik_emotion_circle%2f&amp;title=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29&amp;summary=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29&amp;source=%2fblog%2fpyplutchik_emotion_circle%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2fpyplutchik_emotion_circle%2f&title=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2fpyplutchik_emotion_circle%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on whatsapp"
+        href="https://api.whatsapp.com/send?text=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29%20-%20%2fblog%2fpyplutchik_emotion_circle%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share PyPlutchik库 | 可视化文本的情绪轮(情绪指纹) on telegram"
+        href="https://telegram.me/share/url?text=PyPlutchik%e5%ba%93%20%7c%20%e5%8f%af%e8%a7%86%e5%8c%96%e6%96%87%e6%9c%ac%e7%9a%84%e6%83%85%e7%bb%aa%e8%bd%ae%28%e6%83%85%e7%bb%aa%e6%8c%87%e7%ba%b9%29&amp;url=%2fblog%2fpyplutchik_emotion_circle%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+    
+
   </footer><script src="https://utteranc.es/client.js"
         repo="hiDaDeng/hidadeng.github.io"
         issue-term="pathname"
@@ -734,11 +632,7 @@ pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
 <footer class="footer">
     <span>&copy; 2022 <a href="/">大邓和他的PYTHON</a></span>
 </footer>
-<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
-        <path d="M12 6H0l6-6z" />
-    </svg>
-</a>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
 
 <script>
     let menu = document.getElementById('menu')
@@ -800,12 +694,12 @@ pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
 
         const copybutton = document.createElement('button');
         copybutton.classList.add('copy-code');
-        copybutton.innerText = 'copy';
+        copybutton.innerText = 'Copy';
 
         function copyingDone() {
-            copybutton.innerText = 'copied!';
+            copybutton.innerText = 'Copied!';
             setTimeout(() => {
-                copybutton.innerText = 'copy';
+                copybutton.innerText = 'Copy';
             }, 2000);
         }
 
