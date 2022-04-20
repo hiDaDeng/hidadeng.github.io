@@ -51,14 +51,14 @@ class Config {
 			'zhihu/': {urlPrefix: 'https://www.zhihu.com/search?type=content&q='},
 			'img/': {urlPrefix: 'https://unsplash.com/s/photos/'},
 			'jd/': {urlPrefix: 'https://amazon.com/s?k='},
-			'taobao/': {urlPrefix: 'https://ebay.com/sch/?_nkw='},
+			'taobao/': {urlPrefix: 'https://s.taobao.com/search?q='},
 			'youtube/': {urlPrefix: 'https://youtube.com/results?search_query='},
 			'bilibili/': {urlPrefix: 'https://search.bilibili.com/all?keyword='},
 			'微信公众号/': {urlPrefix: 'https://mp.weixin.qq.com/'},
 			'github/': {urlPrefix: 'https://github.com/search?q='},
 			"scihub/": {urlPrefix: 'https://sci-hub.ru/'},
 			"arxiv/": {urlPrefix: "https://arxiv.org/search/?searchtype=all&abstracts=show&order=-announced_date_first&size=50&query="},
-			"medium/": {urlPrefix: 'https://medium.com/search?q='},
+			"medium/": {urlPrefix: 'https://medium.com/search?q='}
 		};
 
 		return quickSearchData;
