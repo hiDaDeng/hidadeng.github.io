@@ -270,7 +270,7 @@ class Config {
 			{
 				site: 'iVPN',
 				icon: 'hitvpn',
-				url: 'http://ids-hit-edu-cn-s.ivpn.hit.edu.cn/',
+				url: 'http://ivpn.hit.edu.cn',
 				category: 'Academic Search Engine'
 			}, 
 
