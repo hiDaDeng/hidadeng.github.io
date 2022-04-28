@@ -34,6 +34,7 @@ class Config {
 
 	getQuickSearchData() {
 		const quickSearchData = {
+			"mail/": {urlPrefix: "https://mail.qq.com/"},
 			"mdnice/": {urlPrefix: "https://editor.mdnice.com/"},
 			"list/": {urlPrefix: "https://hidadeng.github.io/list/"},
 			"baidu/": {urlPrefix: "https://www.baidu.com/s?wd="},
@@ -190,6 +191,19 @@ class Config {
 				category: 'Academic Search Engine'
 			},
 			{
+				site: 'Connected Papers',
+				icon: 'connected',
+				url: 'https://www.connectedpapers.com/',
+				category: 'Academic Search Engine'
+			},
+			{
+				site: 'Semantic Scholar',
+				icon: 'semantic',
+				url: 'https://www.semanticscholar.org/',
+				category: 'Academic Search Engine'
+			},
+			
+			{
 				site: '谷歌翻译',
 				icon: 'google-translate',
 				url: 'https://translate.google.cn/',
@@ -248,11 +262,12 @@ class Config {
 			},
 
 			{
-				site: 'Google Scholar',
+				site: 'Aoogle Scholar',
 				icon: 'google-scholar',
 				url: 'https://scholar.google.com/',
 				category: 'Academic Search Engine'
-			},  
+			}, 
+
 
 			{
 				site: '期刊分类',
