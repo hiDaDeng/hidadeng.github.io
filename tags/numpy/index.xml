@@ -14,6 +14,111 @@
       
       <guid>/blog/how_to_use_ifelse_in_pandas/</guid>
       <description>两个numpy函数搞定这一难题</description>
+      <content:encoded><![CDATA[<h2 id="代码下载">代码下载</h2>
+<p><a href="https://github.com/hidadeng/DaDengAndHisPython/tree/master/20211031%E5%A6%82%E4%BD%95%E5%9C%A8DataFrame%E4%B8%AD%E4%BD%BF%E7%94%A8If-Else%E6%9D%A1%E4%BB%B6%E8%AF%AD%E5%8F%A5%E5%88%9B%E5%BB%BA%E6%96%B0%E5%88%97">https://github.com/hidadeng/DaDengAndHisPython/tree/master/20211031如何在DataFrame中使用If-Else条件语句创建新列</a></p>
+<br>
+<p>有时我们希望根据 DataFrame 其他列(字段) 的值向 DataFrame 添加一列。</p>
+<p>虽然这听起来很简单，但如果我们尝试使用 if-else 条件来完成它可能会变得有点复杂。 值得庆幸的是，使用 numpy 两个函数<strong>np.where()、np.select()</strong> 就能实现这一需求。</p>
+<h2 id="导入数据">导入数据</h2>
+<p>我们有一个包含 4,000 多条 Dataquest 推文的数据集,字段包括：</p>
+<ul>
+<li>date  twitter发送的日期</li>
+<li>time  推文发送时间</li>
+<li>tweet   推文内容</li>
+<li>mentions    谁提到了该推文</li>
+<li>photos    图片链接</li>
+<li>replies_count  推文回复数</li>
+<li>retweets_count  推文再转发数</li>
+<li>likes_count  推文获得的点赞数</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;tweets.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div>
+<figure >
+    
+        <img src="img/df1.png" width="100%" />
+    
+    
+</figure>
+
+<p><br><br></p>
+<h2 id="问题">问题</h2>
+<p>我们看到数据集中的<strong>photos</strong>字段是图片链接</p>
+<ul>
+<li>如果某条记录有信息，会显示图片链接列表</li>
+<li>如果不含图片，该字段对应的数据是空列表</li>
+</ul>
+<p>我们只想查看带有图片的推文是否获得更多交互，因此我们实际上并不需要图片 URL。 让我们尝试创建一个名为 <strong>has_image</strong> 的新列，该列将包含布尔值</p>
+<ul>
+<li>如果推文包含图像，则为 True，否则为 False。</li>
+</ul>
+<p>那么我们如何创建一个<strong>has_image</strong>字段？</p>
+<p><br><br></p>
+<h2 id="npwhere">np.where()</h2>
+<p>np.where(condition, value if condition is true, value if condition is false)</p>
+<p>为此，我们将使用 numpy 的内置 where() 函数。 这个函数依次接受三个参数：我们要测试的条件，如果条件为真则分配给新列的值，如果条件为假则分配给新列的值。 它看起来像这样：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;has_image&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;photos&#39;</span><span class="p">]</span><span class="o">!=</span><span class="s1">&#39;[]&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div>
+<figure >
+    
+        <img src="img/df2.png" width="100%" />
+    
+    
+</figure>
+
+<br>
+<h2 id="npselect">np.select()</h2>
+<p>这种方法很好用，但如果我们新建列的值不止True、False呢？</p>
+<p>例如我们把<strong>likes_count</strong> 进行分类，不同取值范围定义为不同的类别</p>
+<ul>
+<li>tier_4  少于2个赞</li>
+<li>tier_3  3-9 个赞</li>
+<li>tier_2  10-15 个赞</li>
+<li>tier_1  16+ 个赞</li>
+</ul>
+<p>为此，我们可以使用名为 <strong>np.select()</strong> 的函数。我们将给它两个参数：一个我们的条件列表，以及一个我们想要分配给新列中每一行的值的相关列表。</p>
+<p>这意味着顺序很重要：如果满足条件列表中的第一个条件，则值列表中的第一个值将分配给该行的新列。如果满足第二个条件，则将分配第二个值，依此类推。</p>
+<p>让我们来看看它在 Python 代码中的表现：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># create a list of our conditions</span>
+<span class="n">conditions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;likes_count&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;likes_count&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;likes_count&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">9</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;likes_count&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">9</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;likes_count&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">15</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;likes_count&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">15</span><span class="p">)</span>
+    <span class="p">]</span>
+
+<span class="c1"># create a list of the values we want to assign for each condition</span>
+<span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tier_4&#39;</span><span class="p">,</span> <span class="s1">&#39;tier_3&#39;</span><span class="p">,</span> <span class="s1">&#39;tier_2&#39;</span><span class="p">,</span> <span class="s1">&#39;tier_1&#39;</span><span class="p">]</span>
+
+<span class="c1"># create a new column and use np.select to assign values to it using our lists as arguments</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;tier&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+
+<span class="c1"># display updated DataFrame</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div>
+<figure >
+    
+        <img src="img/df3.png" width="100%" />
+    
+    
+</figure>
+
+<br>
+<h2 id="数据挖掘课">数据挖掘课</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+]]></content:encoded>
     </item>
     
   </channel>

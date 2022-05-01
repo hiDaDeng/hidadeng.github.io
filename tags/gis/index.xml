@@ -14,6 +14,105 @@
       
       <guid>/blog/how_to_calculate_geo_distance_in_python/</guid>
       <description>使用Python的geographiclib包可以用来计算地理信息，诸如两城市距离、方位角等信息</description>
+      <content:encoded><![CDATA[<div style="text-align: center;">
+<figure >
+    
+        <img src="img/earth.jpg" width="100%" />
+    
+    
+</figure>
+</div>
+<br>
+<h2 id="下载本文代码使用python计算地图中两点距离及方位角ipynb"><a href="%E4%BD%BF%E7%94%A8Python%E8%AE%A1%E7%AE%97%E5%9C%B0%E5%9B%BE%E4%B8%AD%E4%B8%A4%E7%82%B9%E8%B7%9D%E7%A6%BB%E5%8F%8A%E6%96%B9%E4%BD%8D%E8%A7%92.ipynb">下载本文代码</a></h2>
+<br>
+<h2 id="如何计算地图中两点距离及角度">如何计算地图中两点距离及角度</h2>
+<p>例如北京市北纬40.1，东经116.6； 哈尔滨市北纬45.7567, 东经126.6424</p>
+<p>感兴趣的童鞋也可去看问题出处</p>
+<blockquote>
+<p><a href="https://stackoverflow.com/questions/3932502/calculate-angle-between-two-latitude-longitude-points/51415608">https://stackoverflow.com/questions/3932502/calculate-angle-between-two-latitude-longitude-points/51415608</a></p>
+</blockquote>
+<p>在回答中，看到有地理信息系统Python包geographiclib，可以计算两点距离和角度。</p>
+<br>
+<h2 id="安装geographiclib">安装geographiclib</h2>
+<p><a href="https://geographiclib.sourceforge.io/1.52/python/">https://geographiclib.sourceforge.io/1.52/python/</a></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">geographiclib</span><span class="o">==</span><span class="mf">1.52</span>
+</code></pre></div><br>
+<h2 id="计算距离">计算距离</h2>
+<p>注意，在接下来的计算中，将北纬、东经表示为正数。将南纬、西经表示为负数。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">distance</span><span class="p">(</span><span class="n">beiwei1</span><span class="p">,</span> <span class="n">dongjing1</span><span class="p">,</span> <span class="n">beiwei2</span><span class="p">,</span> <span class="n">dongjing2</span><span class="p">):</span>
+    <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">    beiwei1: 地点1的纬度数，如果地点在北半球，北纬为正；反之为负。
+</span><span class="s2">    dongjing1: 地点2的经度数， 如果位于东半球，东经数为正；反之为负
+</span><span class="s2">    beiwei2: 地点2的纬度数
+</span><span class="s2">    dongjing2: 地点2的经度数
+</span><span class="s2">    &#34;&#34;&#34;</span>
+    <span class="kn">from</span> <span class="nn">geographiclib.geodesic</span> <span class="kn">import</span> <span class="n">Geodesic</span>
+    <span class="n">geod</span> <span class="o">=</span> <span class="n">Geodesic</span><span class="o">.</span><span class="n">WGS84</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">geod</span><span class="o">.</span><span class="n">Inverse</span><span class="p">(</span><span class="n">beiwei1</span><span class="p">,</span> <span class="n">dongjing1</span><span class="p">,</span> <span class="n">beiwei2</span><span class="p">,</span> <span class="n">dongjing2</span><span class="p">)</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s1">&#39;s12&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">1000</span>
+    <span class="k">return</span> <span class="n">distance</span>
+    
+
+<span class="c1">#北京Beijing与哈尔滨harbin</span>
+<span class="n">distance</span><span class="p">(</span><span class="mf">40.1</span><span class="p">,</span> <span class="mf">116.6</span><span class="p">,</span> <span class="mf">45.7567</span><span class="p">,</span> <span class="mf">126.6424</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>1031.617791888516
+</code></pre>
+<div style="text-align: center;">
+<figure >
+    
+        <img src="img/%e8%b7%9d%e7%a6%bb.png" width="100%" />
+    
+    
+</figure>
+</div>
+<br>
+<h2 id="方位角azimuth">方位角azimuth</h2>
+<p>两个地点在地图中所处的相对位置，称之为方位角azimuth。方位角最大度数360度，</p>
+<ul>
+<li>0度表示正北</li>
+<li>90度表示正西</li>
+<li>180度表示正南</li>
+<li>270度表示正西</li>
+<li>360度表示正北</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">azimuth</span><span class="p">(</span><span class="n">beiwei1</span><span class="p">,</span> <span class="n">dongjing1</span><span class="p">,</span> <span class="n">beiwei2</span><span class="p">,</span> <span class="n">dongjing2</span><span class="p">):</span>
+    <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">    beiwei1: 地点1的纬度数，如果地点在北半球，北纬为正；反之为负。
+</span><span class="s2">    dongjing1: 地点2的经度数， 如果位于东半球，东经数为正；反之为负
+</span><span class="s2">    beiwei2: 地点2的纬度数
+</span><span class="s2">    dongjing2: 地点2的经度数
+</span><span class="s2">    &#34;&#34;&#34;</span>
+    <span class="kn">from</span> <span class="nn">geographiclib.geodesic</span> <span class="kn">import</span> <span class="n">Geodesic</span>
+    <span class="n">geod</span> <span class="o">=</span> <span class="n">Geodesic</span><span class="o">.</span><span class="n">WGS84</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">geod</span><span class="o">.</span><span class="n">InverseLine</span><span class="p">(</span><span class="n">beiwei1</span><span class="p">,</span> <span class="n">dongjing1</span><span class="p">,</span> <span class="n">beiwei2</span><span class="p">,</span> <span class="n">dongjing2</span><span class="p">)</span>
+    <span class="n">s12</span> <span class="o">=</span> <span class="n">distance</span><span class="p">(</span><span class="n">beiwei1</span><span class="p">,</span> <span class="n">dongjing1</span><span class="p">,</span> <span class="n">beiwei2</span><span class="p">,</span> <span class="n">dongjing2</span><span class="p">)</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">Position</span><span class="p">(</span><span class="n">s12</span><span class="p">,</span> <span class="n">Geodesic</span><span class="o">.</span><span class="n">STANDARD</span> <span class="o">|</span> <span class="n">Geodesic</span><span class="o">.</span><span class="n">LONG_UNROLL</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">g</span><span class="p">[</span><span class="s1">&#39;azi2&#39;</span><span class="p">]</span>
+
+<span class="c1">#北京 哈尔滨</span>
+<span class="n">azimuth</span><span class="p">(</span><span class="mf">40.1</span><span class="p">,</span> <span class="mf">116.6</span><span class="p">,</span> <span class="mf">45.7567</span><span class="p">,</span> <span class="mf">126.6424</span><span class="p">)</span>
+</code></pre></div><pre><code>56.03961942267271
+</code></pre>
+<p>按照azimuth定义，56度的解读为 哈尔滨位于北京的东北方向。</p>
+<p>同理可以计算西安与杭州</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#西安， 杭州</span>
+<span class="n">azimuth</span><span class="p">(</span><span class="mf">34.2658</span><span class="p">,</span> <span class="mf">108.9541</span><span class="p">,</span> <span class="mf">30.2741</span><span class="p">,</span> <span class="mf">120.1552</span><span class="p">)</span>
+</code></pre></div><pre><code>115.1506923699206
+</code></pre>
+<p>杭州位于西安的115度，即东南方向</p>
+<p><br><br></p>
+<h1 id="了解课程">了解课程</h1>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p>[点击进入详情页](</p>
+]]></content:encoded>
     </item>
     
     <item>
@@ -23,6 +122,255 @@
       
       <guid>/blog/geospatial_with_greppo/</guid>
       <description>缺乏前端、后端和网络开发经验可能会限制使用 Python 制作网络应用程序。 在Python中使用 Greppo构建的地理空间仪表板</description>
+      <content:encoded><![CDATA[<div style="text-align: center;">
+<figure >
+    <a href="vector-demo.zip">
+        <img src="img/1.gif" width="100%" />
+    </a>
+    <figcaption><small><i>点击本图下载本文项目代码</i></small></figcaption>
+</figure>
+</div>
+<h2 id="下载项目数据代码vector-demozip"><a href="vector-demo.zip">下载项目数据代码</a></h2>
+<p><strong>地理空间数据分析</strong>已成为数据科学中的一个常见领域。对于地理空间数据科学来说也不例外。支持 GeoPandas、Shapely 和 Rasterio 等项目的社区使 Python 成为地理空间分析的首选。</p>
+<br>
+<h2 id="greppo快速简单的地理空间仪表板构建方法">Greppo：快速简单的地理空间仪表板构建方法</h2>
+<p>Greppo 是一个用于构建地理空间网络应用程序的开源 Python 框架。 它提供了可随时使用的前端和后端组件作为函数，充当前端交互组件和绑定的后端变量之间的 API。 要了解有关心智模型的更多信息，<a href="https://docs.greppo.io/mental-model.html">请参阅此页面</a>。</p>
+<p>无需太多前端、后端、Web 开发经验，您就可以在 5 分钟内使用 Python 构建和部署功能齐全的 Web 应用程序。</p>
+<ul>
+<li>GitHub存储库：https://github.com/greppo-io/greppo</li>
+<li>文档：https://docs.greppo.io/</li>
+<li>网站：https://greppo.io/</li>
+</ul>
+<blockquote>
+<p>在本教程中，我们将使用 Greppo 在 Python 中构建地理空间仪表板。 我们将通过设置环境、安装、导入数据、为我们的仪表板放入组件并为其提供服务来工作。 您将需要了解 Python、GeoPandas 和地理空间分析的基础知识。
+入门…</p>
+</blockquote>
+<p>首先要做的是安装本文需要的 Python 第三方库。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip install greppo geopandas
+</code></pre></div><p>下载本教程所需的数据集。 本教程的所有数据和代码都可以在这个 GitHub 存储库中找到：greppo-demo/vector-demo（数据源：https://github.com/openpolis/geojson-italy）</p>
+<br>
+<h2 id="编写仪表板脚本">编写仪表板脚本</h2>
+<p>我们首先为项目设置文件夹结构。 我将使用以下项目文件夹结构：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">└── vector-demo
+    ├── app.py
+    ├── cities.geojson
+    ├── regions.geojson
+    └── roads.geojson
+</code></pre></div><p>该应用程序的主控脚本是 app.py。</p>
+<br>
+<h2 id="step-0启动服务器">Step 0：启动服务器</h2>
+<p>启动服务器，请打开**终端（windows对应的是命令行cmd）**并按照这些说明进行操作。</p>
+<p>首先，终端中执行<code>cd vector_demo</code>将工作目录切换为 (cd) 项目文件夹 <strong>vector_demo</strong>。</p>
+<p>然后，终端执行<code>greppo serve app.py</code>, 启动服务器。</p>
+<div style="text-align: center;">
+<figure >
+    
+        <img src="img/2.png" width="90%" />
+    
+    <figcaption><small><i>在命令行中启动服务器</i></small></figcaption>
+</figure>
+</div>
+<p>然后，您将看到 Uvicorn 服务器在指定位置（类似于链接）运行。 复制网址链接，并将其粘贴到浏览器中。 然后它将加载应用程序。 如果您对 app.py 进行了任何更改，您将在浏览器页面上看到对您的应用的更新更改。</p>
+<br>
+<h2 id="step-1构建应用程序的基本脚手架">Step 1：构建应用程序的基本脚手架。</h2>
+<p>即导入 greppo 包，并在地图中添加 base_layer。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python">
+<span class="kn">from</span> <span class="nn">greppo</span> <span class="kn">import</span> <span class="n">app</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">base_layer</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&#34;Open Street Map&#34;</span><span class="p">,</span>
+    <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&#34;https://</span><span class="si">{s}</span><span class="s2">.tile.openstreetmap.org/</span><span class="si">{z}</span><span class="s2">/</span><span class="si">{x}</span><span class="s2">/</span><span class="si">{y}</span><span class="s2">.png&#34;</span><span class="p">,</span>
+    <span class="n">subdomains</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">attribution</span><span class="o">=</span><span class="s1">&#39;(C) OpenStreetMap contributors&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">base_layer</span><span class="p">(</span><span class="n">provider</span><span class="o">=</span><span class="s2">&#34;CartoDB Positron&#34;</span><span class="p">)</span>
+</code></pre></div><p>您需要先从 greppo 导入应用程序。 此应用程序对象将用作您的应用程序前端的接口，并为前端和后端之间的 2 路通信提供 API。</p>
+<div style="text-align: center;">
+<figure >
+    
+        <img src="img/3.png" width="90%" />
+    
+    
+</figure>
+</div>
+<p>要将 base_layer 添加到您的应用程序地图，只需使用带有所需参数的应用程序 API 方法 app.base_layer()。 请<a href="https://docs.greppo.io/">参阅文档</a>以了解什么是必需的和什么是可选的。 base_layer 方法提供了两种方法来指定基本瓦片层。 一种是使用 name 和 url 属性。 另一种方法是使用提供者的名称。</p>
+<br>
+<h2 id="step-2导入数据集并将其显示为叠加层">Step 2：导入数据集并将其显示为叠加层。</h2>
+<p>使用 geopandas，我们可以将矢量数据集作为 GeoDataFrame 导入。 然后可以使用 app.vector_layer() 方法在 Web 应用程序上的地图上对其进行可视化。
+在这里，我要导入三个不同的数据集，每个数据集都有多边形（意大利不同地区的边界）、线（意大利的主要高速公路）和点（意大利的主要城市）。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<span class="kn">from</span> <span class="nn">greppo</span> <span class="kn">import</span> <span class="n">app</span>
+
+<span class="n">regions</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&#34;./regions.geojson&#34;</span><span class="p">)</span>
+<span class="n">roads</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&#34;./roads.geojson&#34;</span><span class="p">)</span>
+<span class="n">cities</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&#34;./cities.geojson&#34;</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">vector_layer</span><span class="p">(</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">regions</span><span class="p">,</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&#34;Regions of Italy&#34;</span><span class="p">,</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&#34;Polygons showing the boundaries of regions of Italy.&#34;</span><span class="p">,</span>
+    <span class="n">style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;fillColor&#34;</span><span class="p">:</span> <span class="s2">&#34;#4daf4a&#34;</span><span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">vector_layer</span><span class="p">(</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">roads</span><span class="p">,</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&#34;Highways in Italy&#34;</span><span class="p">,</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&#34;Lines showing the major highways in Italy.&#34;</span><span class="p">,</span>
+    <span class="n">style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;color&#34;</span><span class="p">:</span> <span class="s2">&#34;#377eb8&#34;</span><span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">vector_layer</span><span class="p">(</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">cities</span><span class="p">,</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&#34;Cities of Italy&#34;</span><span class="p">,</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&#34;Points showing the cities in Italy.&#34;</span><span class="p">,</span>
+    <span class="n">style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;color&#34;</span><span class="p">:</span> <span class="s2">&#34;#e41a1c&#34;</span><span class="p">},</span>
+    <span class="n">visible</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div><p>使用方法 app.vector_layer() 作为前端的 API，我们可以显示矢量数据。 您需要传入名称，其他参数是可选的。 虽然，将颜色或填充颜色传递给样式是区分和识别每一层的好习惯。 由于前端基于 Leaflet，所有样式都符合 Leaflet 的规范，可以在文档中找到。</p>
+<div style="text-align: center;">
+<figure >
+    
+        <img src="img/4.png" width="100%" />
+    
+    
+</figure>
+</div>
+<p>您可以在此处找到 vector_layer 和样式的所有信息。 注意：您也可以制作 Choropleth 地图。 可以在此处找到其文档。</p>
+<br>
+<h2 id="step-3显示应用内文本应用标题和应用描述">Step 3：显示应用内文本、应用标题和应用描述</h2>
+<p>为了使 Web 应用程序有用，它需要携带一些文本以向其用户提供一些指导和上下文。 这些可以显示在组件旁边的侧边栏上。 使用 app.display() 方法可以在 web-app 上显示降价文本。 使用相同的方法，可以设置应用程序的标题和描述。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">greppo</span> <span class="kn">import</span> <span class="n">app</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;Vector demo&#39;</span><span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;description&#39;</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="s1">&#39;A Greppo demo app for vector data using GeoJSON data.&#39;</span><span class="p">)</span>
+
+<span class="n">text_1</span> <span class="o">=</span> <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">## About the web-app
+</span><span class="s2">The dashboard shows the boundaries of the regions of Italy as polygons, 
+</span><span class="s2">the major arterial higways as lines and the major cities of each region as points.
+</span><span class="s2">&#34;&#34;&#34;</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;text-1&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">text_1</span><span class="p">)</span>
+</code></pre></div><p>app.display() 接受两个参数 name 和 value 。 虽然 value 承载要显示的文本，但 name 必须是唯一的，并带有文本的标识符。 如果 name=&lsquo;title&rsquo; 传递的值是应用程序的标题，如果 name=&lsquo;description&rsquo; 传递的值是应用程序的描述。 如果没有这两者中的任何一个，该应用程序将带有其默认标题和描述。 鼓励设置应用程序的标题和描述。</p>
+<div style="text-align: center;">
+<figure >
+    
+        <img src="img/5.png" width="100%" />
+    
+    
+</figure>
+</div>
+<br>
+<h2 id="step-4将数据显示为图表">Step 4：将数据显示为图表</h2>
+<p>数据应用程序几乎没有将数据显示为图表。 Greppo 还允许您将数据显示为图表。 可以在文档中找到有关图表及其用法的信息。 这里，作为一个例子，展示了一个条形图，app.bar_chart()。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">greppo</span> <span class="kn">import</span> <span class="n">app</span>
+<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+
+<span class="n">regions</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&#34;./regions.geojson&#34;</span><span class="p">)</span>
+<span class="n">roads</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&#34;./roads.geojson&#34;</span><span class="p">)</span>
+<span class="n">cities</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&#34;./cities.geojson&#34;</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;text-2&#39;</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="s1">&#39;The following displays the count of polygons, lines and points as a barchart.&#39;</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">bar_chart</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Geometry count&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;A bar-cart showing the count of each geometry-type in the datasets.&#39;</span><span class="p">,</span>
+              <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;polygons&#39;</span><span class="p">,</span> <span class="s1">&#39;lines&#39;</span><span class="p">,</span> <span class="s1">&#39;points&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">regions</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">roads</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">cities</span><span class="p">)],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#984ea3&#39;</span><span class="p">)</span>
+</code></pre></div><p>图表所需的参数是名称、x 和 y 值。 可以添加描述和颜色来为应用程序用户提供更好的上下文。 名称和描述与图表一起显示。</p>
+<div style="text-align: center;">
+<figure >
+    
+        <img src="img/6.png" width="90%" />
+    
+    
+</figure>
+</div>
+<br>
+<h2 id="结论">结论</h2>
+<p>让我们全面了解一下我们在这里所做的事情。 我们的目标是使用 Greppo 创建一个地理空间 web 应用程序，以显示一些 GIS 矢量数据，并添加组件以为应用程序的用户提供更好的上下文。 这是该应用程序的完整代码：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">greppo</span> <span class="kn">import</span> <span class="n">app</span>
+<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;Vector demo&#39;</span><span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;description&#39;</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="s1">&#39;A Greppo demo app for vector data using GeoJSON data.&#39;</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">base_layer</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&#34;Open Street Map&#34;</span><span class="p">,</span>
+    <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&#34;https://</span><span class="si">{s}</span><span class="s2">.tile.openstreetmap.org/</span><span class="si">{z}</span><span class="s2">/</span><span class="si">{x}</span><span class="s2">/</span><span class="si">{y}</span><span class="s2">.png&#34;</span><span class="p">,</span>
+    <span class="n">subdomains</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">attribution</span><span class="o">=</span><span class="s1">&#39;(C) OpenStreetMap contributors&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">base_layer</span><span class="p">(</span>
+    <span class="n">provider</span><span class="o">=</span><span class="s2">&#34;CartoDB Positron&#34;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">regions</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&#34;./regions.geojson&#34;</span><span class="p">)</span>
+<span class="n">roads</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&#34;./roads.geojson&#34;</span><span class="p">)</span>
+<span class="n">cities</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&#34;./cities.geojson&#34;</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">vector_layer</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">regions</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&#34;Regions of Italy&#34;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s2">&#34;Polygons showing the boundaries of regions of Italy.&#34;</span><span class="p">,</span>
+    <span class="n">style</span><span class="o">=</span><span class="p">{</span><span class="s2">&#34;fillColor&#34;</span><span class="p">:</span> <span class="s2">&#34;#4daf4a&#34;</span><span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">vector_layer</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">roads</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&#34;Highways in Italy&#34;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s2">&#34;Lines showing the major highways in Italy.&#34;</span><span class="p">,</span>
+    <span class="n">style</span><span class="o">=</span><span class="p">{</span><span class="s2">&#34;color&#34;</span><span class="p">:</span> <span class="s2">&#34;#377eb8&#34;</span><span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">vector_layer</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">cities</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&#34;Cities of Italy&#34;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s2">&#34;Points showing the cities in Italy.&#34;</span><span class="p">,</span>
+    <span class="n">style</span><span class="o">=</span><span class="p">{</span><span class="s2">&#34;color&#34;</span><span class="p">:</span> <span class="s2">&#34;#e41a1c&#34;</span><span class="p">},</span>
+    <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">text_1</span> <span class="o">=</span> <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">## About the web-app
+</span><span class="s2">
+</span><span class="s2">The dashboard shows the boundaries of the regions of Italy as polygons, the 
+</span><span class="s2">major arterial higways as lines and the major cities of each region as points.
+</span><span class="s2">&#34;&#34;&#34;</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;text-1&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">text_1</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;text-2&#39;</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="s1">&#39;The following displays the count of polygons, lines and points as a barchart.&#39;</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">bar_chart</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Geometry count&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;A bar-cart showing the count of each geometry-type in the datasets.&#39;</span><span class="p">,</span>
+              <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;polygons&#39;</span><span class="p">,</span> <span class="s1">&#39;lines&#39;</span><span class="p">,</span> <span class="s1">&#39;points&#39;</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">regions</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">roads</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">cities</span><span class="p">)],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#984ea3&#39;</span><span class="p">)</span>
+</code></pre></div><p>运行效果如下</p>
+<div style="text-align: center;">
+<figure >
+    <a href="vector-demo.zip">
+        <img src="img/1.gif" width="100%" />
+    </a>
+    <figcaption><small><i>点击本图下载本文项目代码</i></small></figcaption>
+</figure>
+</div>
+<h2 id="下载项目数据代码vector-demozip-1"><a href="vector-demo.zip">下载项目数据代码</a></h2>
+<p><br><br></p>
+<h2 id="了解课程">了解课程</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+]]></content:encoded>
     </item>
     
   </channel>

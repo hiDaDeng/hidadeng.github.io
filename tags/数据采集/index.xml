@@ -14,6 +14,154 @@
       
       <guid>/blog/%E7%88%B1%E4%BC%81%E6%9F%A5/</guid>
       <description>手把手教你写爬虫</description>
+      <content:encoded><![CDATA[<h2 id="爱企查">爱企查</h2>
+<p>想搜集企业信息，可以使用爱企查网站，例如通过该网站，搜”华为“，，可以获得与关键词<strong>华为</strong>相关的很多企业名信息
+
+<figure >
+    
+        <img src="img/01-%e7%88%b1%e4%bc%81%e6%9f%a5%e9%a6%96%e9%a1%b5.png" width="100%" />
+    
+    
+</figure>
+</p>
+<p>设计网络爬虫步骤</p>
+<ol>
+<li>使用开发者工具network面板审查网站的网址规律urls</li>
+<li>对单个网址url尝试访问</li>
+<li>确定网站是html或json类型</li>
+<li>从网页中解析定位需要的数据。</li>
+</ol>
+<ul>
+<li>使用pyquery解析html页面数据；</li>
+<li>或使用json解析json页面数据</li>
+</ul>
+<ol start="5">
+<li>存储到csv</li>
+<li>重复2-5</li>
+</ol>
+<br>
+<h2 id="尝试访问第一页">尝试访问第一页</h2>
+
+<figure >
+    
+        <img src="img/02-%e7%bd%91%e5%9d%80%e8%a7%84%e5%be%8b.png" width="100%" />
+    
+    
+</figure>
+
+<p>经过开发者工具network，可以使用requests对其进行访问。</p>
+<p>需要注意的是，headers中需要加入Referer参数，该参数作用是告诉服务器</p>
+<blockquote>
+<p>兄弟，我是经过Referer介绍的，不然我也不可能知道
+<a href="https://aiqicha.baidu.com/s/advanceFilterAjax?q=%E5%8D%8E%E4%B8%BA&amp;t=&amp;p=1&amp;s=10&amp;o=0&amp;f=%7B%7D">https://aiqicha.baidu.com/s/advanceFilterAjax?q=%E5%8D%8E%E4%B8%BA&amp;t=&amp;p=1&amp;s=10&amp;o=0&amp;f=%7B%7D</a>
+这个网址啊</p>
+</blockquote>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">quote</span>
+
+<span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;华为&#39;</span>
+
+<span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://aiqicha.baidu.com/s/advanceFilterAjax?q=</span><span class="si">{q}</span><span class="s1">&amp;t=&amp;p=1&amp;s=10&amp;o=0&amp;f=%7B%7D&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="n">quote</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+
+<span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;User-Agent&#39;</span><span class="p">:</span> <span class="s1">&#39;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.55 Safari/537.36&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;Referer&#39;</span><span class="p">:</span> <span class="s1">&#39;https://aiqicha.baidu.com/s?q=</span><span class="si">{q}</span><span class="s1">&amp;t=0&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="n">quote</span><span class="p">(</span><span class="n">query</span><span class="p">))}</span>
+
+<span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+<span class="n">resp</span>
+</code></pre></div><pre><code>&lt;Response [200]&gt;
+</code></pre>
+<br>
+<h2 id="解析网页数据">解析网页数据</h2>
+<p>
+<figure >
+    
+        <img src="img/03-%e8%a7%a3%e6%9e%90%e6%95%b0%e6%8d%ae.png" width="100%" />
+    
+    
+</figure>
+
+通过开发者工具可以看到，这个网站采用的json类型网页数据。</p>
+<p>
+<figure >
+    
+        <img src="img/04-%e6%95%b0%e6%8d%ae%e5%ad%97%e6%ae%b5.png" width="100%" />
+    
+    
+</figure>
+
+好在这类网页的解析定位比较简单。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">com</span> <span class="ow">in</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;resultList&#39;</span><span class="p">][:</span><span class="mi">3</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">com</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    {&#39;pid&#39;: &#39;31360200662522&#39;, &#39;entName&#39;: &#39;&lt;em&gt;华为&lt;/em&gt;技术有限公司&#39;, &#39;entType&#39;: &#39;有限责任公司(自然人投资或控股的法人独资)&#39;, &#39;validityFrom&#39;: &#39;1896-08-14&#39;, &#39;domicile&#39;: &#39;深圳市龙岗区坂田&lt;em&gt;华为&lt;/em&gt;总部办公楼&#39;, &#39;entLogo&#39;: &#39;https://zhengxin-pub.cdn.bcebos.com/logopic/67e739bf0e47768f4a1f542daf3f7f42_fullsize.jpg&#39;, &#39;openStatus&#39;: &#39;开业&#39;, &#39;legalPerson&#39;: &#39;赵明路&#39;, &#39;tags&#39;: {&#39;laTaxer&#39;: &#39;&lt;span class=&#34;zx-ent-tag laTaxer&#34;&gt;A级纳税人(2020)&lt;/span&gt;&#39;}, &#39;logoWord&#39;: &#39;华为技术&#39;, &#39;titleName&#39;: &#39;华为技术有限公司&#39;, &#39;titleLegal&#39;: &#39;赵明路&#39;, &#39;titleDomicile&#39;: &#39;深圳市龙岗区坂田华为总部办公楼&#39;, &#39;levelAtaxer&#39;: [2020, 2018, 2019, 2016, 2017, 2014, 2015], &#39;regCap&#39;: &#39;5,035,113.2万&#39;, &#39;scope&#39;: &#39;一般经营项目是:程控交换机、传输设备、数据通信设备、宽带多媒体设备、电源、无线通信设备、微电子产品、软件、系统集成工程、计算机及配套设备、终端设备及相关通信信息产品、数据中心机房基础设施及配套产品(含供配电、空调制冷设备、智能管理监控等)的开发、生产、销售、技术服务、工程安装、维修、咨询、代理、租赁;信息系统设计、集成、运行维护;集成电路设计、研发;统一通信及协作类产品,服务器及配套软硬件产品,存储设备及相关软件的研发、生产、销售;无线数据产品(不含限制项目)的研发、生产、销售;通信站点机房基础设施及通信配套设备(含通信站点、通信机房、通信电源、机柜、天线、通信线缆、配电、智能管理监控、锂电及储能系统等)的研发、生产、销售;能源科学技术研究及能源相关产品的研发、生产、销售;大数据产品、物联网及通信相关领域产品的研发、生产、销售;汽车零部件及智能系统的研发、生产、销售及服务;建筑工程;设计、制作、发布、代理各类广告;通信设备租赁(不含限制项目);培训服务;技术认证服务;信息咨询(不含限制项目);企业管理咨询(不含限制项目);进出口业务;国内商业、物资供销业业务(不含专营、专控、专卖商品);对外经济技术合作业务;房屋租赁业务(持许可经营证);以及其他法律法规不禁止的经营活动(依法须经批准的项目,经相关部门批准后方可开展经营活动)。,许可经营项目是:增值电信业务经营。&#39;, &#39;regNo&#39;: &#39;815503001822039217&#39;, &#39;hitReason&#39;: [{&#39;品牌项目&#39;: &#39;&lt;em&gt;华为&lt;/em&gt;&#39;}, {&#39;商标名称&#39;: &#39;&lt;em&gt;华为&lt;/em&gt;&#39;}, {&#39;企业名称&#39;: &#39;&lt;em&gt;华为&lt;/em&gt;技术有限公司&#39;}, {&#39;网站名称&#39;: &#39;&lt;em&gt;华为&lt;/em&gt;应用平台1&#39;}, {&#39;地址&#39;: &#39;深圳市龙岗区坂田&lt;em&gt;华为&lt;/em&gt;总部办公楼&#39;}], &#39;labels&#39;: {&#39;opening&#39;: {&#39;text&#39;: &#39;开业&#39;, &#39;style&#39;: &#39;blue&#39;, &#39;fontColor&#39;: &#39;#1EA930&#39;, &#39;bgColor&#39;: &#39;#EBF6EC&#39;}}, &#39;personTitle&#39;: &#39;法定代表人&#39;, &#39;personId&#39;: &#39;a9f275934f59110096757b656ba41382&#39;}
+    
+    {&#39;pid&#39;: &#39;28610144220343&#39;, &#39;entName&#39;: &#39;&lt;em&gt;华为&lt;/em&gt;终端(深圳)有限公司&#39;, &#39;entType&#39;: &#39;有限责任公司(外商投资、非独资)&#39;, &#39;validityFrom&#39;: &#39;2003-12-25&#39;, &#39;domicile&#39;: &#39;深圳市龙岗区坂田&lt;em&gt;华为&lt;/em&gt;基地B区2号楼&#39;, &#39;entLogo&#39;: &#39;https://zhengxin-pub.cdn.bcebos.com/logopic/a638462a7a48ab79f84b7db2c0e64230_fullsize.jpg&#39;, &#39;openStatus&#39;: &#39;开业&#39;, &#39;legalPerson&#39;: &#39;赵明路&#39;, &#39;tags&#39;: {&#39;laTaxer&#39;: &#39;&lt;span class=&#34;zx-ent-tag laTaxer&#34;&gt;A级纳税人(2020)&lt;/span&gt;&#39;}, &#39;logoWord&#39;: &#39;华为终端&#39;, &#39;titleName&#39;: &#39;华为终端(深圳)有限公司&#39;, &#39;titleLegal&#39;: &#39;赵明路&#39;, &#39;titleDomicile&#39;: &#39;深圳市龙岗区坂田华为基地B区2号楼&#39;, &#39;levelAtaxer&#39;: [2020, 2018, 2019, 2016, 2017, 2014, 2015], &#39;regCap&#39;: &#39;1,598,080.8万&#39;, &#39;scope&#39;: &#39;一般经营项目是：开发、生产、销售通信电子产品及配套产品，并提供技术咨询和售后服务。进出口业务（不含分销)。，许可经营项目是：&#39;, &#39;regNo&#39;: &#39;815503006447640305&#39;, &#39;hitReason&#39;: [{&#39;企业名称&#39;: &#39;&lt;em&gt;华为&lt;/em&gt;终端(深圳)有限公司&#39;}, {&#39;网站名称&#39;: &#39;&lt;em&gt;华为&lt;/em&gt;HARMONYOS网站&#39;}, {&#39;地址&#39;: &#39;深圳市龙岗区坂田&lt;em&gt;华为&lt;/em&gt;基地B区2号楼&#39;}], &#39;labels&#39;: {&#39;opening&#39;: {&#39;text&#39;: &#39;开业&#39;, &#39;style&#39;: &#39;blue&#39;, &#39;fontColor&#39;: &#39;#1EA930&#39;, &#39;bgColor&#39;: &#39;#EBF6EC&#39;}}, &#39;personTitle&#39;: &#39;法定代表人&#39;, &#39;personId&#39;: &#39;a9f275934f59110096757b656ba41382&#39;}
+    
+    {&#39;pid&#39;: &#39;30140456955334&#39;, &#39;entName&#39;: &#39;&lt;em&gt;华为&lt;/em&gt;终端有限公司&#39;, &#39;entType&#39;: &#39;有限责任公司(外商投资企业法人独资)&#39;, &#39;validityFrom&#39;: &#39;2012-11-23&#39;, &#39;domicile&#39;: &#39;广东省东莞市松山湖园区新城路2号&#39;, &#39;entLogo&#39;: &#39;https://zhengxin-pub.cdn.bcebos.com/logopic/cc662a5d573b793e9c5b84031350ced0_fullsize.jpg&#39;, &#39;openStatus&#39;: &#39;开业&#39;, &#39;legalPerson&#39;: &#39;赵明路&#39;, &#39;tags&#39;: {&#39;laTaxer&#39;: &#39;&lt;span class=&#34;zx-ent-tag laTaxer&#34;&gt;A级纳税人(2020)&lt;/span&gt;&#39;}, &#39;logoWord&#39;: &#39;华为终端&#39;, &#39;titleName&#39;: &#39;华为终端有限公司&#39;, &#39;titleLegal&#39;: &#39;赵明路&#39;, &#39;titleDomicile&#39;: &#39;广东省东莞市松山湖园区新城路2号&#39;, &#39;levelAtaxer&#39;: [2020, 2018, 2019, 2016, 2017, 2014, 2015], &#39;regCap&#39;: &#39;70,000.0万&#39;, &#39;scope&#39;: &#39;开发、生产、销售：通信及电子产品、计算机、卫星电视接收天线、高频头、数字卫星电视接收机及前述产品的配套产品，并提供技术咨询和售后服务；开发、生产、销售：医疗器械（第一类、第二类、第三类医疗器械），并提供技术咨询和售后服务；增值电信业务经营；佣金代理；货物或技术进出口（国家禁止或涉及行政审批的货物和技术进出口除外）。(依法须经批准的项目，经相关部门批准后方可开展经营活动)&#39;, &#39;regNo&#39;: &#39;815518000494355853&#39;, &#39;hitReason&#39;: [{&#39;企业名称&#39;: &#39;&lt;em&gt;华为&lt;/em&gt;终端有限公司&#39;}], &#39;labels&#39;: {&#39;opening&#39;: {&#39;text&#39;: &#39;开业&#39;, &#39;style&#39;: &#39;blue&#39;, &#39;fontColor&#39;: &#39;#1EA930&#39;, &#39;bgColor&#39;: &#39;#EBF6EC&#39;}}, &#39;personTitle&#39;: &#39;法定代表人&#39;, &#39;personId&#39;: &#39;a9f275934f59110096757b656ba41382&#39;}
+</code></pre></div><br>
+<h2 id="完整爬虫">完整爬虫</h2>
+<p>经过刚刚的几个步骤，我们现在只需要</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;华为&#39;</span>  
+<span class="n">max_pages</span> <span class="o">=</span> <span class="mi">10</span>   <span class="c1">#获取前10页的企业信息数据</span>
+
+<span class="c1">#存储数据</span>
+<span class="n">csvf</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;企业信息.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;titleName&#39;</span><span class="p">,</span> <span class="s1">&#39;titleDomicile&#39;</span><span class="p">,</span> <span class="s1">&#39;titleLegal&#39;</span><span class="p">,</span> <span class="s1">&#39;validityFrom&#39;</span><span class="p">,</span> <span class="s1">&#39;regCap&#39;</span><span class="p">,</span> <span class="s1">&#39;regNo&#39;</span><span class="p">,</span> <span class="s1">&#39;scope&#39;</span><span class="p">]</span>
+<span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">fieldnames</span><span class="o">=</span><span class="n">fieldnames</span><span class="p">)</span>
+<span class="n">writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+
+<span class="c1">#访问</span>
+<span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_pages</span><span class="p">):</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://aiqicha.baidu.com/s/advanceFilterAjax?q=</span><span class="si">{q}</span><span class="s1">&amp;t=&amp;p=</span><span class="si">{p}</span><span class="s1">&amp;s=10&amp;o=0&amp;f=%7B%7D&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="n">quote</span><span class="p">(</span><span class="n">query</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="n">page</span><span class="p">)</span>
+
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;User-Agent&#39;</span><span class="p">:</span> <span class="s1">&#39;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.55 Safari/537.36&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;Referer&#39;</span><span class="p">:</span> <span class="s1">&#39;https://aiqicha.baidu.com/s?q=</span><span class="si">{q}</span><span class="s1">&amp;t=0&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="n">quote</span><span class="p">(</span><span class="n">query</span><span class="p">))}</span>
+
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    
+    <span class="c1">#解析数据</span>
+    <span class="k">for</span> <span class="n">com</span> <span class="ow">in</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;resultList&#39;</span><span class="p">]:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">fieldname</span> <span class="ow">in</span> <span class="n">fieldnames</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">fieldname</span><span class="p">]</span> <span class="o">=</span> <span class="n">com</span><span class="p">[</span><span class="n">fieldname</span><span class="p">]</span>
+        <span class="c1">#写入csv</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        
+
+<span class="n">csvf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</code></pre></div><br>
+<h2 id="运行结果">运行结果</h2>
+<p>采集10页的爬虫运行结束后，尝试读取 <strong>企业信息.csv</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span><span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;企业信息.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div>
+<figure >
+    
+        <img src="img/05-data.png" width="100%" />
+    
+    
+</figure>
+
+<br>
+<h1 id="了解课程">了解课程</h1>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+]]></content:encoded>
     </item>
     
     <item>
@@ -23,6 +171,152 @@
       
       <guid>/blog/stock_exchange_prospectus/</guid>
       <description>有代码有视频；一文让你学会GET/POST两种请求方法的案例实战</description>
+      <content:encoded><![CDATA[<h2 id="代码下载">代码下载</h2>
+<p><a href="%E6%8B%9B%E8%82%A1%E8%AF%B4%E6%98%8E%E4%BB%A3%E7%A0%81.zip">点击此处下载代码</a></p>
+<br>
+<br>
+<h2 id="本文b站视频">本文B站视频</h2>
+<p><a href="https://www.bilibili.com/video/BV1AE411r7ph">https://www.bilibili.com/video/BV1AE411r7ph</a></p>
+<br>
+<br>
+<h2 id="一知识准备">一、知识准备</h2>
+<ol>
+<li>python语法基本知识 <a href="https://www.bilibili.com/video/BV1eb411h7sP/">https://www.bilibili.com/video/BV1eb411h7sP/</a></li>
+<li>python网络爬虫 <a href="https://www.bilibili.com/video/BV1AE411r7ph/">https://www.bilibili.com/video/BV1AE411r7ph/</a></li>
+</ol>
+<br>
+<br>
+<h2 id="二网址规律分析">二、网址规律分析</h2>
+<h3 id="21-上交所">2.1 上交所</h3>
+
+<figure >
+    
+        <img src="img/00-%e4%b8%8a%e4%ba%a4%e6%89%80%e6%8b%9b%e8%82%a1%e7%bd%91%e5%9d%80%e8%a7%84%e5%be%8b.png" width="800" />
+    
+    
+</figure>
+
+<p>上交所多为GET请求方法，伪码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;上交所网址规律&#39;</span>
+<span class="n">headers</span> <span class="o">=</span> <span class="s1">&#39;你的浏览器useragent(带referer)&#39;</span>
+<span class="n">cookies</span> <span class="o">=</span> <span class="s1">&#39;你的cookies&#39;</span>
+<span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> 
+                    <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> 
+                    <span class="n">cookies</span><span class="o">=</span><span class="n">cookies</span><span class="p">)</span>
+</code></pre></div><br>
+<h3 id="22-深交所">2.2 深交所</h3>
+
+<figure >
+    
+        <img src="img/01-%e6%b7%b1%e5%9c%b3%e8%af%81%e5%88%b8%e4%ba%a4%e6%98%93%e6%89%80%e7%bd%91%e5%9d%80%e8%a7%84%e5%be%8b.png" width="800" />
+    
+    
+</figure>
+
+
+<figure >
+    
+        <img src="img/02-%e6%b7%b1%e5%9c%b3%e8%af%81%e5%88%b8%e4%ba%a4%e6%98%93%e6%89%80%e7%bd%91%e5%9d%80%e8%a7%84%e5%be%8b.png" width="800" />
+    
+    
+</figure>
+
+<p>深交所多为POST请求方法，伪码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;深交所网址规律&#39;</span>
+<span class="n">headers</span> <span class="o">=</span> <span class="s1">&#39;你的浏览器useragent(带referer)&#39;</span>
+<span class="n">cookies</span> <span class="o">=</span> <span class="s1">&#39;你的cookies&#39;</span>
+<span class="n">param</span> <span class="o">=</span> <span class="s1">&#39;form data构造的字典，补全网址规律&#39;</span>
+
+<span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> 
+                    <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+                    <span class="n">cookies</span><span class="o">=</span><span class="n">cookies</span><span class="p">,</span> 
+                    <span class="n">data</span><span class="o">=</span><span class="n">param</span><span class="p">)</span>
+</code></pre></div><p><br><br></p>
+<h2 id="三定位pdf相关数据">三、定位pdf相关数据</h2>
+<p>访问得到的结果均为json数据，解析定位方法可使用python的字典方法。</p>
+
+<figure >
+    
+        <img src="img/03-%e4%b8%8a%e4%ba%a4%e6%89%80%e6%95%b0%e6%8d%ae.png" width="800" />
+    
+    
+</figure>
+
+
+<figure >
+    
+        <img src="img/04-%e6%b7%b1%e4%ba%a4%e6%89%80%e6%95%b0%e6%8d%ae.png" width="800" />
+    
+    
+</figure>
+
+<br>
+<br>
+<h2 id="四存储数据">四、存储数据</h2>
+<p>几千个pdf数据量很容易达到1000+M，如果长时间自动下载容易失败。</p>
+<p>建议先获取所有公司相关信息，存储到csv中。</p>
+<p>后续再单独使用pandas读取，逐一下载pdf。</p>
+<p>注意，这里推荐使用csv新的语法</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;你的csv文件路径&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvf</span><span class="p">:</span>
+    <span class="c1">#csv文件内的字段名</span>
+    <span class="n">fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;link&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">]</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">fieldnames</span><span class="o">=</span><span class="n">fieldnames</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+    <span class="c1">#访问</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;网址&#39;</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span><span class="o">....</span><span class="p">)</span>
+    <span class="c1">#定位</span>
+    <span class="k">for</span> <span class="n">company</span> <span class="ow">in</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;data&#39;</span><span class="p">]:</span>
+        <span class="c1">#解析数据</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">row</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;采集到的标题&#39;</span>
+        <span class="n">row</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;采集到的日期&#39;</span>
+        <span class="n">row</span><span class="p">[</span><span class="s1">&#39;link&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;采集到的pdf链接&#39;</span>
+        <span class="n">row</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;采集到的内容&#39;</span>
+        
+        <span class="c1">#写入csv</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+</code></pre></div><p><br><br></p>
+<h2 id="五批量下载pdf">五、批量下载pdf</h2>
+<p>以深交所为例，已经采集到<strong>深圳交易所.csv</strong>，现在下载只需要执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">## 下载
+import requests
+import pandas as pd
+
+def download(link, fpath):
+    &#34;&#34;&#34;
+    下载多媒体及文件
+    link： 多媒体文件链接（结尾有文件格式名）
+    fpath: 存储文件的路径（结尾有文件格式名）
+    &#34;&#34;&#34;
+    
+    resp = requests.get(link)
+    #获取到二进制数据
+    binarydata = resp.content
+    #以二进制形式将数据流存入fname中
+    with open(fpath, &#39;wb&#39;) as f:
+        f.write(binarydata)
+        
+df = pd.read_csv(&#39;深圳交易所.csv&#39;)
+for title, link in zip(df[&#39;title&#39;], df[&#39;link&#39;]):
+    fpath = &#39;深圳/{title}.PDF&#39;.format(title=title)
+    download(link, fpath)
+</code></pre></div><br>
+<h1 id="了解课程">了解课程</h1>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+]]></content:encoded>
     </item>
     
   </channel>
