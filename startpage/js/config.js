@@ -171,6 +171,14 @@ class Config {
 				url: 'https://osf.io/',
 				category: 'Academic Tools'
 			},
+			{
+				site: 'Researcher',
+				icon: '博士',
+				url: 'https://www.researcher-app.com/feed/all',
+				category: 'Academic Search Engine'
+			},
+
+			
 
 			{
 				site: 'Research Gate',
