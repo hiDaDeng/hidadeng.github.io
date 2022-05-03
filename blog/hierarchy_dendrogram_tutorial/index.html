@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>使用scipy实现层次聚类分析 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="文本分析, 经济管理, 科研学术" />
+<meta name="description" content="使用scipy实现层次聚类分析">
+<meta name="author" content="FamouseGuys">
+<link rel="canonical" href="/blog/hierarchy_dendrogram_tutorial/" />
+<meta name="baidu-site-verification" content="code-xTk1LSyjvt" />
+<meta name="360-site-verification" content="dc00b42cd1d4e0fcaa5edfd27394f9cd" />
+<meta name="sogou-site-verification" content="3HDeo612Pl" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="使用scipy实现层次聚类分析" />
+<meta property="og:description" content="使用scipy实现层次聚类分析" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/hierarchy_dendrogram_tutorial/" />
+<meta property="og:image" content="/images/blog/cluster-dendrogram.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2018-05-18T10:40:10&#43;06:00" />
+<meta property="article:modified_time" content="2018-05-18T10:40:10&#43;06:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/cluster-dendrogram.png" />
+<meta name="twitter:title" content="使用scipy实现层次聚类分析"/>
+<meta name="twitter:description" content="使用scipy实现层次聚类分析"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "使用scipy实现层次聚类分析",
+      "item": "/blog/hierarchy_dendrogram_tutorial/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "使用scipy实现层次聚类分析",
+  "name": "使用scipy实现层次聚类分析",
+  "description": "使用scipy实现层次聚类分析",
+  "keywords": [
+    "文本分析", "经济管理", "科研学术"
+  ],
+  "articleBody": "代码下载 click to download\n实验目的 如果您以前从未使用过树状图，那么使用树状图是查看多维数据如何聚集在一起的好方法。 在这本笔记本中，我将简单探索通过层次分析，借助树状图将其可视化。\n层次分析 层次分析是聚类分析的一种，scipy有这方面的封装包。\nlinkage函数从字面意思是链接，层次分析就是不断链接的过程，最终从n条数据，经过不断链接，最终聚合成一类，算法就此停止。\ndendrogram是用来绘制树形图的函数。\n实验数据 grain_variety是标签，其他列为多种属性的值（特征）。\nfrom scipy.cluster.hierarchy import linkage, dendrogram import matplotlib.pyplot as plt import pandas as pd seeds_df = pd.read_csv('seeds-less-rows.csv') seeds_df.head()  .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  area perimeter compactness length width asymmetry_coefficient groove_length grain_variety     0 14.88 14.57 0.8811 5.554 3.333 1.018 4.956 Kama wheat   1 14.69 14.49 0.8799 5.563 3.259 3.586 5.219 Kama wheat   2 14.03 14.16 0.8796 5.438 3.201 1.717 5.001 Kama wheat   3 19.31 16.59 0.8815 6.341 3.810 3.477 6.238 Rosa wheat   4 17.99 15.86 0.8992 5.890 3.694 2.068 5.837 Rosa wheat     #移除文本数据列 varieties = list(seeds_df.pop('grain_variety')) varieties ['Kama wheat', 'Kama wheat', 'Kama wheat', 'Rosa wheat', 'Rosa wheat', 'Rosa wheat', 'Rosa wheat', 'Rosa wheat', 'Canadian wheat', 'Canadian wheat', 'Canadian wheat', 'Canadian wheat', 'Canadian wheat', 'Canadian wheat']  samples = seeds_df.values print(samples) print('samples的维度',samples.shape) [[14.88 14.57 0.8811 5.554 3.333 1.018 4.956 ] [14.69 14.49 0.8799 5.563 3.259 3.586 5.219 ] [14.03 14.16 0.8796 5.438 3.201 1.717 5.001 ] [19.31 16.59 0.8815 6.341 3.81 3.477 6.238 ] [17.99 15.86 0.8992 5.89 3.694 2.068 5.837 ] [18.85 16.17 0.9056 6.152 3.806 2.843 6.2 ] [19.38 16.72 0.8716 6.303 3.791 3.678 5.965 ] [17.36 15.76 0.8785 6.145 3.574 3.526 5.971 ] [13.32 13.94 0.8613 5.541 3.073 7.035 5.44 ] [11.43 13.13 0.8335 5.176 2.719 2.221 5.132 ] [11.26 13.01 0.8355 5.186 2.71 5.335 5.092 ] [12.46 13.41 0.8706 5.236 3.017 4.987 5.147 ] [11.81 13.45 0.8198 5.413 2.716 4.898 5.352 ] [11.23 12.88 0.8511 5.14 2.795 4.325 5.003 ]] samples的维度 (14, 7)  使用linkage函数对samples进行层次聚类 X = linkage(y, method='single', metric='euclidean') sacipy中y是距离矩阵，我对此只是傻傻的理解成特征矩阵。 (m*n) m行代表m条记录,n代表n个特征\n返回结果X是(m-1)*4的矩阵。 具体含义请看下面的案例\nmergings = linkage(samples) #我们发现mergings比samples少一行 print('sample维度',samples.shape) print('mergings维度',mergings.shape) sample维度 (14, 7) mergings维度 (13, 4)  #层次分析可视化，leaf的字体不旋转，大小为10。 #这里我们不显示每一条数据的具体名字标签（varieties），默认以数字标签显示 dendrogram(mergings,leaf_rotation=0,leaf_font_size=10) plt.show() #在图中显示的数字是最细粒度的叶子，相当于每个样本数据点。 mergings array([[ 3. , 6. , 0.37233454, 2. ], [11. , 12. , 0.77366442, 2. ], [10. , 15. , 0.89804259, 3. ], [ 5. , 14. , 0.90978998, 3. ], [13. , 16. , 1.02732924, 4. ], [ 0. , 2. , 1.18832161, 2. ], [ 4. , 17. , 1.28425969, 4. ], [ 7. , 20. , 1.62187345, 5. ], [ 1. , 19. , 2.02587613, 3. ], [ 9. , 18. , 2.13385537, 5. ], [ 8. , 23. , 2.323123 , 6. ], [22. , 24. , 2.87625877, 9. ], [21. , 25. , 3.12231564, 14. ]])  层次分析图从上到下看，依次是枝和叶。\n第一列和第二列代表类标签，包含叶子和枝子。\n第三列代表叶叶（或叶枝，枝枝）之间的距离\n第四列代表该层次类中含有的样本数（记录数）\nX = linkage(y, method='single', metric='euclidean') method是指计算类间距离的方法,比较常用的有3种:\n(1)single:最近邻,把类与类间距离最近的作为类间距\n(2)average:平均距离,类与类间所有pairs距离的平均\n(3)complete:最远邻,把类与类间距离最远的作为类间距\n我们写曾侧分析法函数，看看不同的method从图中有什么区别\ndef hierarchy_analysis(samples,method='single'): mergings = linkage(samples, method=method) dendrogram(mergings, labels=varieties, leaf_rotation=45, leaf_font_size=10) plt.show() #single hierarchy_analysis(samples,method='single') #average hierarchy_analysis(samples,method='average') #complete hierarchy_analysis(samples,method='complete') 由于数据量比较少，complete和average方法做出来的图完全一样。 \n课程  点击上方图片购买课程   点击进入详情页\n",
+  "wordCount" : "428",
+  "inLanguage": "en",
+  "image":"/images/blog/cluster-dendrogram.png","datePublished": "2018-05-18T10:40:10+06:00",
+  "dateModified": "2018-05-18T10:40:10+06:00",
+  "author":[{
+    "@type": "Person",
+    "name": "FamouseGuys"
+  }],
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/hierarchy_dendrogram_tutorial/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/management_python_course/" title="课程" target="_blank">
+                    <span>课程</span>
+                </a>
+            </li>
+            <li>
+                <a href="/index.xml" title="RSS" target="_blank">
+                    <span>RSS</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      使用scipy实现层次聚类分析
+    </h1>
+    <div class="post-meta"><span title='2018-05-18 10:40:10 +0600 +0600'>2018-05-18</span>&nbsp;·&nbsp;3 min&nbsp;·&nbsp;FamouseGuys
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/cluster-dendrogram.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/cluster-dendrogram.png" alt=""></a>
+        
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90&amp;url=%2fblog%2fhierarchy_dendrogram_tutorial%2f&amp;hashtags=%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e5%ad%a6%e6%9c%af%e5%ba%94%e7%94%a8">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2fhierarchy_dendrogram_tutorial%2f&amp;title=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90&amp;summary=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90&amp;source=%2fblog%2fhierarchy_dendrogram_tutorial%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2fhierarchy_dendrogram_tutorial%2f&title=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2fhierarchy_dendrogram_tutorial%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90%20-%20%2fblog%2fhierarchy_dendrogram_tutorial%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on telegram"
+        href="https://telegram.me/share/url?text=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90&amp;url=%2fblog%2fhierarchy_dendrogram_tutorial%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e4%bb%a3%e7%a0%81%e4%b8%8b%e8%bd%bd" aria-label="代码下载">代码下载</a></li>
+                    <li>
+                        <a href="#%e5%ae%9e%e9%aa%8c%e7%9b%ae%e7%9a%84" aria-label="实验目的">实验目的</a></li>
+                    <li>
+                        <a href="#%e5%b1%82%e6%ac%a1%e5%88%86%e6%9e%90" aria-label="层次分析">层次分析</a></li>
+                    <li>
+                        <a href="#%e5%ae%9e%e9%aa%8c%e6%95%b0%e6%8d%ae" aria-label="实验数据">实验数据</a><ul>
+                            
+                    <li>
+                        <a href="#%e4%bd%bf%e7%94%a8linkage%e5%87%bd%e6%95%b0%e5%af%b9samples%e8%bf%9b%e8%a1%8c%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb" aria-label="使用linkage函数对samples进行层次聚类">使用linkage函数对samples进行层次聚类</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e8%af%be%e7%a8%8b" aria-label="课程">课程</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><h2 id="代码下载">代码下载<a hidden class="anchor" aria-hidden="true" href="#代码下载">#</a></h2>
+<p><a href="hierarchy_dendrogram_code.zip"><strong>click to download</strong></a></p>
+<h2 id="实验目的">实验目的<a hidden class="anchor" aria-hidden="true" href="#实验目的">#</a></h2>
+<p>如果您以前从未使用过树状图，那么使用树状图是查看多维数据如何聚集在一起的好方法。 在这本笔记本中，我将简单探索通过层次分析，借助树状图将其可视化。</p>
+<br>
+<h2 id="层次分析">层次分析<a hidden class="anchor" aria-hidden="true" href="#层次分析">#</a></h2>
+<p>层次分析是聚类分析的一种，scipy有这方面的封装包。</p>
+<p>linkage函数从字面意思是链接，层次分析就是不断链接的过程，最终从n条数据，经过不断链接，最终聚合成一类，算法就此停止。</p>
+<p>dendrogram是用来绘制树形图的函数。</p>
+<br>
+<h2 id="实验数据">实验数据<a hidden class="anchor" aria-hidden="true" href="#实验数据">#</a></h2>
+<p>grain_variety是标签，其他列为多种属性的值（特征）。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">scipy.cluster.hierarchy</span> <span class="kn">import</span> <span class="n">linkage</span><span class="p">,</span> <span class="n">dendrogram</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">seeds_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;seeds-less-rows.csv&#39;</span><span class="p">)</span>
+<span class="n">seeds_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+<p></style></p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>area</th>
+      <th>perimeter</th>
+      <th>compactness</th>
+      <th>length</th>
+      <th>width</th>
+      <th>asymmetry_coefficient</th>
+      <th>groove_length</th>
+      <th>grain_variety</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>14.88</td>
+      <td>14.57</td>
+      <td>0.8811</td>
+      <td>5.554</td>
+      <td>3.333</td>
+      <td>1.018</td>
+      <td>4.956</td>
+      <td>Kama wheat</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>14.69</td>
+      <td>14.49</td>
+      <td>0.8799</td>
+      <td>5.563</td>
+      <td>3.259</td>
+      <td>3.586</td>
+      <td>5.219</td>
+      <td>Kama wheat</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>14.03</td>
+      <td>14.16</td>
+      <td>0.8796</td>
+      <td>5.438</td>
+      <td>3.201</td>
+      <td>1.717</td>
+      <td>5.001</td>
+      <td>Kama wheat</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>19.31</td>
+      <td>16.59</td>
+      <td>0.8815</td>
+      <td>6.341</td>
+      <td>3.810</td>
+      <td>3.477</td>
+      <td>6.238</td>
+      <td>Rosa wheat</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>17.99</td>
+      <td>15.86</td>
+      <td>0.8992</td>
+      <td>5.890</td>
+      <td>3.694</td>
+      <td>2.068</td>
+      <td>5.837</td>
+      <td>Rosa wheat</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#移除文本数据列</span>
+<span class="n">varieties</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">seeds_df</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;grain_variety&#39;</span><span class="p">))</span>
+<span class="n">varieties</span>
+</code></pre></div><pre><code>['Kama wheat',
+ 'Kama wheat',
+ 'Kama wheat',
+ 'Rosa wheat',
+ 'Rosa wheat',
+ 'Rosa wheat',
+ 'Rosa wheat',
+ 'Rosa wheat',
+ 'Canadian wheat',
+ 'Canadian wheat',
+ 'Canadian wheat',
+ 'Canadian wheat',
+ 'Canadian wheat',
+ 'Canadian wheat']
+</code></pre>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">samples</span> <span class="o">=</span> <span class="n">seeds_df</span><span class="o">.</span><span class="n">values</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;samples的维度&#39;</span><span class="p">,</span><span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</code></pre></div><pre><code>[[14.88   14.57    0.8811  5.554   3.333   1.018   4.956 ]
+ [14.69   14.49    0.8799  5.563   3.259   3.586   5.219 ]
+ [14.03   14.16    0.8796  5.438   3.201   1.717   5.001 ]
+ [19.31   16.59    0.8815  6.341   3.81    3.477   6.238 ]
+ [17.99   15.86    0.8992  5.89    3.694   2.068   5.837 ]
+ [18.85   16.17    0.9056  6.152   3.806   2.843   6.2   ]
+ [19.38   16.72    0.8716  6.303   3.791   3.678   5.965 ]
+ [17.36   15.76    0.8785  6.145   3.574   3.526   5.971 ]
+ [13.32   13.94    0.8613  5.541   3.073   7.035   5.44  ]
+ [11.43   13.13    0.8335  5.176   2.719   2.221   5.132 ]
+ [11.26   13.01    0.8355  5.186   2.71    5.335   5.092 ]
+ [12.46   13.41    0.8706  5.236   3.017   4.987   5.147 ]
+ [11.81   13.45    0.8198  5.413   2.716   4.898   5.352 ]
+ [11.23   12.88    0.8511  5.14    2.795   4.325   5.003 ]]
+samples的维度 (14, 7)
+</code></pre>
+<h3 id="使用linkage函数对samples进行层次聚类">使用linkage函数对samples进行层次聚类<a hidden class="anchor" aria-hidden="true" href="#使用linkage函数对samples进行层次聚类">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">X = linkage(y, method=&#39;single&#39;, metric=&#39;euclidean&#39;) 
+</code></pre></div><p>sacipy中y是距离矩阵，我对此只是傻傻的理解成特征矩阵。 (m*n) m行代表m条记录,n代表n个特征</p>
+<p>返回结果X是(m-1)*4的矩阵。 具体含义请看下面的案例</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">mergings</span> <span class="o">=</span> <span class="n">linkage</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+
+<span class="c1">#我们发现mergings比samples少一行</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;sample维度&#39;</span><span class="p">,</span><span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mergings维度&#39;</span><span class="p">,</span><span class="n">mergings</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</code></pre></div><pre><code>sample维度 (14, 7)
+mergings维度 (13, 4)
+</code></pre>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#层次分析可视化，leaf的字体不旋转，大小为10。</span>
+<span class="c1">#这里我们不显示每一条数据的具体名字标签（varieties），默认以数字标签显示</span>
+<span class="n">dendrogram</span><span class="p">(</span><span class="n">mergings</span><span class="p">,</span><span class="n">leaf_rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">leaf_font_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="c1">#在图中显示的数字是最细粒度的叶子，相当于每个样本数据点。</span>
+</code></pre></div><p><img loading="lazy" src="output_7_0.png" alt="png"  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">mergings</span>
+</code></pre></div><pre><code>array([[ 3.        ,  6.        ,  0.37233454,  2.        ],
+       [11.        , 12.        ,  0.77366442,  2.        ],
+       [10.        , 15.        ,  0.89804259,  3.        ],
+       [ 5.        , 14.        ,  0.90978998,  3.        ],
+       [13.        , 16.        ,  1.02732924,  4.        ],
+       [ 0.        ,  2.        ,  1.18832161,  2.        ],
+       [ 4.        , 17.        ,  1.28425969,  4.        ],
+       [ 7.        , 20.        ,  1.62187345,  5.        ],
+       [ 1.        , 19.        ,  2.02587613,  3.        ],
+       [ 9.        , 18.        ,  2.13385537,  5.        ],
+       [ 8.        , 23.        ,  2.323123  ,  6.        ],
+       [22.        , 24.        ,  2.87625877,  9.        ],
+       [21.        , 25.        ,  3.12231564, 14.        ]])
+</code></pre>
+<p>层次分析图从上到下看，依次是枝和叶。</p>
+<p>第一列和第二列代表类标签，包含叶子和枝子。</p>
+<p>第三列代表叶叶（或叶枝，枝枝）之间的距离</p>
+<p>第四列代表该层次类中含有的样本数（记录数）</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">X = linkage(y, method=&#39;single&#39;, metric=&#39;euclidean&#39;) 
+</code></pre></div><p>method是指计算类间距离的方法,比较常用的有3种:</p>
+<p>(1)single:最近邻,把类与类间距离最近的作为类间距</p>
+<p>(2)average:平均距离,类与类间所有pairs距离的平均</p>
+<p>(3)complete:最远邻,把类与类间距离最远的作为类间距</p>
+<p>我们写曾侧分析法函数，看看不同的method从图中有什么区别</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">hierarchy_analysis</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;single&#39;</span><span class="p">):</span>
+    <span class="n">mergings</span> <span class="o">=</span> <span class="n">linkage</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+
+    <span class="n">dendrogram</span><span class="p">(</span><span class="n">mergings</span><span class="p">,</span>
+              <span class="n">labels</span><span class="o">=</span><span class="n">varieties</span><span class="p">,</span>
+              <span class="n">leaf_rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span>
+              <span class="n">leaf_font_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#single</span>
+<span class="n">hierarchy_analysis</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;single&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="output_12_0.png" alt="png"  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#average</span>
+<span class="n">hierarchy_analysis</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;average&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="output_13_0.png" alt="png"  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#complete</span>
+<span class="n">hierarchy_analysis</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;complete&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="output_14_0.png" alt="png"  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">由于数据量比较少</span><span class="err">，</span><span class="n">complete和average方法做出来的图完全一样</span><span class="err">。</span>
+</code></pre></div><br>
+<h2 id="课程">课程<a hidden class="anchor" aria-hidden="true" href="#课程">#</a></h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+
+
+  </div>
+
+  <footer class="post-footer">
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/" target='_blank'>文本分析</a></li>
+        <li><a href="/tags/%E5%AD%A6%E6%9C%AF%E5%BA%94%E7%94%A8/" target='_blank'>学术应用</a></li>
+      </ul>
+
+
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90&amp;url=%2fblog%2fhierarchy_dendrogram_tutorial%2f&amp;hashtags=%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e5%ad%a6%e6%9c%af%e5%ba%94%e7%94%a8">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2fhierarchy_dendrogram_tutorial%2f&amp;title=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90&amp;summary=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90&amp;source=%2fblog%2fhierarchy_dendrogram_tutorial%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2fhierarchy_dendrogram_tutorial%2f&title=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2fhierarchy_dendrogram_tutorial%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90%20-%20%2fblog%2fhierarchy_dendrogram_tutorial%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用scipy实现层次聚类分析 on telegram"
+        href="https://telegram.me/share/url?text=%e4%bd%bf%e7%94%a8scipy%e5%ae%9e%e7%8e%b0%e5%b1%82%e6%ac%a1%e8%81%9a%e7%b1%bb%e5%88%86%e6%9e%90&amp;url=%2fblog%2fhierarchy_dendrogram_tutorial%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+    
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2022 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'Copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
