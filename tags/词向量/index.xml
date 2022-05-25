@@ -559,7 +559,100 @@
  &#39;stopword_num&#39;: 8,
  &#39;word_num&#39;: 14,
  &#39;sentence_num&#39;: 1}
-</code></pre></div><p><br><br></p>
+</code></pre></div><br>
+<h3 id="16-sentiment_by_valence">1.6 sentiment_by_valence()</h3>
+<p>sentiment函数默认所有情感词权重均为1，只需要统计文本中情感词的个数，即可得到文本情感得分。</p>
+<p>sentiment_by_valence(text, diction, lang=&lsquo;english&rsquo;)函数考虑了词语的效价(valence)</p>
+<ul>
+<li>text 待输入文本</li>
+<li>diction 带效价的词典，DataFrame格式。</li>
+<li>lang 语言类型&rsquo;chinese' 或 &lsquo;english&rsquo;，默认&rsquo;english'</li>
+</ul>
+<p>这里我们以文本具体性度量为例， <strong>concreteness.pkl</strong> 整理自 Brysbaert2014的文章。</p>
+<blockquote>
+<p>Brysbaert, M., Warriner, A. B., &amp; Kuperman, V. (2014). Concreteness ratings for 40 thousand generally known English word lemmas. Behavior Research Methods, 46, 904–911</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="c1"># load the concreteness.pkl dictionary file</span>
+<span class="n">concreteness_df</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_pkl_dict</span><span class="p">(</span><span class="s1">&#39;concreteness.pkl&#39;</span><span class="p">)</span>
+<span class="n">concreteness_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:right"></th>
+<th style="text-align:left">word</th>
+<th style="text-align:right">valence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:left">roadsweeper</td>
+<td style="text-align:right">4.85</td>
+</tr>
+<tr>
+<td style="text-align:right">1</td>
+<td style="text-align:left">traindriver</td>
+<td style="text-align:right">4.54</td>
+</tr>
+<tr>
+<td style="text-align:right">2</td>
+<td style="text-align:left">tush</td>
+<td style="text-align:right">4.45</td>
+</tr>
+<tr>
+<td style="text-align:right">3</td>
+<td style="text-align:left">hairdress</td>
+<td style="text-align:right">3.93</td>
+</tr>
+<tr>
+<td style="text-align:right">4</td>
+<td style="text-align:left">pharmaceutics</td>
+<td style="text-align:right">3.77</td>
+</tr>
+</tbody>
+</table>
+<br>
+<p>先看一条文本的具体性度量</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">reply</span> <span class="o">=</span> <span class="s2">&#34;I&#39;ll go look for that&#34;</span>
+
+<span class="n">score</span><span class="o">=</span><span class="n">ct</span><span class="o">.</span><span class="n">sentiment_by_valence</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">reply</span><span class="p">,</span> 
+                              <span class="n">diction</span><span class="o">=</span><span class="n">concreteness_df</span><span class="p">,</span> 
+                              <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;english&#39;</span><span class="p">)</span>
+<span class="n">score</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1.85
+</code></pre></div><br>
+<p>很多条文本的具体性度量</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">employee_replys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;I&#39;ll go look for that&#34;</span><span class="p">,</span>
+                   <span class="s2">&#34;I&#39;ll go search for that&#34;</span><span class="p">,</span>
+                   <span class="s2">&#34;I&#39;ll go search for that top&#34;</span><span class="p">,</span>
+                   <span class="s2">&#34;I&#39;ll go search for that t-shirt&#34;</span><span class="p">,</span>
+                   <span class="s2">&#34;I&#39;ll go look for that t-shirt in grey&#34;</span><span class="p">,</span>
+                   <span class="s2">&#34;I&#39;ll go search for that t-shirt in grey&#34;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">reply</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">employee_replys</span><span class="p">):</span>
+    <span class="n">score</span><span class="o">=</span><span class="n">ct</span><span class="o">.</span><span class="n">sentiment_by_valence</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">reply</span><span class="p">,</span> 
+                                  <span class="n">diction</span><span class="o">=</span><span class="n">concreteness_df</span><span class="p">,</span> 
+                                  <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;english&#39;</span><span class="p">)</span>
+    
+    <span class="n">template</span> <span class="o">=</span> <span class="s2">&#34;Concreteness Score: </span><span class="si">{score:.2f}</span><span class="s2"> | Example-</span><span class="si">{idx}</span><span class="s2">: </span><span class="si">{exmaple}</span><span class="s2">&#34;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span> 
+                          <span class="n">idx</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> 
+                          <span class="n">exmaple</span><span class="o">=</span><span class="n">reply</span><span class="p">))</span>
+    
+<span class="n">ct</span><span class="o">.</span><span class="n">sentiment_by_valence</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">diction</span><span class="o">=</span><span class="n">concreteness_df</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;english&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Concreteness Score: 1.55 | Example-0: I&#39;ll go look for that
+Concreteness Score: 1.55 | Example-1: I&#39;ll go search for that
+Concreteness Score: 1.89 | Example-2: I&#39;ll go search for that top
+Concreteness Score: 2.04 | Example-3: I&#39;ll go search for that t-shirt
+Concreteness Score: 2.37 | Example-4: I&#39;ll go look for that t-shirt in grey
+Concreteness Score: 2.37 | Example-5: I&#39;ll go search for that t-shirt in grey
+</code></pre></div><br>
+<p><br><br></p>
 <h2 id="二dictionary">二、dictionary</h2>
 <p>本模块用于构建词表(典),含</p>
 <ul>
