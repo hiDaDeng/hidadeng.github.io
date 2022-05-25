@@ -440,6 +440,12 @@ class Config {
 				url: 'https://editor.mdnice.com/',
 				category: 'Coding'
 			},
+			{
+				site: 'Logo DIY',
+				icon: 'logo',
+				url: 'https://logo.com/',
+				category: 'Coding'
+			},
 
 			{
 				site: '工大管院',

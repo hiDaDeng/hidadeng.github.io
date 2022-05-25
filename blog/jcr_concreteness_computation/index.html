@@ -103,8 +103,8 @@
   "keywords": [
     "文本分析", "Journal of Consumer Research", "经济管理", "科研分析", "语言具体性"
   ],
-  "articleBody": "前不久分享了一篇JCR2018的综述 营销研究中文本分析应用概述(含案例及代码) \n最近看到一篇JCR2021的实证 语言具体性如何影响消费者态度 ，研究者从一个现象, 即消费者可以通过感知店员的表达具体(例如，更多的名词而非代词)，判断店员是否用心倾听自己的需求。这有点像三十年前， 在服务态度不好的百货商场，店员往往爱答不理。\n大邓作为消费者，相比1、2、3三种表达方式，我会更喜欢会觉得4、5、6句子中使用**较多细节、具体词的店员。**而简短表达，代词过多，表明店员连嘴都懒得张口服务我，似乎对我们的切身需求关注不足，态度好不端正的感觉。文中对店员言语具体性表达给出了建议及原因，例子如下图。\n 结构模型、DSGE、Stata实证前沿、空间计量、Python数据挖掘|2022五一工作坊 想随时随地系统学习Python文本分析，可以选择  Python网络爬虫与文本分析 | 2021录播课(虽是录播，但章节更多一些)。   更喜欢有互动感通过直播学习，可以考虑  Python网络爬虫与文本分析 | 2022五一直播    我找了三篇文本具体性的论文，文章结尾附有具体性的Python案例代码，希望能对大家有帮助。\n语言具体性 语言具体性Concreteness描述了一个词在多大程度上是指一个实际的、有形的或“真实的”实体，以一种更具体、更熟悉、更容易被眼睛或心灵感知的方式描述对象和行为（即，可想象或生动；Brysbaert, Warriner, and Kuperman 2014; Semin and Fiedler 1988). 我找了三篇文本具体性的论文，文章结尾附有具体性的Python案例代码，希望能对大家有帮助。\n具体性词典 Brysbaert, Warriner, A. B., \u0026 Kuperman, V. (2014) 找4000人，网络众包标注，开发了英文40000词的具体性词典。下图是对应的词典excel文件，字段Conc.M就是对应词语的具体性得分。\n心理距离与语言具体性 Snefjella, Bryor, and Victor Kuperman(2015)挖掘了心理距离与语言具体性之间的数学关系， 第一次将心理距离看做连续性变量进行度量(而之前的研究几乎只把心理距离设置为高、低二分类变量)，计算过程使用了Brysbaert2014的语言具体性词典度量。\n实验结果与我们认知相吻合，基本上心理距离越大， 具体性得分越小；反之，也成立。下面我列出在地理、时间、社会三个维度的量化可视化结果。\n地理维度 时间维度 社会维度 代码实现-以JCR为例 消费者经常对客户服务感到沮丧。 但是语言的简单转变是否有助于提高客户满意度？ 我们认为，语言具体性linguistic concreteness——员工在与客户交谈时使用的词语的有形性tangibility、具体性speciﬁcity或可想象性imaginability——可以塑造消费者的态度和行为。 五项研究，包括对两个不同领域环境中超过 1,000 次真实消费者-员工互动的文本分析，表明当员工与他们具体交谈时，客户会更满意、更愿意购买和购买。 这是因为客户推断使用更具体语言的员工正在倾听（即关注并理解他们的需求)。 这些发现加深了对语言如何塑造消费者行为的理解，揭示了具体性影响人们感知的心理机制，并为管理者帮助提高客户满意度提供了一种直接的方法。\n假设我们作为消费者，看到员工对同一个意思使用如下不同表达，\n相比4、5、6这三种表达方式，会觉得句子中使用**较多代词的店员懒得说话(态度不端正)。**而使用较多名词和形容词，会表明店员关注我们的切身需求。这篇JCR就是从这个角度切入的研究。\nJCR文中具体性计算说明\nWe computed a concreteness score for each conversational turn (averaging across all words in that turn) and for each conversational participant (averaging across all words over all their turns). Results were the same whether or not stop words commonly excluded from linguistics analyses (e.g., but, and) were included. We report results excluding stop words. 按照我的理解， 设计如下算法\n 对文本(会话)使用nltk分词，得到词语列表 在具体性词典中查询对应的具体性得分 得到文本的具体性得分(句子所有词的具体性得分加总除以词数)  代码如下\nimport pandas as pd from nltk.tokenize import word_tokenize #JCR文中使用的Paetzold2016的词典 # Paetzold2016文中的词典下载链接失效。这里使用Brysbaert2014的词典 df = pd.read_excel(\"Concreteness_ratings_Brysbaert_et_al_BRM.xlsx\") from nltk.tokenize import word_tokenize def query_concreteness(word): \"\"\" 查询word的具体性得分 \"\"\" try: return df[df[\"Word\"]==word]['Conc.M'].values[0] except: return 0 def concreteness_score(text): \"\"\" 计算文本的具体性得分 \"\"\" score = 0 text = text.lower() try: words = word_tokenize(text) except: print('你的电脑nltk没配置好，请观看视频https://www.bilibili.com/video/BV14A411i7DB') words = text.split(' ') for word in words: try: score += query_concreteness(word=word) except: score += 0 return score/len(words) # 案例 employee_replys = [\"I'll go look for that\", \"I'll go search for that\", \"I'll go search for that top\", \"I'll go search for that t-shirt\", \"I'll go look for that t-shirt in grey\", \"I'll go search for that t-shirt in grey\"] for idx, reply in enumerate(employee_replys): score=concreteness_score(reply) template = \"Concreteness Score: {score:.2f}| Example-{idx}: {exmaple}\" print(template.format(score=score, idx=idx, exmaple=reply)) Run\nConcreteness Score: 1.55 | Example-0: I'll go look for that Concreteness Score: 1.55 | Example-1: I'll go search for that Concreteness Score: 1.89 | Example-2: I'll go search for that top Concreteness Score: 2.04 | Example-3: I'll go search for that t-shirt Concreteness Score: 2.37 | Example-4: I'll go look for that t-shirt in grey Concreteness Score: 2.37 | Example-5: I'll go search for that t-shirt in grey 员工的表达越具体，具体性得分越高。\n跟JCR中的得分不一样，但是案例的得分趋势是一致的。基本上从上至下，每个员工回复对应的具体性得分越来越高。\n代码获取 点击下载本文代码\n  结构模型、DSGE、Stata实证前沿、空间计量、Python数据挖掘|2022五一工作坊\n  想随时随地系统学习Python文本分析，可以选择\n Python网络爬虫与文本分析 | 2021录播课(虽是录播，但章节更多一些)。    更喜欢有互动感通过直播学习，可以考虑\n Python网络爬虫与文本分析 | 2022五一直播    相关文献 Brysbaert, M., Warriner, A. B., \u0026 Kuperman, V. (2014). Concreteness ratings for 40 thousand generally known English word lemmas. Behavior Research Methods, 46, 904–911\nSnefjella, Bryor, and Victor Kuperman. “Concreteness and psychological distance in natural language use.” Psychological science 26, no. 9 (2015): 1449-1460.\nPaetzold, G. H., and L. Specia (2016), “Inferring Psycholinguistic Properties of Words,” in Proceedings of the North American Association for Computational Linguistics-Human Language Technologies 2016, 435–40.\nPackard, Grant, and Jonah Berger. “How concrete language shapes customer satisfaction.” Journal of Consumer Research 47, no. 5 (2021): 787-806.\n\n了解课程  点击上方图片购买课程   点击进入详情页\n",
-  "wordCount" : "422",
+  "articleBody": "前不久分享了一篇JCR2018的综述 营销研究中文本分析应用概述(含案例及代码) \n最近看到一篇JCR2021的实证 语言具体性如何影响消费者态度 ，研究者从一个现象, 即消费者可以通过感知店员的表达具体(例如，更多的名词而非代词)，判断店员是否用心倾听自己的需求。这有点像三十年前， 在服务态度不好的百货商场，店员往往爱答不理。\n大邓作为消费者，相比1、2、3三种表达方式，我会更喜欢会觉得4、5、6句子中使用**较多细节、具体词的店员。**而简短表达，代词过多，表明店员连嘴都懒得张口服务我，似乎对我们的切身需求关注不足，态度好不端正的感觉。文中对店员言语具体性表达给出了建议及原因，例子如下图。\n 结构模型、DSGE、Stata实证前沿、空间计量、Python数据挖掘|2022五一工作坊 想随时随地系统学习Python文本分析，可以选择  Python网络爬虫与文本分析 | 2021录播课(虽是录播，但章节更多一些)。   更喜欢有互动感通过直播学习，可以考虑  Python网络爬虫与文本分析 | 2022五一直播    我找了三篇文本具体性的论文，文章结尾附有具体性的Python案例代码，希望能对大家有帮助。\n语言具体性 语言具体性Concreteness描述了一个词在多大程度上是指一个实际的、有形的或“真实的”实体，以一种更具体、更熟悉、更容易被眼睛或心灵感知的方式描述对象和行为（即，可想象或生动；Brysbaert, Warriner, and Kuperman 2014; Semin and Fiedler 1988). 我找了三篇文本具体性的论文，文章结尾附有具体性的Python案例代码，希望能对大家有帮助。\n具体性词典 Brysbaert, Warriner, A. B., \u0026 Kuperman, V. (2014) 找4000人，网络众包标注，开发了英文40000词的具体性词典。下图是对应的词典excel文件，字段Conc.M就是对应词语的具体性得分。\n心理距离与语言具体性 Snefjella, Bryor, and Victor Kuperman(2015)挖掘了心理距离与语言具体性之间的数学关系， 第一次将心理距离看做连续性变量进行度量(而之前的研究几乎只把心理距离设置为高、低二分类变量)，计算过程使用了Brysbaert2014的语言具体性词典度量。\n实验结果与我们认知相吻合，基本上心理距离越大， 具体性得分越小；反之，也成立。下面我列出在地理、时间、社会三个维度的量化可视化结果。\n地理维度 时间维度 社会维度 代码实现-以JCR为例 消费者经常对客户服务感到沮丧。 但是语言的简单转变是否有助于提高客户满意度？ 我们认为，语言具体性linguistic concreteness——员工在与客户交谈时使用的词语的有形性tangibility、具体性speciﬁcity或可想象性imaginability——可以塑造消费者的态度和行为。 五项研究，包括对两个不同领域环境中超过 1,000 次真实消费者-员工互动的文本分析，表明当员工与他们具体交谈时，客户会更满意、更愿意购买和购买。 这是因为客户推断使用更具体语言的员工正在倾听（即关注并理解他们的需求)。 这些发现加深了对语言如何塑造消费者行为的理解，揭示了具体性影响人们感知的心理机制，并为管理者帮助提高客户满意度提供了一种直接的方法。\n假设我们作为消费者，看到员工对同一个意思使用如下不同表达，\n相比4、5、6这三种表达方式，会觉得句子中使用**较多代词的店员懒得说话(态度不端正)。**而使用较多名词和形容词，会表明店员关注我们的切身需求。这篇JCR就是从这个角度切入的研究。\nJCR文中具体性计算说明\nWe computed a concreteness score for each conversational turn (averaging across all words in that turn) and for each conversational participant (averaging across all words over all their turns). Results were the same whether or not stop words commonly excluded from linguistics analyses (e.g., but, and) were included. We report results excluding stop words. 按照我的理解， 设计如下算法\n 对文本(会话)使用nltk分词，得到词语列表 在具体性词典中查询对应的具体性得分 得到文本的具体性得分(句子所有词的具体性得分加总除以词数)  方法一 import pandas as pd from nltk.tokenize import word_tokenize #JCR文中使用的Paetzold2016的词典 # Paetzold2016文中的词典下载链接失效。这里使用Brysbaert2014的词典 df = pd.read_excel(\"Concreteness_ratings_Brysbaert_et_al_BRM.xlsx\") from nltk.tokenize import word_tokenize def query_concreteness(word): \"\"\" 查询word的具体性得分 \"\"\" try: return df[df[\"Word\"]==word]['Conc.M'].values[0] except: return 0 def concreteness_score(text): \"\"\" 计算文本的具体性得分 \"\"\" score = 0 text = text.lower() try: words = word_tokenize(text) except: print('你的电脑nltk没配置好，请观看视频https://www.bilibili.com/video/BV14A411i7DB') words = text.split(' ') for word in words: try: score += query_concreteness(word=word) except: score += 0 return score/len(words) # 案例 employee_replys = [\"I'll go look for that\", \"I'll go search for that\", \"I'll go search for that top\", \"I'll go search for that t-shirt\", \"I'll go look for that t-shirt in grey\", \"I'll go search for that t-shirt in grey\"] for idx, reply in enumerate(employee_replys): score=concreteness_score(reply) template = \"Concreteness Score: {score:.2f}| Example-{idx}: {exmaple}\" print(template.format(score=score, idx=idx, exmaple=reply)) Run\nConcreteness Score: 1.55 | Example-0: I'll go look for that Concreteness Score: 1.55 | Example-1: I'll go search for that Concreteness Score: 1.89 | Example-2: I'll go search for that top Concreteness Score: 2.04 | Example-3: I'll go search for that t-shirt Concreteness Score: 2.37 | Example-4: I'll go look for that t-shirt in grey Concreteness Score: 2.37 | Example-5: I'll go search for that t-shirt in grey 员工的表达越具体，具体性得分越高。\n跟JCR中的得分不一样，但是案例的得分趋势是一致的。基本上从上至下，每个员工回复对应的具体性得分越来越高。\n方法二 cntext内置了效价情感分析函数和concreteness词典，因此本任务实际上可以用cntext完成。\npip3 install cntext==1.7.0 代码\nimport cntext as ct # load the concreteness.pkl dictionary file concreteness_df = ct.load_pkl_dict('concreteness.pkl') concreteness_df.head() Run\n    word valence     0 roadsweeper 4.85   1 traindriver 4.54   2 tush 4.45   3 hairdress 3.93   4 pharmaceutics 3.77    reply = \"I'll go look for that\" score=ct.sentiment_by_valence(text=reply, diction=concreteness_df, lang='english') score Run\n1.85 \nemployee_replys = [\"I'll go look for that\", \"I'll go search for that\", \"I'll go search for that top\", \"I'll go search for that t-shirt\", \"I'll go look for that t-shirt in grey\", \"I'll go search for that t-shirt in grey\"] for idx, reply in enumerate(employee_replys): score=ct.sentiment_by_valence(text=reply, diction=concreteness_df, lang='english') template = \"Concreteness Score: {score:.2f}| Example-{idx}: {exmaple}\" print(template.format(score=score, idx=idx, exmaple=reply)) ct.sentiment_by_valence(text=text, diction=concreteness_df, lang='english') Run\nConcreteness Score: 1.55 | Example-0: I'll go look for that Concreteness Score: 1.55 | Example-1: I'll go search for that Concreteness Score: 1.89 | Example-2: I'll go search for that top Concreteness Score: 2.04 | Example-3: I'll go search for that t-shirt Concreteness Score: 2.37 | Example-4: I'll go look for that t-shirt in grey Concreteness Score: 2.37 | Example-5: I'll go search for that t-shirt in grey \n代码获取 点击下载本文代码\n  结构模型、DSGE、Stata实证前沿、空间计量、Python数据挖掘|2022五一工作坊\n  想随时随地系统学习Python文本分析，可以选择\n Python网络爬虫与文本分析 | 2021录播课(虽是录播，但章节更多一些)。    更喜欢有互动感通过直播学习，可以考虑\n Python网络爬虫与文本分析 | 2022五一直播    相关文献 Brysbaert, M., Warriner, A. B., \u0026 Kuperman, V. (2014). Concreteness ratings for 40 thousand generally known English word lemmas. Behavior Research Methods, 46, 904–911\nSnefjella, Bryor, and Victor Kuperman. “Concreteness and psychological distance in natural language use.” Psychological science 26, no. 9 (2015): 1449-1460.\nPaetzold, G. H., and L. Specia (2016), “Inferring Psycholinguistic Properties of Words,” in Proceedings of the North American Association for Computational Linguistics-Human Language Technologies 2016, 435–40.\nPackard, Grant, and Jonah Berger. “How concrete language shapes customer satisfaction.” Journal of Consumer Research 47, no. 5 (2021): 787-806.\n\n了解课程  点击上方图片购买课程   点击进入详情页\n",
+  "wordCount" : "603",
   "inLanguage": "en",
   "image":"/images/blog/Concreteness_JCR.png","datePublished": "2022-04-07T18:43:10+06:00",
   "dateModified": "2022-04-07T18:43:10+06:00",
@@ -226,7 +226,7 @@ onload="renderMathInElement(document.body);"></script>
     <h1 class="post-title">
       计算文本的语言具体性 | 以JCR2021论文为例
     </h1>
-    <div class="post-meta"><span title='2022-04-07 18:43:10 +0600 +0600'>2022-04-07</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
+    <div class="post-meta"><span title='2022-04-07 18:43:10 +0600 +0600'>2022-04-07</span>&nbsp;·&nbsp;3 min&nbsp;·&nbsp;大邓
 
 </div>
   </header> 
@@ -302,7 +302,13 @@ onload="renderMathInElement(document.body);"></script>
                         <a href="#%e7%a4%be%e4%bc%9a%e7%bb%b4%e5%ba%a6" aria-label="社会维度">社会维度</a></li></ul>
                     </li>
                     <li>
-                        <a href="#%e4%bb%a3%e7%a0%81%e5%ae%9e%e7%8e%b0-%e4%bb%a5jcr%e4%b8%ba%e4%be%8b" aria-label="代码实现-以JCR为例">代码实现-以JCR为例</a></li>
+                        <a href="#%e4%bb%a3%e7%a0%81%e5%ae%9e%e7%8e%b0-%e4%bb%a5jcr%e4%b8%ba%e4%be%8b" aria-label="代码实现-以JCR为例">代码实现-以JCR为例</a><ul>
+                            
+                    <li>
+                        <a href="#%e6%96%b9%e6%b3%95%e4%b8%80" aria-label="方法一">方法一</a></li>
+                    <li>
+                        <a href="#%e6%96%b9%e6%b3%95%e4%ba%8c" aria-label="方法二">方法二</a></li></ul>
+                    </li>
                     <li>
                         <a href="#%e4%bb%a3%e7%a0%81%e8%8e%b7%e5%8f%96" aria-label="代码获取">代码获取</a></li>
                     <li>
@@ -437,7 +443,7 @@ onload="renderMathInElement(document.body);"></script>
 <li>在具体性词典中查询对应的具体性得分</li>
 <li>得到文本的具体性得分(句子所有词的具体性得分加总除以词数)</li>
 </ol>
-<p>代码如下</p>
+<h3 id="方法一">方法一<a hidden class="anchor" aria-hidden="true" href="#方法一">#</a></h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">nltk.tokenize</span> <span class="kn">import</span> <span class="n">word_tokenize</span>
 
@@ -456,7 +462,8 @@ onload="renderMathInElement(document.body);"></script>
     <span class="k">except</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
     
-    
+ 
+
 <span class="k">def</span> <span class="nf">concreteness_score</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
     <span class="s2">&#34;&#34;&#34;
 </span><span class="s2">    计算文本的具体性得分
@@ -505,6 +512,88 @@ Concreteness Score: 2.37 | Example-5: I&#39;ll go search for that t-shirt in gre
 <p><img loading="lazy" src="img/Concreteness_JCR_computation.png" alt=""  />
 </p>
 <br>
+<h3 id="方法二">方法二<a hidden class="anchor" aria-hidden="true" href="#方法二">#</a></h3>
+<p>cntext内置了效价情感分析函数和concreteness词典，因此本任务实际上可以用cntext完成。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install cntext==1.7.0
+</code></pre></div><p>代码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import cntext as ct
+
+# load the concreteness.pkl dictionary file
+concreteness_df = ct.load_pkl_dict(&#39;concreteness.pkl&#39;)
+concreteness_df.head()
+</code></pre></div><p>Run</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:right"></th>
+<th style="text-align:left">word</th>
+<th style="text-align:right">valence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:left">roadsweeper</td>
+<td style="text-align:right">4.85</td>
+</tr>
+<tr>
+<td style="text-align:right">1</td>
+<td style="text-align:left">traindriver</td>
+<td style="text-align:right">4.54</td>
+</tr>
+<tr>
+<td style="text-align:right">2</td>
+<td style="text-align:left">tush</td>
+<td style="text-align:right">4.45</td>
+</tr>
+<tr>
+<td style="text-align:right">3</td>
+<td style="text-align:left">hairdress</td>
+<td style="text-align:right">3.93</td>
+</tr>
+<tr>
+<td style="text-align:right">4</td>
+<td style="text-align:left">pharmaceutics</td>
+<td style="text-align:right">3.77</td>
+</tr>
+</tbody>
+</table>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">reply</span> <span class="o">=</span> <span class="s2">&#34;I&#39;ll go look for that&#34;</span>
+
+<span class="n">score</span><span class="o">=</span><span class="n">ct</span><span class="o">.</span><span class="n">sentiment_by_valence</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">reply</span><span class="p">,</span> 
+                              <span class="n">diction</span><span class="o">=</span><span class="n">concreteness_df</span><span class="p">,</span> 
+                              <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;english&#39;</span><span class="p">)</span>
+<span class="n">score</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1.85
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">employee_replys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;I&#39;ll go look for that&#34;</span><span class="p">,</span>
+                   <span class="s2">&#34;I&#39;ll go search for that&#34;</span><span class="p">,</span>
+                   <span class="s2">&#34;I&#39;ll go search for that top&#34;</span><span class="p">,</span>
+                   <span class="s2">&#34;I&#39;ll go search for that t-shirt&#34;</span><span class="p">,</span>
+                   <span class="s2">&#34;I&#39;ll go look for that t-shirt in grey&#34;</span><span class="p">,</span>
+                   <span class="s2">&#34;I&#39;ll go search for that t-shirt in grey&#34;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">reply</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">employee_replys</span><span class="p">):</span>
+    <span class="n">score</span><span class="o">=</span><span class="n">ct</span><span class="o">.</span><span class="n">sentiment_by_valence</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">reply</span><span class="p">,</span> 
+                                  <span class="n">diction</span><span class="o">=</span><span class="n">concreteness_df</span><span class="p">,</span> 
+                                  <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;english&#39;</span><span class="p">)</span>
+    
+    <span class="n">template</span> <span class="o">=</span> <span class="s2">&#34;Concreteness Score: </span><span class="si">{score:.2f}</span><span class="s2"> | Example-</span><span class="si">{idx}</span><span class="s2">: </span><span class="si">{exmaple}</span><span class="s2">&#34;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span> 
+                          <span class="n">idx</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> 
+                          <span class="n">exmaple</span><span class="o">=</span><span class="n">reply</span><span class="p">))</span>
+    
+<span class="n">ct</span><span class="o">.</span><span class="n">sentiment_by_valence</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">diction</span><span class="o">=</span><span class="n">concreteness_df</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;english&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Concreteness Score: 1.55 | Example-0: I&#39;ll go look for that
+Concreteness Score: 1.55 | Example-1: I&#39;ll go search for that
+Concreteness Score: 1.89 | Example-2: I&#39;ll go search for that top
+Concreteness Score: 2.04 | Example-3: I&#39;ll go search for that t-shirt
+Concreteness Score: 2.37 | Example-4: I&#39;ll go look for that t-shirt in grey
+Concreteness Score: 2.37 | Example-5: I&#39;ll go search for that t-shirt in grey
+</code></pre></div><p><br><br></p>
 <h2 id="代码获取">代码获取<a hidden class="anchor" aria-hidden="true" href="#代码获取">#</a></h2>
 <p><font color=blue><a href="JCR_Concreteness_Computation.zip">点击下载本文代码</a></font></p>
 <ul>
