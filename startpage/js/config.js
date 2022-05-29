@@ -357,6 +357,24 @@ class Config {
 				category: 'media'
 			},
 
+            {
+                site: '少数派',
+                icon: '少数派',
+                url: 'https://sspai.com/',
+                category: 'cNews'
+            },
+            {
+                site: 'VisualCapitalist',
+                icon: 'VisualCapitalist',
+                url: 'https://www.visualcapitalist.com/',
+                category: 'cNews'
+            },
+             {
+                site: 'Modevol',
+                icon: 'modevol',
+                url: 'https://www.modevol.com/',
+                category: 'cNews'
+            },
 			{
 				site: 'Zhihu',
 				icon: 'zhihu',
