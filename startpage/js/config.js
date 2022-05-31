@@ -249,6 +249,8 @@ class Config {
 				url: 'https://mail.qq.com/',
 				category: 'Academic Tools'
 			},
+
+
 			{
 				site: 'CNKI翻译',
 				icon: 'cnki翻译',
@@ -458,6 +460,19 @@ class Config {
 				url: 'https://editor.mdnice.com/',
 				category: 'Coding'
 			},
+            {
+                site: 'Canva',
+                icon: 'canva',
+                url: 'https://www.canva.cn/',
+                category: 'Coding'
+            },
+            
+            {
+                site: 'Favicon',
+                icon: 'favicon',
+                url: 'https://formito.com/tools/favicon',
+                category: 'Coding'
+            },
 			{
 				site: 'Logo DIY',
 				icon: 'logo',
