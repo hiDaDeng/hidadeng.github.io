@@ -6,7 +6,291 @@
     <description>Recent content in 第三方包 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 18 Jun 2022 16:40:10 +0600</lastBuildDate><atom:link href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 20 Jun 2022 12:40:10 +0600</lastBuildDate><atom:link href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>cntext库 | 关于DUTIR被污染解决办法</title>
+      <link>https://hidadeng.github.io/blog/fixed_dutir_bug/</link>
+      <pubDate>Mon, 20 Jun 2022 12:40:10 +0600</pubDate>
+      
+      <guid>/blog/fixed_dutir_bug/</guid>
+      <description>实在抱歉，大邓的粗心导致词典DUTIR被污染。大家如果使用cntext中的DUTIR，麻烦更新至1.7.2版本。</description>
+      <content:encoded><![CDATA[<p><img loading="lazy" src="img/dutir%e9%97%ae%e9%a2%98.png" alt=""  />
+</p>
+<h2 id="本文资料">本文资料</h2>
+<p><a href="DUTIR%E9%97%AE%E9%A2%98.zip">点击下载本文资料</a></p>
+<br>
+<h2 id="词典污染了">词典污染了</h2>
+<p>实在抱歉，大邓的粗心导致词典DUTIR被污染。大家如果使用cntext中的DUTIR，麻烦更新至1.7.2版本。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+<span class="n">dutir</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_pkl_dict</span><span class="p">(</span><span class="s1">&#39;DUTIR.pkl&#39;</span><span class="p">)</span>
+<span class="n">dutir</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1.7.1
+
+{&#39;DUTIR&#39;: {&#39;哀&#39;: [&#39;怀想&#39;, &#39;治丝而棼&#39;, &#39;伤害&#39;,...],
+           &#39;好&#39;: [&#39;进贤黜奸&#39;, &#39;清醇&#39;, &#39;放达&#39;, ...],
+           &#39;惊&#39;: [&#39;惊奇不已&#39;, &#39;魂惊魄惕&#39;, &#39;海外奇谈&#39;,...],
+           &#39;惧&#39;: [&#39;忸忸怩怩&#39;, &#39;谈虎色变&#39;, &#39;手忙脚乱&#39;,...],
+           &#39;乐&#39;: [&#39;百龄眉寿&#39;, &#39;娱心&#39;, &#39;如意&#39;,...],
+           &#39;怒&#39;: [&#39;饮恨吞声&#39;, &#39;扬眉瞬目&#39;,...],   
+           &#39;恶&#39;: [&#39;出逃&#39;, &#39;鱼肉百姓&#39;, &#39;移天易日&#39;,...]},
+
+ &#39;Desc&#39;: &#39;大连理工大学情感本体库，细粒度情感词典。含七大类情绪，依次是哀, 好, 惊, 惧, 乐, 怒, 恶&#39;,
+
+ &#39;Referer&#39;: &#39;徐琳宏,林鸿飞,潘宇,等.情感词汇本体的构造[J]. 情报学报, 2008, 27(2): 180-185.&#39;}
+</code></pre></div><p>七大类情绪有:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;DUTIR&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    dict_keys([&#39;哀&#39;, &#39;好&#39;, &#39;惊&#39;, &#39;惧&#39;, &#39;乐&#39;, &#39;怒&#39;, &#39;恶&#39;])
+</code></pre></div><p>下面是Bug!</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;DUTIR&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">if</span> <span class="s1">&#39;开心&#39;</span> <span class="ow">in</span> <span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;DUTIR&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;「开心」出现在情绪【</span><span class="si">{}</span><span class="s1">】词表中&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    「开心」出现在情绪【乐】词表中
+    「开心」出现在情绪【恶】词表中
+</code></pre></div><p>词语「开心」同时出现在情绪【乐】和【恶】</p>
+<br>
+<h2 id="dutir词典">DUTIR词典</h2>
+<p>在网上找到大连理工大学情感本体文献、词典xlsx文件。</p>
+<p><img loading="lazy" src="img/dutir%e8%b5%84%e6%96%99.png" alt=""  />
+</p>
+<p>制作方法，把 21 种小情绪汇总到喜怒哀乐等七大类情绪中。词典被污染，很可能是我汇总过程中出的问题。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;大连理工大学中文情感词汇本体.xlsx&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+<p></style></p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>词语</th>
+      <th>词性种类</th>
+      <th>词义数</th>
+      <th>词义序号</th>
+      <th>情感分类</th>
+      <th>强度</th>
+      <th>极性</th>
+      <th>辅助情感分类</th>
+      <th>强度.1</th>
+      <th>极性.1</th>
+      <th>Unnamed: 10</th>
+      <th>Unnamed: 11</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>脏乱</td>
+      <td>adj</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>NN</td>
+      <td>7</td>
+      <td>2</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>糟报</td>
+      <td>adj</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>NN</td>
+      <td>5</td>
+      <td>2</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>早衰</td>
+      <td>adj</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>NE</td>
+      <td>5</td>
+      <td>2</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>责备</td>
+      <td>verb</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>NN</td>
+      <td>5</td>
+      <td>2</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>贼眼</td>
+      <td>noun</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>NN</td>
+      <td>5</td>
+      <td>2</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<br>
+<h2 id="汇总七类情绪">汇总七类情绪</h2>
+<p><img loading="lazy" src="img/dutir%e4%b8%83%e5%a4%a7%e7%b1%bb.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#乐</span>
+<span class="n">le_cates</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PA&#39;</span><span class="p">,</span> <span class="s1">&#39;PE&#39;</span><span class="p">]</span>
+<span class="c1">#好</span>
+<span class="n">hao_cates</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PD&#39;</span><span class="p">,</span> <span class="s1">&#39;PH&#39;</span><span class="p">,</span> <span class="s1">&#39;PG&#39;</span><span class="p">,</span> <span class="s1">&#39;PB&#39;</span><span class="p">,</span> <span class="s1">&#39;PK&#39;</span><span class="p">]</span>
+<span class="c1"># 怒</span>
+<span class="n">nu_cates</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;NA&#39;</span><span class="p">]</span>
+<span class="c1">#哀</span>
+<span class="n">ai_cates</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;NB&#39;</span><span class="p">,</span> <span class="s1">&#39;NJ&#39;</span><span class="p">,</span> <span class="s1">&#39;NH&#39;</span><span class="p">,</span> <span class="s1">&#39;PF&#39;</span><span class="p">]</span>
+<span class="c1"># 惧</span>
+<span class="n">ju_cates</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;NI&#39;</span><span class="p">,</span> <span class="s1">&#39;NC&#39;</span><span class="p">,</span> <span class="s1">&#39;NG&#39;</span><span class="p">]</span>
+<span class="c1"># 恶</span>
+<span class="n">wu_cates</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;NE&#39;</span><span class="p">,</span> <span class="s1">&#39;ND&#39;</span><span class="p">,</span> <span class="s1">&#39;NN&#39;</span><span class="p">,</span> <span class="s1">&#39;NK&#39;</span><span class="p">,</span> <span class="s1">&#39;NL&#39;</span><span class="p">]</span>
+<span class="c1"># 惊</span>
+<span class="n">jing_cates</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PC&#39;</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">emotion</span><span class="p">(</span><span class="n">cates</span><span class="p">):</span>
+    <span class="n">dfs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">cate</span> <span class="ow">in</span> <span class="n">cates</span><span class="p">:</span>
+        <span class="n">sdf</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;情感分类&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">cate</span><span class="p">]</span>
+        <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sdf</span><span class="p">)</span>
+    <span class="n">res_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">res_df</span><span class="p">[</span><span class="s1">&#39;词语&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+<span class="c1"># 情绪【乐】的词语有：</span>
+<span class="n">le_words</span> <span class="o">=</span> <span class="n">emotion</span><span class="p">(</span><span class="n">cates</span><span class="o">=</span><span class="n">le_cates</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">le_words</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    [&#39;瑞雪&#39;, &#39;神采&#39;, &#39;喜人&#39;, &#39;怡悦&#39;, &#39;进益&#39;, &#39;奏凯&#39;, &#39;鸾凤和鸣&#39;, &#39;特等&#39;, &#39;欢快&#39;, &#39;如意&#39;]
+</code></pre></div><br>
+<h2 id="制作dutirpkl">制作DUTIR.pkl</h2>
+<p>将DUTIR介绍、文献出处、对应的词典汇总到字典，并制作生成DUTIR.pkl文件</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">dutir</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+<span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;乐&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">senti</span><span class="p">(</span><span class="n">cates</span><span class="o">=</span><span class="n">ju_cates</span><span class="p">)</span>
+<span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;好&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">senti</span><span class="p">(</span><span class="n">cates</span><span class="o">=</span><span class="n">hao_cates</span><span class="p">)</span>
+<span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;怒&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">senti</span><span class="p">(</span><span class="n">cates</span><span class="o">=</span><span class="n">nu_cates</span><span class="p">)</span>
+<span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;哀&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">senti</span><span class="p">(</span><span class="n">cates</span><span class="o">=</span><span class="n">ai_cates</span><span class="p">)</span>
+<span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;惧&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">senti</span><span class="p">(</span><span class="n">cates</span><span class="o">=</span><span class="n">ju_cates</span><span class="p">)</span>
+<span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;恶&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">senti</span><span class="p">(</span><span class="n">cates</span><span class="o">=</span><span class="n">e_cates</span><span class="p">)</span>
+<span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;惊&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">senti</span><span class="p">(</span><span class="n">cates</span><span class="o">=</span><span class="n">jing_cates</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;DUTIR&#39;</span><span class="p">:</span> <span class="n">dutir</span><span class="p">,</span>
+        <span class="s1">&#39;Desc&#39;</span><span class="p">:</span> <span class="s1">&#39;大连理工大学情感本体库，细粒度情感词典。含七大类情绪，依次是哀, 好, 惊, 惧, 乐, 怒, 恶&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Referer&#39;</span><span class="p">:</span> <span class="s1">&#39;徐琳宏,林鸿飞,潘宇,等.情感词汇本体的构造[J]. 情报学报, 2008, 27(2): 180-185.&#39;</span><span class="p">}</span>
+
+
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;DUTIR.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</code></pre></div><br>
+<h2 id="更新cntext">更新cntext</h2>
+<p>解决DUTIR词典问题， 需更新至1.7.2版本。</p>
+<p><strong>pip3 install cntext==1.7.2</strong></p>
+<p>现在我们检查下刚刚的问题</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+
+<span class="n">dutir</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_pkl_dict</span><span class="p">(</span><span class="s1">&#39;DUTIR.pkl&#39;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;DUTIR&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">if</span> <span class="s1">&#39;开心&#39;</span> <span class="ow">in</span> <span class="n">dutir</span><span class="p">[</span><span class="s1">&#39;DUTIR&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;「开心」只出现在情绪【</span><span class="si">{}</span><span class="s1">】词表中&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    1.7.2
+    「开心」只出现在情绪【恶】词表中
+</code></pre></div><br>
+<h2 id="长期征稿">长期征稿</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://hidadeng.github.io/blog/call_for_paper/">
+        <img src="/images/blog/call_for_paper.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解投稿</i></small></figcaption>
+</figure>
+</div>
+<br>
+<h2 id="招募小伙伴">招募小伙伴</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://hidadeng.github.io/blog/we_need_you/">
+        <img src="/images/blog/we_need_you.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击加入我们</i></small></figcaption>
+</figure>
+</div>
+<h2 id="广告位">广告位</h2>
+<p>想轻松而快捷的深刻了解一个领域，看视频(直播)学习是一个不错的方式。</p>
+<ul>
+<li>
+<p>大邓每年会有4场直播，五一、十一、寒、暑假，如果时间点接近，可考虑报名参与<a href="https://hidadeng.github.io/blog/2022-05-workshop/7-Python.html">直播课</a>。</p>
+</li>
+<li>
+<p>如果只意性价比，且已迫不及待想学，可以考虑直接报名大邓的<a href="https://hidadeng.github.io/blog/management_python_course">录播课</a>。</p>
+</li>
+<li>
+<p>如果不想学，也可以考虑外包。更建议找淘宝，如果找我咨询，请先阅读<a href="https://hidadeng.github.io/blog/paid_for_service">有偿说明</a></p>
+</li>
+</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+<br>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>sklearnex库 | 让你的scikit-learn代码加速百倍</title>
       <link>https://hidadeng.github.io/blog/speed_up_sklearn_code_with_sklearnex/</link>
