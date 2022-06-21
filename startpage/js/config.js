@@ -74,47 +74,12 @@ class Config {
 				prefix: 'https://www.baidu.com/s?wd='
 			},
 
-			'GoogleScholar':	{
-				name: 'Google Scholar',
-				icon: 'google-scholar',
-				prefix: 'https://scholar.google.com/scholar?q='
-			},
-
-			'startpage': {
-				name: 'Startpage',
-				prefix: 'https://www.startpage.com/do/dsearch?query=',
-				icon: 'startpage'
-			},
-			'qwant': {
-				name: 'Qwant',
-				prefix: 'https://www.qwant.com/?q=',
-				icon: 'qwant'
-			},
-			'ecosia': {
-				name: 'Ecosia',
-				prefix: 'https://www.ecosia.org/search?q=',
-				icon: 'ecosia'
-			},
-			'duckduckgo': {
-				name: 'Duckduckgo',
-				prefix: 'https://duckduckgo.com/?q=',
-				icon: 'duckduckgo'
-			},
-			'yahoo': {
-				name: 'Yahoo',
-				prefix: 'https://search.yahoo.com/search?p=',
-				icon: 'yahoo'
-			},
 			'google': {
 				name: 'Google',
 				prefix: 'https://www.google.com/search?q=',
 				icon: 'google'
 			},
-			'bing': {
-				name: 'Bing',
-				prefix: 'https://www.bing.com/search?q=',
-				icon: 'bing'
-			},
+
 			'yandex': {
 				name: 'Yandex',
 				prefix: 'https://yandex.com/search/?text=',
@@ -496,6 +461,31 @@ class Config {
 				site: '高校人才网',
 				icon: 'gaoxiaojob',
 				url: 'http://www.gaoxiaojob.com/',
+				category: 'BInformation'
+			},
+{
+				site: '国家统计局',
+				icon: 'stats_gov',
+				url: 'https://data.stats.gov.cn/',
+				category: 'BInformation'
+			},
+
+			{
+				site: '教育部',
+				icon: 'education',
+				url: 'http://www.moe.gov.cn/',
+				category: 'BInformation'
+			},
+			{
+				site: '中国政府网站',
+				icon: 'goverment',
+				url: 'https://www.gov.cn/',
+				category: 'BInformation'
+			},
+			{
+				site: '黑龙江政府网',
+				icon: 'heilongjiang',
+				url: 'https://hrbthx.zwfw.hlj.gov.cn/?flag=false',
 				category: 'BInformation'
 			},
 			{
