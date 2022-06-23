@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>管理世界 | 使用LM中文金融词典对年报进行语调分析 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="文本分析, 经济管理, 语调, 管理层, 年报, 管理世界" />
+<meta name="description" content="使用LM中文金融词典对年报进行语调分析">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/manager_tone_analysis_with_lm/" />
+<meta name="baidu-site-verification" content="code-xTk1LSyjvt" />
+<meta name="360-site-verification" content="dc00b42cd1d4e0fcaa5edfd27394f9cd" />
+<meta name="sogou-site-verification" content="3HDeo612Pl" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="管理世界 | 使用LM中文金融词典对年报进行语调分析" />
+<meta property="og:description" content="使用LM中文金融词典对年报进行语调分析" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/manager_tone_analysis_with_lm/" />
+<meta property="og:image" content="/images/blog/manager_tone_analysis_with_LM.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2022-06-22T18:43:10&#43;06:00" />
+<meta property="article:modified_time" content="2022-06-22T18:43:10&#43;06:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/manager_tone_analysis_with_LM.png" />
+<meta name="twitter:title" content="管理世界 | 使用LM中文金融词典对年报进行语调分析"/>
+<meta name="twitter:description" content="使用LM中文金融词典对年报进行语调分析"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "管理世界 | 使用LM中文金融词典对年报进行语调分析",
+      "item": "/blog/manager_tone_analysis_with_lm/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "管理世界 | 使用LM中文金融词典对年报进行语调分析",
+  "name": "管理世界 | 使用LM中文金融词典对年报进行语调分析",
+  "description": "使用LM中文金融词典对年报进行语调分析",
+  "keywords": [
+    "文本分析", "经济管理", "语调", "管理层", "年报", "管理世界"
+  ],
+  "articleBody": "今天分享的这篇论文通过 有道翻译 这一简单有效的的方式汉化了 LM英文金融词典，并使用 数词语数个数 的方式构造了管理层语调这个指标。\n文献 曾庆生,周波,张程,陈信元.年报语调与内部人交易:“表里如一”还是“口是心非”?[J].管理世界,2018,34(09):143-160.\n本文代码实现的视频讲解已更新至付费课 Python实证指标构建与文本分析 中。\n 点击上方图片购买课程   本文代码 点击下载\n摘要 基于中国A股非金融公司2007～2014年年报语调的文本分析,本文研究了年报语调与年报披露后的内部人交易行为之间的关系。研究发现,年报语调越积极,公司高管在年报公布后一段期间内的卖出股票规模越大,净买入股票规模越小,表明公司高管编制年报时存在**「口是心非」** 的操纵嫌疑。进一步研究发现,年报披露后中期市场表现差、信息透明度低、非国有控股的公司高管交易与年报语调的反向关系分别显著强于年报披露后中期市场表现好、信息透明度高、国有控股的公司;而公司盈余管理程度、交易者职位（是否核心高管）对年报语调与高管交易关系的影响不显著。此外,年报语调越积极,高管亲属卖出股票的规模也越大,但未发现公司重要股东交易与 「年报语调」 相关。上述结果表明,中国上市公司年报存在语调管理行为,年报语调成为除会计报表以外另一种可以被内部人管理或操纵的信息。\n关键词 年报; 语调管理; 内部人交易; 信息不对称;\n代码  年报数据 data/reports.csv LM金融词典 需要更新cntext库至于1.7.3及以上版本  \n语调指标  算法1 该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例； 算法2 （积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）  import pandas as pd df = pd.read_csv('data/reports.csv') df.head() Run\n .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  company year content     0 四川长虹 2017 2017 年，面对复杂多变的外部环境和多重叠加的困难挑战，公司聚焦用户与产品，强化消费洞...   1 江苏吴中 2014 2014 年，正值公司成立二十周年，上市十五周年，在董事会带领下，公司经营管理团队与全体...   2 联美控股 2017 报告期内，公司实现营业收入 2,376,375,380.44 元，同比增长 16.24%，营...   3 华海药业 2016 第三节\\t公司业务概要\\n\\n一、 报告期内公司所从事的主要业务、经营模式及行业情况说明\\n...   4 江泉实业 2014 报告期内，全球经济形势复杂多变、复苏进程缓慢；我国宏观经济进入增速放缓、结构调整加剧的新...     len(df) Run\n500  \ncntext 安装cntext\n!pip3 install cntext \nimport cntext as ct print(ct.__version__) Run\n1.7.3 \n查看内置词典\nct.dict_pkl_list() Run\n['DUTIR.pkl', 'HOWNET.pkl', 'Chinese_Loughran_McDonald_Financial_Sentiment.pkl', 'sentiws.pkl', 'ChineseFinancialFormalUnformalSentiment.pkl', 'ANEW.pkl', 'LSD2015.pkl', 'NRC.pkl', 'geninqposneg.pkl', 'HuLiu.pkl', 'Loughran_McDonald_Financial_Sentiment.pkl', 'AFINN.pkl', 'ADV_CONJ.pkl', 'STOPWORDS.pkl'] \nclm = ct.load_pkl_dict('Chinese_Loughran_McDonald_Financial_Sentiment.pkl') #print(clm) print('clm关键词: ',clm.keys()) print() print('Desc: ', clm['Desc']) print() print('Referer: ', clm['Referer']) print() print('Chinese_Loughran_McDonald_Financial_Sentiment词典含2类情感词\\n，分别是', clm['Chinese_Loughran_McDonald_Financial_Sentiment'].keys()) Run\nclm关键词: dict_keys(['Chinese_Loughran_McDonald_Financial_Sentiment', 'Desc', 'Referer']) Desc: 参照该论文，cntext库使用百度翻译、有道翻译对LM词典进行汉化处理。原文使用的有道翻译、金山词霸。 Referer: 曾庆生, 周波, 张程, and 陈信元. \"年报语调与内部人交易: 表里如一还是口是心非?.\" 管理世界 34, no. 09 (2018): 143-160. Chinese_Loughran_McDonald_Financial_Sentiment词典含2类情感词 ，分别是 dict_keys(['negative', 'positive']) \ncntext语调的实现  算法1 该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例； 算法2 （积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）  import cntext as ct diction = {'pos': ['高兴', '快乐', '分享'], 'neg': ['难过', '悲伤']} text = '我今天得奖了，很高兴，我要将快乐分享大家。' ct.sentiment(text=text, diction=diction, lang='chinese') Run\n{'pos_num': 3, 'neg_num': 0, 'stopword_num': 8, 'word_num': 14, 'sentence_num': 1} \nimport cntext as ct diction = ct.load_pkl_dict('Chinese_Loughran_McDonald_Financial_Sentiment.pkl')['Chinese_Loughran_McDonald_Financial_Sentiment'] def tone(text): res = ct.sentiment(text=text, diction=diction, lang='chinese') return pd.Series(res) #第一个年报的语调 tone(text=df['content'].tolist()[0]) Run\nnegative_num 67 positive_num 76 stopword_num 462 word_num 1831 sentence_num 52 dtype: int64 \n选中文本列content， 对content整体实施tone计算，\n#计算tone语调 tone_df = df['content'].apply(tone) tone_df.head() Run\n .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  negative_num positive_num stopword_num word_num sentence_num     0 67 76 462 1831 52   1 32 59 372 1266 34   2 18 33 178 816 19   3 81 114 1055 3619 90   4 27 17 134 453 16      算法1 该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例； 算法2 （积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）  将得到的正、负面、总词数分别按照算法1和算法2进行计算。\n# 算法1 tone_df['tone1'] = (tone_df['positive_num']-tone_df['negative_num'])/tone_df['word_num'] #tone_df['tone1'] = (tone_df['positive_num']-tone_df['negative_num'])/(tone_df['word_num']+1) #算法2 tone_df['tone2'] = (tone_df['positive_num']-tone_df['negative_num'])/(tone_df['positive_num']+tone_df['negative_num']) #tone_df['tone2'] = (tone_df['positive_num']-tone_df['negative_num'])/(tone_df['positive_num']+tone_df['negative_num']+1) tone_df.head() Run\n .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  negative_num positive_num stopword_num word_num sentence_num tone1 tone2     0 67 76 462 1831 52 0.004915 0.062937   1 32 59 372 1266 34 0.021327 0.296703   2 18 33 178 816 19 0.018382 0.294118   3 81 114 1055 3619 90 0.009119 0.169231   4 27 17 134 453 16 -0.022075 -0.227273     将结果存储到xlsx中\ntone_df.to_excel('output/管理层-语调分析.xlsx') \n长期征稿  点击了解投稿   招募小伙伴  点击加入我们   文本分析视频课 想轻松而快捷的深刻了解一个领域，看视频(直播)学习是一个不错的方式。\n  大邓每年会有4场直播，五一、十一、寒、暑假，如果时间点接近，可考虑报名参与直播课。\n  如果只意性价比，且已迫不及待想学，可以考虑直接报名大邓的录播课。\n  如果不想学，也可以考虑外包。更建议找淘宝，如果找我咨询，请先阅读有偿说明\n   点击上方图片购买课程   点击进入详情页\n",
+  "wordCount" : "427",
+  "inLanguage": "en",
+  "image":"/images/blog/manager_tone_analysis_with_LM.png","datePublished": "2022-06-22T18:43:10+06:00",
+  "dateModified": "2022-06-22T18:43:10+06:00",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/manager_tone_analysis_with_lm/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/management_python_course/" title="课程" target="_blank">
+                    <span>课程</span>
+                </a>
+            </li>
+            <li>
+                <a href="/index.xml" title="RSS" target="_blank">
+                    <span>RSS</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/call_for_paper/" title="欢迎投稿" target="_blank">
+                    <span>欢迎投稿</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      管理世界 | 使用LM中文金融词典对年报进行语调分析
+    </h1>
+    <div class="post-meta"><span title='2022-06-22 18:43:10 +0600 +0600'>2022-06-22</span>&nbsp;·&nbsp;3 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/manager_tone_analysis_with_LM.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/manager_tone_analysis_with_LM.png" alt=""></a>
+        
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90&amp;url=%2fblog%2fmanager_tone_analysis_with_lm%2f&amp;hashtags=%e6%95%b0%e6%8d%ae%e5%88%86%e6%9e%90%2c%2c%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2fmanager_tone_analysis_with_lm%2f&amp;title=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90&amp;summary=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90&amp;source=%2fblog%2fmanager_tone_analysis_with_lm%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2fmanager_tone_analysis_with_lm%2f&title=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2fmanager_tone_analysis_with_lm%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90%20-%20%2fblog%2fmanager_tone_analysis_with_lm%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on telegram"
+        href="https://telegram.me/share/url?text=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90&amp;url=%2fblog%2fmanager_tone_analysis_with_lm%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e6%96%87%e7%8c%ae" aria-label="文献">文献</a><ul>
+                            
+                    <li>
+                        <a href="#%e6%9c%ac%e6%96%87%e4%bb%a3%e7%a0%81" aria-label="本文代码">本文代码</a></li>
+                    <li>
+                        <a href="#%e6%91%98%e8%a6%81" aria-label="摘要">摘要</a></li>
+                    <li>
+                        <a href="#%e5%85%b3%e9%94%ae%e8%af%8d" aria-label="关键词">关键词</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e4%bb%a3%e7%a0%81" aria-label="代码">代码</a></li>
+                    <li>
+                        <a href="#%e8%af%ad%e8%b0%83%e6%8c%87%e6%a0%87" aria-label="语调指标">语调指标</a></li>
+                    <li>
+                        <a href="#cntext" aria-label="cntext">cntext</a></li>
+                    <li>
+                        <a href="#cntexthttpsgithubcomhidadengcntext%e8%af%ad%e8%b0%83%e7%9a%84%e5%ae%9e%e7%8e%b0" aria-label="cntext语调的实现"><a href="https://github.com/hiDaDeng/cntext">cntext</a>语调的实现</a></li>
+                    <li>
+                        <a href="#%e9%95%bf%e6%9c%9f%e5%be%81%e7%a8%bf" aria-label="长期征稿">长期征稿</a></li>
+                    <li>
+                        <a href="#%e6%8b%9b%e5%8b%9f%e5%b0%8f%e4%bc%99%e4%bc%b4" aria-label="招募小伙伴">招募小伙伴</a></li>
+                    <li>
+                        <a href="#%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%e8%a7%86%e9%a2%91%e8%af%be" aria-label="文本分析视频课">文本分析视频课</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><p>今天分享的这篇论文通过 <strong>有道翻译</strong> 这一简单有效的的方式汉化了 LM英文金融词典，并使用 <strong>数词语数个数</strong>  的方式构造了管理层语调这个指标。</p>
+<h2 id="文献">文献<a hidden class="anchor" aria-hidden="true" href="#文献">#</a></h2>
+<p><strong>曾庆生,周波,张程,陈信元.年报语调与内部人交易:“表里如一”还是“口是心非”?[J].管理世界,2018,34(09):143-160.</strong></p>
+<p>本文代码实现的视频讲解已更新至付费课 <a href="http://mp.weixin.qq.com/s?__biz=MzI1MTE2ODg4MA==&amp;mid=2650082457&amp;idx=2&amp;sn=de680696e2595e8f4dc894e283436819&amp;chksm=f1f6bd86c6813490e8dc413eaf8446f176c41047cd8f5fc4faff14f12737ff5d68903396e8ec&amp;scene=21#wechat_redirect"><strong>Python实证指标构建与文本分析</strong></a> 中。</p>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<h3 id="本文代码">本文代码<a hidden class="anchor" aria-hidden="true" href="#本文代码">#</a></h3>
+<p><a href="manager_tone_analysis_with_lm.zip">点击下载</a></p>
+<h3 id="摘要">摘要<a hidden class="anchor" aria-hidden="true" href="#摘要">#</a></h3>
+<p>基于中国A股非金融公司2007～2014年年报语调的文本分析,本文研究了年报语调与年报披露后的内部人交易行为之间的关系。研究发现,年报语调越积极,公司高管在年报公布后一段期间内的卖出股票规模越大,净买入股票规模越小,表明公司高管编制年报时存在**「口是心非」** 的操纵嫌疑。进一步研究发现,年报披露后中期市场表现差、信息透明度低、非国有控股的公司高管交易与年报语调的反向关系分别显著强于年报披露后中期市场表现好、信息透明度高、国有控股的公司;而公司盈余管理程度、交易者职位（是否核心高管）对年报语调与高管交易关系的影响不显著。此外,<strong>年报语调越积极,高管亲属卖出股票的规模也越大,但未发现公司重要股东交易与  「年报语调」 相关</strong>。上述结果表明,中国上市公司年报存在语调管理行为,年报语调成为除会计报表以外另一种可以被内部人管理或操纵的信息。</p>
+<h3 id="关键词">关键词<a hidden class="anchor" aria-hidden="true" href="#关键词">#</a></h3>
+<p>年报; 语调管理; 内部人交易; 信息不对称;</p>
+<h2 id="代码">代码<a hidden class="anchor" aria-hidden="true" href="#代码">#</a></h2>
+<ul>
+<li>年报数据 <code>data/reports.csv</code></li>
+<li>LM金融词典</li>
+<li>需要更新cntext库至于1.7.3及以上版本</li>
+</ul>
+<p><br><br></p>
+<h2 id="语调指标">语调指标<a hidden class="anchor" aria-hidden="true" href="#语调指标">#</a></h2>
+<ul>
+<li>算法1 <code>该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例；</code></li>
+<li>算法2 <code>（积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）</code></li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/reports.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+<p></style></p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>company</th>
+      <th>year</th>
+      <th>content</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>四川长虹</td>
+      <td>2017</td>
+      <td>2017 年，面对复杂多变的外部环境和多重叠加的困难挑战，公司聚焦用户与产品，强化消费洞...</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>江苏吴中</td>
+      <td>2014</td>
+      <td>2014 年，正值公司成立二十周年，上市十五周年，在董事会带领下，公司经营管理团队与全体...</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>联美控股</td>
+      <td>2017</td>
+      <td>报告期内，公司实现营业收入 2,376,375,380.44 元，同比增长 16.24%，营...</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>华海药业</td>
+      <td>2016</td>
+      <td>第三节\t公司业务概要\n\n一、 报告期内公司所从事的主要业务、经营模式及行业情况说明\n...</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>江泉实业</td>
+      <td>2014</td>
+      <td>报告期内，全球经济形势复杂多变、复苏进程缓慢；我国宏观经济进入增速放缓、结构调整加剧的新...</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>500
+</code></pre>
+<p><br><br></p>
+<h2 id="cntext">cntext<a hidden class="anchor" aria-hidden="true" href="#cntext">#</a></h2>
+<p>安装cntext</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">cntext</span>
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    1.7.3
+</code></pre></div><br>
+<p>查看内置词典</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">dict_pkl_list</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    [&#39;DUTIR.pkl&#39;,
+     &#39;HOWNET.pkl&#39;,
+     &#39;Chinese_Loughran_McDonald_Financial_Sentiment.pkl&#39;,
+     &#39;sentiws.pkl&#39;,
+     &#39;ChineseFinancialFormalUnformalSentiment.pkl&#39;,
+     &#39;ANEW.pkl&#39;,
+     &#39;LSD2015.pkl&#39;,
+     &#39;NRC.pkl&#39;,
+     &#39;geninqposneg.pkl&#39;,
+     &#39;HuLiu.pkl&#39;,
+     &#39;Loughran_McDonald_Financial_Sentiment.pkl&#39;,
+     &#39;AFINN.pkl&#39;,
+     &#39;ADV_CONJ.pkl&#39;,
+     &#39;STOPWORDS.pkl&#39;]
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">clm</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_pkl_dict</span><span class="p">(</span><span class="s1">&#39;Chinese_Loughran_McDonald_Financial_Sentiment.pkl&#39;</span><span class="p">)</span>
+
+<span class="c1">#print(clm)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;clm关键词: &#39;</span><span class="p">,</span><span class="n">clm</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Desc: &#39;</span><span class="p">,</span> <span class="n">clm</span><span class="p">[</span><span class="s1">&#39;Desc&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Referer: &#39;</span><span class="p">,</span> <span class="n">clm</span><span class="p">[</span><span class="s1">&#39;Referer&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Chinese_Loughran_McDonald_Financial_Sentiment词典含2类情感词</span><span class="se">\n</span><span class="s1">，分别是&#39;</span><span class="p">,</span> <span class="n">clm</span><span class="p">[</span><span class="s1">&#39;Chinese_Loughran_McDonald_Financial_Sentiment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    clm关键词:  dict_keys([&#39;Chinese_Loughran_McDonald_Financial_Sentiment&#39;, &#39;Desc&#39;, &#39;Referer&#39;])
+    
+    Desc:  参照该论文，cntext库使用百度翻译、有道翻译对LM词典进行汉化处理。原文使用的有道翻译、金山词霸。
+    
+    Referer:  曾庆生, 周波, 张程, and 陈信元. &#34;年报语调与内部人交易: 表里如一还是口是心非?.&#34; 管理世界 34, no. 09 (2018): 143-160.
+    
+    Chinese_Loughran_McDonald_Financial_Sentiment词典含2类情感词
+    ，分别是 dict_keys([&#39;negative&#39;, &#39;positive&#39;])
+</code></pre></div><p><br><br></p>
+<h2 id="cntexthttpsgithubcomhidadengcntext语调的实现"><a href="https://github.com/hiDaDeng/cntext">cntext</a>语调的实现<a hidden class="anchor" aria-hidden="true" href="#cntexthttpsgithubcomhidadengcntext语调的实现">#</a></h2>
+<ul>
+<li>算法1 <code>该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例；</code></li>
+<li>算法2 <code>（积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）</code></li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">diction</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;pos&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;高兴&#39;</span><span class="p">,</span> <span class="s1">&#39;快乐&#39;</span><span class="p">,</span> <span class="s1">&#39;分享&#39;</span><span class="p">],</span>
+           <span class="s1">&#39;neg&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;难过&#39;</span><span class="p">,</span> <span class="s1">&#39;悲伤&#39;</span><span class="p">]}</span>
+
+<span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;我今天得奖了，很高兴，我要将快乐分享大家。&#39;</span>
+
+<span class="n">ct</span><span class="o">.</span><span class="n">sentiment</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> 
+             <span class="n">diction</span><span class="o">=</span><span class="n">diction</span><span class="p">,</span> 
+             <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    {&#39;pos_num&#39;: 3,
+     &#39;neg_num&#39;: 0,
+     &#39;stopword_num&#39;: 8,
+     &#39;word_num&#39;: 14,
+     &#39;sentence_num&#39;: 1}
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">diction</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_pkl_dict</span><span class="p">(</span><span class="s1">&#39;Chinese_Loughran_McDonald_Financial_Sentiment.pkl&#39;</span><span class="p">)[</span><span class="s1">&#39;Chinese_Loughran_McDonald_Financial_Sentiment&#39;</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">tone</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">sentiment</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span>
+                       <span class="n">diction</span><span class="o">=</span><span class="n">diction</span><span class="p">,</span>
+                       <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+  
+<span class="c1">#第一个年报的语调</span>
+<span class="n">tone</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    negative_num      67
+    positive_num      76
+    stopword_num     462
+    word_num        1831
+    sentence_num      52
+    dtype: int64
+</code></pre></div><br>
+<p>选中文本列content， 对content整体实施tone计算，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#计算tone语调</span>
+<span class="n">tone_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">tone</span><span class="p">)</span>
+<span class="n">tone_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+<p></style></p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>negative_num</th>
+      <th>positive_num</th>
+      <th>stopword_num</th>
+      <th>word_num</th>
+      <th>sentence_num</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>67</td>
+      <td>76</td>
+      <td>462</td>
+      <td>1831</td>
+      <td>52</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>32</td>
+      <td>59</td>
+      <td>372</td>
+      <td>1266</td>
+      <td>34</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>18</td>
+      <td>33</td>
+      <td>178</td>
+      <td>816</td>
+      <td>19</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>81</td>
+      <td>114</td>
+      <td>1055</td>
+      <td>3619</td>
+      <td>90</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>27</td>
+      <td>17</td>
+      <td>134</td>
+      <td>453</td>
+      <td>16</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<br>
+<ul>
+<li>算法1 <code>该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例；</code></li>
+<li>算法2 <code>（积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）</code></li>
+</ul>
+<p>将得到的正、负面、总词数分别按照算法1和算法2进行计算。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 算法1</span>
+<span class="n">tone_df</span><span class="p">[</span><span class="s1">&#39;tone1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">tone_df</span><span class="p">[</span><span class="s1">&#39;positive_num&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">tone_df</span><span class="p">[</span><span class="s1">&#39;negative_num&#39;</span><span class="p">])</span><span class="o">/</span><span class="n">tone_df</span><span class="p">[</span><span class="s1">&#39;word_num&#39;</span><span class="p">]</span>
+<span class="c1">#tone_df[&#39;tone1&#39;] = (tone_df[&#39;positive_num&#39;]-tone_df[&#39;negative_num&#39;])/(tone_df[&#39;word_num&#39;]+1)</span>
+
+<span class="c1">#算法2</span>
+<span class="n">tone_df</span><span class="p">[</span><span class="s1">&#39;tone2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">tone_df</span><span class="p">[</span><span class="s1">&#39;positive_num&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">tone_df</span><span class="p">[</span><span class="s1">&#39;negative_num&#39;</span><span class="p">])</span><span class="o">/</span><span class="p">(</span><span class="n">tone_df</span><span class="p">[</span><span class="s1">&#39;positive_num&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">tone_df</span><span class="p">[</span><span class="s1">&#39;negative_num&#39;</span><span class="p">])</span>
+<span class="c1">#tone_df[&#39;tone2&#39;] = (tone_df[&#39;positive_num&#39;]-tone_df[&#39;negative_num&#39;])/(tone_df[&#39;positive_num&#39;]+tone_df[&#39;negative_num&#39;]+1)</span>
+
+<span class="n">tone_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+
+</code></pre></div><p>Run</p>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+<p></style></p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>negative_num</th>
+      <th>positive_num</th>
+      <th>stopword_num</th>
+      <th>word_num</th>
+      <th>sentence_num</th>
+      <th>tone1</th>
+      <th>tone2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>67</td>
+      <td>76</td>
+      <td>462</td>
+      <td>1831</td>
+      <td>52</td>
+      <td>0.004915</td>
+      <td>0.062937</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>32</td>
+      <td>59</td>
+      <td>372</td>
+      <td>1266</td>
+      <td>34</td>
+      <td>0.021327</td>
+      <td>0.296703</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>18</td>
+      <td>33</td>
+      <td>178</td>
+      <td>816</td>
+      <td>19</td>
+      <td>0.018382</td>
+      <td>0.294118</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>81</td>
+      <td>114</td>
+      <td>1055</td>
+      <td>3619</td>
+      <td>90</td>
+      <td>0.009119</td>
+      <td>0.169231</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>27</td>
+      <td>17</td>
+      <td>134</td>
+      <td>453</td>
+      <td>16</td>
+      <td>-0.022075</td>
+      <td>-0.227273</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<br>
+<p>将结果存储到xlsx中</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">tone_df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s1">&#39;output/管理层-语调分析.xlsx&#39;</span><span class="p">)</span>
+</code></pre></div><br>
+<h2 id="长期征稿">长期征稿<a hidden class="anchor" aria-hidden="true" href="#长期征稿">#</a></h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://hidadeng.github.io/blog/call_for_paper/">
+        <img src="/images/blog/call_for_paper.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解投稿</i></small></figcaption>
+</figure>
+</div>
+<br>
+<h2 id="招募小伙伴">招募小伙伴<a hidden class="anchor" aria-hidden="true" href="#招募小伙伴">#</a></h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://hidadeng.github.io/blog/we_need_you/">
+        <img src="/images/blog/we_need_you.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击加入我们</i></small></figcaption>
+</figure>
+</div>
+<h2 id="文本分析视频课">文本分析视频课<a hidden class="anchor" aria-hidden="true" href="#文本分析视频课">#</a></h2>
+<p>想轻松而快捷的深刻了解一个领域，看视频(直播)学习是一个不错的方式。</p>
+<ul>
+<li>
+<p>大邓每年会有4场直播，五一、十一、寒、暑假，如果时间点接近，可考虑报名参与<a href="https://hidadeng.github.io/blog/2022-05-workshop/7-Python.html">直播课</a>。</p>
+</li>
+<li>
+<p>如果只意性价比，且已迫不及待想学，可以考虑直接报名大邓的<a href="https://hidadeng.github.io/blog/management_python_course">录播课</a>。</p>
+</li>
+<li>
+<p>如果不想学，也可以考虑外包。更建议找淘宝，如果找我咨询，请先阅读<a href="https://hidadeng.github.io/blog/paid_for_service">有偿说明</a></p>
+</li>
+</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+<br>
+
+
+  </div>
+
+  <footer class="post-footer">
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/" target='_blank'>数据分析</a></li>
+        <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/" target='_blank'>文本分析</a></li>
+      </ul>
+
+
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90&amp;url=%2fblog%2fmanager_tone_analysis_with_lm%2f&amp;hashtags=%e6%95%b0%e6%8d%ae%e5%88%86%e6%9e%90%2c%2c%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2fmanager_tone_analysis_with_lm%2f&amp;title=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90&amp;summary=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90&amp;source=%2fblog%2fmanager_tone_analysis_with_lm%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2fmanager_tone_analysis_with_lm%2f&title=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2fmanager_tone_analysis_with_lm%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90%20-%20%2fblog%2fmanager_tone_analysis_with_lm%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 管理世界 | 使用LM中文金融词典对年报进行语调分析 on telegram"
+        href="https://telegram.me/share/url?text=%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c%20%7c%20%e4%bd%bf%e7%94%a8LM%e4%b8%ad%e6%96%87%e9%87%91%e8%9e%8d%e8%af%8d%e5%85%b8%e5%af%b9%e5%b9%b4%e6%8a%a5%e8%bf%9b%e8%a1%8c%e8%af%ad%e8%b0%83%e5%88%86%e6%9e%90&amp;url=%2fblog%2fmanager_tone_analysis_with_lm%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+    
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2022 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'Copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
