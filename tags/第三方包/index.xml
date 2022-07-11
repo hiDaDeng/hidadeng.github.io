@@ -6,7 +6,151 @@
     <description>Recent content in 第三方包 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Mon, 20 Jun 2022 12:40:10 +0600</lastBuildDate><atom:link href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 10 Jul 2022 09:40:10 +0600</lastBuildDate><atom:link href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Asent库 | 英文文本数据情感分析</title>
+      <link>https://hidadeng.github.io/blog/asent_sentiment_analysis/</link>
+      <pubDate>Sun, 10 Jul 2022 09:40:10 +0600</pubDate>
+      
+      <guid>/blog/asent_sentiment_analysis/</guid>
+      <description>使用Python做英文情感分析，考虑否定词、程度副词对情感词的修饰作用。</description>
+      <content:encoded><![CDATA[<p>Asent 是一个新的Python情感分析库， 依据情感词典，按照一定的规则，可用于评判词语、句子、文档的情感信息(正、负)。</p>
+<p>目前的规则解释了</p>
+<ul>
+<li>否定（即“不高兴”）</li>
+<li>加强词（“非常高兴”）</li>
+<li>对比共轭（即“但是”）</li>
+<li>其他强调标记，如感叹号、大小写和问号。</li>
+</ul>
+<p>Asent目前仅支持<code>英语、丹麦、挪威、瑞典4种语言</code>。</p>
+<br>
+<h2 id="安装配置">安装配置</h2>
+<p>学习课程之前，需要先下载并配置spacy模型， <a href="https://github.com/explosion/spacy-models/releases">https://github.com/explosion/spacy-models/releases</a></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">spacy</span><span class="o">==</span><span class="mf">3.2.0</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">asent</span><span class="o">==</span><span class="mf">0.4.2</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">Desktop</span><span class="o">/</span><span class="n">en_core_web_lg</span><span class="o">-</span><span class="mf">3.3.0</span><span class="o">-</span><span class="n">py3</span><span class="o">-</span><span class="n">none</span><span class="o">-</span><span class="nb">any</span><span class="o">.</span><span class="n">whl</span>
+</code></pre></div><br>
+<h2 id="快速上手">快速上手</h2>
+<p>以下将带您逐步了解情绪是如何计算的。</p>
+<p>首先，我们需要一个 spaCy 管道，并且我们需要向其中添加 asent 管道。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">asent</span>
+<span class="kn">import</span> <span class="nn">spacy</span>
+
+<span class="c1"># load spacy pipeline</span>
+<span class="n">nlp</span> <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&#34;en_core_web_lg&#34;</span><span class="p">)</span>
+
+<span class="c1"># add the rule-based sentiment model</span>
+<span class="n">nlp</span><span class="o">.</span><span class="n">add_pipe</span><span class="p">(</span><span class="s2">&#34;asent_en_v1&#34;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>&lt;asent.component.Asent at 0x7fd6b3243130&gt;
+</code></pre>
+<br>
+<h2 id="效价和极性">效价和极性</h2>
+<p>如下所示， token的效价信息来自于人工标注的词典。例如<code>I am not very happy</code>中词语<code>happy</code>的人类情感评分是2.7。</p>
+<p><img loading="lazy" src="/Users/thunderhit/Downloads/img/token_polarity.png" alt=""  />
+</p>
+<p>首先我们查看每个词语对应的效价。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">doc</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="s2">&#34;I am not very happy.&#34;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">doc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="s2">&#34;</span><span class="se">\t</span><span class="s2">&#34;</span><span class="p">,</span> <span class="n">token</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">valence</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>I 	 0.0
+am 	 0.0
+not 	 0.0
+very 	 0.0
+happy 	 2.7
+. 	 0.0
+</code></pre>
+<p>在该语境中， <code>happy</code>前面有否定词not修饰，所以情感极性方面应该被看做消极的。一般否定词和副词可以将形容词的情感进行反转和放大(缩小)。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">doc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">polarity</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>polarity=0.0 token=I span=I
+polarity=0.0 token=am span=am
+polarity=0.0 token=not span=not
+polarity=0.0 token=very span=very
+polarity=-2.215 token=happy span=not very happy
+polarity=0.0 token=. span=.
+</code></pre>
+<p>注意到， 词语在<code>happy</code>拥有-2.215的极性分，该分是由<code>not very happy</code>确定的。</p>
+<br>
+<h2 id="可视化">可视化</h2>
+<p>asent拥有多种情感极性可视化的方法</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">asent</span><span class="o">.</span><span class="n">visualize</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&#34;prediction&#34;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/fig1.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">asent</span><span class="o">.</span><span class="n">visualize</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&#34;analysis&#34;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/fig2.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">sents</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">sentence</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">polarity</span><span class="p">)</span>
+</code></pre></div><pre><code>neg=0.391 neu=0.609 pos=0.0 compound=-0.4964 span=I am not very happy.
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">doc</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">polarity</span>
+</code></pre></div><pre><code>DocPolarityOutput(neg=0.391, neu=0.609, pos=0.0, compound=-0.4964)
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">doc2</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="s2">&#34;I am not very happy.I am very very happy.It is awesome!!&#34;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;doc2情感极性信息: &#39;</span><span class="p">,</span> <span class="n">doc2</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">polarity</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;doc2情感得分:&#39;</span><span class="p">,</span> <span class="n">doc2</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">polarity</span><span class="o">.</span><span class="n">compound</span><span class="p">)</span>
+</code></pre></div><pre><code>doc2情感极性信息:  neg=0.13 neu=0.536 pos=0.333 compound=0.2794
+
+doc2情感得分: 0.279353567721562
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#每个句子的情感极性信息</span>
+<span class="k">for</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="n">doc2</span><span class="o">.</span><span class="n">sents</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">sentence</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">polarity</span><span class="p">)</span>
+</code></pre></div><pre><code>neg=0.391 neu=0.609 pos=0.0 compound=-0.4964 span=I am not very happy.
+neg=0.0 neu=0.539 pos=0.461 compound=0.6453 span=I am very very happy.
+neg=0.0 neu=0.461 pos=0.539 compound=0.6892 span=It is awesome!!
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#每个句子的情感得分</span>
+<span class="k">for</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="n">doc2</span><span class="o">.</span><span class="n">sents</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">sentence</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">polarity</span><span class="o">.</span><span class="n">compound</span><span class="p">)</span>
+</code></pre></div><pre><code>-0.4964238981617178
+0.6452764659402158
+0.689208135386188
+</code></pre>
+<p><br><br></p>
+<h2 id="长期征稿">长期征稿</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://hidadeng.github.io/blog/call_for_paper/">
+        <img src="/images/blog/call_for_paper.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解投稿</i></small></figcaption>
+</figure>
+</div>
+<br>
+<h2 id="招募小伙伴">招募小伙伴</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://hidadeng.github.io/blog/we_need_you/">
+        <img src="/images/blog/we_need_you.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击加入我们</i></small></figcaption>
+</figure>
+</div>
+<br>
+<h2 id="了解课程">了解课程</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>cntext库 | 关于DUTIR被污染解决办法</title>
       <link>https://hidadeng.github.io/blog/fixed_dutir_bug/</link>
