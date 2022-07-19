@@ -6,7 +6,7 @@
     <description>Recent content in 学术应用 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 16 Jul 2022 09:40:10 +0600</lastBuildDate><atom:link href="/categories/%E5%AD%A6%E6%9C%AF%E5%BA%94%E7%94%A8/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 17 Jul 2022 18:43:10 +0600</lastBuildDate><atom:link href="/categories/%E5%AD%A6%E6%9C%AF%E5%BA%94%E7%94%A8/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>2022暑期工作坊 | Python实证指标构建与文本分析</title>
       <link>https://hidadeng.github.io/blog/2022_summer_workshop/</link>
@@ -251,6 +251,7 @@
 <ul>
 <li><a href="https://hidadeng.github.io/blog/dadeng_python_basic_tutorial/">Python语法入门 | 含视频代码</a></li>
 <li><a href="https://hidadeng.github.io/blog/30_days_of_python/">30天Python编程学习挑战</a></li>
+<li><a href="https://hidadeng.github.io/blog/tian_ya_cha_spider_code/">天**  |  使用selenium做数据采集</a></li>
 <li><a href="https://hidadeng.github.io/blog/chinese_financial_dictionary/">中文金融情感词典</a></li>
 <li><a href="https://hidadeng.github.io/blog/liwc_python_text_mining/">LIWC vs Python  | 文本分析之词典词频法略讲(含代码)</a></li>
 <li><a href="https://hidadeng.github.io/blog/share_your_dict_to_cntext/">欢迎各位向cntext库分享情感词典</a></li>
@@ -1478,6 +1479,227 @@
     </item>
     
     <item>
+      <title>天**  |  使用selenium做数据采集</title>
+      <link>https://hidadeng.github.io/blog/tian_ya_cha_spider_code/</link>
+      <pubDate>Sun, 17 Jul 2022 18:43:10 +0600</pubDate>
+      
+      <guid>/blog/tian_ya_cha_spider_code/</guid>
+      <description>天** 数据采集教程</description>
+      <content:encoded><![CDATA[<blockquote>
+<p>作者: 张延丰</p>
+<p>哈工程管工在读博士，擅长数据采集&amp;挖掘。</p>
+<p>文末可获取代码下载链接</p>
+</blockquote>
+<p>马云在接受CNBC（美国消费者新闻与商业频道）采访时提出：“整个世界将变成数据，我认为这还是只是数据时代的开始。新浪潮即将来临，很多就业机会将被夺走。有些人会赶上潮流，变得更加富有和成功。但是对于那些落后的人，未来将是痛苦的。”就小编看来，这种说法在人文社科研究当中也同样适用。在当前数以万计甚至数以十万计研究样本“遍地走”的时代，若我们还拘泥于传统的“小样本”研究（比如样本量为100多的调查问卷数据等），不仅难以跟随时代的脚步，还会逐渐丧失学术竞争力、从而被时代淘汰。那么，究竟该如何获取属于自己的大样本数据呢？今天小编就带大家用selenium库来爬取国内某知名第三方企业信息平台（天**）的企业工商信息。</p>
+<p><br><br></p>
+<h2 id="一自动打开网站页面">一、自动打开网站页面</h2>
+<p>首先，数据爬取的第一步是利用selenium库启动浏览器，打开我们的目标网站。部分代码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># @Author  : Jacob-ZHANG</span>
+<span class="kn">import</span> <span class="nn">requests</span><span class="o">,</span><span class="nn">base64</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span> <span class="nn">csv</span><span class="o">,</span><span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">selenium</span> <span class="kn">import</span> <span class="n">webdriver</span>
+<span class="kn">import</span> <span class="nn">time</span><span class="o">,</span><span class="nn">random</span>
+
+<span class="c1">#1启动浏览器。</span>
+<span class="c1">#win</span>
+<span class="n">browser</span><span class="o">=</span><span class="n">webdriver</span><span class="o">.</span><span class="n">Chrome</span><span class="p">(</span><span class="n">executable_path</span><span class="o">=</span><span class="s1">&#39;driver/chromedriver.exe&#39;</span><span class="p">)</span>
+<span class="c1">#mac</span>
+<span class="c1">#browser=webdriver.Chrome(executable_path=&#39;driver/chromedriver&#39;)</span>
+
+<span class="c1">#2加入这个脚本可以避免被识别</span>
+<span class="n">browser</span><span class="o">.</span><span class="n">execute_cdp_cmd</span><span class="p">(</span><span class="s2">&#34;Page.addScriptToEvaluateOnNewDocument&#34;</span><span class="p">,</span> <span class="p">{</span>
+<span class="s2">&#34;source&#34;</span><span class="p">:</span> <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">     Object.defineProperty(navigator, &#39;webdriver&#39;, {
+</span><span class="s2">      get: () =&gt; undefined
+</span><span class="s2">    })
+</span><span class="s2">   &#34;&#34;&#34;</span> <span class="p">})</span>
+
+<span class="c1">#3延迟10s启动</span>
+<span class="n">browser</span><span class="o">.</span><span class="n">implicitly_wait</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="c1">#4利用谷歌浏览器打开目标网页</span>
+<span class="n">browser</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;https://pro.xxxxxx.com/searchx&#39;</span><span class="p">)</span>
+
+<span class="c1">#5将窗口最大化</span>
+<span class="n">browser</span><span class="o">.</span><span class="n">maximize_window</span><span class="p">()</span>
+
+<span class="c1">#6给网页一些时间加载</span>
+<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="o">...</span>
+<span class="o">...</span>
+<span class="o">...</span>
+</code></pre></div><p>非常简单，如下所示。</p>
+<p>需要说明的是：</p>
+<ul>
+<li>第一，selenium库距今已经有近20年的历史，各类网站、浏览器大多都能对它进行识别，因此为了避免被反爬，我可以通过加入上述脚本（#2）来防止网站的识别。</li>
+<li>第二，因为在完成#4的操作，也即利用浏览器打开网页后，显示的网页页面并非是最大化的窗口，这导致页面元素存在难以定位、从而报错的情况，因此我们在此处加上了窗口最大化的操作（#5）。</li>
+<li>第三，在以后的操作里，类似#6的代码会频频出现，这主要是因为受限于网速，不得不为网页加载提供更多时间。</li>
+</ul>
+<p><br><br></p>
+<h2 id="二模拟登陆">二、模拟登陆</h2>
+<p>天**反扒的第一关便是需要登录才能够查看具体的页面信息。相比于利用复杂JS逆向技术完成登陆而言，利用selenium库模拟人的操作、从而实现网站自动化登陆的做法则显得更为简单易行。从下图来看，我们需要利用selenium库来完成“点击密码登录（切换到密码登录页面，也即下图所示页面）-向账号对话框内输入账号-向密码对话框内输入密码-向验证码对话框内输入验证码-点击登录”等一系列操作后，才能登录到网站的信息页面，获取自己要想的数据。</p>
+<p><img loading="lazy" src="img/%e5%a4%a9%e7%9c%bc%e6%9f%a5-%e7%99%bb%e5%bd%95%e9%aa%8c%e8%af%81%e7%95%8c%e9%9d%a2.png" alt=""  />
+</p>
+<p>对于网站的登录我们提供了以下两种方法：一种是<strong>自动化登录</strong>；另一种则是<strong>手动登录</strong>。</p>
+<br>
+<h3 id="21-自动化登录">2.1 自动化登录</h3>
+<p>首先，我们先来看看较为复杂的<strong>自动化登录</strong>。要想实现网页的自动化登录，其关键在于利用 「外部力量」 来识别验证码并完成导入。具体而言，我们首先需要定位验证码在网页当中的元素位置，其次利用截图软件根据验证码元素位置来截取验证码图片，再次利用外部库对验证码图片进行识别，最后将识别出的验证码录入对话框。自动化登录的具体过程可以分为 <strong>get_code_image函数</strong> 和 <strong>parse_code函数</strong> 两个步骤进行，具体代码如下所示。其中，验证码的解析小编是调用了百度AI的开源库进行的。另外，需要注意的是，利用selenium库打开的登录页面一开始是不显示验证码的，必须向账号框和密码框输入内容以后，它才会显示验证码。因此，对于验证码的识别和录入，我们将它放在了所有操作中的最后部分。</p>
+<p><strong>parse_code函数</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">parse_code</span><span class="p">():</span>
+    <span class="c1">#用百度API解析图片</span>
+    <span class="n">request_url</span> <span class="o">=</span> <span class="s2">&#34;https://aip.baidubce.com/rest/2.0/ocr/v1/numbers&#34;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;temp/验证码.png&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;image&#34;</span><span class="p">:</span> <span class="n">img</span><span class="p">}</span>
+    <span class="n">access_token</span> <span class="o">=</span> <span class="s1">&#39;24.a7fbbfb9dcab2e1054cc827f09d09234.2592000.1625930266.282335-19004069&#39;</span>
+
+    <span class="n">request_url</span> <span class="o">=</span> <span class="n">request_url</span> <span class="o">+</span> <span class="s2">&#34;?access_token=&#34;</span> <span class="o">+</span> <span class="n">access_token</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/x-www-form-urlencoded&#39;</span><span class="p">}</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">request_url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    
+    <span class="c1">#得到解析结果</span>
+    <span class="n">dictionary</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    
+    <span class="c1">#得到验证码</span>
+    <span class="n">yanzhengma</span><span class="o">=</span><span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;words_result&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;words&#39;</span><span class="p">]</span>
+    
+    <span class="c1">#录入验证码</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[6]/input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="n">yanzhengma</span><span class="p">)</span>
+    
+    <span class="c1"># 点击登录按钮</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[8]&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+
+</code></pre></div><br>
+<p><strong>parse_code函数</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">get_code_image</span><span class="p">():</span>
+    <span class="c1"># 1启动浏览器。</span>
+    <span class="n">browser</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">Chrome</span><span class="p">()</span>
+    <span class="c1"># 2加入这个脚本可以避免被识别</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">execute_cdp_cmd</span><span class="p">(</span><span class="s2">&#34;Page.addScriptToEvaluateOnNewDocument&#34;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&#34;source&#34;</span><span class="p">:</span> <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">         Object.defineProperty(navigator, &#39;webdriver&#39;, {
+</span><span class="s2">          get: () =&gt; undefined
+</span><span class="s2">        })
+</span><span class="s2">       &#34;&#34;&#34;</span><span class="p">})</span>
+    <span class="c1"># 3延迟10s启动</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">implicitly_wait</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    
+    <span class="c1"># 4利用谷歌浏览器打开目标网页</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;https://pro.xxxxxx.com/searchx&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># 5将窗口最大化</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">maximize_window</span><span class="p">()</span>
+    
+    <span class="c1"># 6给网页一些时间加载</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1">#将页面从快捷登录切换到密码登录</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/div[1]/div[2]&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    
+    <span class="c1">#输入账号</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[2]/input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span>
+        <span class="s1">&#39;******&#39;</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    
+    <span class="c1"># 输入密码</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[4]/input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="s1">&#39;*******&#39;</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">save_screenshot</span><span class="p">(</span><span class="s1">&#39;temp/屏幕.png&#39;</span><span class="p">)</span><span class="c1">#截图整个页面】</span>
+    
+    <span class="c1">#定位验证码x,y坐标</span>
+    <span class="n">left_angle</span><span class="o">=</span><span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[6]/img&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">location</span>
+    <span class="n">image</span><span class="o">=</span><span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[6]/img&#39;</span><span class="p">)</span>
+    
+    <span class="c1">#获取验证码的长和宽</span>
+    <span class="n">size</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">size</span>
+    
+    <span class="c1">#设定我们需要截取的位置</span>
+    <span class="n">rangle</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">left_angle</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">left_angle</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">left_angle</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">size</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">230</span><span class="p">),</span>
+
+              <span class="nb">int</span><span class="p">(</span><span class="n">left_angle</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">size</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">300</span><span class="p">))</span>
+    
+    <span class="c1">#打开截图</span>
+    <span class="n">open_image</span><span class="o">=</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;temp/屏幕.png&#39;</span><span class="p">)</span>
+    
+    <span class="c1">#从图片中截取我们需要的的区域</span>
+    <span class="n">jietu</span><span class="o">=</span><span class="n">open_image</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">rangle</span><span class="p">)</span>
+    <span class="n">jietu</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;temp/验证码.png&#39;</span><span class="p">)</span>
+</code></pre></div><p>接下来，我们再来看看如何实现手动登录。相比于自动化登录，手动登录的操作更为简单。具体地，我们只要在完成自动打开网站页面的代码后加入<code>input()函数</code>，然后自己手动向网站的对话框内输入账号、密码、验证码并点击登录，就可以进入到网站的信息页面。</p>
+<p><br><br></p>
+<h2 id="三获取自己想要的数据">三、获取自己想要的数据</h2>
+<p>完成登陆之后，就会跳转到如下页面。然后，大家就可以根据自己的目标继续撰写属于自己的“个性化代码”了。下面，小编以获取31个省市的特定类型的企业数据为例，给大家分享一下自己获取数据的过程。</p>
+<p><img loading="lazy" src="img/clip_image005.png" alt=""  />
+</p>
+<p>其实，代码撰写的逻辑很简单。首先要做的就是先选中我们要爬取的目标城市。下来就是根据自己的需求来定制个性化的筛选标准。以小编自己的需求为例，先通过点击高级模式，向企业名称对话框里输入关键词，比如医院（当然，大家也可以通过限定行业来挑选目标）；然后，去掉机构类型中已勾选的企业，选择事业单位；接下来，勾选全部企业类型；最后点击查看结果。</p>
+<p>至此就完成了筛选，得到了满足我们要求的所有企业（见下图1）。接下来，我们要做的就是遍历每一页里的每一家企业，然后获取企业页面信息（见下图2）中自己想要的数据了。</p>
+<p><img loading="lazy" src="img/clip_image009.png" alt="img"  />
+<img loading="lazy" src="img/clip_image010.png" alt=""  />
+</p>
+<p>由于后续代码较长，就不在这里一一列举了。  有需要的小伙伴可以在后台留言，然后向xx索取。</p>
+<p><br><br></p>
+<h2 id="代码下载">代码下载</h2>
+<p>对于初学者而言，直接上手可能比较难，建议先收藏本文，待熟练掌握爬虫可以实验本文的代码。</p>
+<p>如果想复现本文代码，需熟悉</p>
+<ul>
+<li>python基础语法</li>
+<li>selenium驱动器driver的适配</li>
+<li>百度api注册</li>
+<li>涉及开发者工具xpath定位</li>
+</ul>
+<p>本文教程&amp;代码免费分享，但作者时间和精力宝贵，无法做到一一指导，尽请包涵。</p>
+<blockquote>
+<p>代码链接: <a href="https://pan.baidu.com/s/1VmNoTN8hFRCBI9g770mUCw">https://pan.baidu.com/s/1VmNoTN8hFRCBI9g770mUCw</a> 提取码: ob2j</p>
+</blockquote>
+<br>
+<h2 id="长期征稿">长期征稿</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://hidadeng.github.io/blog/call_for_paper/">
+        <img src="/images/blog/call_for_paper.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解投稿</i></small></figcaption>
+</figure>
+</div>
+<br>
+<h2 id="招募小伙伴">招募小伙伴</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://hidadeng.github.io/blog/we_need_you/">
+        <img src="/images/blog/we_need_you.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击加入我们</i></small></figcaption>
+</figure>
+</div>
+<h2 id="文本分析视频课">文本分析视频课</h2>
+<p>想轻松而快捷的深刻了解一个领域，看视频(直播)学习是一个不错的方式。</p>
+<ul>
+<li>
+<p>大邓每年会有4场直播，五一、十一、寒、暑假，如果时间点接近，可考虑报名参与<a href="https://hidadeng.github.io/blog/2022-05-workshop/7-Python.html">直播课</a>。</p>
+</li>
+<li>
+<p>如果只意性价比，且已迫不及待想学，可以考虑直接报名大邓的<a href="https://hidadeng.github.io/blog/management_python_course">录播课</a>。</p>
+</li>
+<li>
+<p>如果不想学，也可以考虑外包。更建议找淘宝，如果找我咨询，请先阅读<a href="https://hidadeng.github.io/blog/paid_for_service">有偿说明</a></p>
+</li>
+</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+<br>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>EmoBank | 中文维度情感词典</title>
       <link>https://hidadeng.github.io/blog/chinese_emobank/</link>
       <pubDate>Sat, 16 Jul 2022 09:40:10 +0600</pubDate>
@@ -2427,31 +2649,18 @@ neg=0.0 neu=0.461 pos=0.539 compound=0.6892 span=It is awesome!!
     </item>
     
     <item>
-      <title>近年《管理世界》《管理科学学报》使用文本分析论文</title>
+      <title>近年《管理世界》《管理科学学报》《金融研究》使用文本分析论文</title>
       <link>https://hidadeng.github.io/blog/research_with_tm_in_chinese_top_ms_journal/</link>
       <pubDate>Fri, 17 Jun 2022 18:43:10 +0600</pubDate>
       
       <guid>/blog/research_with_tm_in_chinese_top_ms_journal/</guid>
       <description>近年《管理世界》《管理科学学报》期刊中使用文本分析论文汇总</description>
-      <content:encoded><![CDATA[<h2 id="论文清单">论文清单</h2>
+      <content:encoded><![CDATA[<h2 id="管理世界">管理世界</h2>
 <p><strong>曾庆生,周波,张程,陈信元.年报语调与内部人交易:“表里如一”还是“口是心非”?[J].管理世界,2018,34(09):143-160.DOI:10.19744/j.cnki.11-1235/f.2018.09.012.</strong></p>
 <p><a href="https://hidadeng.github.io/blog/manager_tone_analysis_with_lm/">本文代码实现</a></p>
 <blockquote>
 <p><strong>摘要</strong>: 基于中国A股非金融公司2007～2014年年报语调的文本分析,本文研究了年报语调与年报披露后的内部人交易行为之间的关系。研究发现,年报语调越积极,公司高管在年报公布后一段期间内的卖出股票规模越大,净买入股票规模越小,表明公司高管编制年报时存在&quot;口是心非&quot;的操纵嫌疑。进一步研究发现,年报披露后中期市场表现差、信息透明度低、非国有控股的公司高管交易与年报语调的反向关系分别显著强于年报披露后中期市场表现好、信息透明度高、国有控股的公司;而公司盈余管理程度、交易者职位（是否核心高管）对年报语调与高管交易关系的影响不显著。此外,年报语调越积极,高管亲属卖出股票的规模也越大,但未发现公司重要股东交易与年报语调相关。上述结果表明,中国上市公司年报存在语调管理行为,年报语调成为除会计报表以外另一种可以被内部人管理或操纵的信息。</p>
 <p>**关键词：**年报; 语调管理; 内部人交易; 信息不对称;</p>
-</blockquote>
-<br>
-<p><strong>林晚发,赵仲匡,宋敏.管理层讨论与分析的语调操纵及其债券市场反应[J].管理世界,2022,38(01):164-180.DOI:10.19744/j.cnki.11-1235/f.2022.0012.</strong></p>
-<blockquote>
-<p>**摘要: **本文研究了管理层讨论与分析（MD&amp;A）语调的操纵行为及其债券市场反应。研究发现,MD&amp;A异常积极语调与预警Z值负相关,债务重组正相关,这表明MD&amp;A异常积极语调暗示了企业较高的未来风险,这与语调的信息增量解释相悖,因此MD&amp;A异常积极语调更可能是操纵的结果。进一步研究发现,MD&amp;A异常积极语调越大,债券信用评级越高,且该正向关系在与评级机构利益冲突大、信息透明度低的公司子样本中更显著;此外,债券投资者能够识别语调操纵行为,但随着债券市场公众投资者的参与,MD&amp;A异常积极语调与债券信用利差之间呈现出一定的负向关系,且这种负向关系在信息透明度低的企业组中更加显著。本文较早使用中国资本市场数据度量了MD&amp;A异常积极语调,且证实这种异常语调是管理层操纵的结果,并探讨了MD&amp;A语调操纵对于债券市场信息效率的影响,相关结论对于完善MD&amp;A文本信息披露监管法规、提高评级机构独立性以及提升债券市场信息效率具有重要启示。</p>
-<p><strong>关键词：</strong></p>
-<p>MD＆A语调操纵; 利益冲突; 债券信用评级; 债券信用利差;</p>
-</blockquote>
-<br>
-<p><strong>马长峰, 陈志娟, 张顺明. 基于文本大数据分析的会计和金融研究综述[J]. 管理科学学报, 2020, 23(9):12..</strong></p>
-<blockquote>
-<p>**摘要：**作为一种非结构化数据,文本大数据最近十年深刻影响会计学和金融学研究.这种影响体现在两类文献:第一类以信息为中心,将文本分析技术用于信息的品质(可读性)和数量(文本信息含量),信息披露和市场异象等方面的研究;第二类与信息无关,主要是利用文本大数据分析技术构建全新指标,例如基于文本分析的公司竞争力,创新和经济政策不确定性等新变量,梳理上述文献研究脉络,揭示文本分析技术的优缺点,并且指出在会计和金融领域应用文本大数据技术的研究面临的挑战和机遇。</p>
-<p>**关键词：**可读性; 信息; 欺诈; 创新; 经济政策不确定性</p>
 </blockquote>
 <br>
 <p><strong>洪永淼,汪寿阳.大数据如何改变经济学研究范式？[J].管理世界,2021,37(10):40-55+72+56.DOI:10.19744/j.cnki.11-1235/f.2021.0153.</strong></p>
@@ -2476,6 +2685,20 @@ neg=0.0 neu=0.461 pos=0.539 compound=0.6892 span=It is awesome!!
 <blockquote>
 <p><strong>摘要：</strong> 利用我国供应商企业前五名上市客户及其管理层语调的文本数据,本文考察了跨企业关系情形下客户年报语调对供应商企业现金持有决策的影响。研究结果发现,客户的年报语调越消极,供应商企业则会持有更多的现金,表明客户年报净负面语调在供应链上存在传染效应。进一步的研究发现,非国有性质、相对议价能力较低的供应商企业现金持有与客户年报净负面语调的正相关关系分别显著强于国有性质、相对议价能力较高的供应商企业。此外,当客户融资融券程度较高时,客户年报净负面语调对供应商企业现金持有的正向影响会有所增强。本文的研究不仅在考察跨企业情形下企业现金持有的影响因素以及客户文本信息的经济后果两个方面弥补了国内外现有研究的不足,而且对于企业如何进行现金持有决策提供了一定的经验证据与参考,这对于管理供应链相关风险,推动我国企业的供应链整合进而提升我国企业的全球竞争力具有重要的启示意义。</p>
 <p><strong>关键词：</strong>	年报语调;现金持有;供应链传染;文本分析;</p>
+</blockquote>
+<br>
+<p><strong>林晚发,赵仲匡,宋敏.管理层讨论与分析的语调操纵及其债券市场反应[J].管理世界,2022,38(01):164-180.DOI:10.19744/j.cnki.11-1235/f.2022.0012.</strong></p>
+<blockquote>
+<p>**摘要: **本文研究了管理层讨论与分析（MD&amp;A）语调的操纵行为及其债券市场反应。研究发现,MD&amp;A异常积极语调与预警Z值负相关,债务重组正相关,这表明MD&amp;A异常积极语调暗示了企业较高的未来风险,这与语调的信息增量解释相悖,因此MD&amp;A异常积极语调更可能是操纵的结果。进一步研究发现,MD&amp;A异常积极语调越大,债券信用评级越高,且该正向关系在与评级机构利益冲突大、信息透明度低的公司子样本中更显著;此外,债券投资者能够识别语调操纵行为,但随着债券市场公众投资者的参与,MD&amp;A异常积极语调与债券信用利差之间呈现出一定的负向关系,且这种负向关系在信息透明度低的企业组中更加显著。本文较早使用中国资本市场数据度量了MD&amp;A异常积极语调,且证实这种异常语调是管理层操纵的结果,并探讨了MD&amp;A语调操纵对于债券市场信息效率的影响,相关结论对于完善MD&amp;A文本信息披露监管法规、提高评级机构独立性以及提升债券市场信息效率具有重要启示。</p>
+<p><strong>关键词：</strong></p>
+<p>MD＆A语调操纵; 利益冲突; 债券信用评级; 债券信用利差;</p>
+</blockquote>
+<p><br><br></p>
+<h2 id="管理科学学报">管理科学学报</h2>
+<p><strong>马长峰, 陈志娟, 张顺明. 基于文本大数据分析的会计和金融研究综述[J]. 管理科学学报, 2020, 23(9):12..</strong></p>
+<blockquote>
+<p>**摘要：**作为一种非结构化数据,文本大数据最近十年深刻影响会计学和金融学研究.这种影响体现在两类文献:第一类以信息为中心,将文本分析技术用于信息的品质(可读性)和数量(文本信息含量),信息披露和市场异象等方面的研究;第二类与信息无关,主要是利用文本大数据分析技术构建全新指标,例如基于文本分析的公司竞争力,创新和经济政策不确定性等新变量,梳理上述文献研究脉络,揭示文本分析技术的优缺点,并且指出在会计和金融领域应用文本大数据技术的研究面临的挑战和机遇。</p>
+<p>**关键词：**可读性; 信息; 欺诈; 创新; 经济政策不确定性</p>
 </blockquote>
 <br>
 <p><strong>杨晓兰,王伟超,高媚.股市政策对股票市场的影响——基于投资者社会互动的视角[J].管理科学学报,2020,v.23;No.187(01):15-32.</strong></p>
@@ -2542,6 +2765,43 @@ neg=0.0 neu=0.461 pos=0.539 compound=0.6892 span=It is awesome!!
 <blockquote>
 <p><strong>摘要：</strong> 探讨投资者情绪对我国股票市场的影响.为刻画投资者情绪,基于东方财富网股吧帖文与朴素贝叶斯方法,提出融合股评看涨看跌预期和投资者关注程度的投资者情绪度量指标.进一步,利用Granger因果检验、瞬时Granger因果检验、跨期回归分析等方法,探讨了投资者情绪对我国股票收益率、交易量和波动性是否具有预测能力及影响.实证结果揭示:虽然投资者情绪对股票市场收益率、交易量和波动性均无预测能力,但投资者情绪对股票收益率和交易量有当期影响;开盘前非交易时段的股评情绪对开盘价具有预测力,开盘后交易时段的股评情绪对收盘价和日交易量具有更显著的影响.此外,股票收益率是投资者情绪的Granger原因,即投资者情绪的形成依赖于前期市场收益率.这些实证结果为深入理解参与股吧评论的交易者的行为以及行为对市场产生的影响提供了证据.</p>
 <p><strong>关键词:</strong> 	投资者情绪; 噪声交易者; 文本挖掘; Granger因果检验;</p>
+</blockquote>
+<p><br><br></p>
+<p>##金融研究</p>
+<p>姜富伟, 胡逸驰, &amp; 黄楠. (2021). 央行货币政策报告文本信息, 宏观经济与股票市场. <em>金融研究</em>, <em>492</em>(6), 95-113.</p>
+<blockquote>
+<p>**摘要: ** 本文利用金融情感词典和文本分析技术,分析中国人民银行货币政策执行报告的文本情绪、文本相似度和文本可读性等多维文本信息,刻画央行货币政策执行报告的文本特征,探究货币政策报告的文本信息与宏观经济和股票市场的关系。实证研究发现,货币政策报告的文本情绪的改善会引起显著为正的股票市场价格反应,报告文本相似度的增加会引起股票市场波动性的显著降低,报告可读性对公布后股票市场的波动性影响不显著。货币政策报告文本情绪还与诸多宏观经济指标显著相关。进一步研究发现,引起股票市场显著反应的是报告文本情绪中反映货币政策指引的部分,而反映宏观经济历史状态的部分对股票市场的影响不显著。本文从文本大数据分析角度证明了我国央行沟通的有效性,对国内央行沟通相关研究形成了有益补充。</p>
+<p><strong>关键词:</strong>  文本情绪分析  中央银行沟通  股票市场  宏观经济</p>
+</blockquote>
+<br>
+<p>孙彤, 薛爽, &amp; 崔庆慧. (2021). 企业家前台化影响企业价值吗?——基于新浪微博的实证证据. 金融研究, 491(5), 189-206.</p>
+<blockquote>
+<p><strong>摘要:</strong> 互联网时代信息传递成本和沟通成本显著降低。微博作为自媒体的主要代表之一,为企业家从企业的幕后走向台前提供了一条便捷的途径。本文以信息传递理论为基础,利用新浪微博数据,检验了企业家前台化行为对企业价值的影响。实证结果表明:(1)企业家发布微博这一前台化行为有助于提升企业价值。从对价值影响的路径看,企业家微博发布后,企业经营活动现金流增加,系统性风险降低;(2)针对企业家微博进行文本分析,发现企业家微博中个性化微博比例越高、“艾特”人数越多或者微博内容中正向语调比例越高,对企业价值的正向影响越显著;(3)相对于信息不对称程度较低的企业,信息不对称程度较高的企业中企业家更倾向于发布微博。上述实证结果说明自媒体对缓解企业、企业家与投资者之间的信息不对称具有一定作用,为企业家前台化决策及路径选择提供了参考。</p>
+<p><strong>关键词:</strong>  企业家  前台化  微博  企业价值  信息传递</p>
+</blockquote>
+<br>
+<p>阮睿, 孙宇辰, 唐悦, &amp; 聂辉华. (2021). 资本市场开放能否提高企业信息披露质量?——基于 “沪港通” 和年报文本挖掘的分析. 金融研究, 488(2), 188-206.</p>
+<blockquote>
+<p><strong>摘要:</strong> 提高信息披露质量对于改善上市公司治理结构和保护股东权益具有重要意义。本文利用2014年开通的“沪港通”机制这一准自然实验,研究资本市场开放是否提高了企业的信息披露质量。从2010-2019年A股上市公司年报文本中提炼可读性指标衡量信息披露质量,使用匹配和双重差分方法进行实证研究,发现“沪港通”机制实施以后,标的公司(纳入“沪港通”的A股上市公司)的信息披露质量显著提高。这一结论对不同的估计方法、样本区间及控制变量组均保持稳健。异质性分析表明,对于盈余操纵水平较高、股价信息含量较低的企业,资本市场开放能够更好地改善其信息披露质量。本文丰富了资本市场开放对企业行为和绩效影响的实证研究,为继续推进资本市场开放政策提供了理论依据。</p>
+<p><strong>关键词:</strong>  沪港通  资本市场开放  信息披露  文本分析</p>
+</blockquote>
+<br>
+<p>李哲, &amp; 王文翰. (2021). “多言寡行” 的环境责任表现能否影响银行信贷获取——基于 “言” 和 “行” 双维度的文本分析. 金融研究, 498(12), 116-132.</p>
+<blockquote>
+<p><strong>摘要:</strong> 基于我国推行绿色信贷的政策背景,本文考察了企业“多言寡行”的环境责任表现能否影响银行的信贷决策。研究发现:(1)从总体来看,“多言寡行”的环境责任表现有助于企业获取更多的银行借款。(2)相比于长期银行借款,“多言寡行”对于短期银行借款的正向影响更为明显。(3)《关于构建绿色金融体系的指导意见》的出台抑制了“多言寡行”对银行借款的正向影响。(4)进一步分析发现,相比于环境责任表现“少言多行”以及“少言寡行”的企业,企业“多言寡行”的环境责任表现对于银行的信贷资源具有显著的正向影响;“多言寡行”对银行借款的正向影响在无背景关联、价值较低以及市场环境更差的企业中更为明显。本文有助于信贷机构认识到绿色信贷政策面临的执行风险,为确保绿色信贷的健康发展提供了新的决策参考。
+<strong>关键词:</strong>  环境责任表现  绿色金融  绿色信贷  文本分析</p>
+</blockquote>
+<br>
+<p>潘健平, 潘越, &amp; 马奕涵. (2019). 以 “合” 为贵? 合作文化与企业创新. 金融研究, 463(1), 148-167.</p>
+<blockquote>
+<p><strong>摘要:</strong> 本文以2006-2015年沪深A股非金融上市公司为样本,基于上市公司网站对于企业文化的叙述和年报董事会报告两份本文,采用文本分析方法,构建两个度量企业合作文化强弱的指标,并研究企业合作文化对企业创新产出和创新效率的影响。研究发现,企业文化越强调合作,企业的创新产出越多,创新效率越高。这一结论在采用增加控制变量、利用水稻播种面积作为工具变量以及以董事长的非正常离职事件为冲击进行PSM-DID等多种方法后仍然稳健。渠道检验的结果显示,合作文化是通过提高企业内部员工的凝聚力和促进企业的“产学研”合作这两种渠道来促进企业创新。进一步的研究表明,合作文化的促进作用在竞争性行业以及地区信任程度和产业集群程度较高的地区中尤为显著。本文不仅从微观层面揭示企业文化对公司财务行为的影响机理,丰富和补充了当前方兴未艾的“文化与金融”研究,而且为国家制定建设社会主义文化强国的方针战略提供理论基础和实证支持。</p>
+<p><strong>关键词:</strong>  合作  企业文化  企业创新</p>
+</blockquote>
+<br>
+<p>彭红枫, &amp; 林川. (2018). 言之有物: 网络借贷中语言有用吗?——来自人人贷借款描述的经验证据. 金融研究, 461(11), 133-153.</p>
+<blockquote>
+<p><strong>摘要:</strong> 本文以“人人贷”平台的388522条借款标的为样本,基于借款描述文本构造P2P网络借贷词典,并探究文本中六种类型词语比重对网络借贷行为的影响,实证结果表明:首先,各类词语比重发出的信号对贷款人的投资决策有显著影响,积极类词语和金融类词语比重与借款成功率呈正相关,消极类词语比重、强语气词语比重和弱语气词语比重均与借款成功率呈负相关关系;其次,不同年龄层次和不同收入水平的借款人提供的描述性文本中词语信号对贷款人行为的影响存在较大差异,而性别差异和学历高低基本不影响词语信号作用的发挥;最后,各类词语比重发出的质量信号是部分有效的,金融类词语比重发出的信号有效且被投资者正确识别,强语气词语比重发出的信号同样有效却未被投资者准确识别,其他类别词语比重不是有效质量信号。</p>
+<p><strong>关键词:</strong>  网络借贷  文本分析  信号理论</p>
 </blockquote>
 <br>
 <h2 id="长期征稿">长期征稿</h2>

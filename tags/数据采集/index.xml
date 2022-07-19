@@ -6,7 +6,228 @@
     <description>Recent content in 数据采集 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 08 Dec 2021 18:42:10 +0600</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 17 Jul 2022 18:43:10 +0600</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>天**  |  使用selenium做数据采集</title>
+      <link>https://hidadeng.github.io/blog/tian_ya_cha_spider_code/</link>
+      <pubDate>Sun, 17 Jul 2022 18:43:10 +0600</pubDate>
+      
+      <guid>/blog/tian_ya_cha_spider_code/</guid>
+      <description>天** 数据采集教程</description>
+      <content:encoded><![CDATA[<blockquote>
+<p>作者: 张延丰</p>
+<p>哈工程管工在读博士，擅长数据采集&amp;挖掘。</p>
+<p>文末可获取代码下载链接</p>
+</blockquote>
+<p>马云在接受CNBC（美国消费者新闻与商业频道）采访时提出：“整个世界将变成数据，我认为这还是只是数据时代的开始。新浪潮即将来临，很多就业机会将被夺走。有些人会赶上潮流，变得更加富有和成功。但是对于那些落后的人，未来将是痛苦的。”就小编看来，这种说法在人文社科研究当中也同样适用。在当前数以万计甚至数以十万计研究样本“遍地走”的时代，若我们还拘泥于传统的“小样本”研究（比如样本量为100多的调查问卷数据等），不仅难以跟随时代的脚步，还会逐渐丧失学术竞争力、从而被时代淘汰。那么，究竟该如何获取属于自己的大样本数据呢？今天小编就带大家用selenium库来爬取国内某知名第三方企业信息平台（天**）的企业工商信息。</p>
+<p><br><br></p>
+<h2 id="一自动打开网站页面">一、自动打开网站页面</h2>
+<p>首先，数据爬取的第一步是利用selenium库启动浏览器，打开我们的目标网站。部分代码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># @Author  : Jacob-ZHANG</span>
+<span class="kn">import</span> <span class="nn">requests</span><span class="o">,</span><span class="nn">base64</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span> <span class="nn">csv</span><span class="o">,</span><span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">selenium</span> <span class="kn">import</span> <span class="n">webdriver</span>
+<span class="kn">import</span> <span class="nn">time</span><span class="o">,</span><span class="nn">random</span>
+
+<span class="c1">#1启动浏览器。</span>
+<span class="c1">#win</span>
+<span class="n">browser</span><span class="o">=</span><span class="n">webdriver</span><span class="o">.</span><span class="n">Chrome</span><span class="p">(</span><span class="n">executable_path</span><span class="o">=</span><span class="s1">&#39;driver/chromedriver.exe&#39;</span><span class="p">)</span>
+<span class="c1">#mac</span>
+<span class="c1">#browser=webdriver.Chrome(executable_path=&#39;driver/chromedriver&#39;)</span>
+
+<span class="c1">#2加入这个脚本可以避免被识别</span>
+<span class="n">browser</span><span class="o">.</span><span class="n">execute_cdp_cmd</span><span class="p">(</span><span class="s2">&#34;Page.addScriptToEvaluateOnNewDocument&#34;</span><span class="p">,</span> <span class="p">{</span>
+<span class="s2">&#34;source&#34;</span><span class="p">:</span> <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">     Object.defineProperty(navigator, &#39;webdriver&#39;, {
+</span><span class="s2">      get: () =&gt; undefined
+</span><span class="s2">    })
+</span><span class="s2">   &#34;&#34;&#34;</span> <span class="p">})</span>
+
+<span class="c1">#3延迟10s启动</span>
+<span class="n">browser</span><span class="o">.</span><span class="n">implicitly_wait</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="c1">#4利用谷歌浏览器打开目标网页</span>
+<span class="n">browser</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;https://pro.xxxxxx.com/searchx&#39;</span><span class="p">)</span>
+
+<span class="c1">#5将窗口最大化</span>
+<span class="n">browser</span><span class="o">.</span><span class="n">maximize_window</span><span class="p">()</span>
+
+<span class="c1">#6给网页一些时间加载</span>
+<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="o">...</span>
+<span class="o">...</span>
+<span class="o">...</span>
+</code></pre></div><p>非常简单，如下所示。</p>
+<p>需要说明的是：</p>
+<ul>
+<li>第一，selenium库距今已经有近20年的历史，各类网站、浏览器大多都能对它进行识别，因此为了避免被反爬，我可以通过加入上述脚本（#2）来防止网站的识别。</li>
+<li>第二，因为在完成#4的操作，也即利用浏览器打开网页后，显示的网页页面并非是最大化的窗口，这导致页面元素存在难以定位、从而报错的情况，因此我们在此处加上了窗口最大化的操作（#5）。</li>
+<li>第三，在以后的操作里，类似#6的代码会频频出现，这主要是因为受限于网速，不得不为网页加载提供更多时间。</li>
+</ul>
+<p><br><br></p>
+<h2 id="二模拟登陆">二、模拟登陆</h2>
+<p>天**反扒的第一关便是需要登录才能够查看具体的页面信息。相比于利用复杂JS逆向技术完成登陆而言，利用selenium库模拟人的操作、从而实现网站自动化登陆的做法则显得更为简单易行。从下图来看，我们需要利用selenium库来完成“点击密码登录（切换到密码登录页面，也即下图所示页面）-向账号对话框内输入账号-向密码对话框内输入密码-向验证码对话框内输入验证码-点击登录”等一系列操作后，才能登录到网站的信息页面，获取自己要想的数据。</p>
+<p><img loading="lazy" src="img/%e5%a4%a9%e7%9c%bc%e6%9f%a5-%e7%99%bb%e5%bd%95%e9%aa%8c%e8%af%81%e7%95%8c%e9%9d%a2.png" alt=""  />
+</p>
+<p>对于网站的登录我们提供了以下两种方法：一种是<strong>自动化登录</strong>；另一种则是<strong>手动登录</strong>。</p>
+<br>
+<h3 id="21-自动化登录">2.1 自动化登录</h3>
+<p>首先，我们先来看看较为复杂的<strong>自动化登录</strong>。要想实现网页的自动化登录，其关键在于利用 「外部力量」 来识别验证码并完成导入。具体而言，我们首先需要定位验证码在网页当中的元素位置，其次利用截图软件根据验证码元素位置来截取验证码图片，再次利用外部库对验证码图片进行识别，最后将识别出的验证码录入对话框。自动化登录的具体过程可以分为 <strong>get_code_image函数</strong> 和 <strong>parse_code函数</strong> 两个步骤进行，具体代码如下所示。其中，验证码的解析小编是调用了百度AI的开源库进行的。另外，需要注意的是，利用selenium库打开的登录页面一开始是不显示验证码的，必须向账号框和密码框输入内容以后，它才会显示验证码。因此，对于验证码的识别和录入，我们将它放在了所有操作中的最后部分。</p>
+<p><strong>parse_code函数</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">parse_code</span><span class="p">():</span>
+    <span class="c1">#用百度API解析图片</span>
+    <span class="n">request_url</span> <span class="o">=</span> <span class="s2">&#34;https://aip.baidubce.com/rest/2.0/ocr/v1/numbers&#34;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;temp/验证码.png&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;image&#34;</span><span class="p">:</span> <span class="n">img</span><span class="p">}</span>
+    <span class="n">access_token</span> <span class="o">=</span> <span class="s1">&#39;24.a7fbbfb9dcab2e1054cc827f09d09234.2592000.1625930266.282335-19004069&#39;</span>
+
+    <span class="n">request_url</span> <span class="o">=</span> <span class="n">request_url</span> <span class="o">+</span> <span class="s2">&#34;?access_token=&#34;</span> <span class="o">+</span> <span class="n">access_token</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/x-www-form-urlencoded&#39;</span><span class="p">}</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">request_url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    
+    <span class="c1">#得到解析结果</span>
+    <span class="n">dictionary</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    
+    <span class="c1">#得到验证码</span>
+    <span class="n">yanzhengma</span><span class="o">=</span><span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;words_result&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;words&#39;</span><span class="p">]</span>
+    
+    <span class="c1">#录入验证码</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[6]/input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="n">yanzhengma</span><span class="p">)</span>
+    
+    <span class="c1"># 点击登录按钮</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[8]&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+
+</code></pre></div><br>
+<p><strong>parse_code函数</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">get_code_image</span><span class="p">():</span>
+    <span class="c1"># 1启动浏览器。</span>
+    <span class="n">browser</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">Chrome</span><span class="p">()</span>
+    <span class="c1"># 2加入这个脚本可以避免被识别</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">execute_cdp_cmd</span><span class="p">(</span><span class="s2">&#34;Page.addScriptToEvaluateOnNewDocument&#34;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&#34;source&#34;</span><span class="p">:</span> <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">         Object.defineProperty(navigator, &#39;webdriver&#39;, {
+</span><span class="s2">          get: () =&gt; undefined
+</span><span class="s2">        })
+</span><span class="s2">       &#34;&#34;&#34;</span><span class="p">})</span>
+    <span class="c1"># 3延迟10s启动</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">implicitly_wait</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    
+    <span class="c1"># 4利用谷歌浏览器打开目标网页</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;https://pro.xxxxxx.com/searchx&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># 5将窗口最大化</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">maximize_window</span><span class="p">()</span>
+    
+    <span class="c1"># 6给网页一些时间加载</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1">#将页面从快捷登录切换到密码登录</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/div[1]/div[2]&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    
+    <span class="c1">#输入账号</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[2]/input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span>
+        <span class="s1">&#39;******&#39;</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    
+    <span class="c1"># 输入密码</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[4]/input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="s1">&#39;*******&#39;</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">browser</span><span class="o">.</span><span class="n">save_screenshot</span><span class="p">(</span><span class="s1">&#39;temp/屏幕.png&#39;</span><span class="p">)</span><span class="c1">#截图整个页面】</span>
+    
+    <span class="c1">#定位验证码x,y坐标</span>
+    <span class="n">left_angle</span><span class="o">=</span><span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[6]/img&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">location</span>
+    <span class="n">image</span><span class="o">=</span><span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s1">&#39;//*[@id=&#34;web-content&#34;]/div/div[2]/div[3]/form/div[6]/img&#39;</span><span class="p">)</span>
+    
+    <span class="c1">#获取验证码的长和宽</span>
+    <span class="n">size</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">size</span>
+    
+    <span class="c1">#设定我们需要截取的位置</span>
+    <span class="n">rangle</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">left_angle</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">left_angle</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">left_angle</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">size</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">230</span><span class="p">),</span>
+
+              <span class="nb">int</span><span class="p">(</span><span class="n">left_angle</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">size</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">300</span><span class="p">))</span>
+    
+    <span class="c1">#打开截图</span>
+    <span class="n">open_image</span><span class="o">=</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;temp/屏幕.png&#39;</span><span class="p">)</span>
+    
+    <span class="c1">#从图片中截取我们需要的的区域</span>
+    <span class="n">jietu</span><span class="o">=</span><span class="n">open_image</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">rangle</span><span class="p">)</span>
+    <span class="n">jietu</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;temp/验证码.png&#39;</span><span class="p">)</span>
+</code></pre></div><p>接下来，我们再来看看如何实现手动登录。相比于自动化登录，手动登录的操作更为简单。具体地，我们只要在完成自动打开网站页面的代码后加入<code>input()函数</code>，然后自己手动向网站的对话框内输入账号、密码、验证码并点击登录，就可以进入到网站的信息页面。</p>
+<p><br><br></p>
+<h2 id="三获取自己想要的数据">三、获取自己想要的数据</h2>
+<p>完成登陆之后，就会跳转到如下页面。然后，大家就可以根据自己的目标继续撰写属于自己的“个性化代码”了。下面，小编以获取31个省市的特定类型的企业数据为例，给大家分享一下自己获取数据的过程。</p>
+<p><img loading="lazy" src="img/clip_image005.png" alt=""  />
+</p>
+<p>其实，代码撰写的逻辑很简单。首先要做的就是先选中我们要爬取的目标城市。下来就是根据自己的需求来定制个性化的筛选标准。以小编自己的需求为例，先通过点击高级模式，向企业名称对话框里输入关键词，比如医院（当然，大家也可以通过限定行业来挑选目标）；然后，去掉机构类型中已勾选的企业，选择事业单位；接下来，勾选全部企业类型；最后点击查看结果。</p>
+<p>至此就完成了筛选，得到了满足我们要求的所有企业（见下图1）。接下来，我们要做的就是遍历每一页里的每一家企业，然后获取企业页面信息（见下图2）中自己想要的数据了。</p>
+<p><img loading="lazy" src="img/clip_image009.png" alt="img"  />
+<img loading="lazy" src="img/clip_image010.png" alt=""  />
+</p>
+<p>由于后续代码较长，就不在这里一一列举了。  有需要的小伙伴可以在后台留言，然后向xx索取。</p>
+<p><br><br></p>
+<h2 id="代码下载">代码下载</h2>
+<p>对于初学者而言，直接上手可能比较难，建议先收藏本文，待熟练掌握爬虫可以实验本文的代码。</p>
+<p>如果想复现本文代码，需熟悉</p>
+<ul>
+<li>python基础语法</li>
+<li>selenium驱动器driver的适配</li>
+<li>百度api注册</li>
+<li>涉及开发者工具xpath定位</li>
+</ul>
+<p>本文教程&amp;代码免费分享，但作者时间和精力宝贵，无法做到一一指导，尽请包涵。</p>
+<blockquote>
+<p>代码链接: <a href="https://pan.baidu.com/s/1VmNoTN8hFRCBI9g770mUCw">https://pan.baidu.com/s/1VmNoTN8hFRCBI9g770mUCw</a> 提取码: ob2j</p>
+</blockquote>
+<br>
+<h2 id="长期征稿">长期征稿</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://hidadeng.github.io/blog/call_for_paper/">
+        <img src="/images/blog/call_for_paper.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解投稿</i></small></figcaption>
+</figure>
+</div>
+<br>
+<h2 id="招募小伙伴">招募小伙伴</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://hidadeng.github.io/blog/we_need_you/">
+        <img src="/images/blog/we_need_you.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击加入我们</i></small></figcaption>
+</figure>
+</div>
+<h2 id="文本分析视频课">文本分析视频课</h2>
+<p>想轻松而快捷的深刻了解一个领域，看视频(直播)学习是一个不错的方式。</p>
+<ul>
+<li>
+<p>大邓每年会有4场直播，五一、十一、寒、暑假，如果时间点接近，可考虑报名参与<a href="https://hidadeng.github.io/blog/2022-05-workshop/7-Python.html">直播课</a>。</p>
+</li>
+<li>
+<p>如果只意性价比，且已迫不及待想学，可以考虑直接报名大邓的<a href="https://hidadeng.github.io/blog/management_python_course">录播课</a>。</p>
+</li>
+<li>
+<p>如果不想学，也可以考虑外包。更建议找淘宝，如果找我咨询，请先阅读<a href="https://hidadeng.github.io/blog/paid_for_service">有偿说明</a></p>
+</li>
+</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+<br>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>案例实战 | 企业信息数据采集</title>
       <link>https://hidadeng.github.io/blog/%E7%88%B1%E4%BC%81%E6%9F%A5/</link>

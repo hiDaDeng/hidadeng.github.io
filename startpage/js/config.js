@@ -136,6 +136,13 @@ class Config {
 				url: 'https://osf.io/',
 				category: 'Academic Tools'
 			},
+
+			{
+				site: '知网',
+				icon: 'zhiwang',
+				url: 'https://www.cnki.net/',
+				category: 'Academic Search Engine'
+			},
 			{
 				site: 'Researcher',
 				icon: '博士',
