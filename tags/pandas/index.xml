@@ -711,6 +711,120 @@ B(1234, &#34;Bloxs in notebook!&#34;)
     </item>
     
     <item>
+      <title>YelpDaset | 酒店管理类数据集10&#43;G</title>
+      <link>https://hidadeng.github.io/blog/yelpdataset_10g/</link>
+      <pubDate>Sat, 20 Nov 2021 22:40:10 +0600</pubDate>
+      
+      <guid>/blog/yelpdataset_10g/</guid>
+      <description>Yelp数据集是我们用于个人，教育和学术目的的业务，评论和用户数据的子集。字段丰富，适合玩数据分析</description>
+      <content:encoded><![CDATA[<h2 id="数据集下载">数据集下载</h2>
+<p>链接:<a href="https://pan.baidu.com/s/1rUfj7NYYAnM3NuFWCHyPpA">https://pan.baidu.com/s/1rUfj7NYYAnM3NuFWCHyPpA</a> 密码:ux8z</p>
+<p>在昨天发的文章里提到了yelp数据集，官网显示&quot;Yelp数据集是我们用于个人，教育和学术目的的业务，评论和用户数据的子集。 以JSON文件形式提供，可用于在学习如何制作移动应用程序的同时，向学生介绍数据库，学习NLP或提供示例生产数据。&quot;</p>
+<p>yelp官网显示，这个数据集亮点如下：</p>
+<ul>
+<li>668+w条评论</li>
+<li>19+w个商业机构</li>
+<li>20w张图片</li>
+<li>10个都市区域</li>
+<li>字段包括:营业时间、是否泊车、可用性和环境</li>
+</ul>
+<p><img loading="lazy" src="img/yelp.png" alt=""  />
+</p>
+<p>在kaggle上也能看到使用这个数据集的案例，说不定有你需要的分析方法。</p>
+<p><img loading="lazy" src="img/kaggle.png" alt=""  />
+</p>
+<p>我已经从yelp官网下载了数据, 参照kaggle的很多例子，咱们也在自己电脑上跑跑简单的分析</p>
+<h2 id="business数据读取">business数据读取</h2>
+<p>kaggle中的数据是csv文件，咱这里是json，略有不同，但读取都可以用pandas读取</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#一开始用注释掉的代码，有bug，经过百度找到lines=True解决方案</span>
+<span class="c1">#business = pd.read_json(&#39;yelp_dataset/business.json&#39;)</span>
+<span class="n">business</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_json</span><span class="p">(</span><span class="s1">&#39;yelp_dataset/business.json&#39;</span><span class="p">,</span> <span class="n">lines</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">business</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/1.png" alt=""  />
+</p>
+<br>
+<h2 id="评分分布">评分分布</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">()</span>
+</code></pre></div><pre><code>[(0.12156862745098039, 0.4666666666666667, 0.7058823529411765),
+ (1.0, 0.4980392156862745, 0.054901960784313725),
+ (0.17254901960784313, 0.6274509803921569, 0.17254901960784313),
+ (0.8392156862745098, 0.15294117647058825, 0.1568627450980392),
+ (0.5803921568627451, 0.403921568627451, 0.7411764705882353),
+ (0.5490196078431373, 0.33725490196078434, 0.29411764705882354),
+ (0.8901960784313725, 0.4666666666666667, 0.7607843137254902),
+ (0.4980392156862745, 0.4980392156862745, 0.4980392156862745),
+ (0.7372549019607844, 0.7411764705882353, 0.13333333333333333),
+ (0.09019607843137255, 0.7450980392156863, 0.8117647058823529)]
+</code></pre>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+
+<span class="n">colors</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">()</span>
+<span class="n">rating</span> <span class="o">=</span> <span class="n">business</span><span class="p">[</span><span class="s1">&#39;stars&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+<span class="n">rating</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">rating</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> 
+            <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[:</span><span class="mi">9</span><span class="p">],</span>
+            <span class="n">rot</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="c1">#字体倾斜角度</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Rating Distribution of Yelp&#39;</span><span class="p">,</span><span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_5_0.png" alt=""  />
+</p>
+<br>
+<h2 id="行业统计">行业统计</h2>
+<p>查看行业店家数量分布</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">business</span><span class="p">[</span><span class="s1">&#39;categories&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">business</span><span class="p">[</span><span class="s1">&#39;categories&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="k">if</span> <span class="n">x</span> <span class="k">else</span> <span class="s1">&#39; &#39;</span><span class="p">)</span>
+<span class="n">category_str</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">business</span><span class="p">[</span><span class="s1">&#39;categories&#39;</span><span class="p">])</span>
+<span class="n">category_list</span> <span class="o">=</span> <span class="n">category_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+<span class="n">category_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">category_list</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">])</span>
+<span class="n">top15_category</span> <span class="o">=</span> <span class="n">category_df</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()[:</span><span class="mi">15</span><span class="p">]</span>
+<span class="n">top15_category</span>
+<span class="n">top15_category</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[:</span><span class="mi">20</span><span class="p">],</span>
+                    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> 
+                    <span class="n">rot</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+                    <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Top 20 Category in Yelp&#39;</span><span class="p">,</span>
+          <span class="n">fontsize</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> 
+          <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_7_0.png" alt=""  />
+</p>
+<br>
+<h2 id="城市分布">城市分布</h2>
+<p>显示yelp中Top20城</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">citys</span> <span class="o">=</span> <span class="n">business</span><span class="p">[</span><span class="s1">&#39;city&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()[:</span><span class="mi">20</span><span class="p">]</span>
+<span class="n">citys</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="c1">#降序，原地修改原始数据</span>
+<span class="n">citys</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;barh&#39;</span><span class="p">,</span>   <span class="c1">#水平条形图</span>
+           <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+           <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+           <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[:</span><span class="mi">20</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Top 20 city in the Yelp&#39;</span><span class="p">,</span> 
+          <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> 
+          <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_9_0.png" alt=""  />
+</p>
+<br>
+<h2 id="了解课程">了解课程</h2>
+<div style="text-align: center;">
+<figure >
+    <a href="https://m.qlchat.com/wechat/page/channel-intro?channelId=2000015158133596">
+        <img src="/images/bg/management_data_mining_with_python_course.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击上方图片购买课程</i></small></figcaption>
+</figure>
+</div>
+<p><a href="https://hidadeng.github.io/blog/management_python_course/">点击进入详情页</a></p>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>使用pandas_bokeh做可视化</title>
       <link>https://hidadeng.github.io/blog/pandas_bokeh_vis/</link>
       <pubDate>Thu, 18 Nov 2021 17:40:10 +0600</pubDate>
