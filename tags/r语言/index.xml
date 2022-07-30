@@ -101,6 +101,205 @@ hugo --theme=PaperMod --baseUrl=&#39;/&#39; --buildDrafts</code></pre>
     </item>
     
     <item>
+      <title>使用R将多个txt汇总到一个csv文件中</title>
+      <link>https://hidadeng.github.io/blog/multiple_txts_into_csv/</link>
+      <pubDate>Fri, 29 Jul 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/multiple_txts_into_csv/</guid>
+      <description>使用R语言，对多个文件夹内的数百个txt汇总到一个csv文件内，有利于后续的文本分析。本文会用到readr、readtext、purrr三个包。</description>
+      <content:encoded><![CDATA[
+
+
+<div id="任务" class="section level2">
+<h2>任务</h2>
+<p>使用R语言，对多个文件夹内的数百个txt汇总到一个csv文件内。</p>
+<p><br><br></p>
+</div>
+<div id="数据集" class="section level2">
+<h2>数据集</h2>
+<p>01-21年，全国各地市政府工作报告数据集。</p>
+<p><img src="img/provinces.png" /></p>
+<p><img src="img/anhui.png" /></p>
+<p><br><br></p>
+</div>
+<div id="任务分解" class="section level2">
+<h2>任务分解</h2>
+<ol style="list-style-type: decimal">
+<li>使用list.files获取文件路径列表</li>
+<li>定义需要的函数
+<ul>
+<li>使用readtext::readtext()函数读取报告文本</li>
+<li>年份函数、省份函数</li>
+</ul></li>
+<li>对每个文件路径，根据2得到三个字段信息，构造tibble结构；</li>
+<li>步骤2和步骤3使用bind_cols合并成一个tibble</li>
+<li>readr::write_csv()函数存至data.csv</li>
+<li>审查data.csv</li>
+</ol>
+<p>数据存在province文件内, 该<a href="province.zip"><strong>点击下载该数据集</strong></a></p>
+<div id="txt路径列表" class="section level3">
+<h3>1. txt路径列表</h3>
+<p>使用 list.files函数查看</p>
+<ul>
+<li>文件夹路径列表</li>
+<li>文件路径列表</li>
+</ul>
+<p>province内的文件夹路径列表</p>
+<pre class="r"><code>dirs &lt;- list.files(&#39;province&#39;, full.names = TRUE)
+head(dirs)</code></pre>
+<pre><code>## [1] &quot;province/上海&quot;   &quot;province/云南&quot;   &quot;province/内蒙古&quot; &quot;province/北京&quot;  
+## [5] &quot;province/吉林&quot;   &quot;province/四川&quot;</code></pre>
+<p>所有省份文件夹内的文件路径列表</p>
+<pre class="r"><code>files &lt;- list.files(dirs, full.names = TRUE)
+head(files)</code></pre>
+<pre><code>## [1] &quot;province/上海/2003年上海政府工作报告.txt&quot;
+## [2] &quot;province/上海/2004年上海政府工作报告.txt&quot;
+## [3] &quot;province/上海/2005年上海政府工作报告.txt&quot;
+## [4] &quot;province/上海/2006年上海政府工作报告.txt&quot;
+## [5] &quot;province/上海/2007年上海政府工作报告.txt&quot;
+## [6] &quot;province/上海/2008年上海政府工作报告.txt&quot;</code></pre>
+<p>共有617个txt文件</p>
+<pre class="r"><code>length(files)</code></pre>
+<pre><code>## [1] 617</code></pre>
+<p><br></p>
+</div>
+<div id="readtext读取txt" class="section level3">
+<h3>2.1 readtext读取txt</h3>
+<p>使用 readtext::readtext 批量读取 多个txt</p>
+<pre class="r"><code>txts_df &lt;- readtext::readtext(files)
+head(txts_df)</code></pre>
+<pre><code>## readtext object consisting of 6 documents and 0 docvars.
+## # Description: df [6 × 2]
+##   doc_id                     text                         
+##   &lt;chr&gt;                      &lt;chr&gt;                        
+## 1 2003年上海政府工作报告.txt &quot;\&quot;  各位代表， 现在\&quot;...&quot;   
+## 2 2004年上海政府工作报告.txt &quot;\&quot; 各位代表：\n\n  \&quot;...&quot;   
+## 3 2005年上海政府工作报告.txt &quot;\&quot;各位代表：\n\n　　现\&quot;...&quot;
+## 4 2006年上海政府工作报告.txt &quot;\&quot;各位代表：\n　　上海\&quot;...&quot;
+## 5 2007年上海政府工作报告.txt &quot;\&quot;　　政府工作报告\n　\&quot;...&quot;
+## 6 2008年上海政府工作报告.txt &quot;\&quot;\n\t政府工作报告\n\n\&quot;...&quot;</code></pre>
+<p>检查text字段长度，是否为617.</p>
+<pre class="r"><code>length(txts_df[[&#39;text&#39;]])</code></pre>
+<pre><code>## [1] 617</code></pre>
+<p><br></p>
+</div>
+<div id="定义功能函数" class="section level3">
+<h3>2.2 定义功能函数</h3>
+<p>数据整理到一个csv，我们想保存四个字段，分别是</p>
+<ul>
+<li>txt文件名</li>
+<li>年份</li>
+<li>省(市)名</li>
+<li>工作报告内容</li>
+</ul>
+<p>年份和省份需要通过定义函数实现~</p>
+<pre class="r"><code>s&lt;-basename(&quot;province/上海/2003年上海政府工作报告.txt&quot;) 
+substr(s, 1, 4)</code></pre>
+<pre><code>## [1] &quot;2003&quot;</code></pre>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
+## ✔ ggplot2 3.3.6     ✔ purrr   0.3.4
+## ✔ tibble  3.1.8     ✔ dplyr   1.0.9
+## ✔ tidyr   1.2.0     ✔ stringr 1.4.0
+## ✔ readr   2.1.2     ✔ forcats 0.5.1
+## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## ✖ dplyr::filter() masks stats::filter()
+## ✖ dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>year_func &lt;- function(filepath){
+  year &lt;- filepath %&gt;% 
+    basename() %&gt;% 
+    substr(1, 4)
+  return (year)
+}
+
+name_func &lt;- function(file){
+  file &lt;- basename(file)
+  name &lt;- gsub(&#39;政府工作报告.txt&#39;, &#39;&#39;, file) 
+  name &lt;- stringr::str_sub(name, start=6)
+  return (name)
+}
+
+file &lt;- &quot;province/上海/2003年上海政府工作报告.txt&quot;
+year_func(file)</code></pre>
+<pre><code>## [1] &quot;2003&quot;</code></pre>
+<pre class="r"><code>name_func(file)</code></pre>
+<pre><code>## [1] &quot;上海&quot;</code></pre>
+<p>txts_df 是一个特殊的tibble数据类型。 现在需要构造年份、省份函数，获取另外一个tibble。</p>
+<pre class="r"><code>year_province_df &lt;- tibble(
+  year = year_func(txts_df$doc_id),
+  province = lapply(txts_df$doc_id, name_func) %&gt;% unlist()
+  )
+
+head(year_province_df)</code></pre>
+<pre><code>## # A tibble: 6 × 2
+##   year  province
+##   &lt;chr&gt; &lt;chr&gt;   
+## 1 2003  上海    
+## 2 2004  上海    
+## 3 2005  上海    
+## 4 2006  上海    
+## 5 2007  上海    
+## 6 2008  上海</code></pre>
+<p><br></p>
+</div>
+<div id="合并两个tibble" class="section level3">
+<h3>4. 合并两个tibble</h3>
+<p>cbind_rows()合并两个tibble</p>
+<pre class="r"><code>res_df &lt;- bind_cols(year_province_df, txts_df)
+head(res_df)</code></pre>
+<pre><code>## # A tibble: 6 × 4
+##   year  province doc_id                     text                                
+##   &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;                      &lt;chr&gt;                               
+## 1 2003  上海     2003年上海政府工作报告.txt &quot;  各位代表， 现在，我代表上海市人… 
+## 2 2004  上海     2004年上海政府工作报告.txt &quot; 各位代表：\n\n    现在，我代表上… 
+## 3 2005  上海     2005年上海政府工作报告.txt &quot;各位代表：\n\n　　现在，我代表上海…
+## 4 2006  上海     2006年上海政府工作报告.txt &quot;各位代表：\n　　上海市国民经济和社…
+## 5 2007  上海     2007年上海政府工作报告.txt &quot;　　政府工作报告\n　　――2007年1月2…
+## 6 2008  上海     2008年上海政府工作报告.txt &quot;\n\t政府工作报告\n\n\t——2008年1月2…</code></pre>
+<p><br></p>
+</div>
+<div id="存入csv" class="section level3">
+<h3>5. 存入csv</h3>
+<p>使用 write.table(x, file, sep) 写入data.csv</p>
+<ul>
+<li>x 待存储数据对象</li>
+<li>file csv文件路径</li>
+<li>delim 分割符</li>
+</ul>
+<pre class="r"><code>?readr::write_csv</code></pre>
+<pre class="r"><code>readr::write_csv(x=res_df, 
+                 file=&#39;data.csv&#39;, 
+                 col_names=T) </code></pre>
+<p><br></p>
+</div>
+<div id="检查data.csv" class="section level3">
+<h3>6. 检查data.csv</h3>
+<p>尝试读取 <a href="data.csv">data.csv</a></p>
+<pre class="r"><code>df &lt;- readr::read_csv(&#39;data.csv&#39;)</code></pre>
+<pre><code>## Rows: 617 Columns: 4
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (3): province, doc_id, text
+## dbl (1): year
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>head(df)</code></pre>
+<pre><code>## # A tibble: 6 × 4
+##    year province doc_id                     text                                
+##   &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;                      &lt;chr&gt;                               
+## 1  2003 上海     2003年上海政府工作报告.txt &quot;各位代表， 现在，我代表上海市人民… 
+## 2  2004 上海     2004年上海政府工作报告.txt &quot;各位代表：\n\n    现在，我代表上海…
+## 3  2005 上海     2005年上海政府工作报告.txt &quot;各位代表：\n\n　　现在，我代表上海…
+## 4  2006 上海     2006年上海政府工作报告.txt &quot;各位代表：\n　　上海市国民经济和社…
+## 5  2007 上海     2007年上海政府工作报告.txt &quot;　　政府工作报告\n　　――2007年1月2…
+## 6  2008 上海     2008年上海政府工作报告.txt &quot;\n\t政府工作报告\n\n\t——2008年1月2…</code></pre>
+</div>
+</div>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>renv包 | R语言的项目环境管理库</title>
       <link>https://hidadeng.github.io/blog/renv_environment_management_for_r/</link>
       <pubDate>Thu, 21 Jul 2022 18:43:10 +0600</pubDate>
