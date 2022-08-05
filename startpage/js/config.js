@@ -495,13 +495,13 @@ class Config {
 				url: 'https://hrbthx.zwfw.hlj.gov.cn/?flag=false',
 				category: 'BInformation'
 			},
+			
 			{
-				site: '自然基金委',
-				icon: 'nsfc',
-				url: 'https://www.nsfc.gov.cn/',
+				site: '自然基金查询',
+				icon: 'nsfc-net',
+				url: 'https://kd.nsfc.gov.cn/',
 				category: 'BInformation'
 			},
-
 			{
 				site: '安泰讲座',
 				icon: 'antai',
