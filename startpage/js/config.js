@@ -109,7 +109,18 @@ class Config {
 				url: 'https://reddit.com/',
 				category: 'Coding'
 			},
-
+			{
+				site: '和鲸社区',
+				icon: 'heywhale',
+				url: 'https://www.heywhale.com/',
+				category: 'Coding'
+			},
+			{
+				site: 'Kaggle',
+				icon: 'kaggle',
+				url: 'https://www.kaggle.com/',
+				category: 'Coding'
+			},
 			{
 				site: 'Github',
 				icon: 'github',
