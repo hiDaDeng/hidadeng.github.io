@@ -456,6 +456,12 @@ class Config {
                 url: 'https://formito.com/tools/favicon',
                 category: 'Coding'
             },
+             {
+                site: '统计之都',
+                icon: 'cosx',
+                url: 'https://cosx.org/',
+                category: 'Coding'
+            },
 			{
 				site: 'Logo DIY',
 				icon: 'logo',

@@ -1,0 +1,285 @@
+---
+title: R语言 | ggplot2简明绘图教程
+author: R package build
+date: '2022-09-03'
+slug: []
+categories: []
+tags:
+  - R语言
+  - ggplot2
+  - 可视化
+cover:
+  image: images/blog/ggplot2_relative_funcs.png
+description: 教你理解图层、数geom、labs等函数，轻松上手ggplot2
+keywords:
+  - R语言
+  - ggplot2
+draft: no
+type: post
+---
+
+ggplot() 函数对任何数据科学家都是必不可少的, ta是一种非常简单的绘图函数。刚开始接触可能看起来很难， 不过不要害怕，因为一旦学了基础知识，一切都会变得清晰！ 让我们开始！
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+
+## 准备
+在这里，我需要导入本节需要的包。 tidyverse 包括八个包，其中之一是 ggplot。 primer.data包 拥有比R 内置的更多的数据集。
+
+
+
+
+
+## 画布gglot
+画画需要画布，对于数据分析的绘图也是同理。导入相关R包后， 用ggplot函数构造一个画布。因为还没设定数据，所以这是一个空画布
+
+```{r}
+ggplot()
+```
+
+我们将使用nhanes数据集，传入数据的代码ggplot(data=nhanes)
+
+```{r}
+ggplot(data=nhanes)
+```
+
+画布看起来依然是空白的，不要紧张。理解这个之前类比PS这类绘图软件，将修图工作看做是很多个图层的叠加。现在我们使用时依然在最底层的ggplot图层，在ggplot函数内添加mapping=aes()参数，准备添加x轴、y轴、color。的图层。
+
+```{r}
+ggplot(data=nhanes,
+       mapping=aes())
+```
+
+注意了，现在图层即将发生变化。我们选择设置x周、y轴、color的字段。
+
+- x轴 height身高
+- y轴 weight体重
+- color gender性别
+
+```{r}
+ggplot(data=nhanes,
+       mapping=aes(
+         x=height,
+         y=weight,
+         color=gender))
+```
+
+现在我们将开始添加高层次的图层，也会显示越来越多的信息。
+
+<br>
+
+## 添加geom
+现在添加geom层，该层是通过 ``+`` 构建在ggplot层之上。这里使用geom_point绘制散点图，
+
+
+```{r warning=F, message=F}
+ggplot(data=nhanes,
+       mapping = aes(
+         x=height,
+         y=weight,
+         color=gender))+
+  geom_point()
+```
+
+Wow! 不错的开始，不过这个图中的点互相之间重叠的有一点点严重，需要设定点的大小size和透明度alpha来控制重叠效果。
+
+```{r warning=F, message=F}
+ggplot(data=nhanes,
+       mapping=aes(
+         x=height,
+         y=weight,
+         color=gender))+
+  geom_point(alpha=0.3, size=0.5)
+```
+
+much better! 但能否按性别，分别绘制男、女的散点图。
+
+<br>
+
+## 分面facet
+
+接下来添加一个分面函数 ``facet_wrap``。该函数会分别生成男性分面、女性分面
+
+```{r warning=F, message=F}
+ggplot(data=nhanes,
+       mapping=aes(
+         x=height,
+         y=weight,
+         color=gender))+
+  geom_point(alpha=0.3, size=0.5)+
+  facet_wrap(~gender)
+```
+
+现在我们有了两个分面图
+
+<br>
+
+## 添加第二个geom
+
+现在我们需要添加一个趋势线，可以使用 ``geom_smooth`` 函数，因为geom_smooth和geom_point都是geom层的函数，理所当然它俩比facet_wrap层更近一些。为了让趋势线更明显，将散点的透明度设置的更浅，比如0.1
+
+```{r warning=F, message=F}
+ggplot(data=nhanes,
+       mapping=aes(
+         x=height,
+         y=weight,
+         color=gender))+
+  geom_point(alpha=0.1, size=0.5)+
+  geom_smooth()+
+  facet_wrap(~gender)
+```
+
+现在，我们想让趋势线更平滑一些。在``geom_smooth``中，我们会设置 ``method="loess"``以使得趋势线更平滑。 ``formula=y~x``表示y的变化与x有关。
+
+```{r warning=F, message=F}
+ggplot(data=nhanes,
+       mapping=aes(
+         x=height,
+         y=weight,
+         color=gender))+
+  geom_point(alpha=0.1, size=0.5)+
+  geom_smooth(method="loess", formula=y~x)+
+  facet_wrap(~gender)
+```
+<br>
+
+## 标签labs
+
+现在我们需要用``labs``函数给图片添加标签图层。例如title、subtitle、caption、x、y、legend。
+
+```{r warning=F, message=F}
+ggplot(data=nhanes,
+       mapping=aes(
+         x=height,
+         y=weight,
+         color=gender))+
+  geom_point(alpha=0.1, size=0.5)+
+  geom_smooth(method="loess", formula=y~x)+
+  facet_wrap(~gender)+
+  labs(title = "Heights in the U.S.",
+       subtitle = "On average, men weigh more and are taller than women")
+```
+现在有了正副标题，横纵坐标没有数量单位，不太nice，这里更改为 ``Height(cm)、Weight(kg)``
+
+
+```{r warning=F, message=F}
+ggplot(data=nhanes,
+       mapping=aes(
+         x=height,
+         y=weight,
+         color=gender))+
+  geom_point(alpha=0.1, size=0.5)+
+  geom_smooth(method="loess", formula=y~x)+
+  facet_wrap(~gender)+
+  labs(title = "Heights in the U.S.",
+       subtitle = "On average, men weigh more and are taller than women",
+       x="Height (cm)",
+       y="Weight (kg)")
+```
+Awesome! 但图例Lengend中的 ``gender`` 依然是小写，我希望改为大写。我们知道x、y、color分别对应height、weight、gender，所以如果更改gender，需要设置的是color。
+
+
+```{r warning=F, message=F}
+ggplot(data=nhanes,
+       mapping=aes(
+         x=height,
+         y=weight,
+         color=gender))+
+  geom_point(alpha=0.1, size=0.5)+
+  geom_smooth(method="loess", formula=y~x)+
+  facet_wrap(~gender)+
+  labs(title = "Heights in the U.S.",
+       subtitle = "On average, men weigh more and are taller than women",
+       x="Height (cm)",
+       y="Weight (kg)",
+       color="Gender")
+```
+
+
+但是看到这个图片时，其他人会想原始数据是啥情况，怎么来的。这时候我们需要告诉大家nhances数据集来自于 ``National Health and Nutrition Examination Survey``。通过设置labs的caption参数即可。
+
+
+```{r warning=F, message=F}
+ggplot(data=nhanes,
+       mapping=aes(
+         x=height,
+         y=weight,
+         color=gender))+
+  geom_point(alpha=0.1, size=0.5)+
+  geom_smooth(method="loess", formula=y~x)+
+  facet_wrap(~gender)+
+  labs(title = "Heights in the U.S.",
+       subtitle = "On average, men weigh more and are taller than women",
+       x="Height (cm)",
+       y="Weight (kg)",
+       color="Gender",
+       caption="Source: National Health and Nutrition Examination Survey")
+```
+
+<br>
+
+## 更改配色
+
+绘图已经相当完整，但geom层的散点颜色可能不是咱的最爱，如何设置颜色呢？
+
+更改geom层的颜色，所以该层紧贴geom层，且在geom层之上。设置方法使用 ``scale_color_manual()``  即可。scale_color_munual()中的values可以传入颜色十六进制的字符串，除了传入颜色字符串。
+
+
+```{r warning=F, message=F}
+ggplot(data=nhanes,
+       mapping=aes(
+         x=height,
+         y=weight,
+         color=gender))+
+  geom_point(alpha=0.1, size=0.5)+
+  geom_smooth(method="loess", formula=y~x)+
+  scale_color_manual(values=c("magenta", "blue"))+
+  facet_wrap(~gender)+
+  labs(title = "Heights in the U.S.",
+       subtitle = "On average, men weigh more and are taller than women",
+       x="Height (cm)",
+       y="Weight (kg)",
+       color="Gender",
+       caption="Source: National Health and Nutrition Examination Survey")
+```
+
+
+<br>
+
+## 中文问题
+
+默认ggplot2不支持中文，为了能显示中文，需要使用showtext包
+
+```{r warning=F, message=F}
+library(ggplot2)
+library(primer.data) #提供数据
+library(showtext) #支持中文
+showtext_auto()
+
+ggplot(data=nhanes,
+       mapping=aes(
+         x=height,
+         y=weight,
+         color=gender))+
+  geom_point(alpha=0.1, size=0.5)+
+  geom_smooth(method="loess", formula=y~x)+
+  scale_color_manual(values=c("magenta", "blue"))+
+  facet_wrap(~gender)+
+  labs(title = "美国身高",
+       subtitle = "平均而言，男性群体的身高会高于女性群体",
+       x="身高(cm)",
+       y="体重(kg)",
+       color="性别",
+       caption="数据源: National Health and Nutrition Examination Survey")
+```
+
+
+<br>
+
+## 广而告之
+
+-   [长期征稿](https://hidadeng.github.io/blog/call_for_paper/)
+-   [长期招募小伙伴](https://hidadeng.github.io/blog/we_need_you/)
+-   [付费视频课 \| Python实证指标构建与文本分析](https://hidadeng.github.io/blog/management_python_course/)
