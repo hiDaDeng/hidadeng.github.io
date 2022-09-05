@@ -260,7 +260,12 @@ class Config {
 				url: 'https://scholar.google.com/',
 				category: 'Academic Search Engine'
 			}, 
-
+			{
+				site: 'Connected Papers',
+				icon: 'connectedpapers',
+				url: 'https://www.connectedpapers.com/',
+				category: 'Academic Search Engine'
+			}, 
 
 			{
 				site: '期刊分类',
