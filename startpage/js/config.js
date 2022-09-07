@@ -193,6 +193,14 @@ class Config {
 				url: 'https://www.semanticscholar.org/',
 				category: 'Academic Search Engine'
 			},
+			{
+				site: 'Zenodo',
+				icon: 'zenodo',
+				url: 'https://zenodo.org/',
+				category: 'Academic Search Engine'
+			},
+
+			
 			
 			{
 				site: '谷歌翻译',
@@ -205,6 +213,19 @@ class Config {
 				site: 'ScienceNews',
 				icon: 'sciencenews',
 				url: 'https://www.sciencenews.org/',
+				category: 'cNews'
+			},
+			{
+				site: '计算传播学小组',
+				icon: 'communication',
+				url: 'https://www.douban.com/group/webmining/discussion?start=0&type=new',
+				category: 'cNews'
+			},
+
+			{
+				site: '集智学园',
+				icon: 'swarma',
+				url: 'https://campus.swarma.org/',
 				category: 'cNews'
 			},
 
