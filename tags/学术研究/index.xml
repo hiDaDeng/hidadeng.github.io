@@ -437,5 +437,152 @@ print(&#39;左侧-网络中的y节点的cdinex得分: {}, 节点y 为颠覆性�
 ]]></content:encoded>
     </item>
     
+    <item>
+      <title>文本相似 | Lazy Prices公司年报内容变动预示重大风险</title>
+      <link>https://hidadeng.github.io/blog/2019-12-08-lazy-prices/</link>
+      <pubDate>Tue, 31 Dec 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2019-12-08-lazy-prices/</guid>
+      <description>description用于SEO优化</description>
+      <content:encoded><![CDATA[<h2 id="文献">文献</h2>
+<p>Cohen, L., Malloy, C. and Nguyen, Q., 2020. Lazy prices. <em>The Journal of Finance</em>, <em>75</em>(3), pp.1371-1415.</p>
+<br>
+<h2 id="摘要">摘要</h2>
+<p>使用1995年-2014年所有美国公司季度和年度申报的完整历史记录，研究发现当公司对<strong>报告进行积极更改</strong>时，这种行为<strong>蕴含着</strong>公司未来运营的<strong>重要信号</strong>。</p>
+<p><strong>财务报告的语言和结构的变化也对公司的未来收益产生重大影响</strong>：做空&quot;变化&quot;的公司（持有的公司，如果其报告发生变化的，做空该公司股票），买入“不变化”的公司，使用这样的投资组合策略，在2006年的每月alpha值高达1.88%的收益（每年超过22％）。报告中涉及执行官（CEO和CFO）团队的话语风格的变化，或者有关诉讼(风险部分)的话语的变化，都对投资的未来收益有重要作用。</p>
+<p>研究发现，对10-K的变化可以预测未来的收益、获利能力、未来的新闻公告，甚至未来的公司破产。同时，不做任何变化的公司将获得显著的异常收益。与资产价格典型的反应不足研究不同，我们发现没有任何与这些变化相关的公告效应–仅在后来通过新闻，事件或收益披露信息时才产生回报–暗示投资者并未注意到整个公众领域的这些变化。</p>
+<br>
+<h2 id="研究背景">研究背景</h2>
+<p>之前的研究认为，尽管投资者一次对包含重大变化的财务报表的发布作出了迅时反应，但随着时间的流逝，这种公告作用是会减弱的(Brown and Tucker, 2011 and Feldman et al., 2010)。这表示10-K报告会随着时间推移，信息价值大打折扣。尽管我们复现了这个事实，即与常规文件的变更没有重大的公告效应，但我们认为，前人的研究忽略了更重要部分(如MD&amp;A)对对资产价格的影响。</p>
+<p>确切的说，<strong>并不是报告的披露效应的信息价值变低了，而是投资者越来越难以发现报告中微妙的信息变化， 比如因为报告变得越来越冗杂。投资者只有看到某些新闻后，才会逐渐意识到之前公司报告内容变化的的真正价值</strong>。</p>
+<p>例如Baxter公司</p>
+<ul>
+<li>纽约时报在 <strong>2010年4月23日</strong> 发了一条FDA将有对输液泵(infusion pumps)更严格对审批管理规定的新闻，<strong>新闻中提到了Baxter公司</strong>。新闻公布当天，<strong>Baxter股价大跌</strong>。</li>
+<li><strong>10天</strong>后的（2010年5月4日），Baxter宣布<strong>召回问题的输液泵产品</strong>，股价当天再次大跌。</li>
+</ul>
+<p><img loading="lazy" src="img/lazy-prices-1.png" alt=""  />
+</p>
+<p>两次负面新闻导致Baxter股价大跌超过20%，最有意思的是Baxter公司一个多月前（<strong>2010年2月23日</strong>）10-k报告中 <strong>提到</strong> 了与这两条新闻类似的 <strong>线索</strong>。</p>
+<p><img loading="lazy" src="img/clues_from_report.png" alt=""  />
+</p>
+<p>截图中写着 <strong>Baxter的产品COLLEGUE未来可能面脸额外的处罚，而且相关销售面临着FDA、OIG、DOI和FTC越来越严格的审批，面临的执法强度也越来越大</strong>。</p>
+<p>因纽约时报发布的消息，股价大跌。但是大跌之前Baxter的10-k报告中似乎提示未来公司可能面临的风险，但是投资者怎么没有注意到这个重要线索呢？</p>
+<br>
+<h2 id="数据获取与分析方法">数据获取与分析方法</h2>
+<p>这篇文章用到了很多 文本数据挖掘 方法，如</p>
+<ul>
+<li>数据采集(报告下载和信息监测)</li>
+<li>正则表达式（数据分割与抽取）</li>
+<li>文本相似度(计算报告变化程度)</li>
+</ul>
+<p>我大致说下这几部分技术在这篇论文中的应用。</p>
+<h3 id="1-数据采集">1. 数据采集</h3>
+<p>这篇论文研究者认为，只有投资者意识到本期报告和上一期报告做对比，才能发现报告变化，进而对股价有影响。所以当有新公告公布后，投资者是否下载本期报告的同时顺带着下载上一期报告，下载量又是多少。</p>
+<p>下载量可以从Freedom of Information Act下载，</p>
+<p><img loading="lazy" src="img/download_data.png" alt=""  />
+</p>
+<p>可以拿到的信息包括:</p>
+<ul>
+<li>报告文件</li>
+<li>报告下载时间</li>
+<li>报告下载的IP地址(可以通过这个ip来当作投资者的id)</li>
+</ul>
+<br>
+<h3 id="2-正则表达式">2. 正则表达式</h3>
+<p>一个公司报告文件会有不同部分，我们需要将不同的部分分别识别出来。这里用到正则表达式，可以进行快速的数据清洗和数据抽取。</p>
+<p><img loading="lazy" src="img/regular_expression.png" alt=""  />
+</p>
+<br>
+<h3 id="3-文本相似度">3. 文本相似度</h3>
+<p>文本转为向量后就可以进行相似度计算,</p>
+<p><img loading="lazy" src="img/similar-1.png" alt=""  />
+
+<img loading="lazy" src="img/similar-2.png" alt=""  />
+
+<img loading="lazy" src="img/similar-3.png" alt=""  />
+</p>
+<p>这里使用我开发的cntext包，可以实现cosine和jaccard相似度的计算。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">A</span> <span class="o">=</span> <span class="s1">&#39;We expect demand to increase.&#39;</span>
+<span class="n">B</span> <span class="o">=</span> <span class="s1">&#39;We expect worldwide demand to increase.&#39;</span>
+<span class="n">C</span> <span class="o">=</span> <span class="s1">&#39;We expect weakness in sales&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">cosine_sim</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">C</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">jaccard_sim</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0.40
+0.83
+</code></pre></div><p>如果对Baxter公司多个年度对报告进行相似度计算，绘制成图就会发现2010年与前后变化很大。相似度越低，说明公司报告前后变化很大，应该引起投资者注意，如果能注意到就会避免纽约时报导致到股价暴跌。如下图</p>
+<p><img loading="lazy" src="img/lazy-prices-2.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="案例实现">案例实现</h2>
+<p>由于没有完全一样的数据，这里使用政府工作报告数据类比，使用cosine相似度画出趋势线条。</p>
+<p>使用相似性识别变化的时间点</p>
+<h3 id="准备数据">准备数据</h3>
+<p>政府工作报告 <a href="http://www.gov.cn/guowuyuan/zfgzbg.htm">http://www.gov.cn/guowuyuan/zfgzbg.htm</a></p>
+<p>prc_reports.xlsx 链接:https://pan.baidu.com/s/1sVU3mkEcP7Z3_hbG5AVNUA 密码:zjrq</p>
+<p>将下载好后的 prc_reports.xlsx 文件放置于 .ipynb文件 所在的文件夹内。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;prc_reports.xlsx&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df.png" alt=""  />
+</p>
+<h3 id="计算相似度">计算相似度</h3>
+<p>运行时间大概30s， 运算结果是列表数据 cosines</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">cosines</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1">#row  Series</span>
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+    <span class="n">text1</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;report&#39;</span><span class="p">]</span>
+    <span class="n">text2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;report2&#39;</span><span class="p">]</span>
+    <span class="n">simi</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">cosine_sim</span><span class="p">(</span><span class="n">text1</span><span class="p">,</span> <span class="n">text2</span><span class="p">)</span>
+    <span class="n">cosines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">simi</span><span class="p">)</span>
+    
+<span class="n">cosines</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[0.44&#39;, &#39;0.39&#39;, &#39;0.35&#39;, ... &#39;0.62&#39;, &#39;0.61&#39;, &#39;0.60&#39;]
+</code></pre></div><h3 id="绘制柱状图">绘制柱状图</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pyecharts.charts</span> <span class="kn">import</span> <span class="n">Bar</span>
+<span class="kn">from</span> <span class="nn">pyecharts</span> <span class="kn">import</span> <span class="n">options</span> <span class="k">as</span> <span class="n">opts</span>
+<span class="kn">from</span> <span class="nn">pyecharts.globals</span> <span class="kn">import</span> <span class="n">CurrentConfig</span><span class="p">,</span> <span class="n">NotebookType</span>
+<span class="n">CurrentConfig</span><span class="o">.</span><span class="n">NOTEBOOK_TYPE</span> <span class="o">=</span> <span class="n">NotebookType</span><span class="o">.</span><span class="n">JUPYTER_NOTEBOOK</span>
+
+<span class="n">bar</span> <span class="o">=</span> <span class="n">Bar</span><span class="p">()</span>
+
+<span class="n">bar</span><span class="o">.</span><span class="n">add_xaxis</span><span class="p">(</span><span class="n">xaxis_data</span><span class="o">=</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">])</span>
+<span class="n">bar</span><span class="o">.</span><span class="n">add_yaxis</span><span class="p">(</span><span class="s2">&#34;相似度&#34;</span><span class="p">,</span> 
+               <span class="n">cosines</span><span class="p">,</span> 
+               <span class="n">label_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">LabelOpts</span><span class="p">(</span><span class="n">is_show</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+<span class="n">bar</span><span class="o">.</span><span class="n">set_global_opts</span><span class="p">(</span><span class="n">title_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">TitleOpts</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&#34;政府工作报告相似度可视化&#34;</span><span class="p">))</span>
+<span class="n">bar</span><span class="o">.</span><span class="n">load_javascript</span><span class="p">()</span>
+
+<span class="n">bar</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s1">&#39;政府工作报告相似度可视化1.html&#39;</span><span class="p">)</span>
+<span class="n">bar</span><span class="o">.</span><span class="n">render_notebook</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/vis_res.png" alt=""  />
+</p>
+<h3 id="解读">解读</h3>
+<p>从图中可以看到除1959年异常外，其他方面能挖掘出很多信息。从相似度整体趋势，</p>
+<p>1959-1992 第一阶段，
+1992-至今 第二阶段</p>
+<p>1992年附近，第一次确立社会主义市场经济制度。之后的岁月里一直围绕着经济建设高速发展。</p>
+<p>同时也可以看出在第一阶段前期相似度异常的低，可以理解为新中国初建，百废待兴，对于建设者而言，组着和管理这个国家的政府也在学习如何建设新中国。而90年代后，相似度越来越高，体现了政府越来越熟悉如何治理国家，如何搞经济建设。</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
   </channel>
 </rss>
