@@ -281,12 +281,7 @@ class Config {
 				url: 'https://scholar.google.com/',
 				category: 'Academic Search Engine'
 			}, 
-			{
-				site: 'Connected Papers',
-				icon: 'connectedpapers',
-				url: 'https://www.connectedpapers.com/',
-				category: 'Academic Search Engine'
-			}, 
+
 
 			{
 				site: '期刊分类',
@@ -354,6 +349,13 @@ class Config {
 				url: 'https://www.webofscience.com/wos/alldb/basic-search',
 				category: 'Academic Tools'
 			},
+			{
+				site: '万词王',
+				icon: 'wantwords',
+				url: 'https://wantwords.net/',
+				category: 'Academic Tools'
+			},
+			
 			{
 				site: '期刊等级',
 				icon: 'fms',
