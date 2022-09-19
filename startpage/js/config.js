@@ -84,6 +84,12 @@ class Config {
 				name: 'Yandex',
 				prefix: 'https://yandex.com/search/?text=',
 				icon: 'yandex'
+			},
+
+			'Scholar': {
+				name: 'Google Scholar',
+				prefix: 'https://scholar.google.com/scholar?q=',
+				icon: 'google-scholar'
 			}
 			
 		};
@@ -544,7 +550,7 @@ class Config {
 			{
 				site: '自然基金查询',
 				icon: 'nsfc-net',
-				url: 'https://kd.nsfc.gov.cn/',
+				url: 'hhttps://kd.nsfc.gov.cn/finalProjectInit',
 				category: 'BInformation'
 			},
 			{
