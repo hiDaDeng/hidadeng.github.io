@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>ggpubr on 大邓和他的PYTHON</title>
+    <link>/tags/ggpubr/</link>
+    <description>Recent content in ggpubr on 大邓和他的PYTHON</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Tue, 20 Sep 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/ggpubr/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>R语言 | ggpubr包让数据可视化更加优雅</title>
+      <link>https://hidadeng.github.io/blog/2022-09-20-r-ggplot2-ggpubr/</link>
+      <pubDate>Tue, 20 Sep 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-09-20-r-ggplot2-ggpubr/</guid>
+      <description>ggplot2能绘制很多美观图表，但是语法太难。ggpubr包让数据可视化更加优雅</description>
+      <content:encoded><![CDATA[
+
+
+<p><a href="https://ggplot2.tidyverse.org/">Hadley Wickham的ggplot2</a> 是一个出色且灵活的包，用于在 R 中进行优雅的数据可视化。但是，默认生成的图需要一些格式才能发送它们以供发布。 此外，要自定义 ggplot，语法是负责的，这提高了没有高级 R 编程技能的研究人员的难度。</p>
+<p><strong><a href="https://rpkgs.datanovia.com/ggpubr">ggpubr包</a></strong> 提供了一些易于使用的功能，可以使用更简单的语法代码绘制出可供发表出版的图表。</p>
+<p><br></p>
+<div id="安装" class="section level2">
+<h2>安装</h2>
+<pre class="r"><code>install.packages(&quot;ggpubr&quot;)</code></pre>
+<p><br>
+## 折线图</p>
+<pre class="r"><code>library(ggpubr)</code></pre>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre class="r"><code>df &lt;- data.frame(supp=rep(c(&quot;VC&quot;, &quot;OJ&quot;), each=3),
+   dose=rep(c(&quot;D0.5&quot;, &quot;D1&quot;, &quot;D2&quot;),2),
+   len=c(6.8, 15, 33, 4.2, 10, 29.5))
+#print(df)
+#&gt;   supp dose  len
+#&gt; 1   VC D0.5  6.8
+#&gt; 2   VC   D1 15.0
+#&gt; 3   VC   D2 33.0
+#&gt; 4   OJ D0.5  4.2
+#&gt; 5   OJ   D1 10.0
+#&gt; 6   OJ   D2 29.5
+
+# Plot &quot;len&quot; by &quot;dose&quot; and
+# Change line types and point shapes by a second groups: &quot;supp&quot;
+ggline(df, x=&quot;dose&quot;, y=&quot;len&quot;,
+  linetype = &quot;supp&quot;, shape = &quot;supp&quot;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code># Change colors
+# +++++++++++++++++++++
+
+# Change color by group: &quot;supp&quot;
+# Use custom color palette
+ggline(df, x=&quot;dose&quot;, y=&quot;len&quot;,
+   linetype = &quot;supp&quot;, shape = &quot;supp&quot;,
+   color = &quot;supp&quot;, palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;))</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="散点图" class="section level2">
+<h2>散点图</h2>
+<pre class="r"><code># Load data
+data(&quot;mtcars&quot;)
+df &lt;- mtcars
+df$cyl &lt;- as.factor(df$cyl)
+#head(df[, c(&quot;wt&quot;, &quot;mpg&quot;, &quot;cyl&quot;)], 3)
+#&gt;                  wt  mpg cyl
+#&gt; Mazda RX4     2.620 21.0   6
+#&gt; Mazda RX4 Wag 2.875 21.0   6
+#&gt; Datsun 710    2.320 22.8   4
+
+# Textual annotation
+# +++++++++++++++++
+df$name &lt;- rownames(df)
+ggscatter(df, x = &quot;wt&quot;, y = &quot;mpg&quot;,
+   color = &quot;cyl&quot;, palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;),
+   label = &quot;name&quot;, repel = TRUE)</code></pre>
+<pre><code>## Warning: ggrepel: 3 unlabeled data points (too many overlaps). Consider
+## increasing max.overlaps</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="饼形图" class="section level2">
+<h2>饼形图</h2>
+<pre class="r"><code>df &lt;- data.frame(
+ group = c(&quot;Male&quot;, &quot;Female&quot;, &quot;Child&quot;),
+  value = c(25, 25, 50))
+
+#head(df)
+#&gt;    group value
+#&gt; 1   Male    25
+#&gt; 2 Female    25
+#&gt; 3  Child    50
+
+
+# Basic pie charts
+# ++++++++++++++++++++++++++++++++
+
+ggpie(df, &quot;value&quot;, label = &quot;group&quot;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre class="r"><code>ggpie(df, &quot;value&quot;, label = &quot;group&quot;, fill=&quot;group&quot;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code>ggpie(df, &quot;value&quot;, label = &quot;group&quot;, fill=&quot;group&quot;, color=&#39;white&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<pre class="r"><code>ggpie(df, &quot;value&quot;, label = &quot;group&quot;, fill=&quot;group&quot;, 
+      palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;),
+      color=&#39;white&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<pre class="r"><code>labs &lt;- paste0(df$group, &quot; (&quot;, df$value, &quot;%)&quot;)
+#&gt; &quot;Male (25%)&quot;   &quot;Female (25%)&quot; &quot;Child (50%)&quot; 
+
+ggpie(df, &quot;value&quot;, label = labs, fill=&quot;group&quot;, 
+      palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;),
+      color=&#39;white&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<pre class="r"><code>labs &lt;- paste0(df$group, &quot; (&quot;, df$value, &quot;%)&quot;)
+#&gt; &quot;Male (25%)&quot;   &quot;Female (25%)&quot; &quot;Child (50%)&quot; 
+
+ggpie(df, &quot;value&quot;, label = labs, fill=&quot;group&quot;, 
+      lab.pos = &quot;in&quot;, lab.font = &quot;white&quot;,
+      palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;),
+      color=&#39;white&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="甜甜圈图" class="section level2">
+<h2>甜甜圈图</h2>
+<pre class="r"><code>#&gt; head(df)
+#&gt;    group value
+#&gt; 1   Male    25
+#&gt; 2 Female    25
+#&gt; 3  Child    50
+#&gt; 
+# Change the position and font color of labels
+ggdonutchart(df, &quot;value&quot;, label = labs,
+   lab.pos = &quot;in&quot;, lab.font = &quot;white&quot;,
+   fill = &quot;group&quot;, color = &quot;white&quot;,
+   palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;))</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="点图" class="section level2">
+<h2>点图</h2>
+<pre class="r"><code># Load data
+data(&quot;mtcars&quot;)
+dfm &lt;- mtcars
+# Convert the cyl variable to a factor
+dfm$cyl &lt;- as.factor(dfm$cyl)
+# Add the name colums
+dfm$name &lt;- rownames(dfm)
+# Inspect the data
+#head(dfm[, c(&quot;name&quot;, &quot;wt&quot;, &quot;mpg&quot;, &quot;cyl&quot;)])
+#&gt;                                name    wt  mpg cyl
+#&gt; Mazda RX4                 Mazda RX4 2.620 21.0   6
+#&gt; Mazda RX4 Wag         Mazda RX4 Wag 2.875 21.0   6
+#&gt; Datsun 710               Datsun 710 2.320 22.8   4
+#&gt; Hornet 4 Drive       Hornet 4 Drive 3.215 21.4   6
+#&gt; Hornet Sportabout Hornet Sportabout 3.440 18.7   8
+#&gt; Valiant                     Valiant 3.460 18.1   6
+
+ggdotchart(dfm, x = &quot;name&quot;, y = &quot;mpg&quot;,
+           color = &quot;cyl&quot;,                                # Color by groups
+           palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;), # Custom color palette
+           sorting = &quot;ascending&quot;,                        # Sort value in descending order
+           add = &quot;segments&quot;,                             # Add segments from y = 0 to dots
+           ggtheme = theme_pubr()                        # ggplot2 theme
+           )</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="密度图" class="section level2">
+<h2>密度图</h2>
+<pre class="r"><code>set.seed(1234)
+wdata = data.frame(
+   sex = factor(rep(c(&quot;F&quot;, &quot;M&quot;), each=200)),
+   weight = c(rnorm(200, 55), rnorm(200, 58)))
+#head(wdata, 4)
+#&gt;   sex   weight
+#&gt; 1   F 53.79293
+#&gt; 2   F 55.27743
+#&gt; 3   F 56.08444
+#&gt; 4   F 52.65430
+
+# Density plot with mean lines and marginal rug
+# :::::::::::::::::::::::::::::::::::::::::::::::::::
+# Change outline and fill colors by groups (&quot;sex&quot;)
+# Use custom palette
+ggdensity(wdata, x = &quot;weight&quot;, color=&#39;sex&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<pre class="r"><code>ggdensity(wdata, x = &quot;weight&quot;, color=&#39;sex&#39;, add=&#39;mean&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<pre class="r"><code>ggdensity(wdata, x = &quot;weight&quot;, color=&#39;sex&#39;, add=&#39;mean&#39;, rug=TRUE)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre class="r"><code>ggdensity(wdata, x = &quot;weight&quot;, color=&#39;sex&#39;, add=&#39;mean&#39;, rug=TRUE, fill=&#39;sex&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<pre class="r"><code>ggdensity(wdata, x = &quot;weight&quot;, color=&#39;sex&#39;, add=&#39;mean&#39;, rug=TRUE, fill=&#39;sex&#39;, 
+          palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;))</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="直方图" class="section level2">
+<h2>直方图</h2>
+<pre class="r"><code># Histogram plot with mean lines and marginal rug
+# :::::::::::::::::::::::::::::::::::::::::::::::::::
+# Change outline and fill colors by groups (&quot;sex&quot;)
+# Use custom color palette
+gghistogram(wdata, x = &quot;weight&quot;,
+   add = &quot;mean&quot;, rug = TRUE,
+   color = &quot;sex&quot;, fill = &quot;sex&quot;,
+   palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;))</code></pre>
+<pre><code>## Warning: Using `bins = 30` by default. Pick better value with the argument
+## `bins`.</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="小提琴图" class="section level2">
+<h2>小提琴图</h2>
+<pre class="r"><code># Load data
+data(&quot;ToothGrowth&quot;)
+df &lt;- ToothGrowth
+head(df, 4)</code></pre>
+<pre><code>##    len supp dose
+## 1  4.2   VC  0.5
+## 2 11.5   VC  0.5
+## 3  7.3   VC  0.5
+## 4  5.8   VC  0.5</code></pre>
+<pre class="r"><code>#&gt;    len supp dose
+#&gt; 1  4.2   VC  0.5
+#&gt; 2 11.5   VC  0.5
+#&gt; 3  7.3   VC  0.5
+#&gt; 4  5.8   VC  0.5
+
+# Box plots with jittered points
+# :::::::::::::::::::::::::::::::::::::::::::::::::::
+# Change outline colors by groups: dose
+# Use custom color palette
+# Add jitter points and change the shape by groups
+ p &lt;- ggboxplot(df, x = &quot;dose&quot;, y = &quot;len&quot;, add = &quot;jitter&quot;,
+                color = &quot;dose&quot;, shape = &quot;dose&quot;, 
+                palette =c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;))
+ p</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="条形图" class="section level2">
+<h2>条形图</h2>
+<pre class="r"><code># Load data
+data(&quot;mtcars&quot;)
+dfm &lt;- mtcars
+# Convert the cyl variable to a factor
+dfm$cyl &lt;- as.factor(dfm$cyl)
+# Add the name colums
+dfm$name &lt;- rownames(dfm)
+# Inspect the data
+#head(dfm[, c(&quot;name&quot;, &quot;wt&quot;, &quot;mpg&quot;, &quot;cyl&quot;)])
+#&gt;                                name    wt  mpg cyl
+#&gt; Mazda RX4                 Mazda RX4 2.620 21.0   6
+#&gt; Mazda RX4 Wag         Mazda RX4 Wag 2.875 21.0   6
+#&gt; Datsun 710               Datsun 710 2.320 22.8   4
+#&gt; Hornet 4 Drive       Hornet 4 Drive 3.215 21.4   6
+#&gt; Hornet Sportabout Hornet Sportabout 3.440 18.7   8
+#&gt; Valiant                     Valiant 3.460 18.1   6
+
+ggbarplot(dfm, x = &quot;name&quot;, y = &quot;mpg&quot;,
+          fill = &quot;cyl&quot;,               # change fill color by cyl
+          color = &quot;white&quot;,            # Set bar border colors to white
+          palette = &quot;jco&quot;,            # jco journal color palett. see ?ggpar
+          sort.val = &quot;desc&quot;,          # Sort the value in dscending order
+          sort.by.groups = TRUE,      # Sort inside each group
+          x.text.angle = 90           # Rotate vertically x axis texts
+          )</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<pre class="r"><code>ggbarplot(dfm, x = &quot;name&quot;, y = &quot;mpg&quot;,
+          fill = &quot;cyl&quot;,               # change fill color by cyl
+          color = &quot;white&quot;,            # Set bar border colors to white
+          palette = &quot;jco&quot;,            # jco journal color palett. see ?ggpar
+          sort.val = &quot;desc&quot;,          # Sort the value in dscending order
+          sort.by.groups = TRUE,      # Don&#39;t sort inside each group
+          x.text.angle = 90,          # Rotate vertically x axis texts
+          legend.title = &quot;CYL&quot;        # Set legend title
+          )</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-21-1.png" width="672" />
+<br></p>
+</div>
+<div id="表格" class="section level2">
+<h2>表格</h2>
+<pre class="r"><code># Medium blue (mBlue) theme
+ggtexttable(head(iris), rows = NULL, theme = ttheme(&quot;mBlue&quot;))</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<pre class="r"><code>main.title &lt;- &quot;Edgar Anderson&#39;s Iris Data&quot;
+subtitle &lt;- paste0(
+&quot;This famous (Fisher&#39;s or Anderson&#39;s) iris data set gives the measurements&quot;,
+&quot; in centimeters of the variables sepal length and width and petal length and width,&quot;,
+ &quot; respectively, for 50 flowers from each of 3 species of iris.&quot;,
+ &quot; The species are Iris setosa, versicolor, and virginica.&quot;
+) %&gt;%
+ strwrap(width = 80) %&gt;%
+ paste(collapse = &quot;\n&quot;)
+
+tab &lt;- ggtexttable(head(iris), theme = ttheme(&quot;light&quot;))
+tab %&gt;%
+ tab_add_title(text = subtitle, face = &quot;plain&quot;, size = 10) %&gt;%
+ tab_add_title(text = main.title, face = &quot;bold&quot;, padding = unit(0.1, &quot;line&quot;)) %&gt;%
+ tab_add_footnote(text = &quot;*Table created using ggpubr&quot;, size = 10, face = &quot;italic&quot;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="广而告之" class="section level2">
+<h2>广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+</div>
+]]></content:encoded>
+    </item>
+    
+  </channel>
+</rss>
