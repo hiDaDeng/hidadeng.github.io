@@ -6,7 +6,7 @@
     <description>Recent content in Blogs on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Tue, 20 Sep 2022 00:00:00 +0000</lastBuildDate><atom:link href="/blog/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 07 Oct 2022 00:00:00 +0000</lastBuildDate><atom:link href="/blog/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>置顶推荐 | 社科(经管)文本分析快速指南</title>
       <link>https://hidadeng.github.io/blog/the_text_analysis_list_about_ms/</link>
@@ -88,6 +88,8 @@
 <li><a href="https://hidadeng.github.io/blog/2022-09-20-r-ggsci/">R语言 |  使用ggsci包绘制sci风格图表</a></li>
 <li><a href="https://hidadeng.github.io/blog/2022-09-20-r-ggplot2-ggpubr/">R语言 | ggpubr包让数据可视化更加优雅</a></li>
 <li><a href="https://hidadeng.github.io/blog/2022-09-21-r-easystats/">R语言 | 让统计更easy的easystats集合包</a></li>
+<li><a href="https://hidadeng.github.io/blog/2022-10-07-r-shiny-reactive/">R语言 | 使用shiny的reactive表达式写应用程序</a></li>
+<li><a href="https://hidadeng.github.io/blog/2022-10-07-r-stargazer/">R语言 | 使用stargazer包输出格式化回归结果</a></li>
 <li><a href="https://hidadeng.github.io/blog/2022-09-01-how_to_use_tinytex/">Latex | 为Rmarkdown配置tinytex环境</a></li>
 </ul>
 <br>
@@ -674,6 +676,277 @@
     </item>
     
     <item>
+      <title>R语言 | 使用shiny的reactive表达式写应用程序</title>
+      <link>https://hidadeng.github.io/blog/2022-10-07-r-shiny-reactive/</link>
+      <pubDate>Fri, 07 Oct 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-10-07-r-shiny-reactive/</guid>
+      <description>description用于SEO优化</description>
+      <content:encoded><![CDATA[<blockquote>
+<p>作者: 猫哥</p>
+<p>波恩大学经济学专业， 计量经济学方向</p>
+</blockquote>
+<p>在之前的推文中，我们介绍了如何在R语言中，用Shiny包编写应用程序App。在这篇推文中，我们将要介绍Shiny包中一类独特且重要的表达式：reactive expressions。</p>
+<p>在设计App时，我们希望App能够有较快的响应速度。但是，如果App的server函数中包含很多耗时较长的运算，那么应该怎么办呢？此时，就需要用到Reactive表达式。它能够控制程序中哪些部分需要更新运算，而哪些部分不需要更新，从而节省运算时间。</p>
+<br>
+<h2 id="案例stockvis">案例：stockVis</h2>
+<p>此处，我们将通过一个案例来讲解reactive表达式。下图是stockVis的App界面，这个App能够帮助用户描绘相应股票的价格变动。感兴趣的读者可以根据<a href="https://shiny.rstudio.com/tutorial/written-tutorial/lesson6/">此处</a>的提示下载该App。</p>
+<p><img loading="lazy" src="img/%e5%9b%be1.png" alt=""  />
+</p>
+<p>根据上图可以看出，用户需要首先选择股票（Symbol），然后选择观察时期(Data range)，再选择绘制原股票价格还是对数化后的股票价格，最后再选择是否股价中的通胀进行矫正。</p>
+<p>在对这些选项进行了选择之后，stockVis首先用<code>getSymbols</code>函数从诸如<a href="https://consent.yahoo.com/v2/collectConsent?sessionId=3_cc-session_b4231433-d1e7-4b31-8341-a7d413ea7922">Yahoo finance</a>和<a href="https://fred.stlouisfed.org">Federal Reserve Bank of St. Louis</a>这样的网站中下载金融数据到R，然后再用<code>chartSeries</code>将股价描绘出来。</p>
+<p>server函数中，用来生成图形的程序如下。在分析了该程序之后，我们会发现一个问题。比如，当我们重新选中“Plot y axis on the log scale”，那么<code>input$log</code>的值就会变化，那么就会导致整个<code>renderPlot</code>重新进行运算。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="n">output</span><span class="o">$</span><span class="n">plot</span> <span class="o">&lt;-</span> <span class="nf">renderPlot</span><span class="p">({</span>
+  <span class="n">data</span> <span class="o">&lt;-</span> <span class="nf">getSymbols</span><span class="p">(</span><span class="n">input</span><span class="o">$</span><span class="n">symb</span><span class="p">,</span> <span class="n">src</span> <span class="o">=</span> <span class="s">&#34;yahoo&#34;</span><span class="p">,</span>
+                     <span class="n">from</span> <span class="o">=</span> <span class="n">input</span><span class="o">$</span><span class="n">dates[1]</span><span class="p">,</span>
+                     <span class="n">to</span> <span class="o">=</span> <span class="n">input</span><span class="o">$</span><span class="n">dates[2]</span><span class="p">,</span>
+                     <span class="n">auto.assign</span> <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
+
+  <span class="nf">chartSeries</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">theme</span> <span class="o">=</span> <span class="nf">chartTheme</span><span class="p">(</span><span class="s">&#34;white&#34;</span><span class="p">),</span>
+              <span class="n">type</span> <span class="o">=</span> <span class="s">&#34;line&#34;</span><span class="p">,</span> <span class="n">log.scale</span> <span class="o">=</span> <span class="n">input</span><span class="o">$</span><span class="n">log</span><span class="p">,</span> <span class="n">TA</span> <span class="o">=</span> <span class="kc">NULL</span><span class="p">)</span>
+<span class="p">})</span>
+</code></pre></div><p>而<code>renderPlot</code>每次重新运算时，首先会重新用<code>getSymbols</code>抓去数据，然后用<code>chartSeries</code>重新画图。然而，用<code>getSymbols</code>从Yahoo等网站抓取数据所花费的时间并不是可以忽略不计的。另外，如果抓取的过于频繁，我们的IP地址会被屏蔽，这是网站将我们错判为机器人，也是网站应对爬虫的常用做法。最关键的是，当我们只是重新选择“Plot y axis on the log scale”，我们并不希望重新抓取数据，而是希望在原有数据的基础上对数化即可。</p>
+<br>
+<h2 id="reactive表达式">Reactive表达式</h2>
+<p>在遇到上述问题时，我们就需要用到reactive表达式。reactive表达式以ui函数里各种input变量作为输入。如下，reactive表达式的输入则是<code>input$symb</code>和<code>input$dates</code>。当<code>input$symb</code>和<code>input$dates</code>的值变化时，此处reactive表达式的输出结果才会发生变化，而不受<code>input$log</code>的影响。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="n">dataInput</span> <span class="o">&lt;-</span> <span class="nf">reactive</span><span class="p">({</span>
+  <span class="nf">getSymbols</span><span class="p">(</span><span class="n">input</span><span class="o">$</span><span class="n">symb</span><span class="p">,</span> <span class="n">src</span> <span class="o">=</span> <span class="s">&#34;yahoo&#34;</span><span class="p">,</span>
+    <span class="n">from</span> <span class="o">=</span> <span class="n">input</span><span class="o">$</span><span class="n">dates[1]</span><span class="p">,</span>
+    <span class="n">to</span> <span class="o">=</span> <span class="n">input</span><span class="o">$</span><span class="n">dates[2]</span><span class="p">,</span>
+    <span class="n">auto.assign</span> <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
+<span class="p">})</span>
+</code></pre></div><p>所以，我们现在用上面的reactive表达式更新原先的程序，得到如下程序。<code>dataInput()</code>命令则是运行如上的reactive表达式。此时，如果我们只重新选择&quot;Plot y axis on the log scale&quot;，那么reactive表达式里的数据抓取过程并不会更新，而只有<code>renderPlot</code>里的<code>log.scale</code>参数会更新，这将节省程序运行时间，而且减少数据抓取次数，防止IP地址被封。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="n">output</span><span class="o">$</span><span class="n">plot</span> <span class="o">&lt;-</span> <span class="nf">renderPlot</span><span class="p">({</span>    
+  <span class="nf">chartSeries</span><span class="p">(</span><span class="nf">dataInput</span><span class="p">(),</span> <span class="n">theme</span> <span class="o">=</span> <span class="nf">chartTheme</span><span class="p">(</span><span class="s">&#34;white&#34;</span><span class="p">),</span>
+    <span class="n">type</span> <span class="o">=</span> <span class="s">&#34;line&#34;</span><span class="p">,</span> <span class="n">log.scale</span> <span class="o">=</span> <span class="n">input</span><span class="o">$</span><span class="n">log</span><span class="p">,</span> <span class="n">TA</span> <span class="o">=</span> <span class="kc">NULL</span><span class="p">)</span>
+<span class="p">})</span>
+</code></pre></div><p>reactive表达式不止<code>reactive()</code>，还包括<code>observe()</code>, <code>observeEvent()</code>和<code>eventReactive()</code>等等，详见<a href="https://shiny.rstudio.com/reference/shiny/1.6.0/">此处</a>。另外，reactive表达式只能包装在特定的、允许reactive表达式的函数中，如此处的<code>renderPlot</code>，而不能被包装在<code>plot</code>函数中。<code>render*</code>类函数都允许reactive表达式。</p>
+<br>
+<h2 id="总结">总结</h2>
+<p>Reactive表达式的功能可被简单地总结为以下步骤：</p>
+<ul>
+<li>当你第一次运行程序时，reactive表达式会缓存运行结果。</li>
+<li>当你下一次运行程序时，reactive表达式会自动检测输入值是否是最新的。在上例中，也就是说输入的<code>input$symb</code>和<code>input$dates</code>是否有变化。</li>
+<li>如果有变化，则reactive会根据新输入值更新结果。</li>
+<li>如果没变化，则reactive会直接使用缓存中的值。</li>
+</ul>
+<br>
+<h2 id="参考文献">参考文献</h2>
+<p><a href="https://shiny.rstudio.com/tutorial/written-tutorial/lesson6/">https://shiny.rstudio.com/tutorial/written-tutorial/lesson6/</a></p>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>R语言 | 使用stargazer包输出格式化回归结果</title>
+      <link>https://hidadeng.github.io/blog/2022-10-07-r-stargazer/</link>
+      <pubDate>Fri, 07 Oct 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-10-07-r-stargazer/</guid>
+      <description>使用stargazer包输出格式化回归结果</description>
+      <content:encoded><![CDATA[<blockquote>
+<p>作者: 猫哥</p>
+<p>波恩大学经济学专业， 计量经济学方向</p>
+</blockquote>
+<p>在实证分析的过程中，各种回归模型十分常用，特别是参数模型。而且我们常常需要运行多种参数回归模型，并对参数估计值、显著性等统计性质进行比较。此时，如果用copy paste或者手动输入，那么则耗时耗力，且有一定错误率。如果你也有相同烦恼，那么stargazer包可以完美地解决你的烦恼。他可以快速、准确、清晰地输出回归结果。</p>
+<br>
+<h2 id="安装">安装</h2>
+<p>与其它R包的安装方式无异，我们可以通过<code>install.packages()</code>和<code>library()</code>函数来下载和导入stargazer包。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">install.packages</span><span class="p">(</span><span class="s">&#34;stargazer&#34;</span><span class="p">)</span>
+<span class="nf">library</span><span class="p">(</span><span class="n">stargazer</span><span class="p">)</span>
+</code></pre></div><br>
+<h2 id="描述性统计值">描述性统计值</h2>
+<p>在估计回归模型之前，我们常常也需要对数据的描述性统计性质进行分析，以便了解变量的分布和变量间的联合分布，这对后续的回归模型设定具有重要意义。stargazer包能使我们方便地分析描述性统计值。我们此处以R内自带数据集attitude为例。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">stargazer</span><span class="p">(</span><span class="n">attitude</span><span class="p">,</span> <span class="n">type</span> <span class="o">=</span> <span class="s">&#34;text&#34;</span><span class="p">)</span>
+</code></pre></div><p>运行上述程序后，我们就会得到下表。</p>
+<p><img loading="lazy" src="img/%e5%9b%be1.png" alt=""  />
+</p>
+<p>如果需要输出latex或者html格式，那么指定<code>type=&quot;latex&quot;</code>或者<code>type=&quot;html&quot;</code>即可。当然，我们还有其他一些重要的参数。</p>
+<ul>
+<li><code>title</code>: 定义表格的标题</li>
+<li><code>out</code>: 	定义导出文件的路径，文件类型可以是<code>.tex</code>, <code>.txt</code>, <code>.htm</code>或者<code>.html</code>。</li>
+<li><code>flip</code>: 默认为FALSE。当定义为TRUE时，则表示转置，即各变量按列排列。</li>
+<li><code>digits</code>: 定义输出数值的小数位数。</li>
+</ul>
+<br>
+<h2 id="参数回归模型结果">参数回归模型结果</h2>
+<p>此处，我们依然使用attitude数据包，以<code>rating</code>作为因变量，其他各变量作为协变量，用两个线性模型和一个Probit模型进行参数估计。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="c1">##  2 OLS models</span>
+<span class="n">linear.1</span> <span class="o">&lt;-</span> <span class="nf">lm</span><span class="p">(</span><span class="n">rating</span> <span class="o">~</span> <span class="n">complaints</span> <span class="o">+</span> <span class="n">privileges</span> <span class="o">+</span> <span class="n">learning</span> 
+                        <span class="o">+</span> <span class="n">raises</span> <span class="o">+</span> <span class="n">critical</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">attitude</span><span class="p">)</span>
+
+<span class="n">linear.2</span> <span class="o">&lt;-</span> <span class="nf">lm</span><span class="p">(</span><span class="n">rating</span> <span class="o">~</span> <span class="n">complaints</span> <span class="o">+</span> <span class="n">privileges</span> <span class="o">+</span> <span class="n">learning</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">attitude</span><span class="p">)</span>
+
+<span class="c1">## create an indicator dependent variable, and run a probit model</span>
+ 
+<span class="n">attitude</span><span class="o">$</span><span class="n">high.rating</span> <span class="o">&lt;-</span> <span class="p">(</span><span class="n">attitude</span><span class="o">$</span><span class="n">rating</span> <span class="o">&gt;</span> <span class="m">70</span><span class="p">)</span>
+<span class="n">probit.model</span> <span class="o">&lt;-</span> <span class="nf">glm</span><span class="p">(</span><span class="n">high.rating</span> <span class="o">~</span> <span class="n">learning</span> <span class="o">+</span> <span class="n">critical</span> <span class="o">+</span> <span class="n">advance</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">attitude</span><span class="p">,</span>
+                    <span class="n">family</span> <span class="o">=</span> <span class="nf">binomial</span><span class="p">(</span><span class="n">link</span> <span class="o">=</span> <span class="s">&#34;probit&#34;</span><span class="p">))</span>
+</code></pre></div><p>在得到各模型后，我们可以运行以下程序汇总和输出三个模型的结果。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="nf">stargazer</span><span class="p">(</span><span class="n">linear.1</span><span class="p">,</span> <span class="n">linear.2</span><span class="p">,</span> <span class="n">probit.model</span><span class="p">,</span> <span class="n">type</span><span class="o">=</span><span class="s">&#34;text&#34;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#34;Regression Results&#34;</span><span class="p">)</span>
+</code></pre></div><p>汇总和输出结果如下表。</p>
+<p><img loading="lazy" src="img/%e5%9b%be2.png" alt=""  />
+</p>
+<p>在输出回归结果时，我们也可以定义一些重要的参数。</p>
+<ul>
+<li><code>single.row</code>: 默认值为FALSE。当取值为TRUE，表示将参数和t统计值或其它参数统计值放在一行，而不是分上下放置。</li>
+<li><code>ci</code>: 默认为FALSE。当取值为TRUE时，表示将在参数估计值后报告置信区间，而不是t统计值。</li>
+<li><code>ci.level</code>: 定义置信度水平。</li>
+<li><code>omit.stat</code>: 定义不需要报告的统计值。例如，<code>omit.stat=c(&quot;f&quot;.&quot;ser&quot;)</code>，表示不需要报告模型的F统计值和Residual Std. Error，即残差的标准误。</li>
+<li><code>keep.stat</code>: 定义需要报告的统计值。默认是报告所有的协变量。例如，<code>keep.stat=&quot;n&quot;</code>，表示只需要报告样本量。</li>
+<li><code>keep</code>: 定义需要包含在输出结果中的变量。当模型协变量数目很多，而我们又只关注个别变量的系数时，这个参数则能够起到作用。例如，<code>keep=c(&quot;complaints&quot;,&quot;learning&quot;,&quot;raises&quot;,&quot;critical&quot;)</code>。</li>
+<li><code>order</code>: 定义输出结果中变量的顺序。例如，<code>order=c(&quot;learning&quot;, &quot;raises&quot;)</code>。</li>
+</ul>
+<br>
+<h2 id="相关系数表">相关系数表</h2>
+<p>stargazer包还能汇总整理相关系数表。以attitude数据集为例，运行以下程序即可获得相关系数表。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="n">correlation.matrix</span> <span class="o">&lt;-</span> <span class="nf">cor</span><span class="p">(</span><span class="n">attitude</span><span class="p">)</span>
+<span class="nf">stargazer</span><span class="p">(</span><span class="n">correlation.matrix</span><span class="p">,</span> <span class="n">type</span><span class="o">=</span><span class="s">&#34;text&#34;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/%e5%9b%be3.png" alt=""  />
+</p>
+<br>
+<h2 id="参考文献">参考文献</h2>
+<p>Hlavac, Marek (2018). stargazer: Well-Formatted Regression and Summary Statistics Tables. R package version 5.2.2. <a href="https://CRAN.R-project.org/package=stargazer">https://CRAN.R-project.org/package=stargazer</a></p>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>Google Books Ngram Viewer显示英文词汇历史使用趋势</title>
+      <link>https://hidadeng.github.io/blog/2022-09-27-r-ngramr/</link>
+      <pubDate>Tue, 27 Sep 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-09-27-r-ngramr/</guid>
+      <description>显示词汇历史使用趋势</description>
+      <content:encoded><![CDATA[
+
+
+<p><a href="https://books.google.com/ngrams/">Google Books Ngram Viewer</a> 可以显示输入短语(你感兴趣的词组)在谷歌书籍中（例如，“British English”、“English Fiction”、“French”）中出现的频率变化趋势 。</p>
+<p>网址 <a href="https://books.google.com/ngrams/" class="uri">https://books.google.com/ngrams/</a></p>
+<p><img src="ngramr_hacker_programmer.png" /></p>
+<p><img src="ngramr_democracy_monarchy.png" /></p>
+<p><img src="us_is_us_has.png" /></p>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>R语言 | renderthis包制作讲解动画、视频</title>
+      <link>https://hidadeng.github.io/blog/2022-09-27-r-renderthis/</link>
+      <pubDate>Tue, 27 Sep 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-09-27-r-renderthis/</guid>
+      <description>description用于SEO优化</description>
+      <content:encoded><![CDATA[
+
+
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>R语言 | 让统计更easy的easystats集合包</title>
+      <link>https://hidadeng.github.io/blog/2022-09-21-r-easystats/</link>
+      <pubDate>Wed, 21 Sep 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-09-21-r-easystats/</guid>
+      <description>模板统计报告用</description>
+      <content:encoded><![CDATA[<p><a href="https://easystats.github.io/easystats/index.html">easystats</a> 是 R 包集合，可提供统一且easy的代码进行 统计分析。</p>
+<br>
+<h2 id="与-tidyverse-有何不同">与 tidyverse 有何不同？</h2>
+<p>tidyverse包集合，是 R语言 中非常流行的软件包集合（ggplot、dplyr、tidyr&hellip;&hellip;），它也使 R 的使用更加容易。那么，您应该选择 tidyverse 还是 easystats？</p>
+<p><strong>两个都选！</strong></p>
+<p>事实上，这两个生态系统的设计考虑了非常不同的目标。 tidyverse 包主要用于 <code>数据操作和探索</code>。而 easystats 更关注分析的最后阶段：<code>理解和解释您的结果，并在手稿或报告中报告它们</code>。您绝对可以在 tidyverse 工作流程中使用 easystats 功能！</p>
+<p>easystats + tidyverse = ❤️</p>
+<br>
+<h2 id="easystats生态圈">easystats生态圈</h2>
+<p>每个 easystats 包都有不同的范围和用途。这意味着您最好的开始方式是探索并选择您认为可能对您有用的那些。但是，由于它们的构建考虑了&quot;更大的图景&quot;，您会意识到使用更多它们会创建一个流畅的工作流程，因为这些包旨在协同工作。理想情况下，这些软件包可以协同工作，涵盖统计分析和数据可视化的所有方面。</p>
+<ul>
+<li><a href="https://easystats.github.io/report/">report</a>：📜 🎉 生成自动统计报告</li>
+<li><a href="https://easystats.github.io/correlation/">correlation</a>：🔗 相关性的多合一包</li>
+<li><a href="https://easystats.github.io/modelbased/">modelbased</a>：📈 基于统计模型估计效果、组平均值和组间对比</li>
+<li><a href="https://easystats.github.io/bayestestR/">bayestestR</a>：👻 非常适合贝叶斯统计的初学者或专家</li>
+<li><a href="https://easystats.github.io/effectsize/">effectize</a>: 🐉 计算、转换、解释和使用效果大小和标准化参数的索引</li>
+<li><a href="https://easystats.github.io/see/">see</a> ：🎨 创建漂亮结果可视化的绘图</li>
+<li><a href="https://easystats.github.io/parameters/">parameters</a>：📊 获取有关模型包含参数所有信息的表格</li>
+<li><a href="https://easystats.github.io/performance/">performance</a>：💪模型的质量和性能指标（R2、ICC、LOO、AIC、BF、&hellip;）</li>
+<li><a href="https://easystats.github.io/insight/">insight</a>：🔮 对于开发人员来说，一个包可以帮助您使用不同的模型和包</li>
+<li><a href="https://easystats.github.io/datawizard/">datawizard</a>：🧙 清理和转换数据的魔法药水</li>
+</ul>
+<p>截止2022-09-21， easystats生态中各个包的下载情况</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Total</th>
+<th style="text-align:left">insight</th>
+<th style="text-align:left">bayestestR</th>
+<th style="text-align:left">parameters</th>
+<th style="text-align:left">performance</th>
+<th style="text-align:left">datawizard</th>
+<th style="text-align:left">effectsize</th>
+<th style="text-align:left">correlation</th>
+<th style="text-align:left">see</th>
+<th style="text-align:left">modelbased</th>
+<th style="text-align:left">report</th>
+<th style="text-align:left">easystats</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">10,001,095</td>
+<td style="text-align:left">3,085,739</td>
+<td style="text-align:left">1,373,379</td>
+<td style="text-align:left">1,363,678</td>
+<td style="text-align:left">1,285,506</td>
+<td style="text-align:left">1,159,097</td>
+<td style="text-align:left">1,060,079</td>
+<td style="text-align:left">277,541</td>
+<td style="text-align:left">251,038</td>
+<td style="text-align:left">94,089</td>
+<td style="text-align:left">48,876</td>
+<td style="text-align:left">2,073</td>
+</tr>
+</tbody>
+</table>
+<p><img loading="lazy" src="easystats-trend.png" alt=""  />
+</p>
+<br>
+<h2 id="安装">安装</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">install.packages(&#34;easystats&#34;)
+</code></pre></div><br>
+<h2 id="炫一下">炫一下</h2>
+<p>easystats到底如何好用，今天只实验report包，该包号称 “从 R 到你的手稿”</p>
+<p>报告的主要目标是弥合 R 的输出与手稿中包含的格式化结果之间的差距。 它根据最佳实践指南（例如 APA 期刊风格）自动生成模型和数据框架的报告，确保结果报告的标准化和质量。</p>
+<p>生成iris数据集描述性统计信息的英文报告</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">report(iris)
+</code></pre></div><br>
+<p>生成线性回归模型的报告</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">library(report)
+
+model &lt;- lm(Sepal.Length ~ Species, data = iris)
+report(model)
+</code></pre></div><p>更多内容请阅读 <a href="https://easystats.github.io/report/">report包</a> 的文档。</p>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>R语言 |  使用ggsci包绘制sci风格图表</title>
       <link>https://hidadeng.github.io/blog/2022-09-20-r-ggsci/</link>
       <pubDate>Tue, 20 Sep 2022 00:00:00 +0000</pubDate>
@@ -836,6 +1109,304 @@ grid.arrange(p1_d3, p2_d3, ncol = 2)</code></pre>
 <p><img src="/blog/2022-09-20-r-ggsci/index_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 <p><br></p>
 </div>
+</div>
+<div id="广而告之" class="section level2">
+<h2>广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+</div>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>R语言 | ggpubr包让数据可视化更加优雅</title>
+      <link>https://hidadeng.github.io/blog/2022-09-20-r-ggplot2-ggpubr/</link>
+      <pubDate>Tue, 20 Sep 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-09-20-r-ggplot2-ggpubr/</guid>
+      <description>ggplot2能绘制很多美观图表，但是语法太难。ggpubr包让数据可视化更加优雅</description>
+      <content:encoded><![CDATA[
+
+
+<p><a href="https://ggplot2.tidyverse.org/">Hadley Wickham的ggplot2</a> 是一个出色且灵活的包，用于在 R 中进行优雅的数据可视化。但是，默认生成的图需要一些格式才能发送它们以供发布。 此外，要自定义 ggplot，语法是负责的，这提高了没有高级 R 编程技能的研究人员的难度。</p>
+<p><strong><a href="https://rpkgs.datanovia.com/ggpubr">ggpubr包</a></strong> 提供了一些易于使用的功能，可以使用更简单的语法代码绘制出可供发表出版的图表。</p>
+<p><br></p>
+<div id="安装" class="section level2">
+<h2>安装</h2>
+<pre class="r"><code>install.packages(&quot;ggpubr&quot;)</code></pre>
+<p><br>
+## 折线图</p>
+<pre class="r"><code>library(ggpubr)
+
+df &lt;- data.frame(supp=rep(c(&quot;VC&quot;, &quot;OJ&quot;), each=3),
+   dose=rep(c(&quot;D0.5&quot;, &quot;D1&quot;, &quot;D2&quot;),2),
+   len=c(6.8, 15, 33, 4.2, 10, 29.5))
+#print(df)
+#&gt;   supp dose  len
+#&gt; 1   VC D0.5  6.8
+#&gt; 2   VC   D1 15.0
+#&gt; 3   VC   D2 33.0
+#&gt; 4   OJ D0.5  4.2
+#&gt; 5   OJ   D1 10.0
+#&gt; 6   OJ   D2 29.5
+
+# Plot &quot;len&quot; by &quot;dose&quot; and
+# Change line types and point shapes by a second groups: &quot;supp&quot;
+ggline(df, x=&quot;dose&quot;, y=&quot;len&quot;,
+  linetype = &quot;supp&quot;, shape = &quot;supp&quot;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code># Change colors
+# +++++++++++++++++++++
+
+# Change color by group: &quot;supp&quot;
+# Use custom color palette
+ggline(df, x=&quot;dose&quot;, y=&quot;len&quot;,
+   linetype = &quot;supp&quot;, shape = &quot;supp&quot;,
+   color = &quot;supp&quot;, palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;))</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="散点图" class="section level2">
+<h2>散点图</h2>
+<pre class="r"><code># Load data
+data(&quot;mtcars&quot;)
+df &lt;- mtcars
+df$cyl &lt;- as.factor(df$cyl)
+#head(df[, c(&quot;wt&quot;, &quot;mpg&quot;, &quot;cyl&quot;)], 3)
+#&gt;                  wt  mpg cyl
+#&gt; Mazda RX4     2.620 21.0   6
+#&gt; Mazda RX4 Wag 2.875 21.0   6
+#&gt; Datsun 710    2.320 22.8   4
+
+# Textual annotation
+# +++++++++++++++++
+df$name &lt;- rownames(df)
+ggscatter(df, x = &quot;wt&quot;, y = &quot;mpg&quot;,
+   color = &quot;cyl&quot;, palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;),
+   label = &quot;name&quot;, repel = TRUE)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="饼形图" class="section level2">
+<h2>饼形图</h2>
+<pre class="r"><code>df &lt;- data.frame(
+ group = c(&quot;Male&quot;, &quot;Female&quot;, &quot;Child&quot;),
+  value = c(25, 25, 50))
+
+#head(df)
+#&gt;    group value
+#&gt; 1   Male    25
+#&gt; 2 Female    25
+#&gt; 3  Child    50
+
+
+# Basic pie charts
+# ++++++++++++++++++++++++++++++++
+
+ggpie(df, &quot;value&quot;, label = &quot;group&quot;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre class="r"><code>ggpie(df, &quot;value&quot;, label = &quot;group&quot;, fill=&quot;group&quot;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code>ggpie(df, &quot;value&quot;, label = &quot;group&quot;, fill=&quot;group&quot;, color=&#39;white&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<pre class="r"><code>ggpie(df, &quot;value&quot;, label = &quot;group&quot;, fill=&quot;group&quot;, 
+      palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;),
+      color=&#39;white&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<pre class="r"><code>labs &lt;- paste0(df$group, &quot; (&quot;, df$value, &quot;%)&quot;)
+#&gt; &quot;Male (25%)&quot;   &quot;Female (25%)&quot; &quot;Child (50%)&quot; 
+
+ggpie(df, &quot;value&quot;, label = labs, fill=&quot;group&quot;, 
+      palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;),
+      color=&#39;white&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<pre class="r"><code>labs &lt;- paste0(df$group, &quot; (&quot;, df$value, &quot;%)&quot;)
+#&gt; &quot;Male (25%)&quot;   &quot;Female (25%)&quot; &quot;Child (50%)&quot; 
+
+ggpie(df, &quot;value&quot;, label = labs, fill=&quot;group&quot;, 
+      lab.pos = &quot;in&quot;, lab.font = &quot;white&quot;,
+      palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;),
+      color=&#39;white&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="甜甜圈图" class="section level2">
+<h2>甜甜圈图</h2>
+<pre class="r"><code>#&gt; head(df)
+#&gt;    group value
+#&gt; 1   Male    25
+#&gt; 2 Female    25
+#&gt; 3  Child    50
+#&gt; 
+# Change the position and font color of labels
+ggdonutchart(df, &quot;value&quot;, label = labs,
+   lab.pos = &quot;in&quot;, lab.font = &quot;white&quot;,
+   fill = &quot;group&quot;, color = &quot;white&quot;,
+   palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;))</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="点图" class="section level2">
+<h2>点图</h2>
+<pre class="r"><code># Load data
+data(&quot;mtcars&quot;)
+dfm &lt;- mtcars
+# Convert the cyl variable to a factor
+dfm$cyl &lt;- as.factor(dfm$cyl)
+# Add the name colums
+dfm$name &lt;- rownames(dfm)
+# Inspect the data
+#head(dfm[, c(&quot;name&quot;, &quot;wt&quot;, &quot;mpg&quot;, &quot;cyl&quot;)])
+#&gt;                                name    wt  mpg cyl
+#&gt; Mazda RX4                 Mazda RX4 2.620 21.0   6
+#&gt; Mazda RX4 Wag         Mazda RX4 Wag 2.875 21.0   6
+#&gt; Datsun 710               Datsun 710 2.320 22.8   4
+#&gt; Hornet 4 Drive       Hornet 4 Drive 3.215 21.4   6
+#&gt; Hornet Sportabout Hornet Sportabout 3.440 18.7   8
+#&gt; Valiant                     Valiant 3.460 18.1   6
+
+ggdotchart(dfm, x = &quot;name&quot;, y = &quot;mpg&quot;,
+           color = &quot;cyl&quot;,                                # Color by groups
+           palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;), # Custom color palette
+           sorting = &quot;ascending&quot;,                        # Sort value in descending order
+           add = &quot;segments&quot;,                             # Add segments from y = 0 to dots
+           ggtheme = theme_pubr()                        # ggplot2 theme
+           )</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="密度图" class="section level2">
+<h2>密度图</h2>
+<pre class="r"><code>set.seed(1234)
+wdata = data.frame(
+   sex = factor(rep(c(&quot;F&quot;, &quot;M&quot;), each=200)),
+   weight = c(rnorm(200, 55), rnorm(200, 58)))
+#head(wdata, 4)
+#&gt;   sex   weight
+#&gt; 1   F 53.79293
+#&gt; 2   F 55.27743
+#&gt; 3   F 56.08444
+#&gt; 4   F 52.65430
+
+# Density plot with mean lines and marginal rug
+# :::::::::::::::::::::::::::::::::::::::::::::::::::
+# Change outline and fill colors by groups (&quot;sex&quot;)
+# Use custom palette
+ggdensity(wdata, x = &quot;weight&quot;, color=&#39;sex&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<pre class="r"><code>ggdensity(wdata, x = &quot;weight&quot;, color=&#39;sex&#39;, add=&#39;mean&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<pre class="r"><code>ggdensity(wdata, x = &quot;weight&quot;, color=&#39;sex&#39;, add=&#39;mean&#39;, rug=TRUE)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre class="r"><code>ggdensity(wdata, x = &quot;weight&quot;, color=&#39;sex&#39;, add=&#39;mean&#39;, rug=TRUE, fill=&#39;sex&#39;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<pre class="r"><code>ggdensity(wdata, x = &quot;weight&quot;, color=&#39;sex&#39;, add=&#39;mean&#39;, rug=TRUE, fill=&#39;sex&#39;, 
+          palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;))</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="直方图" class="section level2">
+<h2>直方图</h2>
+<pre class="r"><code># Histogram plot with mean lines and marginal rug
+# :::::::::::::::::::::::::::::::::::::::::::::::::::
+# Change outline and fill colors by groups (&quot;sex&quot;)
+# Use custom color palette
+gghistogram(wdata, x = &quot;weight&quot;,
+   add = &quot;mean&quot;, rug = TRUE,
+   color = &quot;sex&quot;, fill = &quot;sex&quot;,
+   palette = c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;))</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="箱图" class="section level2">
+<h2>箱图</h2>
+<pre class="r"><code># Load data
+data(&quot;ToothGrowth&quot;)
+df &lt;- ToothGrowth
+#head(df, 4)
+#&gt;    len supp dose
+#&gt; 1  4.2   VC  0.5
+#&gt; 2 11.5   VC  0.5
+#&gt; 3  7.3   VC  0.5
+#&gt; 4  5.8   VC  0.5
+
+# Box plots with jittered points
+# :::::::::::::::::::::::::::::::::::::::::::::::::::
+# Change outline colors by groups: dose
+# Use custom color palette
+# Add jitter points and change the shape by groups
+ p &lt;- ggboxplot(df, x = &quot;dose&quot;, y = &quot;len&quot;, add = &quot;jitter&quot;,
+                color = &quot;dose&quot;, shape = &quot;dose&quot;, 
+                palette =c(&quot;#00AFBB&quot;, &quot;#E7B800&quot;, &quot;#FC4E07&quot;))
+ p</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<p><br></p>
+</div>
+<div id="条形图" class="section level2">
+<h2>条形图</h2>
+<pre class="r"><code># Load data
+data(&quot;mtcars&quot;)
+dfm &lt;- mtcars
+# Convert the cyl variable to a factor
+dfm$cyl &lt;- as.factor(dfm$cyl)
+# Add the name colums
+dfm$name &lt;- rownames(dfm)
+# Inspect the data
+#head(dfm[, c(&quot;name&quot;, &quot;wt&quot;, &quot;mpg&quot;, &quot;cyl&quot;)])
+#&gt;                                name    wt  mpg cyl
+#&gt; Mazda RX4                 Mazda RX4 2.620 21.0   6
+#&gt; Mazda RX4 Wag         Mazda RX4 Wag 2.875 21.0   6
+#&gt; Datsun 710               Datsun 710 2.320 22.8   4
+#&gt; Hornet 4 Drive       Hornet 4 Drive 3.215 21.4   6
+#&gt; Hornet Sportabout Hornet Sportabout 3.440 18.7   8
+#&gt; Valiant                     Valiant 3.460 18.1   6
+
+ggbarplot(dfm, x = &quot;name&quot;, y = &quot;mpg&quot;,
+          fill = &quot;cyl&quot;,               # change fill color by cyl
+          color = &quot;white&quot;,            # Set bar border colors to white
+          palette = &quot;jco&quot;,            # jco journal color palett. see ?ggpar
+          sort.val = &quot;desc&quot;,          # Sort the value in dscending order
+          sort.by.groups = TRUE,      # Sort inside each group
+          x.text.angle = 90           # Rotate vertically x axis texts
+          )</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<pre class="r"><code>ggbarplot(dfm, x = &quot;name&quot;, y = &quot;mpg&quot;,
+          fill = &quot;cyl&quot;,               # change fill color by cyl
+          color = &quot;white&quot;,            # Set bar border colors to white
+          palette = &quot;jco&quot;,            # jco journal color palett. see ?ggpar
+          sort.val = &quot;desc&quot;,          # Sort the value in dscending order
+          sort.by.groups = TRUE,      # Don&#39;t sort inside each group
+          x.text.angle = 90,          # Rotate vertically x axis texts
+          legend.title = &quot;CYL&quot;        # Set legend title
+          )</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-21-1.png" width="672" />
+<br></p>
+</div>
+<div id="表格" class="section level2">
+<h2>表格</h2>
+<pre class="r"><code>#Medium blue (mBlue) theme
+ggtexttable(head(iris), rows = NULL, theme = ttheme(&quot;mBlue&quot;))</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<pre class="r"><code>main.title &lt;- &quot;Edgar Anderson&#39;s Iris Data&quot;
+subtitle &lt;- paste0(
+&quot;This famous (Fisher&#39;s or Anderson&#39;s) iris data set gives the measurements&quot;,
+&quot; in centimeters of the variables sepal length and width and petal length and width,&quot;,
+ &quot; respectively, for 50 flowers from each of 3 species of iris.&quot;,
+ &quot; The species are Iris setosa, versicolor, and virginica.&quot;
+) %&gt;%
+ strwrap(width = 80) %&gt;%
+ paste(collapse = &quot;\n&quot;)
+
+tab &lt;- ggtexttable(head(iris), theme = ttheme(&quot;light&quot;))
+tab %&gt;%
+ tab_add_title(text = subtitle, face = &quot;plain&quot;, size = 10) %&gt;%
+ tab_add_title(text = main.title, face = &quot;bold&quot;, padding = unit(0.1, &quot;line&quot;)) %&gt;%
+ tab_add_footnote(text = &quot;*Table created using ggpubr&quot;, size = 10, face = &quot;italic&quot;)</code></pre>
+<p><img src="/blog/2022-09-20-r-ggplot2-ggpubr/index_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
+<p><br></p>
 </div>
 <div id="广而告之" class="section level2">
 <h2>广而告之</h2>
