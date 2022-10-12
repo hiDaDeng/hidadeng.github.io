@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>R语言 | 使用word2vec词向量模型 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="R语言, 文本分析, 经济管理" />
+<meta name="description" content="R语言训练和使用词向量word2vec模型">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/2022-10-12-r-word2vec/" />
+<meta name="baidu-site-verification" content="code-xTk1LSyjvt" />
+<meta name="360-site-verification" content="dc00b42cd1d4e0fcaa5edfd27394f9cd" />
+<meta name="sogou-site-verification" content="3HDeo612Pl" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="R语言 | 使用word2vec词向量模型" />
+<meta property="og:description" content="R语言训练和使用词向量word2vec模型" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/2022-10-12-r-word2vec/" />
+<meta property="og:image" content="/images/blog/word2vec.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2022-10-12T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2022-10-12T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/word2vec.png" />
+<meta name="twitter:title" content="R语言 | 使用word2vec词向量模型"/>
+<meta name="twitter:description" content="R语言训练和使用词向量word2vec模型"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "R语言 | 使用word2vec词向量模型",
+      "item": "/blog/2022-10-12-r-word2vec/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "R语言 | 使用word2vec词向量模型",
+  "name": "R语言 | 使用word2vec词向量模型",
+  "description": "R语言训练和使用词向量word2vec模型",
+  "keywords": [
+    "R语言", "文本分析", "经济管理"
+  ],
+  "articleBody": "\rPython的gensim库可以训练和使用word2vec模型，R语言中也有与之对应的word2vec包。word2vec是词嵌入技术中最常用的一种技术，如果对词嵌入不太了解，可以阅读前文\n\r转载 | 大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用\r转载 | 从符号到嵌入：计算社会科学的两种文本表示\r\r本文需要的R包\ninstall.packages(c(\"word2vec\", \"jiebaR\", \"tidyverse\", \"readtext\"))\r\nword2vec包常用函数\r\rword2vec 使用文本数据训练word2vec模型\ras.matrix 获取词向量\rdoc2vec 获取文档向量\rpredict 获取\rwrite.word2vec 保存word2vec模型至文件\rread.word2vec 读取word2vec模型文件\r\r\n\r准备数据\r原始数据是从网站下载的 三体.txt, 未分词处理，现在需要\n读中文取txt数据\r保留标点符号，进行分词处理\r分词结果重新整理为类似英文(空格间隔词语的形式)字符串\r结果存入新的txt\r\rlibrary(jiebaR)\rlibrary(tidyverse)\rlibrary(word2vec)\r#导入数据\rtri_body % c()\r#写入txt\rreadr::write_file(segmented_text, file='data/santi.txt')\r\n\r训练word2vec模型\rword2vec(\rx,\rtype = c(\"cbow\", \"skip-gram\"),\rdim = 50,\rwindow = ifelse(type == \"cbow\", 5L, 10L),\riter = 5L,\rlr = 0.05,\rmin_count = 5L,\rsplit = c(\" \\n,.-!?:;/\\\"#$%\u0026'()*+@[]\\\\^_`{|}~\\t\\v\\f\\r\", \".\\n?!\"),\rstopwords = character(),\rthreads = 1L,\r...\r)\r\rx 英文文本数据txt文件(中文数据txt文件是分词后的txt文件，空格间隔词语)\rtype 训练方式，默认CBOW\rdim 词向量维度，默认50维\rwindow 词向量窗口，默认5\riter 训练迭代次数，默认5\rsplit 分词、分句对应的分隔符。\rlr 学习率，默认0.05\rmin_count 词语在语料中至少要出现5次(低于5次的词语，训练好的结果中没有该词语）\rstopwords 停用词表，默认空字符集\rthreads 并行加速，cpu核数，默认1。为了加速训练过程，可以使用 parallel::detectCores() 获得本电脑的核数\r\r#训练10维的词向量模型\rmodel \r## [,1] [,2] [,3] [,4] [,5] [,6]\r## 煮 -1.02566934 -0.9271542 -0.42417252 -0.54280633 1.8847700 0.41640753\r## 报 -0.83992052 1.9440031 0.09093992 0.83522910 1.7909089 0.72149992\r## 悬空 -0.06369513 -1.3519955 -2.13137460 -0.06198586 0.6096401 1.32933748\r## 略 1.74687469 -0.4278547 -0.33822438 1.08505321 2.0168977 -0.07693915\r## 伏 -0.68947995 -1.4147453 -1.95522511 -0.39963767 0.5269030 0.30352208\r## 石柱 -0.40561640 -1.3643234 0.30329546 -0.94012892 2.1579018 0.79654717\r## [,7] [,8] [,9] [,10]\r## 煮 -1.1708908 -0.7624418 -0.6275516 1.2417521\r## 报 0.5235919 0.8448864 -0.2960095 -0.0773837\r## 悬空 0.1527163 -0.1337370 -0.1646384 1.1892601\r## 略 -0.3246748 -0.9813624 0.5045205 0.2771466\r## 伏 0.3166684 -1.4238008 -1.0167172 -0.0976937\r## 石柱 0.2237919 0.6933151 0.7412233 -0.7918702\r\n\r查看某词的vector\r查看词语 汪淼 的vector\nemb[\"汪淼\",]\r## [1] -0.77559733 -0.90021265 0.66555792 -0.10277803 1.89924443 -0.88817298\r## [7] -1.32665634 -0.75938725 -0.09628224 1.18008399\r查看词语 地球 的vector\nemb[\"地球\",]\r## [1] 0.29645494 -0.61688840 0.91209215 -0.64530188 0.62816381 -0.72807491\r## [7] 0.50655973 2.38137436 1.19238114 -0.09610342\r\n\rpredict()\r找到语料中，词语 罗辑 最相似的 20个词\npredict(model, '罗辑', type='nearest', top_n = 20)\r## $罗辑\r## term1 term2 similarity rank\r## 1 罗辑 胡文 0.9744400 1\r## 2 罗辑 申玉菲 0.9678891 2\r## 3 罗辑 瓦季姆 0.9550550 3\r## 4 罗辑 狄奥伦娜 0.9518393 4\r## 5 罗辑 蓝西 0.9472395 5\r## 6 罗辑 护士 0.9471439 6\r## 7 罗辑 法扎兰 0.9458703 7\r## 8 罗辑 白艾思 0.9451101 8\r## 9 罗辑 坎特 0.9396626 9\r## 10 罗辑 白蓉 0.9387447 10\r## 11 罗辑 参谋长 0.9377206 11\r## 12 罗辑 弗雷斯 0.9369408 12\r## 13 罗辑 第一眼 0.9357565 13\r## 14 罗辑 父亲 0.9350463 14\r## 15 罗辑 多少次 0.9314436 15\r## 16 罗辑 门去 0.9291503 16\r## 17 罗辑 维德 0.9267251 17\r## 18 罗辑 褐蚁 0.9203902 18\r## 19 罗辑 刚 0.9200501 19\r## 20 罗辑 吴岳 0.9191605 20\r查看均值向量（多个词向量中心的）的10个近义词\nvectors \r## term similarity rank\r## 1 罗辑 0.9185568 1\r## 2 狄奥伦娜 0.9104245 2\r## 3 文洁 0.9088279 3\r## 4 汪淼 0.9054156 4\r## 5 白艾思 0.9046930 5\r## 6 张翔 0.9026827 6\r## 7 尴尬 0.8952187 7\r## 8 庄颜 0.8952166 8\r## 9 皇帝 0.8949283 9\r## 10 父亲 0.8915347 10\r\n\rdoc2vec()\r\rdoc2vec(object, newdata, split = ” “)\r\robject word2vec模型对象\rnewdata 文档列表(用空格间隔的字符串列表)\rsplit 默认分隔符是空格\r\r\r将文档转为向量\ndocs \r## [,1] [,2] [,3] [,4] [,5] [,6] [,7]\r## [1,] -1.1769752 -0.1065619 0.1983950 1.734068 0.5478012 -0.8320528 -0.2387014\r## [2,] -0.4827189 0.0664595 -0.2119484 1.895074 0.6729840 -0.3008853 -0.6857539\r## [,8] [,9] [,10]\r## [1,] -0.5519856 -2.007002 0.4182127\r## [2,] -0.5976922 -2.130454 -0.4653725\r\n\r保存word2vec模型\r保存模型，一般有两个目的\n\r为了分享word2vec模型\r避免反复训练模型，节约数据分析时间\r\rword2vec::write.word2vec(x = model, #新建output文件夹，将模型存入output文件夹内\rfile = \"output/santi_word2vec.bin\")\r## [1] TRUE\r\n\r导入预训练模型\r导入 output/santi_word2vec.bin 的预训练word2vec模型\npre_trained_model \r## [,1] [,2] [,3] [,4] [,5] [,6]\r## 回荡 -1.9563367 -0.3099073 -1.2969902 -0.5719763 1.1507142 -0.05515177\r## 听证会 0.2756990 1.3702289 -1.3303705 -0.1827691 0.6622804 -1.92008448\r## 纲领 0.4495552 1.9311246 -0.5812275 -0.1470096 -0.2678985 -0.01694358\r## 很亮 0.3621844 -1.0048453 0.7036168 -2.0917876 0.6459805 1.18436253\r## 秒 1.9033701 1.6510324 -0.2616904 0.3671210 1.0618066 0.06588747\r## 杰森 -1.2904713 -1.2501229 0.3380587 0.8590797 1.6798494 -0.58775252\r## [,7] [,8] [,9] [,10]\r## 回荡 1.1082711 -0.2064489 -0.9264346 -0.7816723\r## 听证会 -1.0952694 0.6120903 -0.1326561 0.7252344\r## 纲领 -0.6097277 2.1051276 -0.2405726 -0.8808851\r## 很亮 0.1964065 -1.3926132 -0.4042619 -0.1645472\r## 秒 -0.8347995 0.2591044 0.3594093 1.1929117\r## 杰森 0.4941484 -1.1393189 -0.4687541 0.9951217\r\r",
+  "wordCount" : "706",
+  "inLanguage": "en",
+  "image":"/images/blog/word2vec.png","datePublished": "2022-10-12T00:00:00Z",
+  "dateModified": "2022-10-12T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/2022-10-12-r-word2vec/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/management_python_course/" title="课程" target="_blank">
+                    <span>课程</span>
+                </a>
+            </li>
+            <li>
+                <a href="/index.xml" title="RSS" target="_blank">
+                    <span>RSS</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/call_for_paper/" title="欢迎投稿" target="_blank">
+                    <span>欢迎投稿</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      R语言 | 使用word2vec词向量模型
+    </h1>
+    <div class="post-meta"><span title='2022-10-12 00:00:00 +0000 UTC'>2022-10-12</span>&nbsp;·&nbsp;4 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/word2vec.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/word2vec.png" alt=""></a>
+        
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on twitter"
+        href="https://twitter.com/intent/tweet/?text=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2022-10-12-r-word2vec%2f&amp;hashtags=%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2cR%e8%af%ad%e8%a8%80%2c%e7%ac%ac%e4%b8%89%e6%96%b9%e5%8c%85%2c%e8%af%8d%e5%90%91%e9%87%8f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2022-10-12-r-word2vec%2f&amp;title=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b&amp;summary=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b&amp;source=%2fblog%2f2022-10-12-r-word2vec%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2022-10-12-r-word2vec%2f&title=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2022-10-12-r-word2vec%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on whatsapp"
+        href="https://api.whatsapp.com/send?text=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b%20-%20%2fblog%2f2022-10-12-r-word2vec%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on telegram"
+        href="https://telegram.me/share/url?text=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2022-10-12-r-word2vec%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#" aria-label="word2vec包常用函数">word2vec包常用函数</a></li>
+                    <li>
+                        <a href="#" aria-label="准备数据">准备数据</a></li>
+                    <li>
+                        <a href="#" aria-label="训练word2vec模型">训练word2vec模型</a></li>
+                    <li>
+                        <a href="#" aria-label="查看某词的vector">查看某词的vector</a></li>
+                    <li>
+                        <a href="#" aria-label="predict()">predict()</a></li>
+                    <li>
+                        <a href="#" aria-label="doc2vec()">doc2vec()</a></li>
+                    <li>
+                        <a href="#" aria-label="保存word2vec模型">保存word2vec模型</a></li>
+                    <li>
+                        <a href="#" aria-label="导入预训练模型">导入预训练模型</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content">
+
+
+<p>Python的gensim库可以训练和使用word2vec模型，R语言中也有与之对应的<code>word2vec包</code>。word2vec是词嵌入技术中最常用的一种技术，如果对词嵌入不太了解，可以阅读前文</p>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/wordembeddingsinsocialscience/">转载 | 大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用</a></li>
+<li><a href="https://hidadeng.github.io/blog/from_sysbol_to_embeddings_in_computational_social_science/">转载 | 从符号到嵌入：计算社会科学的两种文本表示</a></li>
+</ul>
+<p>本文需要的R包</p>
+<pre><code>install.packages(c(&quot;word2vec&quot;, &quot;jiebaR&quot;, &quot;tidyverse&quot;, &quot;readtext&quot;))</code></pre>
+<p><br></p>
+<div id="word2vec包常用函数" class="section level2">
+<h2>word2vec包常用函数</h2>
+<ul>
+<li>word2vec 使用文本数据训练word2vec模型</li>
+<li>as.matrix 获取词向量</li>
+<li>doc2vec 获取文档向量</li>
+<li>predict 获取</li>
+<li>write.word2vec 保存word2vec模型至文件</li>
+<li>read.word2vec 读取word2vec模型文件</li>
+</ul>
+<p><br></p>
+</div>
+<div id="准备数据" class="section level2">
+<h2>准备数据</h2>
+<p>原始数据是从网站下载的 <code>三体.txt</code>, 未分词处理，现在需要</p>
+<ol style="list-style-type: decimal">
+<li>读中文取txt数据</li>
+<li>保留标点符号，进行分词处理</li>
+<li>分词结果重新整理为类似英文(空格间隔词语的形式)字符串</li>
+<li>结果存入新的txt</li>
+</ol>
+<pre class="r"><code>library(jiebaR)
+library(tidyverse)
+library(word2vec)
+
+
+#导入数据
+tri_body &lt;- readtext::readtext(&#39;data/三体.txt&#39;)$text 
+
+#分词（保留标点符号）
+tokenizer &lt;- worker(symbol=T)
+tri_words &lt;- segment(tri_body, tokenizer)
+
+# 整理为英文格式（词语之间加空格）
+segmented_text &lt;- stringr::str_c(tri_words, collapse = &quot; &quot;) %&gt;% c()
+
+#写入txt
+readr::write_file(segmented_text, file=&#39;data/santi.txt&#39;)</code></pre>
+<p><br></p>
+</div>
+<div id="训练word2vec模型" class="section level2">
+<h2>训练word2vec模型</h2>
+<pre><code>word2vec(
+  x,
+  type = c(&quot;cbow&quot;, &quot;skip-gram&quot;),
+  dim = 50,
+  window = ifelse(type == &quot;cbow&quot;, 5L, 10L),
+  iter = 5L,
+  lr = 0.05,
+  min_count = 5L,
+  split = c(&quot; \n,.-!?:;/\&quot;#$%&amp;&#39;()*+&lt;=&gt;@[]\\^_`{|}~\t\v\f\r&quot;, &quot;.\n?!&quot;),
+  stopwords = character(),
+  threads = 1L,
+  ...
+)</code></pre>
+<ul>
+<li>x 英文文本数据txt文件(中文数据txt文件是分词后的txt文件，空格间隔词语)</li>
+<li>type 训练方式，默认CBOW</li>
+<li>dim 词向量维度，默认50维</li>
+<li>window 词向量窗口，默认5</li>
+<li>iter 训练迭代次数，默认5</li>
+<li>split 分词、分句对应的分隔符。</li>
+<li>lr 学习率，默认0.05</li>
+<li>min_count 词语在语料中至少要出现5次(低于5次的词语，训练好的结果中没有该词语）</li>
+<li>stopwords 停用词表，默认空字符集</li>
+<li>threads 并行加速，cpu核数，默认1。为了加速训练过程，可以使用 <code>parallel::detectCores()</code> 获得本电脑的核数</li>
+</ul>
+<pre class="r"><code>#训练10维的词向量模型
+model &lt;- word2vec(x = &#39;data/santi.txt&#39;, 
+                  dim = 10,  
+                  iter = 20, 
+                  split = c(&quot; &quot;,  &quot;。？！；&quot;),
+                  threads = parallel::detectCores()) #并行，使用cpu多核加速
+
+emb &lt;- as.matrix(model)
+
+#显示6个词
+head(emb)</code></pre>
+<pre><code>##             [,1]       [,2]        [,3]        [,4]      [,5]        [,6]
+## 煮   -1.02566934 -0.9271542 -0.42417252 -0.54280633 1.8847700  0.41640753
+## 报   -0.83992052  1.9440031  0.09093992  0.83522910 1.7909089  0.72149992
+## 悬空 -0.06369513 -1.3519955 -2.13137460 -0.06198586 0.6096401  1.32933748
+## 略    1.74687469 -0.4278547 -0.33822438  1.08505321 2.0168977 -0.07693915
+## 伏   -0.68947995 -1.4147453 -1.95522511 -0.39963767 0.5269030  0.30352208
+## 石柱 -0.40561640 -1.3643234  0.30329546 -0.94012892 2.1579018  0.79654717
+##            [,7]       [,8]       [,9]      [,10]
+## 煮   -1.1708908 -0.7624418 -0.6275516  1.2417521
+## 报    0.5235919  0.8448864 -0.2960095 -0.0773837
+## 悬空  0.1527163 -0.1337370 -0.1646384  1.1892601
+## 略   -0.3246748 -0.9813624  0.5045205  0.2771466
+## 伏    0.3166684 -1.4238008 -1.0167172 -0.0976937
+## 石柱  0.2237919  0.6933151  0.7412233 -0.7918702</code></pre>
+<p><br></p>
+</div>
+<div id="查看某词的vector" class="section level2">
+<h2>查看某词的vector</h2>
+<p>查看词语 <code>汪淼</code> 的vector</p>
+<pre class="r"><code>emb[&quot;汪淼&quot;,]</code></pre>
+<pre><code>##  [1] -0.77559733 -0.90021265  0.66555792 -0.10277803  1.89924443 -0.88817298
+##  [7] -1.32665634 -0.75938725 -0.09628224  1.18008399</code></pre>
+<p>查看词语 <code>地球</code> 的vector</p>
+<pre class="r"><code>emb[&quot;地球&quot;,]</code></pre>
+<pre><code>##  [1]  0.29645494 -0.61688840  0.91209215 -0.64530188  0.62816381 -0.72807491
+##  [7]  0.50655973  2.38137436  1.19238114 -0.09610342</code></pre>
+<p><br></p>
+</div>
+<div id="predict" class="section level2">
+<h2>predict()</h2>
+<p>找到语料中，词语 <code>罗辑</code> 最相似的 20个词</p>
+<pre class="r"><code>predict(model, &#39;罗辑&#39;, type=&#39;nearest&#39;, top_n = 20)</code></pre>
+<pre><code>## $罗辑
+##    term1    term2 similarity rank
+## 1   罗辑     胡文  0.9744400    1
+## 2   罗辑   申玉菲  0.9678891    2
+## 3   罗辑   瓦季姆  0.9550550    3
+## 4   罗辑 狄奥伦娜  0.9518393    4
+## 5   罗辑     蓝西  0.9472395    5
+## 6   罗辑     护士  0.9471439    6
+## 7   罗辑   法扎兰  0.9458703    7
+## 8   罗辑   白艾思  0.9451101    8
+## 9   罗辑     坎特  0.9396626    9
+## 10  罗辑     白蓉  0.9387447   10
+## 11  罗辑   参谋长  0.9377206   11
+## 12  罗辑   弗雷斯  0.9369408   12
+## 13  罗辑   第一眼  0.9357565   13
+## 14  罗辑     父亲  0.9350463   14
+## 15  罗辑   多少次  0.9314436   15
+## 16  罗辑     门去  0.9291503   16
+## 17  罗辑     维德  0.9267251   17
+## 18  罗辑     褐蚁  0.9203902   18
+## 19  罗辑       刚  0.9200501   19
+## 20  罗辑     吴岳  0.9191605   20</code></pre>
+<p>查看均值向量（多个词向量中心的）的10个近义词</p>
+<pre class="r"><code>vectors &lt;- emb[c(&quot;汪淼&quot;, &quot;罗辑&quot;, &quot;叶文洁&quot;), ]
+centroid_vector &lt;- colMeans(vectors)
+
+predict(model, centroid_vector, type = &quot;nearest&quot;, top_n = 10)</code></pre>
+<pre><code>##        term similarity rank
+## 1      罗辑  0.9185568    1
+## 2  狄奥伦娜  0.9104245    2
+## 3      文洁  0.9088279    3
+## 4      汪淼  0.9054156    4
+## 5    白艾思  0.9046930    5
+## 6      张翔  0.9026827    6
+## 7      尴尬  0.8952187    7
+## 8      庄颜  0.8952166    8
+## 9      皇帝  0.8949283    9
+## 10     父亲  0.8915347   10</code></pre>
+<p><br></p>
+</div>
+<div id="doc2vec" class="section level2">
+<h2>doc2vec()</h2>
+<ul>
+<li>doc2vec(object, newdata, split = ” “)
+<ul>
+<li>object word2vec模型对象</li>
+<li>newdata 文档列表(用空格间隔的字符串列表)</li>
+<li>split 默认分隔符是空格</li>
+</ul></li>
+</ul>
+<p>将文档转为向量</p>
+<pre class="r"><code>docs &lt;- c(&quot;哦 ， 对不起 ， 汪 教授 。 这是 我们 史强 队长 。&quot;, 
+          &quot; 丁仪 博士 ， 您 能否 把 杨冬 的 遗书 给 汪 教授 看 一下 ？ &quot;)
+
+doc2vec(object=model, newdata = docs, split=&#39; &#39;)</code></pre>
+<pre><code>##            [,1]       [,2]       [,3]     [,4]      [,5]       [,6]       [,7]
+## [1,] -1.1769752 -0.1065619  0.1983950 1.734068 0.5478012 -0.8320528 -0.2387014
+## [2,] -0.4827189  0.0664595 -0.2119484 1.895074 0.6729840 -0.3008853 -0.6857539
+##            [,8]      [,9]      [,10]
+## [1,] -0.5519856 -2.007002  0.4182127
+## [2,] -0.5976922 -2.130454 -0.4653725</code></pre>
+<p><br></p>
+</div>
+<div id="保存word2vec模型" class="section level2">
+<h2>保存word2vec模型</h2>
+<p>保存模型，一般有两个目的</p>
+<ul>
+<li>为了分享word2vec模型</li>
+<li>避免反复训练模型，节约数据分析时间</li>
+</ul>
+<pre class="r"><code>word2vec::write.word2vec(x = model, 
+                         #新建output文件夹，将模型存入output文件夹内
+                         file = &quot;output/santi_word2vec.bin&quot;)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<p><br></p>
+</div>
+<div id="导入预训练模型" class="section level2">
+<h2>导入预训练模型</h2>
+<p>导入 <code>output/santi_word2vec.bin</code> 的预训练word2vec模型</p>
+<pre class="r"><code>pre_trained_model &lt;- word2vec::read.word2vec(file = &quot;output/santi_word2vec.bin&quot;)
+pre_trained_emb &lt;- as.matrix(pre_trained_model)
+head(pre_trained_emb)</code></pre>
+<pre><code>##              [,1]       [,2]       [,3]       [,4]       [,5]        [,6]
+## 回荡   -1.9563367 -0.3099073 -1.2969902 -0.5719763  1.1507142 -0.05515177
+## 听证会  0.2756990  1.3702289 -1.3303705 -0.1827691  0.6622804 -1.92008448
+## 纲领    0.4495552  1.9311246 -0.5812275 -0.1470096 -0.2678985 -0.01694358
+## 很亮    0.3621844 -1.0048453  0.7036168 -2.0917876  0.6459805  1.18436253
+## 秒      1.9033701  1.6510324 -0.2616904  0.3671210  1.0618066  0.06588747
+## 杰森   -1.2904713 -1.2501229  0.3380587  0.8590797  1.6798494 -0.58775252
+##              [,7]       [,8]       [,9]      [,10]
+## 回荡    1.1082711 -0.2064489 -0.9264346 -0.7816723
+## 听证会 -1.0952694  0.6120903 -0.1326561  0.7252344
+## 纲领   -0.6097277  2.1051276 -0.2405726 -0.8808851
+## 很亮    0.1964065 -1.3926132 -0.4042619 -0.1645472
+## 秒     -0.8347995  0.2591044  0.3594093  1.1929117
+## 杰森    0.4941484 -1.1393189 -0.4687541  0.9951217</code></pre>
+</div>
+
+
+  </div>
+
+  <footer class="post-footer">
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/" target='_blank'>文本分析</a></li>
+        <li><a href="/tags/r%E8%AF%AD%E8%A8%80/" target='_blank'>R语言</a></li>
+        <li><a href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/" target='_blank'>第三方包</a></li>
+        <li><a href="/tags/%E8%AF%8D%E5%90%91%E9%87%8F/" target='_blank'>词向量</a></li>
+      </ul>
+
+
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on twitter"
+        href="https://twitter.com/intent/tweet/?text=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2022-10-12-r-word2vec%2f&amp;hashtags=%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2cR%e8%af%ad%e8%a8%80%2c%e7%ac%ac%e4%b8%89%e6%96%b9%e5%8c%85%2c%e8%af%8d%e5%90%91%e9%87%8f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2022-10-12-r-word2vec%2f&amp;title=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b&amp;summary=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b&amp;source=%2fblog%2f2022-10-12-r-word2vec%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2022-10-12-r-word2vec%2f&title=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2022-10-12-r-word2vec%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on whatsapp"
+        href="https://api.whatsapp.com/send?text=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b%20-%20%2fblog%2f2022-10-12-r-word2vec%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share R语言 | 使用word2vec词向量模型 on telegram"
+        href="https://telegram.me/share/url?text=R%e8%af%ad%e8%a8%80%20%7c%20%e4%bd%bf%e7%94%a8word2vec%e8%af%8d%e5%90%91%e9%87%8f%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2022-10-12-r-word2vec%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+    
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2022 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'Copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

@@ -6,7 +6,7 @@
     <description>Recent content in 文本分析 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 08 Oct 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 12 Oct 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>置顶推荐 | 社科(经管)文本分析快速指南</title>
       <link>https://hidadeng.github.io/blog/the_text_analysis_list_about_ms/</link>
@@ -118,6 +118,234 @@
 <li>如果只意性价比，且已迫不及待想学，可以考虑直接报名大邓的<a href="https://hidadeng.github.io/blog/management_python_course">录播课</a>。</li>
 <li>如果不想学，也可以考虑外包。更建议找淘宝，如果找我咨询，请先阅读<a href="https://hidadeng.github.io/blog/paid_for_service">有偿说明</a></li>
 </ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>R语言 | 使用word2vec词向量模型</title>
+      <link>https://hidadeng.github.io/blog/2022-10-12-r-word2vec/</link>
+      <pubDate>Wed, 12 Oct 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-10-12-r-word2vec/</guid>
+      <description>R语言训练和使用词向量word2vec模型</description>
+      <content:encoded><![CDATA[
+
+
+<p>Python的gensim库可以训练和使用word2vec模型，R语言中也有与之对应的<code>word2vec包</code>。word2vec是词嵌入技术中最常用的一种技术，如果对词嵌入不太了解，可以阅读前文</p>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/wordembeddingsinsocialscience/">转载 | 大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用</a></li>
+<li><a href="https://hidadeng.github.io/blog/from_sysbol_to_embeddings_in_computational_social_science/">转载 | 从符号到嵌入：计算社会科学的两种文本表示</a></li>
+</ul>
+<p>本文需要的R包</p>
+<pre><code>install.packages(c(&quot;word2vec&quot;, &quot;jiebaR&quot;, &quot;tidyverse&quot;, &quot;readtext&quot;))</code></pre>
+<p><br></p>
+<div id="word2vec包常用函数" class="section level2">
+<h2>word2vec包常用函数</h2>
+<ul>
+<li>word2vec 使用文本数据训练word2vec模型</li>
+<li>as.matrix 获取词向量</li>
+<li>doc2vec 获取文档向量</li>
+<li>predict 获取</li>
+<li>write.word2vec 保存word2vec模型至文件</li>
+<li>read.word2vec 读取word2vec模型文件</li>
+</ul>
+<p><br></p>
+</div>
+<div id="准备数据" class="section level2">
+<h2>准备数据</h2>
+<p>原始数据是从网站下载的 <code>三体.txt</code>, 未分词处理，现在需要</p>
+<ol style="list-style-type: decimal">
+<li>读中文取txt数据</li>
+<li>保留标点符号，进行分词处理</li>
+<li>分词结果重新整理为类似英文(空格间隔词语的形式)字符串</li>
+<li>结果存入新的txt</li>
+</ol>
+<pre class="r"><code>library(jiebaR)
+library(tidyverse)
+library(word2vec)
+
+
+#导入数据
+tri_body &lt;- readtext::readtext(&#39;data/三体.txt&#39;)$text 
+
+#分词（保留标点符号）
+tokenizer &lt;- worker(symbol=T)
+tri_words &lt;- segment(tri_body, tokenizer)
+
+# 整理为英文格式（词语之间加空格）
+segmented_text &lt;- stringr::str_c(tri_words, collapse = &quot; &quot;) %&gt;% c()
+
+#写入txt
+readr::write_file(segmented_text, file=&#39;data/santi.txt&#39;)</code></pre>
+<p><br></p>
+</div>
+<div id="训练word2vec模型" class="section level2">
+<h2>训练word2vec模型</h2>
+<pre><code>word2vec(
+  x,
+  type = c(&quot;cbow&quot;, &quot;skip-gram&quot;),
+  dim = 50,
+  window = ifelse(type == &quot;cbow&quot;, 5L, 10L),
+  iter = 5L,
+  lr = 0.05,
+  min_count = 5L,
+  split = c(&quot; \n,.-!?:;/\&quot;#$%&amp;&#39;()*+&lt;=&gt;@[]\\^_`{|}~\t\v\f\r&quot;, &quot;.\n?!&quot;),
+  stopwords = character(),
+  threads = 1L,
+  ...
+)</code></pre>
+<ul>
+<li>x 英文文本数据txt文件(中文数据txt文件是分词后的txt文件，空格间隔词语)</li>
+<li>type 训练方式，默认CBOW</li>
+<li>dim 词向量维度，默认50维</li>
+<li>window 词向量窗口，默认5</li>
+<li>iter 训练迭代次数，默认5</li>
+<li>split 分词、分句对应的分隔符。</li>
+<li>lr 学习率，默认0.05</li>
+<li>min_count 词语在语料中至少要出现5次(低于5次的词语，训练好的结果中没有该词语）</li>
+<li>stopwords 停用词表，默认空字符集</li>
+<li>threads 并行加速，cpu核数，默认1。为了加速训练过程，可以使用 <code>parallel::detectCores()</code> 获得本电脑的核数</li>
+</ul>
+<pre class="r"><code>#训练10维的词向量模型
+model &lt;- word2vec(x = &#39;data/santi.txt&#39;, 
+                  dim = 10,  
+                  iter = 20, 
+                  split = c(&quot; &quot;,  &quot;。？！；&quot;),
+                  threads = parallel::detectCores()) #并行，使用cpu多核加速
+
+emb &lt;- as.matrix(model)
+
+#显示6个词
+head(emb)</code></pre>
+<pre><code>##             [,1]       [,2]        [,3]        [,4]      [,5]        [,6]
+## 煮   -1.02566934 -0.9271542 -0.42417252 -0.54280633 1.8847700  0.41640753
+## 报   -0.83992052  1.9440031  0.09093992  0.83522910 1.7909089  0.72149992
+## 悬空 -0.06369513 -1.3519955 -2.13137460 -0.06198586 0.6096401  1.32933748
+## 略    1.74687469 -0.4278547 -0.33822438  1.08505321 2.0168977 -0.07693915
+## 伏   -0.68947995 -1.4147453 -1.95522511 -0.39963767 0.5269030  0.30352208
+## 石柱 -0.40561640 -1.3643234  0.30329546 -0.94012892 2.1579018  0.79654717
+##            [,7]       [,8]       [,9]      [,10]
+## 煮   -1.1708908 -0.7624418 -0.6275516  1.2417521
+## 报    0.5235919  0.8448864 -0.2960095 -0.0773837
+## 悬空  0.1527163 -0.1337370 -0.1646384  1.1892601
+## 略   -0.3246748 -0.9813624  0.5045205  0.2771466
+## 伏    0.3166684 -1.4238008 -1.0167172 -0.0976937
+## 石柱  0.2237919  0.6933151  0.7412233 -0.7918702</code></pre>
+<p><br></p>
+</div>
+<div id="查看某词的vector" class="section level2">
+<h2>查看某词的vector</h2>
+<p>查看词语 <code>汪淼</code> 的vector</p>
+<pre class="r"><code>emb[&quot;汪淼&quot;,]</code></pre>
+<pre><code>##  [1] -0.77559733 -0.90021265  0.66555792 -0.10277803  1.89924443 -0.88817298
+##  [7] -1.32665634 -0.75938725 -0.09628224  1.18008399</code></pre>
+<p>查看词语 <code>地球</code> 的vector</p>
+<pre class="r"><code>emb[&quot;地球&quot;,]</code></pre>
+<pre><code>##  [1]  0.29645494 -0.61688840  0.91209215 -0.64530188  0.62816381 -0.72807491
+##  [7]  0.50655973  2.38137436  1.19238114 -0.09610342</code></pre>
+<p><br></p>
+</div>
+<div id="predict" class="section level2">
+<h2>predict()</h2>
+<p>找到语料中，词语 <code>罗辑</code> 最相似的 20个词</p>
+<pre class="r"><code>predict(model, &#39;罗辑&#39;, type=&#39;nearest&#39;, top_n = 20)</code></pre>
+<pre><code>## $罗辑
+##    term1    term2 similarity rank
+## 1   罗辑     胡文  0.9744400    1
+## 2   罗辑   申玉菲  0.9678891    2
+## 3   罗辑   瓦季姆  0.9550550    3
+## 4   罗辑 狄奥伦娜  0.9518393    4
+## 5   罗辑     蓝西  0.9472395    5
+## 6   罗辑     护士  0.9471439    6
+## 7   罗辑   法扎兰  0.9458703    7
+## 8   罗辑   白艾思  0.9451101    8
+## 9   罗辑     坎特  0.9396626    9
+## 10  罗辑     白蓉  0.9387447   10
+## 11  罗辑   参谋长  0.9377206   11
+## 12  罗辑   弗雷斯  0.9369408   12
+## 13  罗辑   第一眼  0.9357565   13
+## 14  罗辑     父亲  0.9350463   14
+## 15  罗辑   多少次  0.9314436   15
+## 16  罗辑     门去  0.9291503   16
+## 17  罗辑     维德  0.9267251   17
+## 18  罗辑     褐蚁  0.9203902   18
+## 19  罗辑       刚  0.9200501   19
+## 20  罗辑     吴岳  0.9191605   20</code></pre>
+<p>查看均值向量（多个词向量中心的）的10个近义词</p>
+<pre class="r"><code>vectors &lt;- emb[c(&quot;汪淼&quot;, &quot;罗辑&quot;, &quot;叶文洁&quot;), ]
+centroid_vector &lt;- colMeans(vectors)
+
+predict(model, centroid_vector, type = &quot;nearest&quot;, top_n = 10)</code></pre>
+<pre><code>##        term similarity rank
+## 1      罗辑  0.9185568    1
+## 2  狄奥伦娜  0.9104245    2
+## 3      文洁  0.9088279    3
+## 4      汪淼  0.9054156    4
+## 5    白艾思  0.9046930    5
+## 6      张翔  0.9026827    6
+## 7      尴尬  0.8952187    7
+## 8      庄颜  0.8952166    8
+## 9      皇帝  0.8949283    9
+## 10     父亲  0.8915347   10</code></pre>
+<p><br></p>
+</div>
+<div id="doc2vec" class="section level2">
+<h2>doc2vec()</h2>
+<ul>
+<li>doc2vec(object, newdata, split = ” “)
+<ul>
+<li>object word2vec模型对象</li>
+<li>newdata 文档列表(用空格间隔的字符串列表)</li>
+<li>split 默认分隔符是空格</li>
+</ul></li>
+</ul>
+<p>将文档转为向量</p>
+<pre class="r"><code>docs &lt;- c(&quot;哦 ， 对不起 ， 汪 教授 。 这是 我们 史强 队长 。&quot;, 
+          &quot; 丁仪 博士 ， 您 能否 把 杨冬 的 遗书 给 汪 教授 看 一下 ？ &quot;)
+
+doc2vec(object=model, newdata = docs, split=&#39; &#39;)</code></pre>
+<pre><code>##            [,1]       [,2]       [,3]     [,4]      [,5]       [,6]       [,7]
+## [1,] -1.1769752 -0.1065619  0.1983950 1.734068 0.5478012 -0.8320528 -0.2387014
+## [2,] -0.4827189  0.0664595 -0.2119484 1.895074 0.6729840 -0.3008853 -0.6857539
+##            [,8]      [,9]      [,10]
+## [1,] -0.5519856 -2.007002  0.4182127
+## [2,] -0.5976922 -2.130454 -0.4653725</code></pre>
+<p><br></p>
+</div>
+<div id="保存word2vec模型" class="section level2">
+<h2>保存word2vec模型</h2>
+<p>保存模型，一般有两个目的</p>
+<ul>
+<li>为了分享word2vec模型</li>
+<li>避免反复训练模型，节约数据分析时间</li>
+</ul>
+<pre class="r"><code>word2vec::write.word2vec(x = model, 
+                         #新建output文件夹，将模型存入output文件夹内
+                         file = &quot;output/santi_word2vec.bin&quot;)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<p><br></p>
+</div>
+<div id="导入预训练模型" class="section level2">
+<h2>导入预训练模型</h2>
+<p>导入 <code>output/santi_word2vec.bin</code> 的预训练word2vec模型</p>
+<pre class="r"><code>pre_trained_model &lt;- word2vec::read.word2vec(file = &quot;output/santi_word2vec.bin&quot;)
+pre_trained_emb &lt;- as.matrix(pre_trained_model)
+head(pre_trained_emb)</code></pre>
+<pre><code>##              [,1]       [,2]       [,3]       [,4]       [,5]        [,6]
+## 回荡   -1.9563367 -0.3099073 -1.2969902 -0.5719763  1.1507142 -0.05515177
+## 听证会  0.2756990  1.3702289 -1.3303705 -0.1827691  0.6622804 -1.92008448
+## 纲领    0.4495552  1.9311246 -0.5812275 -0.1470096 -0.2678985 -0.01694358
+## 很亮    0.3621844 -1.0048453  0.7036168 -2.0917876  0.6459805  1.18436253
+## 秒      1.9033701  1.6510324 -0.2616904  0.3671210  1.0618066  0.06588747
+## 杰森   -1.2904713 -1.2501229  0.3380587  0.8590797  1.6798494 -0.58775252
+##              [,7]       [,8]       [,9]      [,10]
+## 回荡    1.1082711 -0.2064489 -0.9264346 -0.7816723
+## 听证会 -1.0952694  0.6120903 -0.1326561  0.7252344
+## 纲领   -0.6097277  2.1051276 -0.2405726 -0.8808851
+## 很亮    0.1964065 -1.3926132 -0.4042619 -0.1645472
+## 秒     -0.8347995  0.2591044  0.3594093  1.1929117
+## 杰森    0.4941484 -1.1393189 -0.4687541  0.9951217</code></pre>
+</div>
 ]]></content:encoded>
     </item>
     

@@ -6,15 +6,226 @@ slug: []
 categories: []
 tags:
   - 文本分析
-  - 学术应用
+  - R语言
+  - 第三方包
+  - 词向量
 cover:
-  image: images/blog/chinese_emobank.png
-description: description用于SEO优化
+  image: images/blog/word2vec.png
+description: R语言训练和使用词向量word2vec模型
 keywords:
-  - Python
+  - R语言
   - 文本分析
   - 经济管理
 draft: no
 type: post
 ---
+
+Python的gensim库可以训练和使用word2vec模型，R语言中也有与之对应的``word2vec包``。word2vec是词嵌入技术中最常用的一种技术，如果对词嵌入不太了解，可以阅读前文
+
+- [转载 | 大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用](https://hidadeng.github.io/blog/wordembeddingsinsocialscience/)
+- [转载 | 从符号到嵌入：计算社会科学的两种文本表示](https://hidadeng.github.io/blog/from_sysbol_to_embeddings_in_computational_social_science/)
+
+
+
+本文需要的R包
+
+
+```
+install.packages(c("word2vec", "jiebaR", "tidyverse", "readtext"))
+```
+
+
+<br>
+
+## word2vec包常用函数
+- word2vec	使用文本数据训练word2vec模型
+- as.matrix  获取词向量
+- doc2vec  获取文档向量
+- predict 获取
+- write.word2vec	保存word2vec模型至文件
+- read.word2vec	  读取word2vec模型文件
+
+
+
+
+<br>
+
+## 准备数据
+
+原始数据是从网站下载的 ``三体.txt``, 未分词处理，现在需要
+
+1. 读中文取txt数据
+2. 保留标点符号，进行分词处理
+3. 分词结果重新整理为类似英文(空格间隔词语的形式)字符串
+4. 结果存入新的txt
+
+
+```{r message=F}
+library(jiebaR)
+library(tidyverse)
+library(word2vec)
+
+
+#导入数据
+tri_body <- readtext::readtext('data/三体.txt')$text 
+
+#分词（保留标点符号）
+tokenizer <- worker(symbol=T)
+tri_words <- segment(tri_body, tokenizer)
+
+# 整理为英文格式（词语之间加空格）
+segmented_text <- stringr::str_c(tri_words, collapse = " ") %>% c()
+
+#写入txt
+readr::write_file(segmented_text, file='data/santi.txt')
+```
+
+
+<br>
+
+## 训练word2vec模型
+
+
+```
+word2vec(
+  x,
+  type = c("cbow", "skip-gram"),
+  dim = 50,
+  window = ifelse(type == "cbow", 5L, 10L),
+  iter = 5L,
+  lr = 0.05,
+  min_count = 5L,
+  split = c(" \n,.-!?:;/\"#$%&'()*+<=>@[]\\^_`{|}~\t\v\f\r", ".\n?!"),
+  stopwords = character(),
+  threads = 1L,
+  ...
+)
+```
+
+
+- x 英文文本数据txt文件(中文数据txt文件是分词后的txt文件，空格间隔词语)
+- type 训练方式，默认CBOW
+- dim 词向量维度，默认50维
+- window 词向量窗口，默认5
+- iter 训练迭代次数，默认5
+- split 分词、分句对应的分隔符。
+- lr 学习率，默认0.05
+- min_count 词语在语料中至少要出现5次(低于5次的词语，训练好的结果中没有该词语）
+- stopwords 停用词表，默认空字符集
+- threads  并行加速，cpu核数，默认1。为了加速训练过程，可以使用 ``parallel::detectCores()`` 获得本电脑的核数
+
+
+
+```{r}
+#训练10维的词向量模型
+model <- word2vec(x = 'data/santi.txt', 
+                  dim = 10,  
+                  iter = 20, 
+                  split = c(" ",  "。？！；"),
+                  threads = parallel::detectCores()) #并行，使用cpu多核加速
+
+emb <- as.matrix(model)
+
+#显示6个词
+head(emb)
+```
+
+
+
+<br>
+
+## 查看某词的vector
+
+查看词语 ``汪淼`` 的vector
+
+```{r}
+emb["汪淼",]
+```
+
+
+查看词语 ``地球`` 的vector
+
+```{r}
+emb["地球",]
+```
+
+<br>
+
+## predict()
+
+找到语料中，词语 ``罗辑`` 最相似的 20个词
+
+```{r}
+predict(model, '罗辑', type='nearest', top_n = 20)
+```
+
+
+查看均值向量（多个词向量中心的）的10个近义词
+
+
+```{r}
+vectors <- emb[c("汪淼", "罗辑", "叶文洁"), ]
+centroid_vector <- colMeans(vectors)
+
+predict(model, centroid_vector, type = "nearest", top_n = 10)
+```
+
+<br>
+
+
+## doc2vec()
+
+- doc2vec(object, newdata, split = " ")
+  - object word2vec模型对象
+  - newdata 文档列表(用空格间隔的字符串列表)
+  - split 默认分隔符是空格
+  
+将文档转为向量
+
+```{r}
+docs <- c("哦 ， 对不起 ， 汪 教授 。 这是 我们 史强 队长 。", 
+          " 丁仪 博士 ， 您 能否 把 杨冬 的 遗书 给 汪 教授 看 一下 ？ ")
+
+doc2vec(object=model, newdata = docs, split=' ')
+```
+
+
+<br>
+
+## 保存word2vec模型
+
+保存模型，一般有两个目的
+
+- 为了分享word2vec模型
+- 避免反复训练模型，节约数据分析时间
+
+
+```{r}
+word2vec::write.word2vec(x = model, 
+                         #新建output文件夹，将模型存入output文件夹内
+                         file = "output/santi_word2vec.bin")
+```
+
+
+
+<br>
+
+## 导入预训练模型
+
+导入 ``output/santi_word2vec.bin`` 的预训练word2vec模型
+
+
+```{r}
+pre_trained_model <- word2vec::read.word2vec(file = "output/santi_word2vec.bin")
+pre_trained_emb <- as.matrix(pre_trained_model)
+head(pre_trained_emb)
+```
+
+
+
+
+
+
+
+
 
