@@ -1,0 +1,112 @@
+---
+title: 使用textstat库计算文本可读性
+author: 大邓
+date: '2022-10-22'
+slug: []
+categories: []
+tags:
+  - 文本分析
+cover:
+  image: images/blog/readability-tests.png
+description: 使用textstat库计算文本可读性
+keywords:
+  - Python
+  - 文本分析
+  - 经济管理
+  - 可读性
+draft: no
+type: post
+---
+
+textstat可以对文本进行可读性计算，支持英文、德语、西班牙、意大利、荷兰语等。目前不支持中文，如做中文文本分析，可以考虑用cntext包。
+
+https://github.com/textstat/textstat
+
+<br>
+
+
+## 任务
+
+今天在本文中，将学习三个知识点。
+
+1. 读取csv数据文件
+2. 选中csv中某列文本数据，依次使用apply方法，计算FOG、ARI、CLI等。
+3. 综合三个可读性指标，构造可读性mean值
+
+<br>
+
+## 安装
+
+```
+pip3 install textstat
+```
+
+<br>
+
+## 读取数据
+
+[点击下载实验数据data.csv](data.csv) 
+
+```{python}
+import pandas as pd
+import textstat
+#设置dataframe显示的宽度
+pd.options.display.max_colwidth = 50
+
+df = pd.read_csv('data.csv')
+df
+```
+
+<br>
+
+## Series批操作
+
+
+使用apply方法对pd.Series类型的数据进行批操作
+
+extstat库有丰富的可读性方法，这里任选2个作为 **批操作函数**。
+
+- **Fog**  textstat.gunning_fog(text)
+- **Flesch** textstat.flesch_reading_ease(text)
+
+```{python}
+df['Fog'] = df['doc'].apply(textstat.gunning_fog)
+df['Flesch'] = df['doc'].apply(textstat.flesch_reading_ease)
+
+df.head()
+```
+
+<br>
+
+## DataFrame均值
+选中Fog、Flesch两列
+
+```{python}
+#查看df[['Fog', 'Flesch']]数据类型
+type(df[['Fog', 'Flesch']])
+```
+
+```{python}
+#对这两个指标水平方向进行均值
+df['Mean'] = df[['Fog', 'Flesch']].mean(axis=1)
+df.head()
+```
+<br>
+
+
+## 存储
+存储到可读性.csv中
+
+```{python}
+df.to_csv('可读性.csv', index=False)
+```
+
+
+
+<br>
+
+## 广而告之
+
+-   [长期征稿](https://hidadeng.github.io/blog/call_for_paper/)
+-   [长期招募小伙伴](https://hidadeng.github.io/blog/we_need_you/)
+-   [付费视频课 | Python实证指标构建与文本分析](https://hidadeng.github.io/blog/management_python_course/)
