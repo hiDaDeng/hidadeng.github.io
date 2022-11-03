@@ -8,6 +8,101 @@
     <language>zh</language>
     <lastBuildDate>Sun, 16 Oct 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E8%AF%8D%E5%90%91%E9%87%8F/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>Python | 词移距离(Word Mover&#39;s Distance)</title>
+      <link>https://hidadeng.github.io/blog/2022-10-16-python-word-mover-s-distance/</link>
+      <pubDate>Sun, 16 Oct 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-10-16-python-word-mover-s-distance/</guid>
+      <description>词移距离可以为我们提供短文相似度计算，距离越小，两文档相似度越高。</description>
+      <content:encoded><![CDATA[
+
+
+<p>词嵌入方法（word2vec、glove等）可以将每个词的语义映射到n维空间，在n维空间中，词语间距离远近可以表征语义的远近。Kusner等人(2015)提出<strong>词移距离</strong>（word mover’s distance， 后文用WMD缩写代替）借助词语向量语义距离，实现两文档间的相似度计算，距离越小，相似度越高。在会计领域中的应用可以用来度量问答场景的答非所问的程度。</p>
+<p><br></p>
+<div id="wmd基础" class="section level2">
+<h2>WMD基础</h2>
+<p>有两个文档</p>
+<pre><code>doc1 = &quot;Obama speaks to the media in Illinois&quot;
+doc2 = &quot;The President greets the press in Chicago.&quot;</code></pre>
+<p>词向量一般是高(n)维空间，这里把n压缩到2维空间，使用matplotlib绘图。两个文档中重要的词语彼此之间存在语义相似度，</p>
+<pre class="python"><code># Image from https://vene.ro/images/wmd-obama.png
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+img = mpimg.imread(&#39;img/wmd-obama.png&#39;)
+imgplot = plt.imshow(img)
+plt.axis(&#39;off&#39;)</code></pre>
+<pre><code>## (-0.5, 2397.5, 1327.5, -0.5)</code></pre>
+<pre class="python"><code>plt.show()</code></pre>
+<p><img src="/blog/2022-10-16-python-word-mover-s-distance/index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p><img src="img/wmd-obama.png" /></p>
+<p><br></p>
+</div>
+<div id="计算wmd步骤" class="section level2">
+<h2>计算WMD步骤</h2>
+<ol style="list-style-type: decimal">
+<li>剔除文档中停止词，如the、a等无信息量词</li>
+<li>导入预训练好的词嵌入(word2vec)模型(网上资源比较多，如果数据量很大，也可以自己使用gensim训练自己的词向量)</li>
+<li>计算WMD</li>
+</ol>
+<pre class="python"><code>from nltk.corpus import stopwords
+from nltk import download
+download(&#39;stopwords&#39;)  # Download stopwords list.
+stop_words = stopwords.words(&#39;english&#39;)
+
+def preprocess(sentence):
+    return [w for w in sentence.lower().split() if w not in stop_words]
+
+
+doc1 = &quot;Obama speaks to the media in Illinois&quot;
+doc2 = &quot;The President greets the press in Chicago.&quot;
+
+doc1 = preprocess(doc1)
+doc2 = preprocess(doc2)
+
+print(doc1)
+print(doc2)</code></pre>
+<p>Run</p>
+<pre><code>[&#39;obama&#39;, &#39;speaks&#39;, &#39;media&#39;, &#39;illinois&#39;]
+[&#39;president&#39;, &#39;greets&#39;, &#39;press&#39;, &#39;chicago.&#39;]</code></pre>
+<p><br></p>
+<blockquote>
+<p>如果运行代码出现nltk问题，可以观看视频 <a href="https://www.bilibili.com/video/BV14A411i7DB" class="uri">https://www.bilibili.com/video/BV14A411i7DB</a></p>
+</blockquote>
+<p>下载谷歌新闻预训练模型(word2vec-google-news-300) ,这里可以使用我提供的百度网盘</p>
+<blockquote>
+<p>链接：<a href="https://pan.baidu.com/s/1yzGLcMsZl3u1zigTHLdc2Q" class="uri">https://pan.baidu.com/s/1yzGLcMsZl3u1zigTHLdc2Q</a>
+提取码：l63f</p>
+</blockquote>
+<p>这里需要</p>
+<pre class="python"><code>from gensim.models import KeyedVectors
+
+w2v_model = KeyedVectors.load(&#39;GoogleNews-vectors-negative300.bin.gz&#39;)
+wmd = w2v_model.wmdistance(doc1, doc2)
+print(&#39;distance :{wmd}&#39;.format(wmd=wmd))</code></pre>
+<p>Run</p>
+<pre><code>distance :0.8867237050133944</code></pre>
+<p><br></p>
+</div>
+<div id="参考文献" class="section level2">
+<h2>参考文献</h2>
+<ul>
+<li>Kusner, Matt J., Yu Sun, Nicholas I. Kolkin and Kilian Q. Weinberger. “From Word Embeddings To Document Distances.” ICML (2015).</li>
+<li><a href="https://radimrehurek.com/gensim/auto_examples/tutorials/run_wmd.html" class="uri">https://radimrehurek.com/gensim/auto_examples/tutorials/run_wmd.html</a></li>
+</ul>
+<p><br></p>
+</div>
+<div id="广而告之" class="section level2">
+<h2>广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+</div>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>数据集 | 多语言对齐词向量预训练模型</title>
       <link>https://hidadeng.github.io/blog/2022-10-16-aligned-word-vectors/</link>
       <pubDate>Sun, 16 Oct 2022 00:00:00 +0000</pubDate>

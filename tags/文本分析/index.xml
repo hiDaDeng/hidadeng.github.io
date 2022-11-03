@@ -6,7 +6,7 @@
     <description>Recent content in 文本分析 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 02 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 03 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>置顶推荐 | 社科(经管)文本分析快速指南</title>
       <link>https://hidadeng.github.io/blog/the_text_analysis_list_about_ms/</link>
@@ -27,6 +27,7 @@
 <li><a href="https://hidadeng.github.io/blog/2019-12-08-lazy-prices/">文本相似 | Lazy Prices公司年报内容变动预示重大风险</a></li>
 <li><a href="https://hidadeng.github.io/blog/manager_tone_analysis_with_lm/">管理世界 | 使用LM中文金融词典对年报进行语调分析</a></li>
 <li><a href="https://hidadeng.github.io/blog/text_mining_in_2021_management_world/">管理世界 | 使用文本分析&amp;机器学习测量短视主义</a></li>
+<li><a href="https://hidadeng.github.io/blog/2022-11-03-mda-measure-digitalization/">管理世界 | 使用 经营讨论与分析 测量 企业数字化</a></li>
 <li><a href="https://hidadeng.github.io/blog/automate_text_analysis_in_market/">营销研究中文本分析应用概述(含案例及代码)</a></li>
 <li><a href="https://hidadeng.github.io/blog/text_readability/">文本可读性研究及应用清单</a></li>
 <li><a href="https://hidadeng.github.io/blog/2022-10-22-textstats-readability/">使用textstat库计算文本可读性</a></li>
@@ -122,6 +123,157 @@
 <li>大邓每年会有4场直播，五一、十一、寒、暑假，如果时间点接近，可考虑报名参与<a href="https://hidadeng.github.io/blog/2022-05-workshop/7-Python.html">直播课</a>。</li>
 <li>如果只意性价比，且已迫不及待想学，可以考虑直接报名大邓的<a href="https://hidadeng.github.io/blog/management_python_course">录播课</a>。</li>
 <li>如果不想学，也可以考虑外包。更建议找淘宝，如果找我咨询，请先阅读<a href="https://hidadeng.github.io/blog/paid_for_service">有偿说明</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>管理世界 | 使用 经营讨论与分析 测量 企业数字化</title>
+      <link>https://hidadeng.github.io/blog/2022-11-03-mda-measure-digitalization/</link>
+      <pubDate>Thu, 03 Nov 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-11-03-mda-measure-digitalization/</guid>
+      <description>使用 经营讨论与分 文本数据，测量企业的数字化指标，代码实现过程参考2021管理世界的一篇论文</description>
+      <content:encoded><![CDATA[<p>使用 经营讨论与分析 数据，计算企业数字化指标, 相关论文:</p>
+<ul>
+<li>吴非, 胡慧芷, 林慧妍, and 任晓怡. &ldquo;企业数字化转型与资本市场表现——来自股票流动性的经验证据.&rdquo; 管理世界 (2021).</li>
+<li>宋德勇, 朱文博, and 丁海. &ldquo;企业数字化能否促进绿色技术创新?.&rdquo; 财经研究 48, no. 4 (2022).</li>
+</ul>
+<br>
+<h2 id="一读取数据">一、读取数据</h2>
+<p>完整md&amp;a.xlsx数据集370M，覆盖33000+条   md&amp;a记录。</p>
+<p>测试数据 <a href="small_test_data.xlsx">small_test_data.xlsx</a> 是从完整的数据中随机抽取的20条，结构基本一致。以测试数据为例，方便快速实验。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import pandas as pd
+
+# converters 强制声明该列为字符串，  防止股票代码 被程序识别为数字，
+df = pd.read_excel(&#39;small_mda_data.xlsx&#39;, converters={&#39;股票代码&#39;: str})
+
+#显示前5行
+df.head()
+</code></pre></div><p><img loading="lazy" src="img/df1.png" alt=""  />
+</p>
+<br>
+<h2 id="二构建词典">二、构建词典</h2>
+<p>下图是吴非等(2021)数字化指标的截图</p>
+<p><img loading="lazy" src="img/%e7%ae%a1%e7%90%86%e4%b8%96%e7%95%8c2021%e5%90%b4%e9%9d%9e-%e4%bc%81%e4%b8%9a%e6%95%b0%e5%ad%97%e5%8c%96-%e5%85%b3%e9%94%ae%e8%af%8d.png" alt=""  />
+</p>
+<blockquote>
+<p>后期，如果想自己扩展词典，可以初步筛选种子词(该篇论文的词表), 使用md&amp;a语料文件(txt格式)， 结合cntext库的so-pmi或词向量方法，对数字化词典进行扩充。</p>
+</blockquote>
+<p>这里我已将吴非等(2021)的词表内置到 cntext库（1.8.0版本）的 Chinese_Digitalization.pkl中。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">#安装cntext库
+import cntext as ct
+
+Chinese_Digitalization_Info = ct.load_pkl_dict(&#39;Chinese_Digitalization.pkl&#39;)
+
+print(ct.__version__)
+print(Chinese_Digitalization_Info)
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1.8.0
+
+{&#39;Referer&#39;: &#39;吴非,胡慧芷,林慧妍,任晓怡. 企业数字化转型与资本市场表现——来自股票流动性的经验证据[J]. 管理世界,2021,37(07):130-144+10.&#39;, 
+
+&#39;Desc&#39;: &#39;基于这篇论文，构建了中文数字化词典，含人工智能技术、大数据技术、云计算技术、区块链技术、数字技术应用等关键词列表。 &#39;, 
+
+&#39;Chinese_Digitalization&#39;: 
+    {&#39;Artificial_Intelligence&#39;: [&#39;人工智能&#39;, &#39;商业智能&#39;, &#39;图像理解&#39;, &#39;投资决策辅助系统&#39;, &#39;智能数据分析, &#39;智能机器人&#39;, &#39;机器学习&#39;, &#39;深度学习&#39;, &#39;语义搜索&#39;, &#39;生物识别技术&#39;, &#39;人脸识别&#39;, &#39;语音识别&#39;, &#39;身份验证&#39;, &#39;自动驾驶&#39;, &#39;自然语言处理&#39;], 
+    &#39;Big_Data&#39;: [&#39;大数据&#39;, &#39;数据挖掘&#39;, &#39;文本挖掘&#39;, &#39;数据可视化&#39;, &#39;异构数据&#39;, &#39;征信&#39;, &#39;增强现实&#39;, &#39;混合现实&#39;, &#39;虚拟现实&#39;], 
+    &#39;Cloud_Computing&#39;: [&#39;云计算&#39;, &#39;流计算&#39;, &#39;图计算&#39;, &#39;内存计算&#39;, &#39;多方安全计算&#39;, &#39;类脑计算&#39;, &#39;绿色计算&#39;, &#39;认知计算&#39;, &#39;融合架构&#39;, &#39;亿级并发&#39;, &#39;EB级存储&#39;, &#39;物联网&#39;, &#39;信息物理系统&#39;], 
+    &#39;Block_Chains&#39;: [&#39;区块链&#39;, &#39;数字货币&#39;, &#39;分布式计算&#39;, &#39;差分隐私技术&#39;, &#39;智能金融合约&#39;], 
+    &#39;Usage_of_Digitalization&#39;: [&#39;移动互联网&#39;, &#39;工业互联网&#39;, &#39;移动互联&#39;, &#39;互联网医疗&#39;, &#39;电子商务&#39;, &#39;移动支付&#39;, &#39;第三方支付&#39;, &#39;NFC支付&#39;, &#39;智能能源&#39;, &#39;B2B&#39;, &#39;B2C&#39;, &#39;C2B&#39;, &#39;C2C&#39;, &#39;O2O&#39;, &#39;网联&#39;, &#39;智能穿戴&#39;, &#39;智慧农业&#39;, &#39;智能交通&#39;, &#39;智能医疗&#39;, &#39;智能客服&#39;, &#39;智能家居&#39;, &#39;智能投顾&#39;, &#39;智能文旅&#39;, &#39;智能环保&#39;, &#39;智能电网&#39;, &#39;智能营销&#39;, &#39;数字营销&#39;, &#39;无人零售&#39;, &#39;互联网金融&#39;, &#39;数字金融&#39;, &#39;Fintech&#39;, &#39;金融科技&#39;, &#39;量化金融&#39;, &#39;开放银行&#39;]}}
+</code></pre></div><br>
+<br>
+<h2 id="三定义数字化函数">三、定义数字化函数</h2>
+<p>目前，对于企业数字化水平的度量是相关研究的难点，现有文献主要有三种度量方法。</p>
+<ul>
+<li>第一，祁怀锦等（2020）使用企业年末无形资产明细项中与数字经济相关部分的金额占无形资产总额的比例度量企业数字化程度。</li>
+<li>第二，大量研究运用数字化相关关键词在年报中的词频数量或占比度量企业的数字化转型或数字化水平（赵宸宇，2021；袁淳等，2021）。</li>
+<li>第三，相关研究采取问卷调查的方式获取企业的数字化水平数据（刘政等，2020）。</li>
+</ul>
+<p>使用第二种方法，通过Python定义数字化函数，统计文本中数字化词语个数得到相应指标。</p>
+<blockquote>
+<p>吴非等(2021管理世界)数字化指标的计算更复杂一些，在此基础上，剔除关键词前存在“没”
+“无”
+“不”等否定词语的表述，同时也剔除非本公司（包括公司的股东、客户、供应商、公司高管简介介绍在内）的“数
+字化转型”关键词。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import cntext as ct
+
+
+digtal_diction = ct.load_pkl_dict(&#39;Chinese_Digitalization.pkl&#39;)[&#39;Chinese_Digitalization&#39;]
+
+
+def digtal_function(text):
+    #统计text中每类词的个数
+    res = ct.sentiment(text=text,  diction=digtal_diction)
+    return pd.Series(res)
+
+
+test_text = &#39;经过技术人员不懈努力， 该企业在人工智能、大数据、云计算、工业互联网等领域有了一定的市场地位....&#39;
+
+
+digtal_function(text=test_text)
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Artificial_Intelligence_num     1
+Big_Data_num                    1
+Cloud_Computing_num             1
+Block_Chains_num                0
+Usage_of_Digitalization_num     1
+stopword_num                   11
+word_num                       24
+sentence_num                    1
+dtype: int64
+</code></pre></div><br>
+<h2 id="四批量计算">四、批量计算</h2>
+<p>使用apply方法，对  [经营讨论与分析内容] 列，进行  digtal_function 运算, 得到 <code>res_df</code></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">#结果返回为dataframe，数字代表的是每类词出现次数
+res_df = df[&#39;经营讨论与分析内容&#39;].apply(digtal_function)
+res_df.head()
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<p>参数解读</p>
+<ul>
+<li>Artificial_Intelligence_num	 人工智能技术词出现在md&amp;a中的次数</li>
+<li>Big_Data_num	 大数据技术词出现在md&amp;a中的次数</li>
+<li>Cloud_Computing_num	云计算技术词出现在md&amp;a中的次数</li>
+<li>Block_Chains_num	区块链技术词出现在md&amp;a中的次数</li>
+<li>Usage_of_Digitalization_num	数字化应用技术词出现在md&amp;a中的次数</li>
+<li>stopword_num	停用词出现在md&amp;a中的次数</li>
+<li>word_num	md&amp;a中的总词数(md&amp;a的长度)</li>
+<li>sentence_num   md&amp;a的句子数</li>
+</ul>
+<br>
+<h2 id="五结果整理">五、结果整理</h2>
+<p>上一环节，将各种技术词出现次数加总，构建企业数字化词语出现个数， 并将其转为数字化指标(词频)。</p>
+<blockquote>
+<p>由于这类数据具有典型的“右偏性”特征，后续在其他计量分析软件中需要将其进行对数化处理，从而得到刻画企业数字化转型的整体指标。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">res_df[&#39;Digital_word_num&#39;] = res_df[[&#39;Artificial_Intelligence_num&#39;, &#39;Big_Data_num&#39;, &#39;Cloud_Computing_num&#39;, &#39;Block_Chains_num&#39;, &#39;Usage_of_Digitalization_num&#39;]].sum(axis=1)
+
+# [数字化相关技术词] 在 [文本总词数] 中的占比
+res_df[&#39;Digital_Index&#39;] = res_df[&#39;Digital_word_num&#39;]/res_df[&#39;word_num&#39;]
+res_df.head()
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df3.png" alt=""  />
+</p>
+<br>
+<h2 id="六保存结果">六、保存结果</h2>
+<p>合并df 和 <code>res_df</code>, 将其存储到新的文件中。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df2 = pd.concat([df, res_df], axis=1)
+
+#保存到 digit_result.xlsx 中
+df2.to_excel(&#39;digit_result.xlsx&#39;, index=False)
+df2.head()
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df4.png" alt=""  />
+</p>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
 </ul>
 ]]></content:encoded>
     </item>
@@ -295,6 +447,101 @@
 <li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
 <li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
 </ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>Python | 词移距离(Word Mover&#39;s Distance)</title>
+      <link>https://hidadeng.github.io/blog/2022-10-16-python-word-mover-s-distance/</link>
+      <pubDate>Sun, 16 Oct 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-10-16-python-word-mover-s-distance/</guid>
+      <description>词移距离可以为我们提供短文相似度计算，距离越小，两文档相似度越高。</description>
+      <content:encoded><![CDATA[
+
+
+<p>词嵌入方法（word2vec、glove等）可以将每个词的语义映射到n维空间，在n维空间中，词语间距离远近可以表征语义的远近。Kusner等人(2015)提出<strong>词移距离</strong>（word mover’s distance， 后文用WMD缩写代替）借助词语向量语义距离，实现两文档间的相似度计算，距离越小，相似度越高。在会计领域中的应用可以用来度量问答场景的答非所问的程度。</p>
+<p><br></p>
+<div id="wmd基础" class="section level2">
+<h2>WMD基础</h2>
+<p>有两个文档</p>
+<pre><code>doc1 = &quot;Obama speaks to the media in Illinois&quot;
+doc2 = &quot;The President greets the press in Chicago.&quot;</code></pre>
+<p>词向量一般是高(n)维空间，这里把n压缩到2维空间，使用matplotlib绘图。两个文档中重要的词语彼此之间存在语义相似度，</p>
+<pre class="python"><code># Image from https://vene.ro/images/wmd-obama.png
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+img = mpimg.imread(&#39;img/wmd-obama.png&#39;)
+imgplot = plt.imshow(img)
+plt.axis(&#39;off&#39;)</code></pre>
+<pre><code>## (-0.5, 2397.5, 1327.5, -0.5)</code></pre>
+<pre class="python"><code>plt.show()</code></pre>
+<p><img src="/blog/2022-10-16-python-word-mover-s-distance/index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p><img src="img/wmd-obama.png" /></p>
+<p><br></p>
+</div>
+<div id="计算wmd步骤" class="section level2">
+<h2>计算WMD步骤</h2>
+<ol style="list-style-type: decimal">
+<li>剔除文档中停止词，如the、a等无信息量词</li>
+<li>导入预训练好的词嵌入(word2vec)模型(网上资源比较多，如果数据量很大，也可以自己使用gensim训练自己的词向量)</li>
+<li>计算WMD</li>
+</ol>
+<pre class="python"><code>from nltk.corpus import stopwords
+from nltk import download
+download(&#39;stopwords&#39;)  # Download stopwords list.
+stop_words = stopwords.words(&#39;english&#39;)
+
+def preprocess(sentence):
+    return [w for w in sentence.lower().split() if w not in stop_words]
+
+
+doc1 = &quot;Obama speaks to the media in Illinois&quot;
+doc2 = &quot;The President greets the press in Chicago.&quot;
+
+doc1 = preprocess(doc1)
+doc2 = preprocess(doc2)
+
+print(doc1)
+print(doc2)</code></pre>
+<p>Run</p>
+<pre><code>[&#39;obama&#39;, &#39;speaks&#39;, &#39;media&#39;, &#39;illinois&#39;]
+[&#39;president&#39;, &#39;greets&#39;, &#39;press&#39;, &#39;chicago.&#39;]</code></pre>
+<p><br></p>
+<blockquote>
+<p>如果运行代码出现nltk问题，可以观看视频 <a href="https://www.bilibili.com/video/BV14A411i7DB" class="uri">https://www.bilibili.com/video/BV14A411i7DB</a></p>
+</blockquote>
+<p>下载谷歌新闻预训练模型(word2vec-google-news-300) ,这里可以使用我提供的百度网盘</p>
+<blockquote>
+<p>链接：<a href="https://pan.baidu.com/s/1yzGLcMsZl3u1zigTHLdc2Q" class="uri">https://pan.baidu.com/s/1yzGLcMsZl3u1zigTHLdc2Q</a>
+提取码：l63f</p>
+</blockquote>
+<p>这里需要</p>
+<pre class="python"><code>from gensim.models import KeyedVectors
+
+w2v_model = KeyedVectors.load(&#39;GoogleNews-vectors-negative300.bin.gz&#39;)
+wmd = w2v_model.wmdistance(doc1, doc2)
+print(&#39;distance :{wmd}&#39;.format(wmd=wmd))</code></pre>
+<p>Run</p>
+<pre><code>distance :0.8867237050133944</code></pre>
+<p><br></p>
+</div>
+<div id="参考文献" class="section level2">
+<h2>参考文献</h2>
+<ul>
+<li>Kusner, Matt J., Yu Sun, Nicholas I. Kolkin and Kilian Q. Weinberger. “From Word Embeddings To Document Distances.” ICML (2015).</li>
+<li><a href="https://radimrehurek.com/gensim/auto_examples/tutorials/run_wmd.html" class="uri">https://radimrehurek.com/gensim/auto_examples/tutorials/run_wmd.html</a></li>
+</ul>
+<p><br></p>
+</div>
+<div id="广而告之" class="section level2">
+<h2>广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+</div>
 ]]></content:encoded>
     </item>
     
