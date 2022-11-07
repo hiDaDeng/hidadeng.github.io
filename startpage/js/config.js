@@ -273,7 +273,15 @@ class Config {
 				url: 'https://app.grammarly.com/',
 				category: 'Academic Tools'
 			},
+			{
+				site: 'CopyFromPDF',
+				icon: 'copypdf',
+				url: 'https://learncs.cn/tools/pdf',
+				category: 'Academic Tools'
+			},
 
+
+			
 			{
 				site: 'Overleaf',
 				icon: 'overleaf',
