@@ -6,7 +6,503 @@
     <description>Recent content in 词向量 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 16 Oct 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E8%AF%8D%E5%90%91%E9%87%8F/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 07 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E8%AF%8D%E5%90%91%E9%87%8F/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>预训练词向量模型的方法、应用场景、变体延伸与实践总结</title>
+      <link>https://hidadeng.github.io/blog/2022-11-07-embeddings-theory-applicaiton-liuhuanyong/</link>
+      <pubDate>Mon, 07 Nov 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-11-07-embeddings-theory-applicaiton-liuhuanyong/</guid>
+      <description>预训练词向量模型的方法、应用场景、变体延伸与实践总结</description>
+      <content:encoded><![CDATA[<p><br><br></p>
+<h2 id="关于作者">关于作者</h2>
+<p>刘焕勇，liuhuanyong，现任360人工智能研究院算法专家，前中科院软件所工程师，主要研究方向为知识图谱、事件图谱在实际业务中的落地应用。<br>
+得语言者得天下，得语言资源者，分得天下，得语言逻辑者，争得天下。</p>
+<ul>
+<li>个人主页：https://liuhuanyong.github.io</li>
+<li>个人公众号：老刘说NLP</li>
+</ul>
+<br>
+<p>当前，以预训练语言模型PLM+fintune的自然语言处理范式可谓十分火热，有大量的文章在宣传这类方法，包括梳理以NNLM为起点的整个预训练方法的发展史。</p>
+<p>当前工业界，主要使用的预训练模型包括两种，一种是以wordvec为代表的预训练词向量，另一种是以BERT为代表的预训练语言模型。前者通常作为词语表示输入的初始化，后接NN/CNN/LSTM等编码层，后者既可以同样后接，也可以直接接上softmax/crf/span-pointer等进行解码。</p>
+<p>本文，主要围绕预训练词向量模型这一主题，对当前预训练词向量模型的常用方法、评估与应用方式、领域的迁移变体、当前开放的训练工具和词向量文件进行介绍，并以word2vec和fasttext为例，展示一个词向量训练的案例，做到理论与实践相结合。</p>
+<p><br><br></p>
+<h2 id="一预训练词向量模型方法">一、预训练词向量模型方法</h2>
+<p>自从进入2010年以来，神经语言模型就逐渐进入人们眼球，以NNLM为典型最初代表的神经网络模型，极大的推动了NLP这一领域的发展。</p>
+<p>实际上，早期词向量的研究通常来源于语言模型，比如NNLM和RNNLM，其主要目的是语言模型，而词向量只是一个副产物。著名的harris分布式假说提供了一个局部统计信息的理论基础。</p>
+<p>下面就选择其中三种典型进行介绍。</p>
+<br>
+<h3 id="11-word2vec">1.1 word2vec</h3>
+<p>word2vec是2013年Google开源的一款用于词向量计算的工具，通过内置的语言模型训练目标，可以将中间层得到的向量权重矩阵进行抽离，形成每个词对应的向量化表示，包括CBOW、Skip-gram两种方式，前者通过周围词来预测中心词，后者以中心词来预测上下文。</p>
+<p><img loading="lazy" src="img/1.png" alt=""  />
+</p>
+<p>经典的wordvec结构包括输入层、隐藏层和输出层，其计算流程为：</p>
+<p>1、输入层存储上下文单词的onehot。假设单词向量空间dim为V，上下文单词个数为C。</p>
+<p>2、所有onehot分别乘以共享的输入权重矩阵W。V*N矩阵，N为自己设定的数，初始化权重矩阵W 。</p>
+<p>3、所得的向量 相加求平均作为隐层向量, size为1*N。</p>
+<p>4、乘以输出权重矩阵W' N*V。</p>
+<p>5、得到向量1*V，经过激活函数处理得到V-dim概率分布。</p>
+<p>6、Hierarchical Softmax分类，概率最大的index所指示的单词为预测出的中间词与预测值的onehot做比较，根据误差更新权重矩阵。</p>
+<p><img loading="lazy" src="img/2.png" alt=""  />
+</p>
+<p>这个W矩阵就是所有单词的word embedding，任何一个单词的onehot乘以这个矩阵都将得到自己的词向量。</p>
+<p>通常，在训练词向量时候，会根据语料的大小来选择相应的训练方法。例如，针对小型的数据集，可以用CBOW算法，该方法对于很多分布式信息进行了平滑处理，将一整段上下文信息视为一个单一观察量，对于小型的数据集，这一处理是有帮助的。相比之下，大型数据集，可以用Skip-Gram模型，该方法将每个“上下文-目标词汇”的组合视为一个新观察量，这种做法在大型数据集中会更为有效。</p>
+<br>
+<h3 id="12-fasttext">1.2 fasttext</h3>
+<p>fastText是Facebook于2016年开源的一个词向量计算和文本分类工具。将整篇文档的词及n-gram向量叠加平均得到文档向量，然后使用文档向量做softmax多分类。包括字符级n-gram特征的引入以及分层Softmax分类两种。</p>
+<p>与CBOW一样，原本的fastText模型包括输入层、隐含层、输出层，输入都是多个经向量表示的单词，输出都是一个特定的目标，隐含层都是对多个词向量的叠加平均。不同的是，CBOW的输入是目标单词的上下文，fastText的输入是多个单词及其n-gram特征，这些特征用来表示单个文档，CBOW的输入单词被onehot编码过，fastText的输入特征是经embedding化的，CBOW的输出是目标词汇，fastText的输出是文档对应的类标。</p>
+<p>而如果将该类标替换成中间目标词，那么就可以得到wordvec的升级版，即单纯的词向量模型。例如，word2vec把语料库中的每个单词当成原子的，它会为每个单词生成一个向量。这忽略了单词内部的形态特征。</p>
+<p>fasttext使用了字符级别的n-grams来表示一个单词。对于单词“apple”，假设n的取值为3，则它的trigram有“&lt;ap”, “app”, “ppl”, “ple”, “le&gt;”，其中，&lt;表示前缀，&gt;表示后缀。于是，我们可以用这些trigram来表示“apple”这个单词，进一步，可以用这5个trigram的向量叠加来表示“apple”的词向量。</p>
+<p>因此，因为它们的n-gram可以和其它词共享，对于训练词库之外的单词，能够解决或者oov词，这也是在当前很多文本分类、推荐场景中会优先选用fastText作为训练方法。</p>
+<br>
+<h3 id="13-glove">1.3 Glove</h3>
+<p>GloVe是斯坦福团队于2014年提出一个词向量方法，全名叫“Global Vectors”，直接利用全局的统计信息进行训练。</p>
+<p>与上述两种方式靠滑动窗口来制造局部上下文不同，GloVe会用到全局的词语之间共现的统计信息，即词的出现次数，词对之间的共现概率，形成共现概率矩阵，并试图生成词向量来毕竟共现概率，利用Word2Vec的skip-gram算法的高性能来解决LDA的计算量复杂问题。</p>
+<p>因此，我们可以发现，Glove需要事先统计共现概率，这也让其通常被认为是无监督学习，实际上glove还是有label的，即共现次数。与wordvec还有一处不同的是，损失函数是最小平方损失函数，权重可以做映射变换。</p>
+<p><br><br></p>
+<h2 id="二预训练词向量的训练参数">二、预训练词向量的训练参数</h2>
+<p>词向量模型的超参数很多，不同的参数选择会取得不同的效果，并且，word2vec中有几个大家提的比较多的问题。以gensim-word2vec为例，包括以下参数：</p>
+<ul>
+<li>sentences： 可以是一个list，对于大语料集，可使用BrownCorpus,Text8Corpus或LineSentence构建；</li>
+<li>sg： 用于设置训练算法，默认为0，对应CBOW算法；sg=1则采用skip-gram算法；</li>
+<li>size： 特征向量的维度，默认为100。大的size需要更多的训练数据,但是效果会更好. 推荐值为几十到几百；</li>
+<li>window： 表示当前词与预测词在一个句子中的最大距离是多少；</li>
+<li>alpha: 学习速率；</li>
+<li>seed： 用于随机数发生器。与初始化词向量有关；</li>
+<li>min_count: 可以对字典做截断. 词频少于min_count次数的单词会被丢弃掉, 默认值为5；</li>
+<li>max_vocab_size: 设置词向量构建期间的RAM限制。如果所有独立单词个数超过这个，则就消除掉其中最不频繁的一个。每一千万个单词需要大约1GB的RAM。设置成None则没有限制；</li>
+<li>sample: 高频词汇的随机降采样的配置阈值，默认为1e-3，范围是(0,1e-5)；workers参数控制训练的并行数；</li>
+<li>hs: 如果为1则会采用hierarchical softmax技巧。如果设置为0（defaut），则negative sampling会被使用；</li>
+<li>negative: 如果&gt;0,则会采用negativesamping，用于设置多少个noise words；</li>
+<li>cbow_mean: 如果为0，则采用上下文词向量的和，如果为1（defaut）则采用均值。只有使用CBOW的时候才起作用；</li>
+<li>hashfxn： hash函数来初始化权重。默认使用python的hash函数；</li>
+<li>iter： 迭代次数，默认为5；</li>
+<li>trim_rule： 用于设置词汇表的整理规则，指定那些单词要留下，哪些要被删除。可以设置为None（min_count会被使用）或者一个接受()并返回RUE_DISCARD,utis.RUE_KEEP或者utis.RUE_DEFAUT的函数；</li>
+<li>sorted_vocab： 如果为1（defaut），则在分配word index 的时候会先对单词基于频率降序排序；</li>
+<li>batch_words： 每一批的传递给线程的单词的数量，默认为10000。</li>
+</ul>
+<p>不过，如此多的参数不一定能跳得过来，因此通常会集中在以下常规参数：</p>
+<p><img loading="lazy" src="img/3.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三预训练词向量的评估与应用">三、预训练词向量的评估与应用</h2>
+<p>预训练词向量生产出来，需要进行性能的评估。这方面的方法包括基于评测集，或者基于具体业务使用，用业务的指标来进行评估。</p>
+<h3 id="31-预训练词向量的评估">3.1 预训练词向量的评估</h3>
+<p>学术上，词向量的质量通常由类比问题任务进行评估。如CA-translated包含了三个语义问题和134个中文词。CA8 是专门为中文语言设计的。它包含了 17813 个类比问题，覆盖了综合的词法和语义关联。</p>
+<p>工业，则使用词向量来代替之前随机生成的词向量文件，来对自然语言处理中的文本/情感分类、实体识别、关系抽取等任务进行评估。</p>
+<br>
+<h3 id="32-预训练词向量的应用">3.2 预训练词向量的应用</h3>
+<p>预训练词向量文件最大的价值在于解决了一个词语的初始化稠密表示，在解决当前以数值化为输入的深度或机器学习模型第一部的同时，还保留了一个词的区别性特征。</p>
+<p>一方面，当前词向量可以用于近义词挖掘的重要来源，通过某个词，通过计算词与其他词之间的相似度，并设定阈值，可以迭代挖掘出大量的相关词【过程中要注意语义漂移】。而这个词，直接就可以用于当前的搜索查询扩展、领域词构建等场景。进一步的，在模型方面，还可以作为EDA数据增强工作中的重要补充。</p>
+<p>另一方面，词向量可以用于当前无监督文本表示的重要方法，通过对文本进行分词，然后找到词语对应的向量，通过向量叠加的方式可以快速得到一个文本的向量表示，这一表示在诸如情感分析、句子相似度计算等任务中是实际有效的，基于文本表示，也可以进一步提升文本分类、聚类、相似query召回等使用场景性能，甚至很形象的成为了当前业务模型的baseline或者兜底模型。</p>
+<p><br><br></p>
+<h2 id="四预训练词向量的变体延伸">四、预训练词向量的变体延伸</h2>
+<h3 id="41-gramembedding">4.1 gramEmbedding</h3>
+<p>共现信息，是cbow以及skipgram的基础，其本质在于通过周围词来建模中心词或者用中心词来建模周围词。因此，通过构造不同的共现信息，可以得到不同类型的向量形式。这里取了个名字叫gramembedding，用于表示专指文本的一系列embedding变体。</p>
+<p>例如，对于一个词来说，我们可以把词拆分为词word、n元序列ngram、汉字character，偏旁部首Radical，词性POS，依存关系dependency、拼音pinying。</p>
+<p>单元的共现，我们同样可以进行组合，例如，构造word-word，word-ngram、ngran-ngram等，得到上下文特征（单词、n-gram、字符等）等不同粒度的词向量。</p>
+<p>观察近几年的发展，词向量可以进一步分成偏旁部首向量、字符向量等。如香侬科技推出的glyce向量，引入汉字的字形特征。蚂蚁金服推出的cw2vec字符向量，将汉字拆解成偏旁、字件进行建模。</p>
+<p><img loading="lazy" src="img/4.png" alt=""  />
+</p>
+<p>当ngram中的n为1时，可以得到字向量，n为2或者更多时，则可以得到词向量等。fasttext中，就是得到了ngram的向量，并进行加和，得到一个OOV词语的向量进行表示。</p>
+<p>例如，基于skigram，分别设定词向量的维度及其他超参数，可以得到字向量,拼音向量，词向量，词性向量，通过上下文共现与PCA降维的方法可以得到依存向量。</p>
+<p><img loading="lazy" src="img/5.png" alt=""  />
+</p>
+<p>从下面的结果可以看出，词和字向量的效果看起来还不错。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    ***********************字符向量************************
+    token:刘
+    (&#39;李&#39;, 0.7306396961212158),(&#39;陈&#39;, 0.7201231122016907)
+    (&#39;赵&#39;, 0.6974461674690247),(&#39;杨&#39;, 0.6972213983535767)
+    (&#39;吴&#39;, 0.6851627230644226),(&#39;徐&#39;, 0.6516467332839966)
+    (&#39;郭&#39;, 0.6499480605125427),(&#39;蔡&#39;, 0.6175302267074585)
+    (&#39;郑&#39;, 0.6092196106910706),(&#39;孙&#39;, 0.5950524210929871)
+    token:丑
+    (&#39;卯&#39;, 0.6074919700622559),(&#39;酉&#39;, 0.5910211801528931)
+    (&#39;巳&#39;, 0.5581363439559937),(&#39;戌&#39;, 0.43932047486305237)
+    (&#39;戊&#39;, 0.41449615359306335),(&#39;壬&#39;, 0.40456631779670715)
+    (&#39;謤&#39;, 0.367109090089798),(&#39;绯&#39;, 0.3643313944339752),
+    (&#39;寅&#39;, 0.36351141333580017),(&#39;旽&#39;, 0.3549465537071228)
+
+    ***********************依存向量************************
+    dependency rel:ATT
+    (&#39;COO&#39;, 0.14239487051963806),(&#39;ADV&#39;, -0.16987691819667816)
+    (&#39;RAD&#39;, -0.2357601821422577),(&#39;HED&#39;, -0.2401314228773117)
+    (&#39;SBV&#39;, -0.25625932216644287),(&#39;WP&#39;, -0.27165737748146057)
+    (&#39;LAD&#39;, -0.2902592420578003),(&#39;POB&#39;, -0.2990782558917999)
+    (&#39;VOB&#39;, -0.37553706765174866),(&#39;IOB&#39;, -0.6669262647628784)
+    dependency rel:POB
+    (&#39;IOB&#39;, 0.16698899865150452),(&#39;DBL&#39;, 0.16678886115550995)
+    (&#39;FOB&#39;, 0.1657436639070511),(&#39;CMP&#39;, 0.14784857630729675)
+    (&#39;VOB&#39;, 0.1461176574230194),(&#39;SBV&#39;, 0.08011472970247269)
+    (&#39;LAD&#39;, -0.022307466715574265),(&#39;WP&#39;, -0.022942926734685898)
+    (&#39;HED&#39;, -0.037264980375766754),(&#39;RAD&#39;, -0.042251598089933395)
+
+    ***********************拼音向量************************
+    pinyin:wo
+    (&#39;shei&#39;, 0.6129732131958008)(&#39;ta&#39;, 0.6081706285476685)
+    (&#39;nin&#39;, 0.5819231867790222),(&#39;！&#39;, 0.5435523986816406)
+    (&#39;……&#39;, 0.48428624868392944),(&#39;ai&#39;, 0.47832390666007996)
+    (&#39;o&#39;, 0.4761071801185608),(&#39;。』&#39;, 0.4598163366317749)
+    (&#39;...&#39;, 0.45207729935646057),(&#39;ni&#39;, 0.44975683093070984)
+    pinyin:guo
+    (&#39;dang&#39;, 0.3908974528312683),(&#39;yuan&#39;, 0.378823846578598)
+    (&#39;zu&#39;, 0.35387369990348816),(&#39;hua&#39;, 0.3405681848526001)
+    (&#39;zheng&#39;, 0.3355437219142914),(&#39;yi&#39;, 0.3333034813404083)
+    (&#39;ren&#39;, 0.3194104731082916),(&#39;jun&#39;, 0.3187354505062103)
+    (&#39;hui&#39;, 0.31342023611068726),(&#39;xin&#39;, 0.3096797466278076)
+
+    ***********************词性向量************************
+    word postag:a
+    (&#39;d&#39;, 0.7203904986381531),(&#39;c&#39;, 0.6124969720840454)
+    (&#39;v&#39;, 0.4963228106498718),(&#39;an&#39;, 0.4531499147415161)
+    (&#39;uz&#39;, 0.4459834396839142),(&#39;ud&#39;, 0.42059916257858276)
+    (&#39;r&#39;, 0.4090540111064911),(&#39;uj&#39;, 0.4061364233493805)
+    (&#39;i&#39;, 0.38707998394966125),(&#39;l&#39;, 0.3551557660102844)
+    word postag:n
+    (&#39;b&#39;, 0.7030695676803589),(&#39;vn&#39;, 0.490166038274765)
+    (&#39;p&#39;, 0.4858315885066986),(&#39;v&#39;, 0.4499088227748871)
+    (&#39;nt&#39;, 0.44155171513557434),(&#39;f&#39;, 0.26609259843826294)
+    (&#39;s&#39;, 0.2639649212360382),(&#39;l&#39;, 0.24365971982479095)
+    (&#39;ns&#39;, 0.2278469204902649),(&#39;m&#39;, 0.202927365899086)
+    ***********************词向量************************
+    word:爱情
+    (&#39;爱恋&#39;, 0.6931096315383911),(&#39;真爱&#39;, 0.6897798776626587)
+    (&#39;婚姻&#39;, 0.6540514826774597),(&#39;浪漫爱情&#39;, 0.6535360813140869)
+    (&#39;情感&#39;, 0.6501022577285767),(&#39;感情&#39;, 0.6403399705886841)
+    (&#39;纯爱&#39;, 0.6394841074943542),(&#39;爱情故事&#39;, 0.6282097101211548)
+    (&#39;校园爱情&#39;, 0.6078493595123291),(&#39;情爱&#39;, 0.5976818799972534)
+    word:创新
+    (&#39;技术创新&#39;, 0.7648976445198059),(&#39;不断创新&#39;, 0.7172579765319824)
+    (&#39;创新型&#39;, 0.6573833227157593),(&#39;创新能力&#39;, 0.6533682942390442)
+    (&#39;创新性&#39;, 0.6160774827003479),(&#39;革新&#39;, 0.6159394383430481)
+    (&#39;人才培养&#39;, 0.6093565821647644),(&#39;开拓创新&#39;, 0.6015594601631165)
+    (&#39;探索&#39;, 0.5987343788146973),(&#39;技术革新&#39;, 0.5949685573577881)
+</code></pre></div><p>从上，也看到一些十分有趣的现象：</p>
+<p>1）依存向量，依存向量中可以看出，ATT作为定中关系，在依存关系中属于定中结构，COO(联合)，ADV(状中)的相似度要比主谓SBV，动宾VOB的相似度要高。另外，作为介宾的POB，相似的有IOB，DBL，FOB，这些关系均与宾语成分相关</p>
+<p>2）拼音向量，从wo，guo的拼音相似拼音来看，我们可以看到，这种相似的拼音更像是一种搭配， 很有意思，(词性参照jieba分词词性对照表)。</p>
+<p>3）词性向量，从a，n的相似词性来看，也似乎更像是一种搭配现象，或许有更好的解释。</p>
+<br>
+<h3 id="42-domainembedding">4.2 DomainEmbedding</h3>
+<p>为了更好的适配不同领域的任务，当前也有很多的公司或者任务会选择使用领域性的领域进行训练，以得到不同领域的词向量文件，这与当前各种领域的bert模型做法是类似的。当前出现了金融领域bert、法律领域的bert等。</p>
+<p>代表性的，2018年推出的Chinese-Word-Vectors中提供了包含经过数十种用各领域语料（百度百科、维基百科、人民日报 1947-2017、知乎、微博、文学、金融、古汉语等）训练的词向量，涵盖各领域，且包含多种训练设置。</p>
+<p><img loading="lazy" src="img/6.png" alt=""  />
+</p>
+<p>又如，当前PaddleNLP官方提供了61种可直接加载的预训练词向量，训练自多领域中英文语料、如百度百科、新闻语料、微博等，覆盖多种经典词向量模型（word2vec、glove、fastText）、涵盖不同维度、不同语料库大小。</p>
+<br>
+<h3 id="43-graphembdding">4.3 GraphEmbdding</h3>
+<p>经典的deepwalk以及node2vec也是借鉴word2vec思想，学习图节点嵌入的方法。并且成为当前推荐系统中的一个重量级使用方法。</p>
+<p><strong>1、Deepwalk</strong></p>
+<p>通过对图中的节点进行随机游走（主要考虑深度优先遍历），形成节点之间的游走序列，并将其作为上下文，后面接入skipgram形成节点向量，从构造上来看，就是首先利用random walk来表示图结构，然后利用skip-gram模型来更新学习节点表示。</p>
+<p>随机选取与其邻接的下一个结点，直至达到给定长度，这个长度作为一个参数进行指定，这个类似于word2vec中的window_size上下文窗口。</p>
+<p><img loading="lazy" src="img/7.png" alt=""  />
+</p>
+<p><strong>2、node2vec</strong></p>
+<p>node2vec综合考虑了广度优先遍历（用于捕捉局部信息）和深度优先遍历（用于捕捉全局信息）的游走，提出二阶随机游走思想，解决内容相似和结构相似的问题。</p>
+<p><img loading="lazy" src="img/8.png" alt=""  />
+</p>
+<p>前者具有直接链接关系的两个节点，我们可以认为是内容相似的（例如两个灰色网站之间很有可能能够直接跳转，如图中的s1，s2等一阶邻居）、结构相似（例如周围邻居数量都很类似，如图中的s6和u节点，两个都有4个邻接，结构类似）。</p>
+<p><img loading="lazy" src="img/9.png" alt=""  />
+</p>
+<p>具体实现思路也很简单：</p>
+<p>我们从节点v转移到节点t，并且当前在节点t时，需要考虑下一个采样节点x。因此，可以设计一个节点到它的不同邻居的转移概率：</p>
+<p><img loading="lazy" src="img/10.png" alt=""  />
+</p>
+<p>其中，每一步采样都会有三种状态，分别对应于上图的0，1，2三种情况：</p>
+<ul>
+<li><strong>1）0代表如果t和x相等，那么采样的概率为1/p；</strong></li>
+<li><strong>2）1代表t与x相连，采样的概率为1；</strong></li>
+<li>3）2代表t与x不相连，采样的概率为1/q**</li>
+</ul>
+<p>式子中的参数p作为返回参数，控制重新采样上一步已访问节点的概率。参数q，作为出入参数，控制采样的方向。</p>
+<p>其中：</p>
+<ul>
+<li><strong>1）当q&gt;1时，接下来采样的节点倾向于节点t，偏向于广度优先；</strong></li>
+<li><strong>2）当q&lt;1时，接下来采样的节点倾向于远离t，偏向于深度优先遍历。</strong></li>
+<li><strong>3）当p&gt;max(q,1)时，接下来采样的节点很大概率不是之前已访问节点，这一方法使得采样偏向深度优先；</strong></li>
+<li><strong>4）当p&lt;max(q,1)时，接下来采样的节点很大概率是之前已访问节点，这一方法使得采样偏向广度优先。</strong></li>
+</ul>
+<p>此外，在推荐场景中也有item2vec的类似延伸，例如协同过滤算法是建立在一个user-item的co-occurrence矩阵的基础上，通过行向量或列向量的相似性进行推荐。如果将同一个user购买的item视为一个context，就可以建立一个item-context的矩阵。进一步的，可以在这个矩阵上借鉴CBoW模型或Skip-gram模型计算出item的向量表达。</p>
+<p><br><br></p>
+<h2 id="五预训练词向量的动手实操">五、预训练词向量的动手实操</h2>
+<p>纸上得来终觉浅，觉知此事要躬行，能够动手实践是加强对该概念理解的重要方式。预训练词向量，在流程上，应该包括全量训练和增量训练两种。前者可以在有大规模训练语料的情况下得到领域的向量，后者适用于小语料微调。
+下面以gemsim中的wordvec和fasttext为例进行实践，大家可以看出其中的一些具体的步骤和结果。</p>
+<h3 id="51-word2vec向量训练">5.1 word2vec向量训练</h3>
+<h4 id="1构造训练语料">1、构造训练语料</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># coding = utf-8</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">jieba</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="n">cur</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+
+<span class="k">class</span> <span class="nc">Trainvec</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cur</span><span class="p">,</span> <span class="s2">&#34;lawsuit.json&#34;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cur</span><span class="p">,</span> <span class="s2">&#34;duanzi.txt&#34;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">build_corpus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">train_path</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cur</span><span class="p">,</span> <span class="s2">&#34;train.txt&#34;</span><span class="p">),</span> <span class="s1">&#39;w+&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">json_obj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">json_obj</span><span class="p">[</span><span class="s2">&#34;content&#34;</span><span class="p">]</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+                <span class="n">cut_wds</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                <span class="n">train_path</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cut_wds</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">train_path</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">build_update_corpus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">train_path</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cur</span><span class="p">,</span> <span class="s2">&#34;update.txt&#34;</span><span class="p">),</span> <span class="s1">&#39;w+&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update_filepath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">cut_wds</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                <span class="n">train_path</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cut_wds</span> <span class="k">if</span> <span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">train_path</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+	  <span class="n">handler</span> <span class="o">=</span> <span class="n">Trainvec</span><span class="p">()</span>
+    <span class="c1">#handler.build_corpus()</span>
+    <span class="n">handler</span><span class="o">.</span><span class="n">build_update_corpus</span><span class="p">()</span>
+</code></pre></div><br>
+<h4 id="2配置输入与输出路径">2、配置输入与输出路径</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">gensim</span>
+<span class="kn">from</span> <span class="nn">gensim.models</span> <span class="kn">import</span> <span class="n">word2vec</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">cur</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cur</span><span class="p">,</span> <span class="s2">&#34;train.txt&#34;</span><span class="p">)</span>
+<span class="n">update_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cur</span><span class="p">,</span> <span class="s2">&#34;update.txt&#34;</span><span class="p">)</span>
+<span class="n">model_path</span> <span class="o">=</span> <span class="s2">&#34;wordvec.model&#34;</span>
+<span class="n">model_update_path</span> <span class="o">=</span> <span class="s2">&#34;wordvec_update.model&#34;</span>
+<span class="n">model_vec_path</span> <span class="o">=</span> <span class="s2">&#34;wordvec.bin&#34;</span>
+<span class="n">model_update_vec_path</span> <span class="o">=</span> <span class="s2">&#34;wordvec_update.bin&#34;</span>
+</code></pre></div><br>
+<h4 id="3全量数据预训练">3、全量数据预训练</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">full_train_embedding</span><span class="p">():</span>
+    <span class="n">num_features</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">min_word_count</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">num_workers</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">downsampling</span> <span class="o">=</span> <span class="mf">1e-3</span>
+    <span class="c1"># 获取日志信息</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1">:</span><span class="si">%(levelname)s</span><span class="s1">:</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    <span class="c1"># 加载分词后的文本，使用的是Text8Corpus类</span>
+    <span class="n">sentences</span> <span class="o">=</span> <span class="n">word2vec</span><span class="o">.</span><span class="n">Text8Corpus</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="c1"># 训练模型，部分参数如下</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">word2vec</span><span class="o">.</span><span class="n">Word2Vec</span><span class="p">(</span><span class="n">sentences</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">num_workers</span><span class="p">,</span>
+                              <span class="n">size</span><span class="o">=</span><span class="n">num_features</span><span class="p">,</span> <span class="n">min_count</span><span class="o">=</span><span class="n">min_word_count</span><span class="p">,</span>
+                              <span class="n">window</span><span class="o">=</span><span class="n">context</span><span class="p">,</span> <span class="n">sg</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="n">downsampling</span><span class="p">)</span>
+    <span class="c1">#保存模型,除包含词-向量,还保存词频等训练所需信息</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+    <span class="c1">#保存词向量文件,保存的模型仅包含词-向量信息</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">save_word2vec_format</span><span class="p">(</span><span class="n">model_vec_path</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span>
+</code></pre></div><p>在保存过程中，存在两种方式，保存模型,除包含词-向量,还保存词频等训练所需信息，保存词向量文件,保存的模型仅包含词-向量信息。所以我们可以看到，词向量文件，确实是word2vec模型的副产物。</p>
+<br>
+<h4 id="4增量数据预训练">4、增量数据预训练</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">增量训练</span><span class="err">，</span><span class="n">主要解决在新的文本上进行训练</span><span class="err">，</span><span class="n">也可以引入一些新的词</span><span class="err">，</span><span class="n">但这个时候</span><span class="err">，</span><span class="n">需要考虑到min_count这一过滤条件</span><span class="err">。</span>
+
+<span class="k">def</span> <span class="nf">update_train_embedding</span><span class="p">():</span>
+    <span class="c1"># 获取日志信息</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1">:</span><span class="si">%(levelname)s</span><span class="s1">:</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    <span class="c1"># 加载新的训练数据</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">word2vec</span><span class="o">.</span><span class="n">LineSentence</span><span class="p">(</span><span class="n">update_filepath</span><span class="p">)</span>
+    <span class="c1"># 加载旧模型</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">word2vec</span><span class="o">.</span><span class="n">Word2Vec</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+    <span class="c1"># 更新词汇表</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">build_vocab</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># 训练数据</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">total_examples</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">corpus_count</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">epochs</span><span class="p">)</span>  <span class="c1"># epoch=iter语料库的迭代次数；（默认为5）  total_examples:句子数。</span>
+    <span class="c1"># 保存模型，是分成两个来训练</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model_update_path</span><span class="p">)</span>
+    <span class="c1"># 保存词向量文件</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">save_word2vec_format</span><span class="p">(</span><span class="n">model_update_vec_path</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span>
+</code></pre></div><br> 
+<h4 id="5词向量结果测试">5、词向量结果测试</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">test_model</span><span class="p">():</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">gensim</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">KeyedVectors</span><span class="o">.</span><span class="n">load_word2vec_format</span><span class="p">(</span><span class="s2">&#34;wordvec.model.bin&#34;</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">wd</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&#34;enter an word:&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">most_similar</span><span class="p">(</span><span class="n">wd</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">words</span>
+</code></pre></div><p>通过运行，我们可以得到如下查询结果：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">enter an word:开心
+[(&#39;高兴&#39;, 0.7237069606781006), (&#39;有缘&#39;, 0.7097823619842529), (&#39;开了花&#39;, 0.7021969556808472), (&#39;玩得&#39;, 0.6799882650375366), (&#39;快乐&#39;, 0.6698621511459351), (&#39;不亦乐乎&#39;, 0.668710470199585), (&#39;鉴宝&#39;, 0.6672042012214661), (&#39;越聊&#39;, 0.6671714782714844), (&#39;爱玩&#39;, 0.6659203767776489), (&#39;着迷&#39;, 0.6657696962356567)]
+enter an word:混蛋
+[(&#39;享福&#39;, 0.9413065910339355), (&#39;没良心&#39;, 0.9331107139587402), (&#39;怪不得&#39;, 0.9317291975021362), (&#39;养不活&#39;, 0.9283043742179871), (&#39;好惨&#39;, 0.9255991578102112), (&#39;看笑话&#39;, 0.9251411557197571), (&#39;逗我&#39;, 0.9232471585273743), (&#39;命苦&#39;, 0.9226915836334229), (&#39;别怪&#39;, 0.921725332736969), (&#39;我养&#39;, 0.9205465316772461)]
+enter an word:巴嘎
+KeyError: &#34;word &#39;巴嘎&#39; not in vocabulary&#34;
+</code></pre></div><p>从上面我们可以看到，wordvec中对于词表外的词是无法查询的，为了缓解这一问题，可以通过训练时候的min_count参数调至1，以覆盖更多的词语，另一种则是进行增量训练。</p>
+<br>
+<h3 id="52-fasttext向量训练">5.2 fasttext向量训练</h3>
+<p>与wordvec类似，fasttext也才用了类似的训练方法。</p>
+<h4 id="1全量数据训练">1、全量数据训练</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">full_train_embedding</span><span class="p">():</span>
+    <span class="n">feature_size</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">window_size</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">min_count</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">workers</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">corpus_file</span> <span class="o">=</span> <span class="n">datapath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1">:</span><span class="si">%(levelname)s</span><span class="s1">:</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">FastText</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">feature_size</span><span class="p">,</span> <span class="n">min_count</span><span class="o">=</span><span class="n">min_count</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window_size</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">build_vocab</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="n">corpus_file</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span>
+        <span class="n">corpus_file</span><span class="o">=</span><span class="n">corpus_file</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">epochs</span><span class="p">,</span>
+        <span class="n">total_examples</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">corpus_count</span><span class="p">,</span> <span class="n">total_words</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">corpus_total_words</span>
+    <span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+    <span class="c1">#保存词向量文件,保存的模型仅包含词-向量信息</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">save_word2vec_format</span><span class="p">(</span><span class="n">model_vec_path</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div><br>
+<h4 id="2增量数据训练">2、增量数据训练</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">update_train_embedding</span><span class="p">():</span>
+    <span class="c1"># 获取日志信息</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1">:</span><span class="si">%(levelname)s</span><span class="s1">:</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    <span class="c1"># 加载新的训练数据</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">word2vec</span><span class="o">.</span><span class="n">LineSentence</span><span class="p">(</span><span class="n">update_filepath</span><span class="p">)</span>
+    <span class="c1"># 加载旧模型</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">FastText</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+    <span class="c1"># 更新词汇表</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">build_vocab</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># 训练数据</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">total_examples</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">corpus_count</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">epochs</span><span class="p">)</span>  <span class="c1"># epoch=iter语料库的迭代次数；（默认为5）  total_examples:句子数。</span>
+    <span class="c1"># 保存模型，是分成两个来训练</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model_update_path</span><span class="p">)</span>
+    <span class="c1"># 保存词向量文件</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">save_word2vec_format</span><span class="p">(</span><span class="n">model_update_vec_path</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span>
+</code></pre></div><br>
+<h4 id="3词向量结果测试">3、词向量结果测试</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">test_model</span><span class="p">():</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">FastText</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+    <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">wd</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&#34;enter an word:&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">(</span><span class="n">wd</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+    <span class="k">return</span>
+</code></pre></div><p>通过执行，我们会得到以下查询结果：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">enter an word:开心
+[(&#39;开心果&#39;, 0.7953568696975708), (&#39;高兴&#39;, 0.7377268671989441), (&#39;郡县&#39;, 0.6981974244117737), (&#39;有缘&#39;, 0.6916821002960205), (&#39;折勾以&#39;, 0.687650203704834), (&#39;爱&#39;, 0.684776782989502), (&#39;愉快&#39;, 0.6840348243713379), (&#39;快乐&#39;, 0.676334023475647), (&#39;太高兴&#39;, 0.6728817224502563), (&#39;放心&#39;, 0.6692144274711609)]
+enter an word:混蛋
+[(&#39;侯希辰&#39;, 0.7582178115844727), (&#39;舐&#39;, 0.7578023672103882), (&#39;走眼&#39;, 0.7541716694831848), (&#39;有眼&#39;, 0.7511969804763794), (&#39;贺应勤&#39;, 0.7478049397468567), (&#39;罗敏&#39;, 0.747008204460144), (&#39;郭守桥&#39;, 0.7450246810913086), (&#39;熊芳琴&#39;, 0.7417726516723633), (&#39;找死&#39;, 0.741632342338562), (&#39;许身&#39;, 0.7414941787719727)]
+enter an word:巴嘎
+[(&#39;陈晓大爆&#39;, 0.3896751403808594), (&#39;董王勇&#39;, 0.36747634410858154), (&#39;李刚&#39;, 0.34988462924957275), (&#39;曾杰&#39;, 0.34452974796295166), (&#39;张文宾&#39;, 0.3370075821876526), (&#39;成浩&#39;, 0.3369928300380707), (&#39;刘晓静&#39;, 0.3348349630832672), (&#39;刘晓丹&#39;, 0.3348219394683838), (&#39;刘骏&#39;, 0.32817351818084717), (&#39;吴建明&#39;, 0.32765522599220276)]
+</code></pre></div><p>与上面的wordvec无法处理OOV问题不同，对于八嘎这一词，fasttext依旧可以推断出来，关于这个中间步骤，我们可以作为单独一个问题来说明。</p>
+<br>
+<h4 id="4fasttext是如何解决oov问题的">4、fasttext是如何解决oov问题的</h4>
+<p>通过对其源码进行阅读，可以发现fasttext针对OOV词的原始计算方式包括三个步骤，</p>
+<ul>
+<li>1）抽取出每个词的N-grams;</li>
+<li>2）与预先存好的n-grams词库进行匹配;</li>
+<li>3）将匹配到的n-gram向量进行平均，实现如下：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">gensim.models.utils_any2vec</span> <span class="kn">import</span> <span class="n">_save_word2vec_format</span><span class="p">,</span> <span class="n">_load_word2vec_format</span><span class="p">,</span> <span class="n">_compute_ngrams</span><span class="p">,</span> <span class="n">_ft_hash</span>
+
+<span class="k">def</span> <span class="nf">compute_ngrams</span><span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">min_n</span><span class="p">,</span> <span class="n">max_n</span><span class="p">):</span>
+    <span class="n">BOW</span><span class="p">,</span> <span class="n">EOW</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;&lt;&#39;</span><span class="p">,</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">)</span>  <span class="c1"># Used by FastText to attach to all words as prefix and suffix</span>
+    <span class="n">extended_word</span> <span class="o">=</span> <span class="n">BOW</span> <span class="o">+</span> <span class="n">word</span> <span class="o">+</span> <span class="n">EOW</span>
+    <span class="n">ngrams</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ngram_length</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_n</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">extended_word</span><span class="p">),</span> <span class="n">max_n</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">extended_word</span><span class="p">)</span> <span class="o">-</span> <span class="n">ngram_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">ngrams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">extended_word</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">ngram_length</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">ngrams</span>
+
+    <span class="k">def</span> <span class="nf">word_vec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">,</span> <span class="n">use_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">word</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">FastTextKeyedVectors</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">word_vec</span><span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">use_norm</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># from gensim.models.fasttext import compute_ngrams</span>
+            <span class="n">word_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vectors_ngrams</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">ngrams</span> <span class="o">=</span> <span class="n">_compute_ngrams</span><span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_n</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">use_norm</span><span class="p">:</span>
+                <span class="n">ngram_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectors_ngrams_norm</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ngram_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectors_ngrams</span>
+            <span class="n">ngrams_found</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">ngram</span> <span class="ow">in</span> <span class="n">ngrams</span><span class="p">:</span>
+                <span class="n">ngram_hash</span> <span class="o">=</span> <span class="n">_ft_hash</span><span class="p">(</span><span class="n">ngram</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span>
+                <span class="k">if</span> <span class="n">ngram_hash</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash2index</span><span class="p">:</span>
+                    <span class="n">word_vec</span> <span class="o">+=</span> <span class="n">ngram_weights</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">hash2index</span><span class="p">[</span><span class="n">ngram_hash</span><span class="p">]]</span>
+                    <span class="n">ngrams_found</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">word_vec</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">word_vec</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ngrams_found</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># No ngrams of the word are present in self.ngrams</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;all ngrams for word </span><span class="si">%s</span><span class="s1"> absent from model&#39;</span> <span class="o">%</span> <span class="n">word</span><span class="p">)</span>
+</code></pre></div><p>例如，通过滑动窗口的方式，设定最短ngram和最长ngram，可以得到ngram集合。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&gt;&gt;&gt; from gensim.models.utils_any2vec import *
+&gt;&gt;&gt; ngrams = compute_ngrams(&#39;好嗨哦&#39;,min_n = 1,max_n =3)
+&gt;&gt;&gt; ngrams
+[&#39;&lt;&#39;, &#39;好&#39;, &#39;嗨&#39;, &#39;哦&#39;, &#39;&gt;&#39;, &#39;&lt;好&#39;, &#39;好嗨&#39;, &#39;嗨哦&#39;, &#39;哦&gt;&#39;, &#39;&lt;好嗨&#39;, &#39;好嗨哦&#39;, &#39;嗨哦&gt;&#39;]
+</code></pre></div><p>不过，可以看到的是，ngram中引入了“&lt;”和“&gt;”用于标记头和尾，这对于语言模型来说十分生动。</p>
+<p><br><br></p>
+<h2 id="六开源词向量训练工具与预训文件">六、开源词向量训练工具与预训文件</h2>
+<p>不必重复造轮子，当前已经陆续出现了一些代表性的预训练词向量工具和词向量资源，我们可以充分利用好。</p>
+<h3 id="61-开源词向量训练工具">6.1 开源词向量训练工具</h3>
+<ul>
+<li>ngram2vec： <a href="https://github.com/zhezhaoa/ngram2vec/">https://github.com/zhezhaoa/ngram2vec/</a></li>
+<li>word2vec： <a href="https://github.com/svn2github/word2vec">https://github.com/svn2github/word2vec</a></li>
+<li>fasttext： <a href="https://github.com/facebookresearch/fastText">https://github.com/facebookresearch/fastText</a></li>
+<li>glove：https://github.com/stanfordnlp/GloVe</li>
+</ul>
+<br>
+<h3 id="62-开源预训练词向量文件">6.2 开源预训练词向量文件</h3>
+<ul>
+<li><a href="https://github.com/Embedding/Chinese-Word-Vectors">https://github.com/Embedding/Chinese-Word-Vectors</a></li>
+<li><a href="https://github.com/liuhuanyong/Word2Vector">https://github.com/liuhuanyong/Word2Vector</a></li>
+<li><a href="https://github.com/liuhuanyong/ChineseEmbedding">https://github.com/liuhuanyong/ChineseEmbedding</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="七本文总结">七、本文总结</h2>
+<p>本文，主要围绕预训练词向量模型这一主题，对当前预训练词向量模型的常用方法、评估与应用方式、领域的迁移变体、当前开放的训练工具和词向量文件进行介绍，并以word2vec和fasttext为例，展示一个词向量训练的案例，做到理论与实践相结合。</p>
+<p>关于预训练词向量相关的文章目前已经有很多，关于更为细致的解读，可以参考其他材料。预训练词向量是bert出现之前，NLP处理业务问题的标配，绝对称得上是一个里程碑的事件，并且开创了“万物皆可embdding”的时代。</p>
+<p>​实际上，词向量的发展也在一定程度上验证了当前nlp的进步。</p>
+<p>由最开始的基于one-hot、tf-idf、textrank等的bag-of-words，到LSA（SVD）、pLSA、LDA的主题模型词向量，再到word2vec、fastText、glove为代表的固定表征，最后到当前elmo、GPT、bert为代表的基于词向量的动态表征，都说明了语义建模中的动态属性和文本语境的多样性。</p>
+<p>不过，我们需要认识的是，在此类词向量中，虽然其本质仍然是语言模型，但是它的目标不是语言模型本身，而是词向量，其所作的一系列优化，其专注于词向量本身，因此做了许多优化来提高计算效率。</p>
+<p>例如，与NNLM相比，word2vec将词向量直接sum，不再拼接，并舍弃隐层；考虑到sofmax归一化需要遍历整个词汇表，采用hierarchical softmax 和negative sampling进行优化，前者生成一颗带权路径最小的哈夫曼树，让高频词搜索路劲变小；后者对每一个样本中每一个词都进行负例采样。</p>
+<p>最后，以当前一个新的观点来结尾：</p>
+<p>现在的预训练语言模型是下一代知识图谱，那么预训练词向量是什么？垫底型相关词库？大家可以想想。</p>
+<p><br><br></p>
+<h2 id="参考文献">参考文献</h2>
+<ol>
+<li><a href="https://baijiahao.baidu.com/sid=1600509930259553151">https://baijiahao.baidu.com/sid=1600509930259553151</a></li>
+<li><a href="https://mp.weixin.qq.com/s/u8WZqlsIcGCU5BqPH23S4w">https://mp.weixin.qq.com/s/u8WZqlsIcGCU5BqPH23S4w</a></li>
+<li><a href="https://www.jianshu.com/p/546d12898378/">https://www.jianshu.com/p/546d12898378/</a></li>
+<li><a href="https://www.jianshu.com/p/471d9bfbd72f">https://www.jianshu.com/p/471d9bfbd72f</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/32965521">https://zhuanlan.zhihu.com/p/32965521</a></li>
+<li><a href="https://mp.weixin.qq.com/s/DvbvYppeuMaPn84SRAINcQ">https://mp.weixin.qq.com/s/DvbvYppeuMaPn84SRAINcQ</a></li>
+</ol>
+<br> 
+<br> 
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>Python | 词移距离(Word Mover&#39;s Distance)</title>
       <link>https://hidadeng.github.io/blog/2022-10-16-python-word-mover-s-distance/</link>

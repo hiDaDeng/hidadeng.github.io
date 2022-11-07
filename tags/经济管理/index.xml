@@ -6,7 +6,156 @@
     <description>Recent content in 经济管理 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 08 Oct 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 07 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>小规模金融并购、投资事件图谱设计概述与数据构成解析</title>
+      <link>https://hidadeng.github.io/blog/2022-11-07-financial-invest-merge/</link>
+      <pubDate>Mon, 07 Nov 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-11-07-financial-invest-merge/</guid>
+      <description>description用于SEO优化</description>
+      <content:encoded><![CDATA[<h2 id="作者">作者</h2>
+<p>刘焕勇，NLP开源爱好者与践行者，主页：https://liuhuanyong.github.io。</p>
+<p>就职于360人工智能研究院、曾就职于中国科学院软件研究所。</p>
+<p>老刘说NLP，将定期发布语言资源、工程实践、技术总结等内容，欢迎关注。</p>
+<br>
+<p>事件图谱是当前的一个十分有趣的话题，我们在前面的事件图谱系列文章中对事件图谱进行了论述。</p>
+<p>例如文章《技术思考：面向落地应用的事件类图谱划分、关键问题及其与知识图谱的对比辨析》、《事件图谱应用：智能金融与情报分析中的七大应用潜在场景概述》、《事件图谱技术：基于触发词的事件句识别方法与关键流程总结》等。</p>
+<p>同样本着技术具像化的原则，为了让大家对具体事件图谱有个清晰的直观的认识，本文我们介绍一个自建的金融事件图谱，涵盖并购和投资两大类事件类型，从金融事件图谱设计概述、投资事件图谱数据介绍以及并购事件图谱数据介绍三个角度进行论述，供大家一起参考。</p>
+<br>
+<h2 id="一金融事件图谱设计概述">一、金融事件图谱设计概述</h2>
+<p>事件知识图谱EKG（event knowledge graph）是当前事件类图谱的一种，在这里，我更倾向于认为这个图谱本身更倾向于为一个事件知识库，而非实体知识图谱。</p>
+<p><strong>事件知识图谱的工作主要围绕事件知识本身进行展开，关注点在于事件内部信息，如ACE中的8大类事件，将这几类事件中的信息进行抽取和填充就能够得到一个以特定事件类型作为分类标准的事件知识库，如婚姻事件库、爆炸事件库等。</strong></p>
+<p>而相对应的，领域事件图谱显得更为重要，金融领域作为一个需求较为明显的领域，其建模能力更具代表性，例如，我们可以对事件图谱进行本体定义：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left"><strong>事件类型</strong></th>
+<th style="text-align:left"><strong>事件要素</strong></th>
+<th style="text-align:left"><strong>事件关系</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">投资事件</td>
+<td style="text-align:left">融资方、投资方、金额、轮次、融资时间、所属行业</td>
+<td style="text-align:left">顺承/时序</td>
+</tr>
+<tr>
+<td style="text-align:left">并购事件</td>
+<td style="text-align:left">并购方、被并购方、并购状态、所属行业、涉及股权、并购开始时间、并购结束时间、是否VC/PE支持</td>
+<td style="text-align:left">顺承/时序</td>
+</tr>
+</tbody>
+</table>
+<p>在这样一个本体框架之下，我们要构建起一个事件图谱，可以有两种方式：</p>
+<ul>
+<li>
+<p><strong>从已经结构化好的数据源中直接获取</strong>。例如，目前针对投融资领域已经出现了许多垂类网站，如投资界、IT橘子中直接获取，并做清洗。这种方式最为快捷，但受制于人，其中的数据有限，并存在字段不全的问题。当我们想建成一个实时动态的金融事件图谱库，在捕捉实时数据时，及时处理时候，就需要采用抽取的思路。</p>
+</li>
+<li>
+<p><strong>基于模型的非结构化文本抽取</strong>。为了避免方法1带来的拿来主义缺陷，我们可以转换为标准的事件抽取任务，针对实时的实时新闻流，进行论元识别、事件要素抽取。</p>
+</li>
+</ul>
+<p>例如，给定文本：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">8日消息，总部位于墨西哥的在线批发平台Miferia获得了700万美元种子轮融资，该轮融资由贝恩资本风险投资公司和Tiger Global共同领投。Miferia批发平台将墨西哥的独立零售店与化妆品、食品和饮料以及家居装饰等类别的品牌联系起来。该平台拥有来自500多个品牌的数千种产品，每周有30多个新品牌上线。（Latamlist）
+</code></pre></div><p>我们可以从中检测出融资事件：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">8月8日消息，总部位于墨西哥的在线批发平台Miferia获得了700万美元种子轮融资，该轮融资由贝恩资本风险投资公司和Tiger Global共同领投。
+</code></pre></div><p>并识别出一下结构化信息：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">融资方：Miferia
+金额：700万美元
+轮次：种子轮以及投资方贝恩资本风险投资公司、Tiger Global；
+融资时间：8月8日、所属行业：在线批发等信息
+</code></pre></div><p>下图展示了一个金融领域的一个典型投资领域事件图谱：</p>
+<p>其中包括“君度德瑞、新余凯信投资、深圳市立德富盈投资等投资信濠光电20%股权”、“东莞中科中广基金（领投）、中广创投、紫宸创投等投资信濠光电5%股权”两个投资事件，每个投资事件由投资方、融资方、金额、日期、轮次几个事件要素构成，<strong>而若以一个融资方为中心进行融资历程的刻画，就可以根据日期发展的先后顺序，在两个事件之间形成一条边</strong>。</p>
+<p><img loading="lazy" src="img/fin_edge_networks.png" alt=""  />
+</p>
+<p>需要注意的是，现在的事件抽取任务中，是不包含事件名称的抽取的，但如果要星辰恶搞事件图谱，就必须保证该事件的唯一性和友好性，可以使用md5值来表示，但并不直观，图中给出了一个较好的例子，用一个短句来表示。</p>
+<br>
+<h2 id="二投资事件图谱数据介绍">二、投资事件图谱数据介绍</h2>
+<p>我们以投资界为数据源，通过解析整理，形成了9093条投资事件，包括融资方、投资方、金额、轮次、融资时间、所属行业共5个要素。</p>
+<p><img loading="lazy" src="img/fin_extract_data.png" alt=""  />
+</p>
+<p>数据样例：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="p">{</span>
+    <span class="s2">&#34;name&#34;</span><span class="p">:</span><span class="s2">&#34;苏州聚源铸芯创投基金（领投）、创世一期、高捷资本等投资英彼森&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;event_type&#34;</span><span class="p">:</span><span class="s2">&#34;投资事件&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;融资方&#34;</span><span class="p">:</span><span class="s2">&#34;英彼森半导体（珠海）有限公司&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;投资方&#34;</span><span class="p">:[</span>
+        <span class="s2">&#34;聚源资本&#34;</span><span class="p">,</span>
+        <span class="s2">&#34;高捷资本&#34;</span><span class="p">,</span>
+        <span class="s2">&#34;创世伙伴&#34;</span><span class="p">,</span>
+        <span class="s2">&#34;绿河投资&#34;</span><span class="p">,</span>
+        <span class="s2">&#34;珠海科技创投&#34;</span>
+    <span class="p">],</span>
+    <span class="s2">&#34;金额&#34;</span><span class="p">:</span><span class="s2">&#34;RMB数亿&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;轮次&#34;</span><span class="p">:</span><span class="s2">&#34;A轮&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;融资时间&#34;</span><span class="p">:</span><span class="s2">&#34;2021年06月29日&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;所属行业&#34;</span><span class="p">:</span><span class="s2">&#34;半导体及电子设备-半导体&#34;</span>
+<span class="p">}</span>
+
+<span class="p">{</span>
+    <span class="s2">&#34;name&#34;</span><span class="p">:</span><span class="s2">&#34;Esta Investments、DD Asset Holdings、DST China EC XI等投资滴滴集团6.08%股权&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;event_type&#34;</span><span class="p">:</span><span class="s2">&#34;投资事件&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;融资方&#34;</span><span class="p">:</span><span class="s2">&#34;滴滴&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;投资方&#34;</span><span class="p">:[</span>
+        <span class="s2">&#34;Esta Investments&#34;</span><span class="p">,</span>
+        <span class="s2">&#34;腾讯投资&#34;</span><span class="p">,</span>
+        <span class="s2">&#34;THL A11&#34;</span><span class="p">,</span>
+        <span class="s2">&#34;纪源资本&#34;</span><span class="p">,</span>
+        <span class="s2">&#34;数字天空技术&#34;</span>
+    <span class="p">],</span>
+    <span class="s2">&#34;金额&#34;</span><span class="p">:</span><span class="s2">&#34;USD7.5亿&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;轮次&#34;</span><span class="p">:</span><span class="s2">&#34;B轮&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;融资时间&#34;</span><span class="p">:</span><span class="s2">&#34;2014年12月02日&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;所属行业&#34;</span><span class="p">:</span><span class="s2">&#34;电信及增值业务-无线互联网服务&#34;</span>
+<span class="p">}</span>
+
+</code></pre></div><br>
+<h2 id="三并购事件图谱数据介绍">三、并购事件图谱数据介绍</h2>
+<p>同样的，我们得到了3865条并购事件数据，包括并购方、被并购方、并购状态、所属行业、涉及股权、并购开始时间、并购结束时间以及是否VC/PE支持等事件要素。</p>
+<p><img loading="lazy" src="img/fin_extract_data2.png" alt=""  />
+</p>
+<p>数据样例：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="p">{</span>
+    <span class="s2">&#34;name&#34;</span><span class="p">:</span><span class="s2">&#34;友睦口腔收购友睦三九60%股权&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;event_type&#34;</span><span class="p">:</span><span class="s2">&#34;并购事件&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;并购方&#34;</span><span class="p">:</span><span class="s2">&#34;深圳市友睦口腔股份有限公司&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;被并购方&#34;</span><span class="p">:</span><span class="s2">&#34;深圳友睦三九口腔门诊部有限公司&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;并购状态&#34;</span><span class="p">:</span><span class="s2">&#34;已完成&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;所属行业&#34;</span><span class="p">:</span><span class="s2">&#34;生物技术/医疗健康-医疗服务&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;涉及股权&#34;</span><span class="p">:</span><span class="s2">&#34;60.00 %&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;并购开始时间&#34;</span><span class="p">:</span><span class="s2">&#34;2017年03月21日&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;并购结束时间&#34;</span><span class="p">:</span><span class="s2">&#34;2017年03月21日&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;是否VC/PE支持&#34;</span><span class="p">:</span><span class="s2">&#34;是&#34;</span>
+<span class="p">}</span>
+
+<span class="p">{</span>
+    <span class="s2">&#34;name&#34;</span><span class="p">:</span><span class="s2">&#34;我享科技收购我享网络&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;event_type&#34;</span><span class="p">:</span><span class="s2">&#34;并购事件&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;并购方&#34;</span><span class="p">:</span><span class="s2">&#34;上海我享网络信息科技股份有限公司&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;被并购方&#34;</span><span class="p">:</span><span class="s2">&#34;上海我享网络科技有限公司&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;并购状态&#34;</span><span class="p">:</span><span class="s2">&#34;已完成&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;所属行业&#34;</span><span class="p">:</span><span class="s2">&#34;互联网-电子商务-C2C&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;涉及股权&#34;</span><span class="p">:</span><span class="s2">&#34;N/A&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;并购开始时间&#34;</span><span class="p">:</span><span class="s2">&#34;2017年03月01日&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;并购结束时间&#34;</span><span class="p">:</span><span class="s2">&#34;2017年03月24日&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;是否VC/PE支持&#34;</span><span class="p">:</span><span class="s2">&#34;是&#34;</span>
+<span class="p">}</span>
+</code></pre></div><br>
+<h2 id="总结">总结</h2>
+<p>本文我们介绍l额一个自建的金融事件图谱，涵盖并购和投资两大类事件类型，从金融事件图谱设计概述、投资事件图谱数据介绍以及并购事件图谱数据介绍三个角度进行论述，这对加深我们对事件图谱的具象化认识具有一定的意义。</p>
+<p>关于具体的数据，可以关注 <strong>公众号：老刘说NLP</strong>，并加入技术社区，与技术社区的朋友一同分享获取。</p>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>Maigret库 | 查询某用户名在各平台网站的使用情况</title>
       <link>https://hidadeng.github.io/blog/2022-10-08-find-sns-account-information-with-maigret/</link>
