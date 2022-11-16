@@ -6,7 +6,7 @@
     <description>Recent content on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Mon, 14 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 16 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>置顶推荐 | 社科(经管)文本分析快速指南</title>
       <link>https://hidadeng.github.io/blog/the_text_analysis_list_about_ms/</link>
@@ -49,6 +49,7 @@
 <p>本部分选取了与社科相关性较强的文本分析代码或第三方库。</p>
 <ul>
 <li><a href="https://hidadeng.github.io/blog/dadeng_python_basic_tutorial/">Python语法入门 | 含视频代码</a></li>
+<li><a href="https://hidadeng.github.io/blog/2022-11-16-how-to-fix-string-unicode-decode-error/">如何正确读入文本数据不乱码(解决文本乱码问题)</a></li>
 <li><a href="https://hidadeng.github.io/blog/30_days_of_python/">30天Python编程学习挑战</a></li>
 <li><a href="https://hidadeng.github.io/blog/2022-11-07-embeddings-theory-applicaiton-liuhuanyong/">预训练词向量模型的方法、应用场景、变体延伸与实践总结</a></li>
 <li><a href="https://hidadeng.github.io/blog/tian_ya_cha_spider_code/">天**  |  使用selenium做数据采集</a></li>
@@ -682,6 +683,129 @@
 <p>Cohen, L., Malloy, C. and Nguyen, Q., 2020. Lazy prices. <em>The Journal of Finance</em>, <em>75</em>(3), pp.1371-1415.</p>
 <p>徐巍,姚振晔,陈冬华.中文年报可读性：衡量与检验[J].会计研究,2021(03):28-44.</p>
 <br>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>如何正确读入文本数据不乱码(解决文本乱码问题)</title>
+      <link>https://hidadeng.github.io/blog/2022-11-16-how-to-fix-string-unicode-decode-error/</link>
+      <pubDate>Wed, 16 Nov 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-11-16-how-to-fix-string-unicode-decode-error/</guid>
+      <description>gb2312、gbk、utf-8都是什么鬼</description>
+      <content:encoded><![CDATA[<h2 id="乱码由来">乱码由来</h2>
+<p>相信大家使用Python读取txt、csv文件时，经常遇到UnicodeDecodeError错误，从字面意思看是 编码解码问题 。 关于编码解码相关知识推荐看B站柴知道制作的视频，了解</p>
+<p>**锟斤拷�⊠是怎样炼成的&mdash;&mdash;中文显示&quot;⼊&quot;门指南【**柴知道】</p>
+<iframe
+    src="//player.bilibili.com/player.html?bvid=BV1cB4y177QR&page=1"
+    scrolling="no"
+    height="500px"
+    width="800px"
+    frameborder="no"
+    framespacing="0"
+    allowfullscreen="true"
+>
+</iframe>
+
+<br>
+<h2 id="遇到乱码">遇到乱码</h2>
+<p>在Python中，遇到文件读取乱码的可能性很大，例如</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;twitter_sentiment.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<pre><code>c:\users\thunderhit\appdata\local\programs\python\python37-32\lib\site-packages\pandas\io\parsers.py in parser_f(filepath_or_buffer, sep, delimiter, header, names, index_col, usecols, squeeze, prefix, mangle_dupe_cols, dtype, engine, converters, true_values, false_values, skipinitialspace, skiprows, skipfooter, nrows, na_values, keep_default_na, na_filter, verbose, skip_blank_lines, parse_dates, infer_datetime_format, keep_date_col, date_parser, dayfirst, cache_dates, iterator, chunksize, compression, thousands, decimal, lineterminator, quotechar, quoting, doublequote, escapechar, comment, encoding, dialect, error_bad_lines, warn_bad_lines, delim_whitespace, low_memory, memory_map, float_precision)
+...
+
+pandas\_libs\parsers.pyx in pandas._libs.parsers.TextReader._tokenize_rows()
+
+pandas\_libs\parsers.pyx in pandas._libs.parsers.raise_parser_error()
+
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xbd in position 10717: illegal multibyte sequence
+</code></pre>
+<p>可以看到报错, 遇到 <strong>UnicodeDecodeError</strong> 问题</p>
+<br>
+<h2 id="使用encoding参数">使用encoding参数</h2>
+<p>常见的解决办法是在函数内加入encoding参数，中文最常见的编码方式有gbk、gb2312、utf-8。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#这里依次试验gbk、gb2312、utf-8</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;twitter_sentiment.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>依然出现 <strong>UnicodeDecodeError</strong> 问题 。所以encoding遇到很不常见的编码方式。</p>
+<br>
+<h2 id="获取encoding参数">获取encoding参数</h2>
+<p>先获取 twitter_sentiment.csv 文件的编码方式，再进行读取操作。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">chardet</span>
+
+<span class="c1">#读取为二进制数据</span>
+<span class="n">binary_data</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;twitter_sentiment.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+<span class="c1">#传给chardet.detect，稍等片刻</span>
+<span class="n">chardet</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">binary_data</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>{'encoding': 'Windows-1252', 'confidence': 0.7291192008535122, 'language': ''}
+</code></pre>
+<p>由此得知该文件的编码方式为 <strong>Windows-1252</strong> ， 重新更改即可成功读入数据</p>
+<br>
+<h2 id="成功读取">成功读取</h2>
+<p>获取了正确的编码 <code>encoding='Windows-1252'</code>， 就能正确的读入数据</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#这里依次试验gbk、gb2312、utf-8</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;twitter_sentiment.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;Windows-1252&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:right"></th>
+<th style="text-align:right"><strong>ItemID</strong></th>
+<th style="text-align:right"><strong>Sentiment</strong></th>
+<th style="text-align:right"><strong>SentimentText</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">is so sad for my APL frie...</td>
+</tr>
+<tr>
+<td style="text-align:right">1</td>
+<td style="text-align:right">2</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">I missed the New Moon trail...</td>
+</tr>
+<tr>
+<td style="text-align:right">2</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">omg its already 7:30 :O</td>
+</tr>
+<tr>
+<td style="text-align:right">3</td>
+<td style="text-align:right">4</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">.. Omgaga. Im sooo im gunna CRy. I'...</td>
+</tr>
+<tr>
+<td style="text-align:right">4</td>
+<td style="text-align:right">5</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">i think mi bf is cheating on me!!! ...</td>
+</tr>
+</tbody>
+</table>
 <br>
 <h2 id="广而告之">广而告之</h2>
 <ul>
