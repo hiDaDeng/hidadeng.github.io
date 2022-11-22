@@ -8,7 +8,7 @@
 <title>FinBERT | 金融文本BERT模型，可情感分析、识别ESG和FLS类型 | 大邓和他的PYTHON</title>
 <meta name="keywords" content="Python, 文本分析, 经济管理, BERT, FinBERT, 金融" />
 <meta name="description" content="金融语言模型">
-<meta name="author" content="大邓">
+<meta name="author" content="Yang Yi">
 <link rel="canonical" href="/blog/2022-11-17-finbert-finance-bert-model/" />
 <meta name="baidu-site-verification" content="code-xTk1LSyjvt" />
 <meta name="360-site-verification" content="dc00b42cd1d4e0fcaa5edfd27394f9cd" />
@@ -103,14 +103,14 @@
   "keywords": [
     "Python", "文本分析", "经济管理", "BERT", "FinBERT", "金融"
   ],
-  "articleBody": "FinBERT介绍   FinBERT， 是使用49亿词的英文金融语料库数据，生成的BERT预训练语言模型。语料库上大小为 49亿个词。\n 公司报告 10-K 和 10-Q：25亿个词 电话会议记录：13亿个词 分析师报告：11亿个词  FinBERT开发者在多个金融 NLP 任务上对 FinBERT 预训练模型进行了微调，均优于传统机器学习模型、深度学习模型和微调 BERT 模型。 所有经过微调的 FinBERT 模型都公开托管在 Huggingface 🤗。 目前支持包括情绪分析、ESG 分类、前瞻性陈述 (FLS) 分类。\nFinBERT功能 具体来说，FinBERT有以下内容：\n FinBERT-Pretrained： 针对大规模金融文本的预训练 FinBERT 模型。 FinBERT-Sentiment： 用于情感分类任务。 FinBERT-ESG： 用于 ESG 分类任务。 FinBERT-FLS： 用于前瞻性陈述（FLS）分类任务。  环境配置 pip install transformers==4.18.0 本次实验使用的transformers版本为\nimport transformers transformers.__version__ Run\n4.18.0 \n代码下载 点击下载\n\n一、情感分析 金融文本情绪可以调动管理者、信息中介和投资者的观点和意见, 因此分析金融文本情感(情绪)是有价值的。 FinBERT-Sentiment 是一个 FinBERT 模型，它根据标准普尔 500 家公司的分析师报告中的 10,000 个手动注释的句子进行了Fine-tune(微调)。\n Fine-Tune微调 是 深度学习的一种语言处理技术，可以在前人（已有）的语言模型文件基础上加入少量新场景的文本数据进行更新训练，生成出新场景的语言模型。\n  输入：金融文本。 输出：Positive, Neutral or Negative.  from transformers import BertTokenizer, BertForSequenceClassification, pipeline #首次运行，因为会下载FinBERT模型，耗时会比较久 senti_finbert = BertForSequenceClassification.from_pretrained('yiyanghkust/finbert-tone',num_labels=3) senti_tokenizer = BertTokenizer.from_pretrained('yiyanghkust/finbert-tone') senti_nlp = pipeline(\"text-classification\", model=senti_finbert, tokenizer=senti_tokenizer) \n使用3条测试文本进行测试\n# 待分析的文本数据 senti_results = senti_nlp(['growth is strong and we have plenty of liquidity.', 'there is a shortage of capital, and we need extra financing.', 'formulation patents might protect Vasotec to a limited extent.']) senti_results Run\n[{'label': 'Positive', 'score': 1.0}, {'label': 'Negative', 'score': 0.9952379465103149}, {'label': 'Neutral', 'score': 0.9979718327522278}] \n二、ESG分类 ESG 分析可以帮助投资者确定企业的长期可持续性并识别相关风险。 FinBERT-ESG 是一个 FinBERT 模型，根据来自公司 ESG 报告和年度报告的 2,000 个手动注释句子进行微调。\n 输入：金融文本。 输出：Environmental, Social, Governance or None.  from transformers import BertTokenizer, BertForSequenceClassification, pipeline esg_finbert = BertForSequenceClassification.from_pretrained('yiyanghkust/finbert-esg',num_labels=4) esg_tokenizer = BertTokenizer.from_pretrained('yiyanghkust/finbert-esg') esg_nlp = pipeline(\"text-classification\", model=esg_finbert, tokenizer=esg_tokenizer) \n使用3条测试文本进行测试\nesg_results = esg_nlp(['Managing and working to mitigate the impact our operations have on the environment is a core element of our business.', 'Rhonda has been volunteering for several years for a variety of charitable community programs.', 'Cabot\\'s annual statements are audited annually by an independent registered public accounting firm.', 'As of December 31, 2012, the 2011 Term Loan had a principal balance of $492.5 million.']) esg_results Run\n[{'label': 'Environmental', 'score': 0.9805498719215393}, {'label': 'Social', 'score': 0.9906041026115417}, {'label': 'Governance', 'score': 0.6738430857658386}, {'label': 'None', 'score': 0.9960240125656128}] \n三、FLS识别 前瞻性陈述 (FLS) 告知投资者经理人对公司未来事件或结果的信念和意见。 从公司报告中识别前瞻性陈述可以帮助投资者进行财务分析。 FinBERT-FLS 是一个 FinBERT 模型，它基于罗素 3000 家公司年报的管理讨论和分析部分的 3,500 个手动注释的句子进行了微调。\n 输入：金融文本。 输出：Specific-FLS(特定 FLS) , Non-specific FLS(非特定 FLS), Not-FLS(非 FLS)。  from transformers import BertTokenizer, BertForSequenceClassification, pipeline fls_finbert = BertForSequenceClassification.from_pretrained('yiyanghkust/finbert-fls',num_labels=3) fls_tokenizer = BertTokenizer.from_pretrained('yiyanghkust/finbert-fls') fls_nlp = pipeline(\"text-classification\", model=fls_finbert, tokenizer=fls_tokenizer) \n使用3条测试文本进行测试\nfls_results = fls_nlp(['we expect the age of our fleet to enhance availability and reliability due to reduced downtime for repairs.', 'on an equivalent unit of production basis, general and administrative expenses declined 24 percent from 1994 to $.67 per boe.', 'we will continue to assess the need for a valuation allowance against deferred tax assets considering all available evidence obtained in future reporting periods.']) fls_results Run\n[{'label': 'Specific FLS', 'score': 0.7727874517440796}, {'label': 'Not FLS', 'score': 0.9905241131782532}, {'label': 'Non-specific FLS', 'score': 0.975904107093811}] \n文档及引用说明  文档github地址 https://github.com/yya518/FinBERT  @misc{yang2020finbert, title={FinBERT: A Pretrained Language Model for Financial Communications}, author={Yi Yang and Mark Christopher Siy UY and Allen Huang}, year={2020}, eprint={2006.08097}, archivePrefix={arXiv}, } \n广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
-  "wordCount" : "408",
+  "articleBody": "FinBERT介绍   FinBERT， 是使用49亿词的英文金融语料库数据，生成的BERT预训练语言模型。语料库上大小为 49亿个词。\n 公司报告 10-K 和 10-Q：25亿个词 电话会议记录：13亿个词 分析师报告：11亿个词  FinBERT开发者在多个金融 NLP 任务上对 FinBERT 预训练模型进行了微调，均优于传统机器学习模型、深度学习模型和微调 BERT 模型。 所有经过微调的 FinBERT 模型都公开托管在 Huggingface 🤗。 目前支持包括情绪分析、ESG 分类、前瞻性陈述 (FLS) 分类。\nHuang, Allen H., Hui Wang, and Yi Yang. \"FinBERT: A large language model for extracting information from financial text.\" Contemporary Accounting Research (2022). 摘要（翻译）: 我们开发了 FinBERT，这是一种适用于金融领域的最先进的大型语言模型。我们表明，FinBERT 结合了金融知识，可以更好地总结金融文本中的上下文信息。使用分析报告中研究人员标记的句子样本，我们证明 FinBERT 大大优于 Loughran 和 McDonald 词典以及其他机器学习算法，包括朴素贝叶斯、支持向量机、随机森林、卷积神经网络和长短期记忆，在情感分类中。我们的结果表明，FinBERT 擅长识别其他算法错误标记为中性的句子的正面或负面情绪，这可能是因为它使用了金融文本中的上下文信息。我们发现，FinBERT 优于其他算法，以及 Google 的原始双向编码器表示形式来自 transformers (BERT) 模型，当训练样本量较小且文本中包含一般文本中不常用的金融词时，这种优势尤为突出。 FinBERT 在识别与环境、社会和治理问题相关的讨论方面也优于其他模型。最后，我们表明，与 FinBERT 相比，其他方法低估了收益电话会议的文本信息量至少 18%。我们的结果对学术研究人员、投资专业人士和金融市场监管机构具有重要意义。 \nFinBERT功能 具体来说，FinBERT有以下内容：\n FinBERT-Pretrained： 针对大规模金融文本的预训练 FinBERT 模型。 FinBERT-Sentiment： 用于情感分类任务。 FinBERT-ESG： 用于 ESG 分类任务。 FinBERT-FLS： 用于前瞻性陈述（FLS）分类任务。  环境配置 pip install transformers==4.18.0 本次实验使用的transformers版本为\nimport transformers transformers.__version__ Run\n4.18.0 \n代码下载 点击下载\n\n一、情感分析 金融文本情绪可以调动管理者、信息中介和投资者的观点和意见, 因此分析金融文本情感(情绪)是有价值的。 FinBERT-Sentiment 是一个 FinBERT 模型，它根据标准普尔 500 家公司的分析师报告中的 10,000 个手动注释的句子进行了Fine-tune(微调)。\n Fine-Tune微调 是 深度学习的一种语言处理技术，可以在前人（已有）的语言模型文件基础上加入少量新场景的文本数据进行更新训练，生成出新场景的语言模型。\n  输入：金融文本。 输出：Positive, Neutral or Negative.  from transformers import BertTokenizer, BertForSequenceClassification, pipeline #首次运行，因为会下载FinBERT模型，耗时会比较久 senti_finbert = BertForSequenceClassification.from_pretrained('yiyanghkust/finbert-tone',num_labels=3) senti_tokenizer = BertTokenizer.from_pretrained('yiyanghkust/finbert-tone') senti_nlp = pipeline(\"text-classification\", model=senti_finbert, tokenizer=senti_tokenizer) \n使用3条测试文本进行测试\n# 待分析的文本数据 senti_results = senti_nlp(['growth is strong and we have plenty of liquidity.', 'there is a shortage of capital, and we need extra financing.', 'formulation patents might protect Vasotec to a limited extent.']) senti_results Run\n[{'label': 'Positive', 'score': 1.0}, {'label': 'Negative', 'score': 0.9952379465103149}, {'label': 'Neutral', 'score': 0.9979718327522278}] \n二、ESG分类 ESG 分析可以帮助投资者确定企业的长期可持续性并识别相关风险。 FinBERT-ESG 是一个 FinBERT 模型，根据来自公司 ESG 报告和年度报告的 2,000 个手动注释句子进行微调。\n 输入：金融文本。 输出：Environmental, Social, Governance or None.  from transformers import BertTokenizer, BertForSequenceClassification, pipeline esg_finbert = BertForSequenceClassification.from_pretrained('yiyanghkust/finbert-esg',num_labels=4) esg_tokenizer = BertTokenizer.from_pretrained('yiyanghkust/finbert-esg') esg_nlp = pipeline(\"text-classification\", model=esg_finbert, tokenizer=esg_tokenizer) \n使用3条测试文本进行测试\nesg_results = esg_nlp(['Managing and working to mitigate the impact our operations have on the environment is a core element of our business.', 'Rhonda has been volunteering for several years for a variety of charitable community programs.', 'Cabot\\'s annual statements are audited annually by an independent registered public accounting firm.', 'As of December 31, 2012, the 2011 Term Loan had a principal balance of $492.5 million.']) esg_results Run\n[{'label': 'Environmental', 'score': 0.9805498719215393}, {'label': 'Social', 'score': 0.9906041026115417}, {'label': 'Governance', 'score': 0.6738430857658386}, {'label': 'None', 'score': 0.9960240125656128}] \n三、FLS识别 前瞻性陈述 (FLS) 告知投资者经理人对公司未来事件或结果的信念和意见。 从公司报告中识别前瞻性陈述可以帮助投资者进行财务分析。 FinBERT-FLS 是一个 FinBERT 模型，它基于罗素 3000 家公司年报的管理讨论和分析部分的 3,500 个手动注释的句子进行了微调。\n 输入：金融文本。 输出：Specific-FLS(特定 FLS) , Non-specific FLS(非特定 FLS), Not-FLS(非 FLS)。  from transformers import BertTokenizer, BertForSequenceClassification, pipeline fls_finbert = BertForSequenceClassification.from_pretrained('yiyanghkust/finbert-fls',num_labels=3) fls_tokenizer = BertTokenizer.from_pretrained('yiyanghkust/finbert-fls') fls_nlp = pipeline(\"text-classification\", model=fls_finbert, tokenizer=fls_tokenizer) \n使用3条测试文本进行测试\nfls_results = fls_nlp(['we expect the age of our fleet to enhance availability and reliability due to reduced downtime for repairs.', 'on an equivalent unit of production basis, general and administrative expenses declined 24 percent from 1994 to $.67 per boe.', 'we will continue to assess the need for a valuation allowance against deferred tax assets considering all available evidence obtained in future reporting periods.']) fls_results Run\n[{'label': 'Specific FLS', 'score': 0.7727874517440796}, {'label': 'Not FLS', 'score': 0.9905241131782532}, {'label': 'Non-specific FLS', 'score': 0.975904107093811}] \n文档及引用说明   文档github地址 https://github.com/yya518/FinBERT\n  作者博客: https://yya518.github.io/research\n  Huang, Allen H., Hui Wang, and Yi Yang. “FinBERT: A large language model for extracting information from financial text.” Contemporary Accounting Research (2022).\n\n广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
+  "wordCount" : "455",
   "inLanguage": "en",
   "image":"/images/blog/FinBERT.png","datePublished": "2022-11-16T00:00:00Z",
   "dateModified": "2022-11-16T00:00:00Z",
   "author":{
     "@type": "Person",
-    "name": "大邓"
+    "name": "Yang Yi"
   },
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -231,7 +231,7 @@ onload="renderMathInElement(document.body);"></script>
     <h1 class="post-title">
       FinBERT | 金融文本BERT模型，可情感分析、识别ESG和FLS类型
     </h1>
-    <div class="post-meta"><span title='2022-11-16 00:00:00 +0000 UTC'>2022-11-16</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
+    <div class="post-meta"><span title='2022-11-16 00:00:00 +0000 UTC'>2022-11-16</span>&nbsp;·&nbsp;3 min&nbsp;·&nbsp;Yang Yi
 
 </div>
   </header> 
@@ -392,7 +392,10 @@ onload="renderMathInElement(document.body);"></script>
 <li>分析师报告：11亿个词</li>
 </ul>
 <p>FinBERT开发者在多个金融 NLP 任务上对 FinBERT 预训练模型进行了微调，均优于传统机器学习模型、深度学习模型和微调 BERT 模型。 所有经过微调的 FinBERT 模型都公开托管在 Huggingface 🤗。  目前支持包括<strong>情绪分析、ESG 分类、前瞻性陈述 (FLS) 分类</strong>。</p>
-<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Huang, Allen H., Hui Wang, and Yi Yang. &#34;FinBERT: A large language model for extracting information from financial text.&#34; Contemporary Accounting Research (2022).
+
+摘要（翻译）: 我们开发了 FinBERT，这是一种适用于金融领域的最先进的大型语言模型。我们表明，FinBERT 结合了金融知识，可以更好地总结金融文本中的上下文信息。使用分析报告中研究人员标记的句子样本，我们证明 FinBERT 大大优于 Loughran 和 McDonald 词典以及其他机器学习算法，包括朴素贝叶斯、支持向量机、随机森林、卷积神经网络和长短期记忆，在情感分类中。我们的结果表明，FinBERT 擅长识别其他算法错误标记为中性的句子的正面或负面情绪，这可能是因为它使用了金融文本中的上下文信息。我们发现，FinBERT 优于其他算法，以及 Google 的原始双向编码器表示形式来自 transformers (BERT) 模型，当训练样本量较小且文本中包含一般文本中不常用的金融词时，这种优势尤为突出。 FinBERT 在识别与环境、社会和治理问题相关的讨论方面也优于其他模型。最后，我们表明，与 FinBERT 相比，其他方法低估了收益电话会议的文本信息量至少 18%。我们的结果对学术研究人员、投资专业人士和金融市场监管机构具有重要意义。
+</code></pre></div><br>
 <h3 id="finbert功能">FinBERT功能<a hidden class="anchor" aria-hidden="true" href="#finbert功能">#</a></h3>
 <p>具体来说，FinBERT有以下内容：</p>
 <ul>
@@ -489,17 +492,16 @@ transformers.__version__
 </code></pre></div><p><br><br></p>
 <h2 id="文档及引用说明">文档及引用说明<a hidden class="anchor" aria-hidden="true" href="#文档及引用说明">#</a></h2>
 <ul>
-<li>文档github地址 <a href="https://github.com/yya518/FinBERT">https://github.com/yya518/FinBERT</a></li>
+<li>
+<p>文档github地址 <a href="https://github.com/yya518/FinBERT">https://github.com/yya518/FinBERT</a></p>
+</li>
+<li>
+<p>作者博客: <a href="https://yya518.github.io/research">https://yya518.github.io/research</a></p>
+</li>
 </ul>
 <br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">@misc{yang2020finbert,
-    title={FinBERT: A Pretrained Language Model for Financial Communications},
-    author={Yi Yang and Mark Christopher Siy UY and Allen Huang},
-    year={2020},
-    eprint={2006.08097},
-    archivePrefix={arXiv},
-    }
-</code></pre></div><p><br><br></p>
+<p>Huang, Allen H., Hui Wang, and Yi Yang. &ldquo;FinBERT: A large language model for extracting information from financial text.&rdquo; <strong>Contemporary Accounting Research (2022)</strong>.</p>
+<p><br><br></p>
 <h2 id="广而告之">广而告之<a hidden class="anchor" aria-hidden="true" href="#广而告之">#</a></h2>
 <ul>
 <li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>

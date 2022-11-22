@@ -6,7 +6,121 @@
     <description>Recent content in 词向量 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 16 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E8%AF%8D%E5%90%91%E9%87%8F/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 22 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E8%AF%8D%E5%90%91%E9%87%8F/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>训练&amp;使用Glove语言模型， 可度量刻板印象等</title>
+      <link>https://hidadeng.github.io/blog/2022-11-22-glove-embeddings-model/</link>
+      <pubDate>Tue, 22 Nov 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-11-22-glove-embeddings-model/</guid>
+      <description>训练&amp;amp;使用Glove语言模型， 可度量刻板印象等</description>
+      <content:encoded><![CDATA[<p>Glove可以捕捉到词语在语料库中的全局语义信息和类比信息， 据此基于语义向量计算刻板印象、文化变迁等，Glove模型在计算社会科学中拥有很大的应用潜力。</p>
+<p><img loading="lazy" src="img/wordpaths.png" alt=""  />
+</p>
+<p>训练Glove模型有两种实现方式</p>
+<ol>
+<li>C语言；  <a href="https://nlp.stanford.edu/projects/glove/">https://nlp.stanford.edu/projects/glove/</a></li>
+<li>Python语言；mittens、glove-python</li>
+</ol>
+<p><img loading="lazy" src="img/stanford%e8%ae%ad%e7%bb%83Glove.png" alt=""  />
+</p>
+<h2 id="方法比较">方法比较</h2>
+<p>|方法| 优点| 缺点 |
+|C语言 | 速度快，现成的代码工具 | 源代码仅支持英文, 需要付出较高的学习成本才能改动支持中文。 对文科生小白而言，门槛高|
+|Python语言 | mittens、glove-python等包语法简洁, 易上手| 对文科生还是有一定的门槛，代码运行速度慢|</p>
+<p>不考虑性能约束条件，更多地考虑易用性，大邓简化了Python代码，将其内置到了cntext库。</p>
+<p>对词向量、词嵌入感兴趣的童鞋，可以阅读下列相关资料</p>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/wordembeddingsinsocialscience/">转载 | 大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用</a></li>
+<li><a href="https://hidadeng.github.io/blog/from_sysbol_to_embeddings_in_computational_social_science/">转载 | 从符号到嵌入：计算社会科学的两种文本表示</a></li>
+</ul>
+<br>
+<h2 id="glove代码">GloVe代码</h2>
+<p>cntext支持中英文， 只需要7行代码，可完成导入数据、训练模型、保存结果。 这里以三体小说数据为例， 使用 <a href="santi.txt"><strong>data/santi.txt</strong></a> 。</p>
+<p><strong>需要注意， santi.txt文件内文本是已经分词处理过的</strong>。这样可以在english这类西方语言模式下使用空格来区分词语的边界。</p>
+<blockquote>
+<p>如果使用英文数据，下面代码只需要更改数据文件的路径即可。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1">#设置语言和项目文件夹路径</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Glove</span><span class="p">(</span><span class="n">cwd</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;english&#39;</span><span class="p">)</span>
+<span class="c1">#导入语料</span>
+<span class="n">model</span><span class="o">.</span><span class="n">create_vocab</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="s1">&#39;data/三体.txt&#39;</span><span class="p">,</span> <span class="n">min_count</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="c1">#构建词语共现矩阵</span>
+<span class="n">model</span><span class="o">.</span><span class="n">cooccurrence_matrix</span><span class="p">()</span>
+<span class="c1">#设置词嵌入模型的向量维度、迭代数</span>
+<span class="n">model</span><span class="o">.</span><span class="n">train_embeddings</span><span class="p">(</span><span class="n">vector_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<span class="c1">#存储模型</span>
+<span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;三体_glove_model&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Building prefix dict from the default dictionary ...
+Step 1/4: ...Create vocabulary for Glove.
+
+Dumping model to file cache C:\Users\Deng\AppData\Local\Temp\jieba.cache
+Loading model cost 0.628 seconds.
+
+Prefix dict has been built successfully.
+
+Step 2/4: ...Create cooccurrence matrix.
+Step 3/4: ...Train glove embeddings. 
+             Note, this part takes a long time to run
+
+Iteration 20: error 64925132.71550
+Step 3/4: ... Finish! Use 316.91 s
+
+Step 4/4: ... Save the glove embeddings to a txt file
+</code></pre></div><br>
+<h2 id="导入glove预训练模型">导入GloVe预训练模型</h2>
+<p>训练好的GloVe模型是txt文件，可以使用gensim导入。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">gensim.models</span> <span class="kn">import</span> <span class="n">KeyedVectors</span>
+
+<span class="c1"># 导入GloVe模型文件</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">KeyedVectors</span><span class="o">.</span><span class="n">load_word2vec_format</span><span class="p">(</span><span class="s1">&#39;output/Glove/三体_glove_model.txt&#39;</span><span class="p">,</span>  <span class="n">no_header</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1">#查看某词的词向量</span>
+<span class="n">model</span><span class="o">.</span><span class="n">get_vector</span><span class="p">(</span><span class="s1">&#39;宇宙&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([ 0.6618259 ,  0.60663235,  0.9849417 , -1.028956  ,  1.0711069 ,
+       -0.8875306 , -0.52833366, -1.0125595 , -0.9628481 ,  1.0356479 ,
+        0.8595257 ,  0.7454354 , -1.0468111 , -0.26285014, -1.0310447 ,
+        0.9906805 ,  0.05825566, -0.85581344, -0.9932533 , -1.020438  ,
+        1.0495061 , -0.6973389 ,  0.49099424, -0.80775315,  0.64256483,
+        1.0157642 ,  1.0135043 , -1.0131834 ,  0.17376372,  0.89585054,
+        0.30890268,  0.798895  ,  0.6653925 ,  0.908629  , -1.048273  ,
+       -0.35683677,  0.06306187, -1.0267074 , -1.0494691 ,  0.42172813,
+        0.24005401,  0.5934993 , -0.0696691 , -1.0360557 , -0.9797269 ,
+        1.0205714 , -0.376359  , -1.0501183 ,  1.0415571 , -0.9312968 ],
+      dtype=float32)
+</code></pre></div><br>
+<h2 id="模型的使用">模型的使用</h2>
+<p>语料中所有的词语都是维度相同的向量，可以根据向量计算找近义词、反义词。可参考 之前分享的 豆瓣影评</p>
+<br>
+<h2 id="参考">参考</h2>
+<ul>
+<li>Jeffrey Pennington, Richard Socher, and Christopher D. Manning. 2014. GloVe: Global Vectors for Word Representation.
+<ul>
+<li><a href="https://nlp.stanford.edu/projects/glove/">https://nlp.stanford.edu/projects/glove/</a></li>
+</ul>
+</li>
+<li>William L. Hamilton, Jure Leskovec, and Dan Jurafsky. ACL 2016. Diachronic Word Embeddings Reveal Statistical Laws of Semantic Change.
+<ul>
+<li><a href="https://nlp.stanford.edu/projects/histwords/">https://nlp.stanford.edu/projects/histwords/</a></li>
+</ul>
+</li>
+<li><a href="https://github.com/hiDaDeng/cntext">https://github.com/hiDaDeng/cntext</a></li>
+</ul>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>FinBERT | 金融文本BERT模型，可情感分析、识别ESG和FLS类型</title>
       <link>https://hidadeng.github.io/blog/2022-11-17-finbert-finance-bert-model/</link>
@@ -28,7 +142,10 @@
 <li>分析师报告：11亿个词</li>
 </ul>
 <p>FinBERT开发者在多个金融 NLP 任务上对 FinBERT 预训练模型进行了微调，均优于传统机器学习模型、深度学习模型和微调 BERT 模型。 所有经过微调的 FinBERT 模型都公开托管在 Huggingface 🤗。  目前支持包括<strong>情绪分析、ESG 分类、前瞻性陈述 (FLS) 分类</strong>。</p>
-<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Huang, Allen H., Hui Wang, and Yi Yang. &#34;FinBERT: A large language model for extracting information from financial text.&#34; Contemporary Accounting Research (2022).
+
+摘要（翻译）: 我们开发了 FinBERT，这是一种适用于金融领域的最先进的大型语言模型。我们表明，FinBERT 结合了金融知识，可以更好地总结金融文本中的上下文信息。使用分析报告中研究人员标记的句子样本，我们证明 FinBERT 大大优于 Loughran 和 McDonald 词典以及其他机器学习算法，包括朴素贝叶斯、支持向量机、随机森林、卷积神经网络和长短期记忆，在情感分类中。我们的结果表明，FinBERT 擅长识别其他算法错误标记为中性的句子的正面或负面情绪，这可能是因为它使用了金融文本中的上下文信息。我们发现，FinBERT 优于其他算法，以及 Google 的原始双向编码器表示形式来自 transformers (BERT) 模型，当训练样本量较小且文本中包含一般文本中不常用的金融词时，这种优势尤为突出。 FinBERT 在识别与环境、社会和治理问题相关的讨论方面也优于其他模型。最后，我们表明，与 FinBERT 相比，其他方法低估了收益电话会议的文本信息量至少 18%。我们的结果对学术研究人员、投资专业人士和金融市场监管机构具有重要意义。
+</code></pre></div><br>
 <h3 id="finbert功能">FinBERT功能</h3>
 <p>具体来说，FinBERT有以下内容：</p>
 <ul>
@@ -125,17 +242,16 @@ transformers.__version__
 </code></pre></div><p><br><br></p>
 <h2 id="文档及引用说明">文档及引用说明</h2>
 <ul>
-<li>文档github地址 <a href="https://github.com/yya518/FinBERT">https://github.com/yya518/FinBERT</a></li>
+<li>
+<p>文档github地址 <a href="https://github.com/yya518/FinBERT">https://github.com/yya518/FinBERT</a></p>
+</li>
+<li>
+<p>作者博客: <a href="https://yya518.github.io/research">https://yya518.github.io/research</a></p>
+</li>
 </ul>
 <br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">@misc{yang2020finbert,
-    title={FinBERT: A Pretrained Language Model for Financial Communications},
-    author={Yi Yang and Mark Christopher Siy UY and Allen Huang},
-    year={2020},
-    eprint={2006.08097},
-    archivePrefix={arXiv},
-    }
-</code></pre></div><p><br><br></p>
+<p>Huang, Allen H., Hui Wang, and Yi Yang. &ldquo;FinBERT: A large language model for extracting information from financial text.&rdquo; <strong>Contemporary Accounting Research (2022)</strong>.</p>
+<p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
 <ul>
 <li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
