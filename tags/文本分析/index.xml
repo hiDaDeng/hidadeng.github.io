@@ -2510,6 +2510,111 @@ df2.head()
     </item>
     
     <item>
+      <title>使用textstat库计算文本可读性</title>
+      <link>https://hidadeng.github.io/blog/2022-10-22-textstats-readability/</link>
+      <pubDate>Sat, 22 Oct 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-10-22-textstats-readability/</guid>
+      <description>使用textstat库计算文本可读性</description>
+      <content:encoded><![CDATA[
+
+
+<p>textstat可以对文本进行可读性计算，支持英文、德语、西班牙、意大利、荷兰语等。目前不支持中文，如做中文文本分析，可以考虑用cntext包。</p>
+<p><a href="https://github.com/textstat/textstat" class="uri">https://github.com/textstat/textstat</a></p>
+<p><br></p>
+<div id="任务" class="section level2">
+<h2>任务</h2>
+<p>今天在本文中，将学习三个知识点。</p>
+<ol style="list-style-type: decimal">
+<li>读取csv数据文件</li>
+<li>选中csv中某列文本数据，依次使用apply方法，计算FOG、ARI、CLI等。</li>
+<li>综合三个可读性指标，构造可读性mean值</li>
+</ol>
+<p><br></p>
+</div>
+<div id="安装" class="section level2">
+<h2>安装</h2>
+<pre><code>pip3 install textstat</code></pre>
+<p><br></p>
+</div>
+<div id="读取数据" class="section level2">
+<h2>读取数据</h2>
+<p><a href="data.csv">点击下载实验数据data.csv</a></p>
+<pre class="python"><code>import pandas as pd
+import textstat
+#设置dataframe显示的宽度
+pd.options.display.max_colwidth = 50
+
+df = pd.read_csv(&#39;data.csv&#39;)
+df</code></pre>
+<pre><code>##                                                  doc
+## 0  Playing games has always been thought to be im...
+## 1  the development of well-balanced and creative ...
+## 2  however, what part, if any, they should play i...
+## 3  of adults has never been researched that deepl...
+## 4  that playing games is every bit as important f...
+## 5  as for children. Not only is taking time out t...
+## 6  with our children and other adults valuable to...
+## 7  interpersonal relationships but is also a wond...
+## 8                       to release built up tension.
+## 9  The language will be used for syllable calcula...</code></pre>
+<p><br></p>
+</div>
+<div id="series批操作" class="section level2">
+<h2>Series批操作</h2>
+<p>使用apply方法对pd.Series类型的数据进行批操作</p>
+<p>extstat库有丰富的可读性方法，这里任选2个作为 <strong>批操作函数</strong>。</p>
+<ul>
+<li><strong>Fog</strong> textstat.gunning_fog(text)</li>
+<li><strong>Flesch</strong> textstat.flesch_reading_ease(text)</li>
+</ul>
+<pre class="python"><code>df[&#39;Fog&#39;] = df[&#39;doc&#39;].apply(textstat.gunning_fog)
+df[&#39;Flesch&#39;] = df[&#39;doc&#39;].apply(textstat.flesch_reading_ease)
+
+df.head()</code></pre>
+<pre><code>##                                                  doc   Fog  Flesch
+## 0  Playing games has always been thought to be im...  4.00   78.25
+## 1  the development of well-balanced and creative ...  8.51   30.53
+## 2  however, what part, if any, they should play i...  4.40   94.15
+## 3  of adults has never been researched that deepl...  4.00   86.71
+## 4  that playing games is every bit as important f...  4.00   78.25</code></pre>
+<p><br></p>
+</div>
+<div id="dataframe均值" class="section level2">
+<h2>DataFrame均值</h2>
+<p>选中Fog、Flesch两列</p>
+<pre class="python"><code>#查看df[[&#39;Fog&#39;, &#39;Flesch&#39;]]数据类型
+type(df[[&#39;Fog&#39;, &#39;Flesch&#39;]])</code></pre>
+<pre><code>## &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;</code></pre>
+<pre class="python"><code>#对这两个指标水平方向进行均值
+df[&#39;Mean&#39;] = df[[&#39;Fog&#39;, &#39;Flesch&#39;]].mean(axis=1)
+df.head()</code></pre>
+<pre><code>##                                                  doc   Fog  Flesch    Mean
+## 0  Playing games has always been thought to be im...  4.00   78.25  41.125
+## 1  the development of well-balanced and creative ...  8.51   30.53  19.520
+## 2  however, what part, if any, they should play i...  4.40   94.15  49.275
+## 3  of adults has never been researched that deepl...  4.00   86.71  45.355
+## 4  that playing games is every bit as important f...  4.00   78.25  41.125</code></pre>
+<p><br></p>
+</div>
+<div id="存储" class="section level2">
+<h2>存储</h2>
+<p>存储到可读性.csv中</p>
+<pre class="python"><code>df.to_csv(&#39;可读性.csv&#39;, index=False)</code></pre>
+<p><br></p>
+</div>
+<div id="广而告之" class="section level2">
+<h2>广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+</div>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>14G数据集 | 2007-2021年A股上市公司年度报告（txt文件）</title>
       <link>https://hidadeng.github.io/blog/2022-10-21-2007-2021-a-share-reports-dataset/</link>
       <pubDate>Sun, 16 Oct 2022 00:00:00 +0000</pubDate>

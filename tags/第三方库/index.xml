@@ -6,7 +6,2217 @@
     <description>Recent content in 第三方库 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Tue, 22 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 29 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>可视化 | 绘制《三体》人物关系网络图</title>
+      <link>https://hidadeng.github.io/blog/2022-11-29-santi-relationship-visualization-with-pyecharts/</link>
+      <pubDate>Tue, 29 Nov 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-11-29-santi-relationship-visualization-with-pyecharts/</guid>
+      <description>可视化 | 绘制《三体》人物关系网络图</description>
+      <content:encoded><![CDATA[<p>绘制人物网络关系图，需要有</p>
+<ul>
+<li>节点数据； 节点名、节点属性</li>
+<li>边数据； source、target、weight</li>
+<li>可视化工具(Gephi软件或Python的可视化包)</li>
+</ul>
+<br>
+<h2 id="本文代码">本文代码</h2>
+<p><a href="%E4%B8%89%E4%BD%93%E5%B0%8F%E8%AF%B4-%E4%BA%BA%E7%89%A9%E5%85%B3%E7%B3%BB%E7%BD%91%E7%BB%9C%E5%9B%BE%E5%8F%AF%E8%A7%86%E5%8C%96.zip">点击下载</a></p>
+<p><br><br></p>
+<h2 id="节点-人物数据">节点-人物数据</h2>
+<p>绘制人物关系网络图，首先需要有网络节点数据</p>
+<ul>
+<li>name 人物名称</li>
+<li>desc 人物简介</li>
+<li>stage 人物出现在三体小说的哪个阶段</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">nodes_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/三体人物.xlsx&#39;</span><span class="p">)</span>
+<span class="n">nodes_info_df</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df1.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="边-人物关系数据">边-人物关系数据</h2>
+<p>将节点数据依次在三体小说文本中按行进行检索，如果每行同时出现两个人物，两个人物会构建一个边。人物关系网络图可以用gephi软件进行绘制， 绘制需要两个csv文件，即</p>
+<ul>
+<li>三体_nodes.csv</li>
+<li>三体_edges.csv</li>
+</ul>
+<p>实现代码如下</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
+<span class="kn">import</span> <span class="nn">codecs</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+
+<span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
+    <span class="n">jieba</span><span class="o">.</span><span class="n">add_word</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+<span class="n">nodes</span> <span class="o">=</span> <span class="p">{}</span>			<span class="c1"># 姓名字典，保存人物，该字典的键为人物名称，值为该人物在全文中出现的次数</span>
+<span class="n">relationships</span> <span class="o">=</span> <span class="p">{}</span>	<span class="c1"># 关系字典，保存人物关系的有向边，该字典的键为有向边的起点，值为一个字典edge，edge的键是有向边的终点，值是有向边的权值，代表两个人物之间联系的紧密程度</span>
+<span class="n">lineNodes</span> <span class="o">=</span> <span class="p">[]</span>		<span class="c1"># 每段内人物关系，是一个缓存变量，保存对每一段分词得到当前段中出现的人物名称，lineName[i]是一个列表，列表中存储第i段中出现过的人物</span>
+
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&#34;data/三体.txt&#34;</span><span class="p">,</span> <span class="s2">&#34;r&#34;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&#34;utf-8&#34;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+	<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">():</span>
+		<span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>		<span class="c1"># 分词并返回该词词性</span>
+		<span class="n">lineNodes</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>		<span class="c1"># 为新读入的一段添加人物名称列表</span>
+		<span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
+				<span class="n">lineNodes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>		<span class="c1"># 为当前段的环境增加一个人物</span>
+				<span class="k">if</span> <span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">word</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+					<span class="n">nodes</span><span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+				<span class="n">relationships</span><span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+				<span class="n">nodes</span><span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>					<span class="c1"># 该人物出现次数加 1</span>
+                
+
+<span class="c1"># explore relationships   对于 lineNames 中每一行，我们为该行中出现的所有人物两两相连。如果两个人物之间尚未有边建立，则将新建的边权值设为 1，否则将已存在的边的权值加 1。这种方法将产生很多的冗余边，这些冗余边将在最后处理。</span>
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lineNodes</span><span class="p">:</span>					<span class="c1"># 对于每一段</span>
+	<span class="k">for</span> <span class="n">node1</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>					
+		<span class="k">for</span> <span class="n">node2</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>				<span class="c1"># 每段中的任意两个人</span>
+			<span class="k">if</span> <span class="n">node1</span> <span class="o">==</span> <span class="n">node2</span><span class="p">:</span>
+				<span class="k">continue</span>
+			<span class="k">if</span> <span class="n">relationships</span><span class="p">[</span><span class="n">node1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node2</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>		<span class="c1"># 若两人尚未同时出现则新建项</span>
+				<span class="n">relationships</span><span class="p">[</span><span class="n">node1</span><span class="p">][</span><span class="n">node2</span><span class="p">]</span><span class="o">=</span> <span class="mi">1</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">relationships</span><span class="p">[</span><span class="n">node1</span><span class="p">][</span><span class="n">node2</span><span class="p">]</span> <span class="o">=</span> <span class="n">relationships</span><span class="p">[</span><span class="n">node1</span><span class="p">][</span><span class="n">node2</span><span class="p">]</span><span class="o">+</span> <span class="mi">1</span>		<span class="c1"># 两人共同出现次数加 1</span>
+
+
+<span class="c1"># output   将已经建好的 names 和 relationships 输出到文本，以方便 gephi 可视化处理。输出边的过程中可以过滤可能是冗余的边，这里假设共同出现次数少于 3 次的是冗余边，则在输出时跳过这样的边。输出的节点集合保存为 busan_node.txt ，边集合保存为 busan_edge.node 。</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&#34;output/三体_nodes.csv&#34;</span><span class="p">,</span> <span class="s2">&#34;w&#34;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&#34;utf-8&#34;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvf1</span><span class="p">:</span>
+	<span class="n">writer1</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">csvf1</span><span class="p">,</span> <span class="n">fieldnames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="s1">&#39;weight&#39;</span><span class="p">])</span>
+	<span class="n">writer1</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+	<span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">times</span> <span class="ow">in</span> <span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+		<span class="n">line</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">node</span><span class="p">,</span> <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="n">node</span><span class="p">,</span> <span class="s1">&#39;weight&#39;</span><span class="p">:</span> <span class="n">times</span><span class="p">}</span>
+		<span class="n">writer1</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&#34;output/三体_edges.csv&#34;</span><span class="p">,</span> <span class="s2">&#34;w&#34;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&#34;utf-8&#34;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvf2</span><span class="p">:</span>
+	<span class="n">writer2</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">csvf2</span><span class="p">,</span> <span class="n">fieldnames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">,</span> <span class="s1">&#39;weight&#39;</span><span class="p">])</span>
+	<span class="n">writer2</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+	<span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">edges</span> <span class="ow">in</span> <span class="n">relationships</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+		<span class="k">for</span> <span class="n">target</span><span class="p">,</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">edges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+			<span class="k">if</span> <span class="n">weight</span><span class="o">&gt;</span><span class="mi">3</span><span class="p">:</span>
+				<span class="n">line</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="n">node</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">:</span><span class="n">target</span><span class="p">,</span> <span class="s1">&#39;weight&#39;</span><span class="p">:</span><span class="n">w</span><span class="p">}</span>
+				<span class="n">writer2</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</code></pre></div><br>
+<p>查看 三体_nodes.csv 文件样式</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">nodes_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;output/三体_nodes.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="n">nodes_df</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<br>
+<p>查看 三体_edges.csv 文件样式</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">edges_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;output/三体_edges.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="n">edges_df</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df3.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="绘制关系图">绘制关系图</h2>
+<p>本文不讲解gephi，感兴趣的可以去B站搜gephi使用方法。 实现可视化，除了gephi， 也可以使用pyechart库实现不错的可视化效果。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pyecharts</span> <span class="kn">import</span> <span class="n">options</span> <span class="k">as</span> <span class="n">opts</span>
+<span class="kn">from</span> <span class="nn">pyecharts.charts</span> <span class="kn">import</span> <span class="n">Graph</span>
+<span class="kn">from</span> <span class="nn">pyecharts.globals</span> <span class="kn">import</span> <span class="n">CurrentConfig</span><span class="p">,</span> <span class="n">NotebookType</span>
+<span class="n">CurrentConfig</span><span class="o">.</span><span class="n">NOTEBOOK_TYPE</span> <span class="o">=</span> <span class="n">NotebookType</span><span class="o">.</span><span class="n">JUPYTER_NOTEBOOK</span>
+
+
+<span class="n">nodes_data</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">edges_data</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">categories_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">weight</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nodes_df</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">nodes_df</span><span class="o">.</span><span class="n">weight</span><span class="p">):</span>
+    <span class="n">category</span> <span class="o">=</span> <span class="n">nodes_info_df</span><span class="p">[</span><span class="n">nodes_info_df</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">node</span><span class="p">][</span><span class="s1">&#39;stage&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1">##使用weight作为圆点的值，除以10，防止圆点太大占满整个屏幕.</span>
+    <span class="n">node_info</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;name&#34;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">),</span> <span class="s2">&#34;symbolSize&#34;</span><span class="p">:</span> <span class="n">weight</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;category&#39;</span><span class="p">:</span> <span class="n">category</span><span class="p">,</span> <span class="s2">&#34;value&#34;</span><span class="p">:</span> <span class="n">weight</span><span class="o">/</span><span class="mi">10</span><span class="p">}</span>
+    <span class="n">nodes_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_info</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">ix</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">edges_df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">edges_df</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">edges_df</span><span class="o">.</span><span class="n">target</span><span class="p">):</span>
+    <span class="n">edges_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&#34;id&#34;</span><span class="p">:</span> <span class="n">ix</span><span class="p">,</span> <span class="s2">&#34;source&#34;</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span> <span class="s2">&#34;target&#34;</span><span class="p">:</span> <span class="n">target</span><span class="p">})</span>
+
+<span class="k">for</span> <span class="n">category</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;stage&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()):</span> 
+    <span class="n">categories_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">category</span><span class="p">})</span>
+
+
+<span class="n">c</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Graph</span><span class="p">(</span><span class="n">init_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">InitOpts</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s2">&#34;1000px&#34;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&#34;600px&#34;</span><span class="p">))</span>
+    <span class="o">.</span><span class="n">add</span><span class="p">(</span>
+        <span class="s2">&#34;&#34;</span><span class="p">,</span>
+        <span class="n">nodes</span><span class="o">=</span><span class="n">nodes_data</span><span class="p">,</span>
+        <span class="n">links</span><span class="o">=</span><span class="n">edges_data</span><span class="p">,</span>
+        <span class="n">categories</span><span class="o">=</span><span class="n">categories_data</span><span class="p">,</span>
+        <span class="n">layout</span><span class="o">=</span><span class="s2">&#34;circular&#34;</span><span class="p">,</span>
+        <span class="n">is_rotate_label</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">linestyle_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">LineStyleOpts</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&#34;source&#34;</span><span class="p">,</span> <span class="n">curve</span><span class="o">=</span><span class="mf">0.3</span><span class="p">),</span>
+        <span class="n">label_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">LabelOpts</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="s2">&#34;right&#34;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">set_global_opts</span><span class="p">(</span>
+        <span class="n">title_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">TitleOpts</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&#34;三体人物关系图&#34;</span><span class="p">),</span>
+        <span class="n">legend_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">LegendOpts</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&#34;vertical&#34;</span><span class="p">,</span> <span class="n">pos_left</span><span class="o">=</span><span class="s2">&#34;2%&#34;</span><span class="p">,</span> <span class="n">pos_top</span><span class="o">=</span><span class="s2">&#34;20%&#34;</span><span class="p">),</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">c</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s1">&#39;output/三体_graph.html&#39;</span><span class="p">)</span>
+<span class="n">c</span><span class="o">.</span><span class="n">render_notebook</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Awesome-pyecharts</title>
+            <script type="text/javascript" src="https://assets.pyecharts.org/assets/echarts.min.js"></script>
+
+</head>
+<body>
+    <div id="e97ab300531a4c0ca1574681e578906a" class="chart-container" style="width:1000px; height:600px;"></div>
+    <script>
+        var chart_e97ab300531a4c0ca1574681e578906a = echarts.init(
+            document.getElementById('e97ab300531a4c0ca1574681e578906a'), 'white', {renderer: 'canvas'});
+        var option_e97ab300531a4c0ca1574681e578906a = {
+    "animation": true,
+    "animationThreshold": 2000,
+    "animationDuration": 1000,
+    "animationEasing": "cubicOut",
+    "animationDelay": 0,
+    "animationDurationUpdate": 300,
+    "animationEasingUpdate": "cubicOut",
+    "animationDelayUpdate": 0,
+    "color": [
+        "#c23531",
+        "#2f4554",
+        "#61a0a8",
+        "#d48265",
+        "#749f83",
+        "#ca8622",
+        "#bda29a",
+        "#6e7074",
+        "#546570",
+        "#c4ccd3",
+        "#f05b72",
+        "#ef5b9c",
+        "#f47920",
+        "#905a3d",
+        "#fab27b",
+        "#2a5caa",
+        "#444693",
+        "#726930",
+        "#b2d235",
+        "#6d8346",
+        "#ac6767",
+        "#1d953f",
+        "#6950a1",
+        "#918597"
+    ],
+    "series": [
+        {
+            "type": "graph",
+            "layout": "circular",
+            "symbolSize": 10,
+            "circular": {
+                "rotateLabel": true
+            },
+            "force": {
+                "repulsion": 50,
+                "edgeLength": 50,
+                "gravity": 0.2
+            },
+            "label": {
+                "show": true,
+                "position": "right",
+                "margin": 8
+            },
+            "lineStyle": {
+                "show": true,
+                "width": 1,
+                "opacity": 1,
+                "curveness": 0.3,
+                "type": "solid",
+                "color": "source"
+            },
+            "roam": true,
+            "draggable": false,
+            "focusNodeAdjacency": true,
+            "data": [
+                {
+                    "name": "\u6c6a\u6dfc",
+                    "symbolSize": 64.1,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 64.1
+                },
+                {
+                    "name": "\u53f2\u5f3a",
+                    "symbolSize": 24.7,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 24.7
+                },
+                {
+                    "name": "\u5e38\u4f1f\u601d",
+                    "symbolSize": 9.4,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 9.4
+                },
+                {
+                    "name": "\u6768\u51ac",
+                    "symbolSize": 6.5,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 6.5
+                },
+                {
+                    "name": "\u4e01\u4eea",
+                    "symbolSize": 17.2,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 17.2
+                },
+                {
+                    "name": "\u7533\u7389\u83f2",
+                    "symbolSize": 4.9,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 4.9
+                },
+                {
+                    "name": "\u8c46\u8c46",
+                    "symbolSize": 0.3,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.3
+                },
+                {
+                    "name": "\u9b4f\u6210",
+                    "symbolSize": 3.0,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 3.0
+                },
+                {
+                    "name": "\u6f58\u5bd2",
+                    "symbolSize": 4.7,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 4.7
+                },
+                {
+                    "name": "\u674e\u7476",
+                    "symbolSize": 0.2,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.2
+                },
+                {
+                    "name": "\u53f6\u6587\u6d01",
+                    "symbolSize": 47.2,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 47.2
+                },
+                {
+                    "name": "\u6960\u6960",
+                    "symbolSize": 0.3,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.3
+                },
+                {
+                    "name": "\u6d0b\u6d0b",
+                    "symbolSize": 0.1,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.1
+                },
+                {
+                    "name": "\u54aa\u54aa",
+                    "symbolSize": 0.1,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.1
+                },
+                {
+                    "name": "\u6c99\u745e\u5c71",
+                    "symbolSize": 2.5,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 2.5
+                },
+                {
+                    "name": "\u53f6\u54f2\u6cf0",
+                    "symbolSize": 3.0,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 3.0
+                },
+                {
+                    "name": "\u767d\u6c90\u9716",
+                    "symbolSize": 2.9,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 2.9
+                },
+                {
+                    "name": "\u9a6c\u94a2",
+                    "symbolSize": 0.5,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.5
+                },
+                {
+                    "name": "\u7a0b\u4e3d\u534e",
+                    "symbolSize": 0.9,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.9
+                },
+                {
+                    "name": "\u53f6\u6587\u96ea",
+                    "symbolSize": 0.4,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.4
+                },
+                {
+                    "name": "\u96f7\u5fd7\u6210",
+                    "symbolSize": 3.5,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 3.5
+                },
+                {
+                    "name": "\u6768\u536b\u5b81",
+                    "symbolSize": 7.8,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 7.8
+                },
+                {
+                    "name": "\u5a01\u5c14\u900a",
+                    "symbolSize": 0.4,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.4
+                },
+                {
+                    "name": "\u58a8\u5b50",
+                    "symbolSize": 3.1,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 3.1
+                },
+                {
+                    "name": "\u5f90\u51b0\u51b0",
+                    "symbolSize": 0.7,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.7
+                },
+                {
+                    "name": "\u4f0a\u6587\u65af",
+                    "symbolSize": 8.8,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 8.8
+                },
+                {
+                    "name": "\u62c9\u83f2\u5c14",
+                    "symbolSize": 0.1,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.1
+                },
+                {
+                    "name": "\u6838\u5f39\u5973\u5b69",
+                    "symbolSize": 0.3,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.3
+                },
+                {
+                    "name": "\u9f50\u730e\u5934",
+                    "symbolSize": 0.5,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.5
+                },
+                {
+                    "name": "\u5927\u51e4",
+                    "symbolSize": 1.1,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 1.1
+                },
+                {
+                    "name": "\u9ea6\u514b",
+                    "symbolSize": 0.8,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.8
+                },
+                {
+                    "name": "\u65af\u5766\u987f",
+                    "symbolSize": 2.3,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 2.3
+                },
+                {
+                    "name": "1379\u53f7\u76d1\u542c\u5458",
+                    "symbolSize": 0.5,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.5
+                },
+                {
+                    "name": "\u5143\u9996",
+                    "symbolSize": 7.9,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 7.9
+                },
+                {
+                    "name": "\u667a\u5b50",
+                    "symbolSize": 46.4,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 46.4
+                },
+                {
+                    "name": "\u6797\u4e91",
+                    "symbolSize": 0.1,
+                    "category": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                    "value": 0.1
+                },
+                {
+                    "name": "\u7f57\u8f91",
+                    "symbolSize": 129.4,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 129.4
+                },
+                {
+                    "name": "\u5434\u5cb3",
+                    "symbolSize": 6.1,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 6.1
+                },
+                {
+                    "name": "\u7ae0\u5317\u6d77",
+                    "symbolSize": 31.6,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 31.6
+                },
+                {
+                    "name": "\u96f7\u5fb7\u5c14",
+                    "symbolSize": 1.0,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 1.0
+                },
+                {
+                    "name": "\u743c\u65af",
+                    "symbolSize": 0.9,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.9
+                },
+                {
+                    "name": "\u6590\u5179\u7f57\u5c06\u519b",
+                    "symbolSize": 0.7,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.7
+                },
+                {
+                    "name": "\u5f20\u63f4\u671d",
+                    "symbolSize": 4.3,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 4.3
+                },
+                {
+                    "name": "\u6768\u664b\u6587",
+                    "symbolSize": 3.4,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 3.4
+                },
+                {
+                    "name": "\u82d7\u798f\u5168",
+                    "symbolSize": 2.0,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 2.0
+                },
+                {
+                    "name": "\u53f2\u6653\u660e",
+                    "symbolSize": 3.5,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 3.5
+                },
+                {
+                    "name": "\u4f3d\u5c14\u8bfa\u592b",
+                    "symbolSize": 0.1,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.1
+                },
+                {
+                    "name": "\u767d\u84c9",
+                    "symbolSize": 2.4,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 2.4
+                },
+                {
+                    "name": "\u574e\u7279",
+                    "symbolSize": 7.6,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 7.6
+                },
+                {
+                    "name": "\u8428\u4f0a",
+                    "symbolSize": 5.3,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 5.3
+                },
+                {
+                    "name": "\u5c71\u6749\u60e0\u5b50",
+                    "symbolSize": 6.4,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 6.4
+                },
+                {
+                    "name": "\u6797\u683c",
+                    "symbolSize": 4.8,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 4.8
+                },
+                {
+                    "name": "\u4f3d\u5c14\u5b81",
+                    "symbolSize": 3.5,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 3.5
+                },
+                {
+                    "name": "\u827e\u4f26",
+                    "symbolSize": 2.1,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 2.1
+                },
+                {
+                    "name": "\u4e95\u4e0a\u5b8f\u4e00",
+                    "symbolSize": 0.6,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.6
+                },
+                {
+                    "name": "\u5e84\u989c",
+                    "symbolSize": 12.5,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 12.5
+                },
+                {
+                    "name": "\u54c8\u91cc\u65af",
+                    "symbolSize": 0.3,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.3
+                },
+                {
+                    "name": "\u5f20\u7fd4",
+                    "symbolSize": 1.1,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 1.1
+                },
+                {
+                    "name": "\u5f20\u5ef6",
+                    "symbolSize": 0.5,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.5
+                },
+                {
+                    "name": "\u6653\u8679",
+                    "symbolSize": 0.1,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.1
+                },
+                {
+                    "name": "\u51ef\u745f\u7433",
+                    "symbolSize": 0.1,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.1
+                },
+                {
+                    "name": "\u718a\u6587",
+                    "symbolSize": 1.5,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 1.5
+                },
+                {
+                    "name": "\u90ed\u6b63\u660e",
+                    "symbolSize": 0.3,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.3
+                },
+                {
+                    "name": "\u4e1c\u65b9\u5ef6\u7eea",
+                    "symbolSize": 8.4,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 8.4
+                },
+                {
+                    "name": "\u80af\u535a\u58eb",
+                    "symbolSize": 0.4,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.4
+                },
+                {
+                    "name": "\u7f57\u5bbe\u900a\u5c06\u519b",
+                    "symbolSize": 0.3,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.3
+                },
+                {
+                    "name": "\u5217\u6587",
+                    "symbolSize": 0.8,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.8
+                },
+                {
+                    "name": "\u4e95\u4e0a\u660e",
+                    "symbolSize": 1.1,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 1.1
+                },
+                {
+                    "name": "\u897f\u5b50",
+                    "symbolSize": 2.9,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 2.9
+                },
+                {
+                    "name": "\u8d75\u946b",
+                    "symbolSize": 2.1,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 2.1
+                },
+                {
+                    "name": "\u674e\u7ef4",
+                    "symbolSize": 2.0,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 2.0
+                },
+                {
+                    "name": "\u84dd\u897f",
+                    "symbolSize": 3.0,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 3.0
+                },
+                {
+                    "name": "\u65af\u79d1\u7279",
+                    "symbolSize": 2.3,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 2.3
+                },
+                {
+                    "name": "\u6cd5\u624e\u5170",
+                    "symbolSize": 3.1,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 3.1
+                },
+                {
+                    "name": "\u72c4\u5965\u4f26\u5a1c",
+                    "symbolSize": 5.2,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 5.2
+                },
+                {
+                    "name": "\u4e91\u5929\u660e",
+                    "symbolSize": 31.6,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 31.6
+                },
+                {
+                    "name": "\u5f20\u533b\u751f",
+                    "symbolSize": 1.6,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 1.6
+                },
+                {
+                    "name": "\u8001\u674e",
+                    "symbolSize": 2.4,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 2.4
+                },
+                {
+                    "name": "\u80e1\u6587",
+                    "symbolSize": 2.3,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 2.3
+                },
+                {
+                    "name": "\u7a0b\u5fc3",
+                    "symbolSize": 151.7,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 151.7
+                },
+                {
+                    "name": "\u4f55\u535a\u58eb",
+                    "symbolSize": 2.1,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 2.1
+                },
+                {
+                    "name": "\u4e8e\u7ef4\u6c11",
+                    "symbolSize": 0.4,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 0.4
+                },
+                {
+                    "name": "\u67ef\u66fc\u7433",
+                    "symbolSize": 1.0,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 1.0
+                },
+                {
+                    "name": "\u4e54\u4f9d\u5a1c",
+                    "symbolSize": 0.3,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 0.3
+                },
+                {
+                    "name": "\u516c\u5143\u4eba",
+                    "symbolSize": 1.6,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 1.6
+                },
+                {
+                    "name": "\u6bd5\u4e91\u5cf0",
+                    "symbolSize": 2.4,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 2.4
+                },
+                {
+                    "name": "\u66f9\u5f6c",
+                    "symbolSize": 8.8,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 8.8
+                },
+                {
+                    "name": "\u4f0a\u4e07",
+                    "symbolSize": 0.5,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 0.5
+                },
+                {
+                    "name": "\u5b89\u4e1c\u8bfa\u592b",
+                    "symbolSize": 0.4,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 0.4
+                },
+                {
+                    "name": "\u97e6\u65af\u7279",
+                    "symbolSize": 2.8,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 2.8
+                },
+                {
+                    "name": "\u6234\u6587",
+                    "symbolSize": 1.1,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 1.1
+                },
+                {
+                    "name": "\u6734\u4e49\u541b",
+                    "symbolSize": 0.7,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 0.7
+                },
+                {
+                    "name": "\u827e\u514b",
+                    "symbolSize": 2.5,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 2.5
+                },
+                {
+                    "name": "\u8587\u62c9",
+                    "symbolSize": 1.9,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 1.9
+                },
+                {
+                    "name": "\u5218\u6653\u660e",
+                    "symbolSize": 0.2,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 0.2
+                },
+                {
+                    "name": "\u5173\u4e00\u5e06",
+                    "symbolSize": 26.2,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 26.2
+                },
+                {
+                    "name": "\u5f17\u96f7\u65af",
+                    "symbolSize": 3.8,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 3.8
+                },
+                {
+                    "name": "\u79cb\u539f\u73b2\u5b50",
+                    "symbolSize": 0.2,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 0.2
+                },
+                {
+                    "name": "\u891a\u5ca9",
+                    "symbolSize": 0.5,
+                    "category": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                    "value": 0.5
+                },
+                {
+                    "name": "\u5353\u6587",
+                    "symbolSize": 1.0,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 1.0
+                },
+                {
+                    "name": "\u6df1\u6c34\u738b\u5b50",
+                    "symbolSize": 3.4,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 3.4
+                },
+                {
+                    "name": "\u9732\u73e0\u516c\u4e3b",
+                    "symbolSize": 3.1,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 3.1
+                },
+                {
+                    "name": "\u7a7a\u7075\u753b\u5e08",
+                    "symbolSize": 2.4,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 2.4
+                },
+                {
+                    "name": "\u9488\u773c\u753b\u5e08",
+                    "symbolSize": 3.1,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 3.1
+                },
+                {
+                    "name": "\u957f\u5e06",
+                    "symbolSize": 2.3,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 2.3
+                },
+                {
+                    "name": "\u5df4\u52d2\u83ab",
+                    "symbolSize": 0.8,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 0.8
+                },
+                {
+                    "name": "\u6770\u68ee",
+                    "symbolSize": 2.4,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 2.4
+                },
+                {
+                    "name": "\u5a01\u7eb3\u5c14",
+                    "symbolSize": 1.3,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 1.3
+                },
+                {
+                    "name": "\u9ad8way",
+                    "symbolSize": 2.1,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 2.1
+                },
+                {
+                    "name": "\u5e03\u83b1\u5c14",
+                    "symbolSize": 0.2,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 0.2
+                },
+                {
+                    "name": "\u6b4c\u8005",
+                    "symbolSize": 4.9,
+                    "category": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f",
+                    "value": 4.9
+                }
+            ],
+            "categories": [
+                {
+                    "name": "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b"
+                },
+                {
+                    "name": "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797"
+                },
+                {
+                    "name": "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f"
+                }
+            ],
+            "edgeLabel": {
+                "show": false,
+                "position": "top",
+                "margin": 8
+            },
+            "edgeSymbol": [
+                null,
+                null
+            ],
+            "edgeSymbolSize": 10,
+            "links": [
+                {
+                    "id": 0,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u53f2\u5f3a"
+                },
+                {
+                    "id": 1,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u5e38\u4f1f\u601d"
+                },
+                {
+                    "id": 2,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u6768\u51ac"
+                },
+                {
+                    "id": 3,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u4e01\u4eea"
+                },
+                {
+                    "id": 4,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u7533\u7389\u83f2"
+                },
+                {
+                    "id": 5,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u9b4f\u6210"
+                },
+                {
+                    "id": 6,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u6f58\u5bd2"
+                },
+                {
+                    "id": 7,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 8,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u6c99\u745e\u5c71"
+                },
+                {
+                    "id": 9,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u58a8\u5b50"
+                },
+                {
+                    "id": 10,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u6768\u536b\u5b81"
+                },
+                {
+                    "id": 11,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u5f90\u51b0\u51b0"
+                },
+                {
+                    "id": 12,
+                    "source": "\u6c6a\u6dfc",
+                    "target": "\u65af\u5766\u987f"
+                },
+                {
+                    "id": 13,
+                    "source": "\u53f2\u5f3a",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 14,
+                    "source": "\u53f2\u5f3a",
+                    "target": "\u5e38\u4f1f\u601d"
+                },
+                {
+                    "id": 15,
+                    "source": "\u53f2\u5f3a",
+                    "target": "\u65af\u5766\u987f"
+                },
+                {
+                    "id": 16,
+                    "source": "\u53f2\u5f3a",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 17,
+                    "source": "\u53f2\u5f3a",
+                    "target": "\u574e\u7279"
+                },
+                {
+                    "id": 18,
+                    "source": "\u53f2\u5f3a",
+                    "target": "\u53f2\u6653\u660e"
+                },
+                {
+                    "id": 19,
+                    "source": "\u5e38\u4f1f\u601d",
+                    "target": "\u53f2\u5f3a"
+                },
+                {
+                    "id": 20,
+                    "source": "\u5e38\u4f1f\u601d",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 21,
+                    "source": "\u5e38\u4f1f\u601d",
+                    "target": "\u7ae0\u5317\u6d77"
+                },
+                {
+                    "id": 22,
+                    "source": "\u6768\u51ac",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 23,
+                    "source": "\u6768\u51ac",
+                    "target": "\u4e01\u4eea"
+                },
+                {
+                    "id": 24,
+                    "source": "\u6768\u51ac",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 25,
+                    "source": "\u6768\u51ac",
+                    "target": "\u9f50\u730e\u5934"
+                },
+                {
+                    "id": 26,
+                    "source": "\u6768\u51ac",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 27,
+                    "source": "\u4e01\u4eea",
+                    "target": "\u6768\u51ac"
+                },
+                {
+                    "id": 28,
+                    "source": "\u4e01\u4eea",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 29,
+                    "source": "\u4e01\u4eea",
+                    "target": "\u667a\u5b50"
+                },
+                {
+                    "id": 30,
+                    "source": "\u4e01\u4eea",
+                    "target": "\u7ae0\u5317\u6d77"
+                },
+                {
+                    "id": 31,
+                    "source": "\u4e01\u4eea",
+                    "target": "\u897f\u5b50"
+                },
+                {
+                    "id": 32,
+                    "source": "\u7533\u7389\u83f2",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 33,
+                    "source": "\u7533\u7389\u83f2",
+                    "target": "\u9b4f\u6210"
+                },
+                {
+                    "id": 34,
+                    "source": "\u7533\u7389\u83f2",
+                    "target": "\u6f58\u5bd2"
+                },
+                {
+                    "id": 35,
+                    "source": "\u9b4f\u6210",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 36,
+                    "source": "\u9b4f\u6210",
+                    "target": "\u7533\u7389\u83f2"
+                },
+                {
+                    "id": 37,
+                    "source": "\u6f58\u5bd2",
+                    "target": "\u7533\u7389\u83f2"
+                },
+                {
+                    "id": 38,
+                    "source": "\u6f58\u5bd2",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 39,
+                    "source": "\u6f58\u5bd2",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 40,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 41,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u6768\u51ac"
+                },
+                {
+                    "id": 42,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u6c99\u745e\u5c71"
+                },
+                {
+                    "id": 43,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u53f6\u54f2\u6cf0"
+                },
+                {
+                    "id": 44,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u767d\u6c90\u9716"
+                },
+                {
+                    "id": 45,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u7a0b\u4e3d\u534e"
+                },
+                {
+                    "id": 46,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u53f6\u6587\u96ea"
+                },
+                {
+                    "id": 47,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u6768\u536b\u5b81"
+                },
+                {
+                    "id": 48,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u96f7\u5fd7\u6210"
+                },
+                {
+                    "id": 49,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u6f58\u5bd2"
+                },
+                {
+                    "id": 50,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u4f0a\u6587\u65af"
+                },
+                {
+                    "id": 51,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u9f50\u730e\u5934"
+                },
+                {
+                    "id": 52,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u5927\u51e4"
+                },
+                {
+                    "id": 53,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u667a\u5b50"
+                },
+                {
+                    "id": 54,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 55,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u8428\u4f0a"
+                },
+                {
+                    "id": 56,
+                    "source": "\u53f6\u6587\u6d01",
+                    "target": "\u5e84\u989c"
+                },
+                {
+                    "id": 57,
+                    "source": "\u6c99\u745e\u5c71",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 58,
+                    "source": "\u6c99\u745e\u5c71",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 59,
+                    "source": "\u53f6\u54f2\u6cf0",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 60,
+                    "source": "\u53f6\u54f2\u6cf0",
+                    "target": "\u6768\u536b\u5b81"
+                },
+                {
+                    "id": 61,
+                    "source": "\u767d\u6c90\u9716",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 62,
+                    "source": "\u7a0b\u4e3d\u534e",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 63,
+                    "source": "\u53f6\u6587\u96ea",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 64,
+                    "source": "\u96f7\u5fd7\u6210",
+                    "target": "\u6768\u536b\u5b81"
+                },
+                {
+                    "id": 65,
+                    "source": "\u96f7\u5fd7\u6210",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 66,
+                    "source": "\u6768\u536b\u5b81",
+                    "target": "\u96f7\u5fd7\u6210"
+                },
+                {
+                    "id": 67,
+                    "source": "\u6768\u536b\u5b81",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 68,
+                    "source": "\u6768\u536b\u5b81",
+                    "target": "\u53f6\u54f2\u6cf0"
+                },
+                {
+                    "id": 69,
+                    "source": "\u6768\u536b\u5b81",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 70,
+                    "source": "\u58a8\u5b50",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 71,
+                    "source": "\u5f90\u51b0\u51b0",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 72,
+                    "source": "\u4f0a\u6587\u65af",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 73,
+                    "source": "\u4f0a\u6587\u65af",
+                    "target": "\u9ea6\u514b"
+                },
+                {
+                    "id": 74,
+                    "source": "\u4f0a\u6587\u65af",
+                    "target": "\u667a\u5b50"
+                },
+                {
+                    "id": 75,
+                    "source": "\u9f50\u730e\u5934",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 76,
+                    "source": "\u9f50\u730e\u5934",
+                    "target": "\u6768\u51ac"
+                },
+                {
+                    "id": 77,
+                    "source": "\u9f50\u730e\u5934",
+                    "target": "\u5927\u51e4"
+                },
+                {
+                    "id": 78,
+                    "source": "\u5927\u51e4",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 79,
+                    "source": "\u5927\u51e4",
+                    "target": "\u9f50\u730e\u5934"
+                },
+                {
+                    "id": 80,
+                    "source": "\u9ea6\u514b",
+                    "target": "\u4f0a\u6587\u65af"
+                },
+                {
+                    "id": 81,
+                    "source": "\u65af\u5766\u987f",
+                    "target": "\u53f2\u5f3a"
+                },
+                {
+                    "id": 82,
+                    "source": "\u65af\u5766\u987f",
+                    "target": "\u6c6a\u6dfc"
+                },
+                {
+                    "id": 83,
+                    "source": "\u5143\u9996",
+                    "target": "\u667a\u5b50"
+                },
+                {
+                    "id": 84,
+                    "source": "\u667a\u5b50",
+                    "target": "\u5143\u9996"
+                },
+                {
+                    "id": 85,
+                    "source": "\u667a\u5b50",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 86,
+                    "source": "\u667a\u5b50",
+                    "target": "\u4e01\u4eea"
+                },
+                {
+                    "id": 87,
+                    "source": "\u667a\u5b50",
+                    "target": "\u4f0a\u6587\u65af"
+                },
+                {
+                    "id": 88,
+                    "source": "\u667a\u5b50",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 89,
+                    "source": "\u667a\u5b50",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 90,
+                    "source": "\u667a\u5b50",
+                    "target": "\u6234\u6587"
+                },
+                {
+                    "id": 91,
+                    "source": "\u667a\u5b50",
+                    "target": "\u5f17\u96f7\u65af"
+                },
+                {
+                    "id": 92,
+                    "source": "\u667a\u5b50",
+                    "target": "\u4e91\u5929\u660e"
+                },
+                {
+                    "id": 93,
+                    "source": "\u667a\u5b50",
+                    "target": "\u5173\u4e00\u5e06"
+                },
+                {
+                    "id": 94,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u6768\u51ac"
+                },
+                {
+                    "id": 95,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u53f2\u5f3a"
+                },
+                {
+                    "id": 96,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u7ae0\u5317\u6d77"
+                },
+                {
+                    "id": 97,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u767d\u84c9"
+                },
+                {
+                    "id": 98,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u574e\u7279"
+                },
+                {
+                    "id": 99,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u8428\u4f0a"
+                },
+                {
+                    "id": 100,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u4f3d\u5c14\u5b81"
+                },
+                {
+                    "id": 101,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u5e84\u989c"
+                },
+                {
+                    "id": 102,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u667a\u5b50"
+                },
+                {
+                    "id": 103,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 104,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u6797\u683c"
+                },
+                {
+                    "id": 105,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u5f20\u7fd4"
+                },
+                {
+                    "id": 106,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u5c71\u6749\u60e0\u5b50"
+                },
+                {
+                    "id": 107,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u718a\u6587"
+                },
+                {
+                    "id": 108,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u53f2\u6653\u660e"
+                },
+                {
+                    "id": 109,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 110,
+                    "source": "\u7f57\u8f91",
+                    "target": "\u5f17\u96f7\u65af"
+                },
+                {
+                    "id": 111,
+                    "source": "\u5434\u5cb3",
+                    "target": "\u7ae0\u5317\u6d77"
+                },
+                {
+                    "id": 112,
+                    "source": "\u7ae0\u5317\u6d77",
+                    "target": "\u5434\u5cb3"
+                },
+                {
+                    "id": 113,
+                    "source": "\u7ae0\u5317\u6d77",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 114,
+                    "source": "\u7ae0\u5317\u6d77",
+                    "target": "\u5e38\u4f1f\u601d"
+                },
+                {
+                    "id": 115,
+                    "source": "\u7ae0\u5317\u6d77",
+                    "target": "\u4e01\u4eea"
+                },
+                {
+                    "id": 116,
+                    "source": "\u7ae0\u5317\u6d77",
+                    "target": "\u4e1c\u65b9\u5ef6\u7eea"
+                },
+                {
+                    "id": 117,
+                    "source": "\u7ae0\u5317\u6d77",
+                    "target": "\u84dd\u897f"
+                },
+                {
+                    "id": 118,
+                    "source": "\u6590\u5179\u7f57\u5c06\u519b",
+                    "target": "\u6797\u683c"
+                },
+                {
+                    "id": 119,
+                    "source": "\u5f20\u63f4\u671d",
+                    "target": "\u6768\u664b\u6587"
+                },
+                {
+                    "id": 120,
+                    "source": "\u5f20\u63f4\u671d",
+                    "target": "\u82d7\u798f\u5168"
+                },
+                {
+                    "id": 121,
+                    "source": "\u5f20\u63f4\u671d",
+                    "target": "\u53f2\u6653\u660e"
+                },
+                {
+                    "id": 122,
+                    "source": "\u6768\u664b\u6587",
+                    "target": "\u5f20\u63f4\u671d"
+                },
+                {
+                    "id": 123,
+                    "source": "\u6768\u664b\u6587",
+                    "target": "\u82d7\u798f\u5168"
+                },
+                {
+                    "id": 124,
+                    "source": "\u82d7\u798f\u5168",
+                    "target": "\u5f20\u63f4\u671d"
+                },
+                {
+                    "id": 125,
+                    "source": "\u82d7\u798f\u5168",
+                    "target": "\u6768\u664b\u6587"
+                },
+                {
+                    "id": 126,
+                    "source": "\u53f2\u6653\u660e",
+                    "target": "\u5f20\u63f4\u671d"
+                },
+                {
+                    "id": 127,
+                    "source": "\u53f2\u6653\u660e",
+                    "target": "\u53f2\u5f3a"
+                },
+                {
+                    "id": 128,
+                    "source": "\u53f2\u6653\u660e",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 129,
+                    "source": "\u767d\u84c9",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 130,
+                    "source": "\u574e\u7279",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 131,
+                    "source": "\u574e\u7279",
+                    "target": "\u53f2\u5f3a"
+                },
+                {
+                    "id": 132,
+                    "source": "\u574e\u7279",
+                    "target": "\u5f20\u7fd4"
+                },
+                {
+                    "id": 133,
+                    "source": "\u8428\u4f0a",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 134,
+                    "source": "\u8428\u4f0a",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 135,
+                    "source": "\u8428\u4f0a",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 136,
+                    "source": "\u5c71\u6749\u60e0\u5b50",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 137,
+                    "source": "\u6797\u683c",
+                    "target": "\u6590\u5179\u7f57\u5c06\u519b"
+                },
+                {
+                    "id": 138,
+                    "source": "\u6797\u683c",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 139,
+                    "source": "\u6797\u683c",
+                    "target": "\u80af\u535a\u58eb"
+                },
+                {
+                    "id": 140,
+                    "source": "\u4f3d\u5c14\u5b81",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 141,
+                    "source": "\u5e84\u989c",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 142,
+                    "source": "\u5e84\u989c",
+                    "target": "\u53f6\u6587\u6d01"
+                },
+                {
+                    "id": 143,
+                    "source": "\u5f20\u7fd4",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 144,
+                    "source": "\u5f20\u7fd4",
+                    "target": "\u574e\u7279"
+                },
+                {
+                    "id": 145,
+                    "source": "\u718a\u6587",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 146,
+                    "source": "\u4e1c\u65b9\u5ef6\u7eea",
+                    "target": "\u7ae0\u5317\u6d77"
+                },
+                {
+                    "id": 147,
+                    "source": "\u4e1c\u65b9\u5ef6\u7eea",
+                    "target": "\u84dd\u897f"
+                },
+                {
+                    "id": 148,
+                    "source": "\u80af\u535a\u58eb",
+                    "target": "\u6797\u683c"
+                },
+                {
+                    "id": 149,
+                    "source": "\u5217\u6587",
+                    "target": "\u4e95\u4e0a\u660e"
+                },
+                {
+                    "id": 150,
+                    "source": "\u4e95\u4e0a\u660e",
+                    "target": "\u5217\u6587"
+                },
+                {
+                    "id": 151,
+                    "source": "\u897f\u5b50",
+                    "target": "\u4e01\u4eea"
+                },
+                {
+                    "id": 152,
+                    "source": "\u8d75\u946b",
+                    "target": "\u674e\u7ef4"
+                },
+                {
+                    "id": 153,
+                    "source": "\u674e\u7ef4",
+                    "target": "\u8d75\u946b"
+                },
+                {
+                    "id": 154,
+                    "source": "\u84dd\u897f",
+                    "target": "\u7ae0\u5317\u6d77"
+                },
+                {
+                    "id": 155,
+                    "source": "\u84dd\u897f",
+                    "target": "\u4e1c\u65b9\u5ef6\u7eea"
+                },
+                {
+                    "id": 156,
+                    "source": "\u84dd\u897f",
+                    "target": "\u65af\u79d1\u7279"
+                },
+                {
+                    "id": 157,
+                    "source": "\u65af\u79d1\u7279",
+                    "target": "\u84dd\u897f"
+                },
+                {
+                    "id": 158,
+                    "source": "\u6cd5\u624e\u5170",
+                    "target": "\u72c4\u5965\u4f26\u5a1c"
+                },
+                {
+                    "id": 159,
+                    "source": "\u72c4\u5965\u4f26\u5a1c",
+                    "target": "\u6cd5\u624e\u5170"
+                },
+                {
+                    "id": 160,
+                    "source": "\u4e91\u5929\u660e",
+                    "target": "\u5f20\u533b\u751f"
+                },
+                {
+                    "id": 161,
+                    "source": "\u4e91\u5929\u660e",
+                    "target": "\u8001\u674e"
+                },
+                {
+                    "id": 162,
+                    "source": "\u4e91\u5929\u660e",
+                    "target": "\u80e1\u6587"
+                },
+                {
+                    "id": 163,
+                    "source": "\u4e91\u5929\u660e",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 164,
+                    "source": "\u4e91\u5929\u660e",
+                    "target": "\u4f55\u535a\u58eb"
+                },
+                {
+                    "id": 165,
+                    "source": "\u4e91\u5929\u660e",
+                    "target": "\u4e8e\u7ef4\u6c11"
+                },
+                {
+                    "id": 166,
+                    "source": "\u4e91\u5929\u660e",
+                    "target": "\u667a\u5b50"
+                },
+                {
+                    "id": 167,
+                    "source": "\u4e91\u5929\u660e",
+                    "target": "\u6df1\u6c34\u738b\u5b50"
+                },
+                {
+                    "id": 168,
+                    "source": "\u4e91\u5929\u660e",
+                    "target": "\u7a7a\u7075\u753b\u5e08"
+                },
+                {
+                    "id": 169,
+                    "source": "\u4e91\u5929\u660e",
+                    "target": "\u957f\u5e06"
+                },
+                {
+                    "id": 170,
+                    "source": "\u4e91\u5929\u660e",
+                    "target": "\u5173\u4e00\u5e06"
+                },
+                {
+                    "id": 171,
+                    "source": "\u5f20\u533b\u751f",
+                    "target": "\u4e91\u5929\u660e"
+                },
+                {
+                    "id": 172,
+                    "source": "\u5f20\u533b\u751f",
+                    "target": "\u8001\u674e"
+                },
+                {
+                    "id": 173,
+                    "source": "\u8001\u674e",
+                    "target": "\u4e91\u5929\u660e"
+                },
+                {
+                    "id": 174,
+                    "source": "\u8001\u674e",
+                    "target": "\u5f20\u533b\u751f"
+                },
+                {
+                    "id": 175,
+                    "source": "\u80e1\u6587",
+                    "target": "\u4e91\u5929\u660e"
+                },
+                {
+                    "id": 176,
+                    "source": "\u80e1\u6587",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 177,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u4e91\u5929\u660e"
+                },
+                {
+                    "id": 178,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u80e1\u6587"
+                },
+                {
+                    "id": 179,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u4f55\u535a\u58eb"
+                },
+                {
+                    "id": 180,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u4e8e\u7ef4\u6c11"
+                },
+                {
+                    "id": 181,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u67ef\u66fc\u7433"
+                },
+                {
+                    "id": 182,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u8428\u4f0a"
+                },
+                {
+                    "id": 183,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u516c\u5143\u4eba"
+                },
+                {
+                    "id": 184,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u667a\u5b50"
+                },
+                {
+                    "id": 185,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u6bd5\u4e91\u5cf0"
+                },
+                {
+                    "id": 186,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 187,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u5f17\u96f7\u65af"
+                },
+                {
+                    "id": 188,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u66f9\u5f6c"
+                },
+                {
+                    "id": 189,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u6770\u68ee"
+                },
+                {
+                    "id": 190,
+                    "source": "\u7a0b\u5fc3",
+                    "target": "\u5173\u4e00\u5e06"
+                },
+                {
+                    "id": 191,
+                    "source": "\u4f55\u535a\u58eb",
+                    "target": "\u4e91\u5929\u660e"
+                },
+                {
+                    "id": 192,
+                    "source": "\u4f55\u535a\u58eb",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 193,
+                    "source": "\u4e8e\u7ef4\u6c11",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 194,
+                    "source": "\u4e8e\u7ef4\u6c11",
+                    "target": "\u4e91\u5929\u660e"
+                },
+                {
+                    "id": 195,
+                    "source": "\u67ef\u66fc\u7433",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 196,
+                    "source": "\u516c\u5143\u4eba",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 197,
+                    "source": "\u6bd5\u4e91\u5cf0",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 198,
+                    "source": "\u6bd5\u4e91\u5cf0",
+                    "target": "\u66f9\u5f6c"
+                },
+                {
+                    "id": 199,
+                    "source": "\u66f9\u5f6c",
+                    "target": "\u6bd5\u4e91\u5cf0"
+                },
+                {
+                    "id": 200,
+                    "source": "\u66f9\u5f6c",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 201,
+                    "source": "\u97e6\u65af\u7279",
+                    "target": "\u6234\u6587"
+                },
+                {
+                    "id": 202,
+                    "source": "\u97e6\u65af\u7279",
+                    "target": "\u5173\u4e00\u5e06"
+                },
+                {
+                    "id": 203,
+                    "source": "\u97e6\u65af\u7279",
+                    "target": "\u5353\u6587"
+                },
+                {
+                    "id": 204,
+                    "source": "\u6234\u6587",
+                    "target": "\u97e6\u65af\u7279"
+                },
+                {
+                    "id": 205,
+                    "source": "\u6234\u6587",
+                    "target": "\u667a\u5b50"
+                },
+                {
+                    "id": 206,
+                    "source": "\u827e\u514b",
+                    "target": "\u8587\u62c9"
+                },
+                {
+                    "id": 207,
+                    "source": "\u8587\u62c9",
+                    "target": "\u827e\u514b"
+                },
+                {
+                    "id": 208,
+                    "source": "\u5173\u4e00\u5e06",
+                    "target": "\u97e6\u65af\u7279"
+                },
+                {
+                    "id": 209,
+                    "source": "\u5173\u4e00\u5e06",
+                    "target": "\u5353\u6587"
+                },
+                {
+                    "id": 210,
+                    "source": "\u5173\u4e00\u5e06",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 211,
+                    "source": "\u5173\u4e00\u5e06",
+                    "target": "\u4e91\u5929\u660e"
+                },
+                {
+                    "id": 212,
+                    "source": "\u5173\u4e00\u5e06",
+                    "target": "\u667a\u5b50"
+                },
+                {
+                    "id": 213,
+                    "source": "\u5f17\u96f7\u65af",
+                    "target": "\u7a0b\u5fc3"
+                },
+                {
+                    "id": 214,
+                    "source": "\u5f17\u96f7\u65af",
+                    "target": "\u667a\u5b50"
+                },
+                {
+                    "id": 215,
+                    "source": "\u5f17\u96f7\u65af",
+                    "target": "\u7f57\u8f91"
+                },
+                {
+                    "id": 216,
+                    "source": "\u5353\u6587",
+                    "target": "\u5173\u4e00\u5e06"
+                },
+                {
+                    "id": 217,
+                    "source": "\u5353\u6587",
+                    "target": "\u97e6\u65af\u7279"
+                },
+                {
+                    "id": 218,
+                    "source": "\u6df1\u6c34\u738b\u5b50",
+                    "target": "\u4e91\u5929\u660e"
+                },
+                {
+                    "id": 219,
+                    "source": "\u6df1\u6c34\u738b\u5b50",
+                    "target": "\u9732\u73e0\u516c\u4e3b"
+                },
+                {
+                    "id": 220,
+                    "source": "\u9732\u73e0\u516c\u4e3b",
+                    "target": "\u6df1\u6c34\u738b\u5b50"
+                },
+                {
+                    "id": 221,
+                    "source": "\u9732\u73e0\u516c\u4e3b",
+                    "target": "\u957f\u5e06"
+                },
+                {
+                    "id": 222,
+                    "source": "\u7a7a\u7075\u753b\u5e08",
+                    "target": "\u4e91\u5929\u660e"
+                },
+                {
+                    "id": 223,
+                    "source": "\u7a7a\u7075\u753b\u5e08",
+                    "target": "\u957f\u5e06"
+                },
+                {
+                    "id": 224,
+                    "source": "\u957f\u5e06",
+                    "target": "\u9732\u73e0\u516c\u4e3b"
+                },
+                {
+                    "id": 225,
+                    "source": "\u957f\u5e06",
+                    "target": "\u4e91\u5929\u660e"
+                },
+                {
+                    "id": 226,
+                    "source": "\u957f\u5e06",
+                    "target": "\u7a7a\u7075\u753b\u5e08"
+                },
+                {
+                    "id": 227,
+                    "source": "\u6770\u68ee",
+                    "target": "\u7a0b\u5fc3"
+                }
+            ]
+        }
+    ],
+    "legend": [
+        {
+            "data": [
+                "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b",
+                "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797",
+                "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f"
+            ],
+            "selected": {
+                "\u4e09\u4f531-\u5730\u7403\u5f80\u4e8b": true,
+                "\u4e09\u4f532-\u9ed1\u6697\u68ee\u6797": true,
+                "\u4e09\u4f533-\u6b7b\u795e\u6c38\u751f": true
+            },
+            "show": true,
+            "left": "2%",
+            "top": "20%",
+            "orient": "vertical",
+            "padding": 5,
+            "itemGap": 10,
+            "itemWidth": 25,
+            "itemHeight": 14
+        }
+    ],
+    "tooltip": {
+        "show": true,
+        "trigger": "item",
+        "triggerOn": "mousemove|click",
+        "axisPointer": {
+            "type": "line"
+        },
+        "showContent": true,
+        "alwaysShowContent": false,
+        "showDelay": 0,
+        "hideDelay": 100,
+        "textStyle": {
+            "fontSize": 14
+        },
+        "borderWidth": 0,
+        "padding": 5
+    },
+    "title": [
+        {
+            "text": "\u4e09\u4f53\u4eba\u7269\u5173\u7cfb\u56fe",
+            "padding": 5,
+            "itemGap": 10
+        }
+    ]
+};
+        chart_e97ab300531a4c0ca1574681e578906a.setOption(option_e97ab300531a4c0ca1574681e578906a);
+    </script>
+</body>
+</html>
+
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>Faker库 | 生成实验数据</title>
+      <link>https://hidadeng.github.io/blog/2022-11-25-faker-generate-test-data/</link>
+      <pubDate>Fri, 25 Nov 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2022-11-25-faker-generate-test-data/</guid>
+      <description>生成实验数据</description>
+      <content:encoded><![CDATA[
+
+
+<p>有时候学习新的数据分析方法时，需要构造一些小样本的实验数据，手动构造比较麻烦，这时候可以使用<a href="https://github.com/joke2k/faker">faker库</a>。</p>
+<p><br></p>
+<div id="安装" class="section level2">
+<h2>安装</h2>
+<pre><code>pip install Faker</code></pre>
+<p><br></p>
+</div>
+<div id="快速上手" class="section level2">
+<h2>快速上手</h2>
+<pre class="python"><code>from faker import Faker
+
+#设定语言，默认生成的是英文数据
+#fake = Faker()
+fake = Faker(locale=&#39;zh_CN&#39;)
+
+#伪造姓名
+fake.name()</code></pre>
+<pre><code>## &#39;罗辉&#39;</code></pre>
+<p><br></p>
+<p>生成地址数据</p>
+<pre class="python"><code>fake.address()</code></pre>
+<pre><code>## &#39;湖北省张家港市大东王街v座 601815&#39;</code></pre>
+<p><br></p>
+<p>生成公司数据</p>
+<pre class="python"><code>fake.company_prefix()</code></pre>
+<pre><code>## &#39;银嘉&#39;</code></pre>
+<p><br></p>
+</div>
+<div id="自定义" class="section level2">
+<h2>自定义</h2>
+<p>例如生成一个工作经历的实验数据，可以自定义公司名集合，从中随机抽取。</p>
+<pre class="python"><code>from faker import Faker
+fake = Faker()
+
+my_word_list = [
+&#39;华为&#39;,&#39;小米&#39;,&#39;三星&#39;,
+&#39;海尔&#39;,&#39;宝马&#39;,&#39;保洁&#39;,
+&#39;中铁&#39;,&#39;中通&#39;,&#39;京东&#39;,
+&#39;阿里&#39;,&#39;百度&#39;,&#39;腾讯&#39;]
+
+work_experiences = fake.sentence(ext_word_list=my_word_list, nb_words=5)
+work_experiences</code></pre>
+<pre><code>## &#39;京东 华为 中通.&#39;</code></pre>
+<p><br></p>
+</div>
+<div id="设定随机性" class="section level2">
+<h2>设定随机性</h2>
+<p>由于faker属于随机生成数据的包，如果不限定状态， 每次运行相同的代码，随机生成的数据是不一样的。</p>
+<pre class="python"><code>from faker import Faker
+fake = Faker(&#39;zh_CN&#39;)
+
+#设定随机状态
+Faker.seed(4321)
+
+print(fake.name())</code></pre>
+<pre><code>## 王鑫</code></pre>
+<p><br></p>
+<p><br></p>
+</div>
+<div id="广而告之" class="section level2">
+<h2>广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+</div>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>训练&amp;使用Glove语言模型， 可度量刻板印象等</title>
       <link>https://hidadeng.github.io/blog/2022-11-22-glove-embeddings-model/</link>
