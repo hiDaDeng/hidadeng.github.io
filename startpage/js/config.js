@@ -479,6 +479,13 @@ class Config {
 				url: 'https://icons8.com/',
 				category: 'Coding'
 			},
+			
+			{
+				site: 'Zlib',
+				icon: 'zlib',
+				url: 'https://zlib.knat.network/',
+				category: 'Coding'
+			},
 			{
 				site: 'MD Nice',
 				icon: 'markdown',
