@@ -64,6 +64,158 @@
     </item>
     
     <item>
+      <title>金融研究 | 央行货币政策文本相似度计算与可视化</title>
+      <link>https://hidadeng.github.io/blog/2023-01-10-similarity_of_cental_bank_monetary_policy/</link>
+      <pubDate>Tue, 10 Jan 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-01-10-similarity_of_cental_bank_monetary_policy/</guid>
+      <description>本文利用金融情感词典和文本分析技术,分析中国人民银行货币政策执行报告的**文本情绪、文本相似度和文本可读性**等多维文本信息,刻画央行货币政策执行报告的文本特征,探究货币政策报告的文本信息与宏观经济和股票市场的关系。**实证研究发现,货币政策报告的文本情绪的改善会引起显著为正的股票市场价格反应, 报告文本相似度的增加会引起股票市场波动性的显著降低, 报告可读性对公布后股票市场的波动性影响不显著**。货币政策报告文本情绪还与诸多宏观经济指标显著相关。进一步研究发现,引起股票市场显著反应的是报告文本情绪中反映货币政策指引的部分,而反映宏观经济历史状态的部分对股票市场的影响不显著。本文从文本大数据分析角度证明了我国央行沟通的有效性,对国内央行沟通相关研究形成了有益补充。</description>
+      <content:encoded><![CDATA[<p>姜富伟,胡逸驰,黄楠.<strong><a href="%E5%A4%AE%E8%A1%8C%E8%B4%A7%E5%B8%81%E6%94%BF%E7%AD%96%E6%8A%A5%E5%91%8A%E6%96%87%E6%9C%AC%E4%BF%A1%E6%81%AF%E3%80%81%E5%AE%8F%E8%A7%82%E7%BB%8F%E6%B5%8E%E4%B8%8E%E8%82%A1%E7%A5%A8%E5%B8%82%E5%9C%BA_%E5%A7%9C%E5%AF%8C%E4%BC%9F.pdf">央行货币政策报告文本信息、宏观经济与股票市场</a></strong>[J].金融研究,2021,(06):95-113.</p>
+<br>
+<p>摘要:本文利用金融情感词典和文本分析技术,分析中国人民银行货币政策执行报告的<strong>文本情绪、文本相似度和文本可读性</strong>等多维文本信息,刻画央行货币政策执行报告的文本特征,探究货币政策报告的文本信息与宏观经济和股票市场的关系。<strong>实证研究发现,货币政策报告的文本情绪的改善会引起显著为正的股票市场价格反应, 报告文本相似度的增加会引起股票市场波动性的显著降低, 报告可读性对公布后股票市场的波动性影响不显著</strong>。货币政策报告文本情绪还与诸多宏观经济指标显著相关。进一步研究发现,引起股票市场显著反应的是报告文本情绪中反映货币政策指引的部分,而反映宏观经济历史状态的部分对股票市场的影响不显著。本文从文本大数据分析角度证明了我国央行沟通的有效性,对国内央行沟通相关研究形成了有益补充。</p>
+<br>
+<p>文文相似度很好用，下图是该论文中绘制的2001-2018年间的货币政策报告<strong>文本相似度</strong>。 <strong>前后相邻两个季度的货币政策文本相似度越高，说明政策相似性高，政策连贯性强(变化小)。如果相似度较低，则政策变动的风险较大，政策连贯性差(变化大)</strong>。</p>
+<p><img loading="lazy" src="img/%e8%ae%ba%e6%96%87-%e6%8a%a5%e5%91%8a%e6%96%87%e6%9c%ac%e7%9b%b8%e4%bc%bc%e5%ba%a6.png" alt=""  />
+</p>
+<br>
+<h2 id="复现相似度">复现相似度</h2>
+<p>本文只实现文本相似度的度量、文本相似度趋势的可视化。</p>
+<ol>
+<li>准备数据</li>
+<li>相似度计算</li>
+<li>可视化</li>
+</ol>
+<br>
+<h2 id="1-准备数据">1. 准备数据</h2>
+<p>首先先手动从 <strong>中国人民银行</strong> 下载货币政策报告。</p>
+<p><img loading="lazy" src="img/pbc.png" alt=""  />
+</p>
+<p>下图是我下载好的报告</p>
+<p><img loading="lazy" src="img/pdfs.png" alt=""  />
+</p>
+<p>之后将其整理到csv中</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">from</span> <span class="nn">pdfdocx</span> <span class="kn">import</span> <span class="n">read_pdf</span>
+
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;pbc_reports.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvf</span><span class="p">:</span>
+    <span class="c1">#年份、季度、报告文本</span>
+    <span class="n">fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;q&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">]</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">fieldnames</span><span class="o">=</span><span class="n">fieldnames</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+
+    <span class="n">pdfs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;data/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">pf</span> <span class="ow">in</span> <span class="n">pdfs</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;year&#39;</span><span class="p">:</span>  <span class="n">pf</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="mi">4</span><span class="p">],</span>
+            <span class="s1">&#39;q&#39;</span><span class="p">:</span>  <span class="n">pf</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">5</span><span class="p">],</span>
+            <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/2013-3.pdf&#39;</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div><br>
+<h2 id="2-读取数据">2. 读取数据</h2>
+<p>下载pdf时，遗漏了货币政策报告日期数据，将 pbc_reports.csv 修改为 pbc_reports.xlsx ，增加了 date 字段。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;pbc_reports.xlsx&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df1.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#让每一行含有前后两个季度的报告文本</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;text2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<br>
+<h2 id="3-计算相似度">3. 计算相似度</h2>
+<p>水平(行)方向，计算每一行中的 text 与 text2 两者的文本相似度。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="k">def</span> <span class="nf">cosine_similarity</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+    <span class="c1">#row 为 pd.Series 类型数据，类似于字段</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">cosine_sim</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;text2&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">sim</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1">#异常标记为1</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+<span class="c1">#计算结果存储到 similarity 字段中</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;similarity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">cosine_similarity</span><span class="p">(</span><span class="n">row</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df3.png" alt=""  />
+</p>
+<h2 id="4-绘制折线图">4. 绘制折线图</h2>
+<p>这里为了方便，使用 pandas_bokeh 库。 注意: 绘图不限于Python，各位也可以用excel、R。</p>
+<p>参数:</p>
+<ul>
+<li>kind 图表类型，折线图line</li>
+<li>x 横轴字段</li>
+<li>y 纵轴字段</li>
+<li>xlabel 横轴标签</li>
+<li>ylabel 纵轴标签</li>
+<li>title 图标题</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas_bokeh</span>
+
+<span class="n">pandas_bokeh</span><span class="o">.</span><span class="n">output_notebook</span><span class="p">()</span>
+
+<span class="c1">#选择折线图line</span>
+<span class="c1">#</span>
+<span class="n">df</span><span class="o">.</span><span class="n">plot_bokeh</span><span class="p">(</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;line&#39;</span><span class="p">,</span>
+              <span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+              <span class="n">y</span> <span class="o">=</span> <span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
+              <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;2001~2022央行货币政策相似度趋势&#39;</span><span class="p">,</span>
+              <span class="n">xlabel</span> <span class="o">=</span> <span class="s1">&#39;报告发布日期&#39;</span><span class="p">,</span>
+              <span class="n">ylabel</span> <span class="o">=</span> <span class="s1">&#39;相似度&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/%e5%9b%be1.png" alt=""  />
+</p>
+<p>刚刚生成的图没有经过移动平滑处理，所以锯齿比较多。论文中使用三季度移动平均线处理了 similarity ，我在此将其命名为 ma3_similarity</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas_bokeh</span>
+
+<span class="n">pandas_bokeh</span><span class="o">.</span><span class="n">output_notebook</span><span class="p">()</span>
+
+<span class="c1">#三季度移动平均线</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;ma3_similarity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;similarity&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+<span class="n">df</span><span class="o">.</span><span class="n">plot_bokeh</span><span class="p">(</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;line&#39;</span><span class="p">,</span>
+              <span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+              <span class="n">y</span> <span class="o">=</span> <span class="s1">&#39;ma3_similarity&#39;</span><span class="p">,</span>
+              <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;2001~2022央行货币政策相似度趋势&#39;</span><span class="p">,</span>
+              <span class="n">xlabel</span> <span class="o">=</span> <span class="s1">&#39;报告发布日期&#39;</span><span class="p">,</span>
+              <span class="n">ylabel</span> <span class="o">=</span> <span class="s1">&#39;相似度&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/%e5%9b%be2.png" alt=""  />
+</p>
+<p>基本复刻论文原图相似度的变化趋势</p>
+<p><img loading="lazy" src="img/%e8%ae%ba%e6%96%87-%e6%8a%a5%e5%91%8a%e6%96%87%e6%9c%ac%e7%9b%b8%e4%bc%bc%e5%ba%a6.png" alt=""  />
+</p>
+<br>
+<h2 id="代码下载">代码下载</h2>
+<ul>
+<li>代码及视频讲解已经添加至 <a href="https://hidadeng.github.io/blog/management_python_course/">支持开票 | Python实证指标构建与文本分析</a>  中，感兴趣的同学欢迎订阅该系列课，涵盖Python语法入门、数据采集、文本分析、机器学习等。</li>
+<li>未订阅 <a href="https://hidadeng.github.io/blog/management_python_course/">支持开票 | Python实证指标构建与文本分析</a> 的朋友们，可转发本文集赞30+， 加微信 <strong>372335839</strong> ， 备注「<strong>姓名-学校-专业-央行相似度</strong>」，获取本文数据及代码。</li>
+</ul>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>中国工业经济 | MD&amp;A信息含量指标构建代码实现</title>
       <link>https://hidadeng.github.io/blog/2023-01-06-mda_informative_content/</link>
       <pubDate>Fri, 06 Jan 2023 00:00:00 +0000</pubDate>
