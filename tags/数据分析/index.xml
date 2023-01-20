@@ -6,9 +6,116 @@
     <description>Recent content in 数据分析 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 18 Jan 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 20 Jan 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Rath | 次世代开源智能数据分析与可视化应用</title>
+      <title>R语言 | 绘制文本数据情感历时趋势图</title>
+      <link>https://hidadeng.github.io/blog/2023-01-20-visualization-of-sentiment-analysis-of-historical-text-data-with-r/</link>
+      <pubDate>Fri, 20 Jan 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-01-20-visualization-of-sentiment-analysis-of-historical-text-data-with-r/</guid>
+      <description>使用R语言，基于卫报数据、LSD2015词典，绘制文本数据情感历时趋势图</description>
+      <content:encoded><![CDATA[<p>使用R语言绘制文本数据情感历时趋势图， 实现步骤</p>
+<ol>
+<li>导入数据、</li>
+<li>保留涉及政府的内容； 确定政府关键词，保留政府关键词出现位置窗口距离内的所有词语</li>
+<li>情感计算，使用LSD2015中的正、负两类词表， 统计正、负情感词出现次数</li>
+<li>绘制出卫报中涉及政府情感的历时可视化图</li>
+</ol>
+<br>
+<h2 id="1-导入数据">1. 导入数据</h2>
+<p>该语料库包含 2012 年至 2016 年的 6,000 篇卫报新闻文章。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="nf">library</span><span class="p">(</span><span class="n">quanteda</span><span class="p">)</span>
+<span class="nf">library</span><span class="p">(</span><span class="n">quanteda.corpora</span><span class="p">)</span>
+
+<span class="n">corp_news</span> <span class="o">&lt;-</span> <span class="nf">readRDS</span><span class="p">(</span><span class="s">&#34;data/data_corpus_guardian.RDS&#34;</span><span class="p">)</span>
+</code></pre></div><br>
+<h2 id="2-保留涉及政府的内容">2. 保留涉及政府的内容</h2>
+<p>确定政府关键词，保留政府关键词出现位置窗口距离内的所有词语</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="c1"># 分词</span>
+<span class="n">toks_news</span> <span class="o">&lt;-</span> <span class="nf">tokens</span><span class="p">(</span><span class="n">corp_news</span><span class="p">,</span> <span class="n">remove_punct</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>
+
+<span class="c1">#政府相关词</span>
+<span class="n">gov</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="s">&#34;government&#34;</span><span class="p">,</span> <span class="s">&#34;cabinet&#34;</span><span class="p">,</span> <span class="s">&#34;prime minister&#34;</span><span class="p">)</span>
+
+<span class="c1"># 政府gov词出现位置前后10个词都保留</span>
+<span class="c1"># note: 使用 phrase() 构建词组</span>
+<span class="n">toks_gov</span> <span class="o">&lt;-</span> <span class="nf">tokens_keep</span><span class="p">(</span><span class="n">toks_news</span><span class="p">,</span> <span class="n">pattern</span> <span class="o">=</span> <span class="nf">phrase</span><span class="p">(</span><span class="n">gov</span><span class="p">),</span> <span class="n">window</span> <span class="o">=</span> <span class="m">10</span><span class="p">)</span>
+</code></pre></div><br>
+<h2 id="3-情感计算">3. 情感计算</h2>
+<p>使用 data_dictionary_LSD2015 情感词典</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="nf">lengths</span><span class="p">(</span><span class="n">data_dictionary_LSD2015</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">negative     positive neg_positive neg_negative 
+2858         1709         1721         2860 
+</code></pre></div><p>data_dictionary_LSD2015词典中有四个词表，只使用前两个，即 negative 和 positive</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="c1"># 只使用 negative 和 positive </span>
+<span class="n">data_dictionary_LSD2015_pos_neg</span> <span class="o">&lt;-</span> <span class="n">data_dictionary_LSD2015[1</span><span class="o">:</span><span class="m">2</span><span class="n">]</span>
+
+<span class="c1"># toks_gov中属于positive词表的词语出现几次， positive就是几；同理，negative；</span>
+<span class="n">toks_gov_lsd</span> <span class="o">&lt;-</span> <span class="nf">tokens_lookup</span><span class="p">(</span><span class="n">toks_gov</span><span class="p">,</span> 
+                              <span class="n">dictionary</span> <span class="o">=</span> <span class="n">data_dictionary_LSD2015_pos_neg</span><span class="p">)</span>
+
+<span class="c1"># 构建文档特征矩阵， 并将date进行分组</span>
+<span class="n">dfmat_gov_lsd</span> <span class="o">&lt;-</span> <span class="nf">dfm</span><span class="p">(</span><span class="n">toks_gov_lsd</span><span class="p">)</span> <span class="o">%&gt;%</span> 
+  <span class="nf">dfm_group</span><span class="p">(</span><span class="n">groups</span> <span class="o">=</span> <span class="n">date</span><span class="p">)</span>
+
+<span class="n">dfmat_gov_lsd</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Document-feature matrix of: 1,453 documents, 2 features (36.89% sparse) and 3 docvars.
+            features
+docs         negative positive
+  2012-01-02        2        0
+  2012-01-04        0        0
+  2012-01-05        0        1
+  2012-01-06        0        0
+  2012-01-07        1        0
+  2012-01-11        4        4
+[ reached max_ndoc ... 1,447 more documents ]
+</code></pre></div><br>
+<h2 id="4-可视化">4. 可视化</h2>
+<p>图表详情</p>
+<ul>
+<li>x轴日期</li>
+<li>y轴词频</li>
+<li>图中的柱为每天中的正、负词出现次数</li>
+</ul>
+<p>由此绘制出卫报中涉及政府情感的历时可视化图。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="nf">matplot</span><span class="p">(</span><span class="n">dfmat_gov_lsd</span><span class="o">$</span><span class="n">date</span><span class="p">,</span> <span class="n">dfmat_gov_lsd</span><span class="p">,</span> <span class="n">type</span> <span class="o">=</span> <span class="s">&#34;l&#34;</span><span class="p">,</span> <span class="n">lty</span> <span class="o">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">,</span>
+        <span class="n">ylab</span> <span class="o">=</span> <span class="s">&#34;Frequency&#34;</span><span class="p">,</span> <span class="n">xlab</span> <span class="o">=</span> <span class="s">&#34;&#34;</span><span class="p">)</span>
+<span class="nf">grid</span><span class="p">()</span>
+<span class="nf">legend</span><span class="p">(</span><span class="s">&#34;topleft&#34;</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">,</span> <span class="n">legend</span> <span class="o">=</span> <span class="nf">colnames</span><span class="p">(</span><span class="n">dfmat_gov_lsd</span><span class="p">),</span> <span class="n">lty</span> <span class="o">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">bg</span> <span class="o">=</span> <span class="s">&#34;white&#34;</span><span class="p">)</span>
+</code></pre></div><br>
+<p>通过获取正面词和负面词的频率之间的差异来计算每日情绪分数。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="nf">plot</span><span class="p">(</span><span class="n">dfmat_gov_lsd</span><span class="o">$</span><span class="n">date</span><span class="p">,</span> <span class="n">dfmat_gov_lsd[</span><span class="p">,</span><span class="s">&#34;positive&#34;</span><span class="n">]</span> <span class="o">-</span> <span class="n">dfmat_gov_lsd[</span><span class="p">,</span><span class="s">&#34;negative&#34;</span><span class="n">]</span><span class="p">,</span> 
+     <span class="n">type</span> <span class="o">=</span> <span class="s">&#34;l&#34;</span><span class="p">,</span> <span class="n">ylab</span> <span class="o">=</span> <span class="s">&#34;Sentiment&#34;</span><span class="p">,</span> <span class="n">xlab</span> <span class="o">=</span> <span class="s">&#34;&#34;</span><span class="p">)</span>
+<span class="nf">grid</span><span class="p">()</span>
+<span class="nf">abline</span><span class="p">(</span><span class="n">h</span> <span class="o">=</span> <span class="m">0</span><span class="p">,</span> <span class="n">lty</span> <span class="o">=</span> <span class="m">2</span><span class="p">)</span>
+</code></pre></div><br>
+<p>上面两幅图太粗糙了， 可以应用内核平滑处理下情感值，更清楚地显示卫报中涉及政府的情感变化趋势。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="n">dat_smooth</span> <span class="o">&lt;-</span> <span class="nf">ksmooth</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">dfmat_gov_lsd</span><span class="o">$</span><span class="n">date</span><span class="p">,</span> 
+                      <span class="n">y</span> <span class="o">=</span> <span class="n">dfmat_gov_lsd[</span><span class="p">,</span><span class="s">&#34;positive&#34;</span><span class="n">]</span> <span class="o">-</span> <span class="n">dfmat_gov_lsd[</span><span class="p">,</span><span class="s">&#34;negative&#34;</span><span class="n">]</span><span class="p">,</span>
+                      <span class="n">kernel</span> <span class="o">=</span> <span class="s">&#34;normal&#34;</span><span class="p">,</span> <span class="n">bandwidth</span> <span class="o">=</span> <span class="m">30</span><span class="p">)</span>
+<span class="nf">plot</span><span class="p">(</span><span class="n">dat_smooth</span><span class="o">$</span><span class="n">x</span><span class="p">,</span> <span class="n">dat_smooth</span><span class="o">$</span><span class="n">y</span><span class="p">,</span> <span class="n">type</span> <span class="o">=</span> <span class="s">&#34;l&#34;</span><span class="p">,</span> <span class="n">ylab</span> <span class="o">=</span> <span class="s">&#34;Sentiment&#34;</span><span class="p">,</span> <span class="n">xlab</span> <span class="o">=</span> <span class="s">&#34;&#34;</span><span class="p">)</span>
+<span class="nf">grid</span><span class="p">()</span>
+<span class="nf">abline</span><span class="p">(</span><span class="n">h</span> <span class="o">=</span> <span class="m">0</span><span class="p">,</span> <span class="n">lty</span> <span class="o">=</span> <span class="m">2</span><span class="p">)</span>
+</code></pre></div><br>
+<h2 id="资料出处">资料出处</h2>
+<ul>
+<li><a href="https://tutorials.quanteda.io/advanced-operations/targeted-dictionary-analysis/">https://tutorials.quanteda.io/advanced-operations/targeted-dictionary-analysis/</a></li>
+</ul>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>Rath | 自动化数据分析工具</title>
       <link>https://hidadeng.github.io/blog/2023-01-18-rath-next-generation-business-intelligence/</link>
       <pubDate>Wed, 18 Jan 2023 00:00:00 +0000</pubDate>
       
