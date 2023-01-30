@@ -6,7 +6,117 @@
     <description>Recent content in pandas on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Fri, 01 Apr 2022 10:43:10 +0600</lastBuildDate><atom:link href="/tags/pandas/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 30 Jan 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pandas/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Pandas库 | 使用 df.query 字符串表达式进行数据筛选</title>
+      <link>https://hidadeng.github.io/blog/2023-01-30-query-method-in-dataframe/</link>
+      <pubDate>Mon, 30 Jan 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-01-30-query-method-in-dataframe/</guid>
+      <description>数据分析中筛选是一个很重要的操作，在pandas.DataFrame中如何进行筛选，今天简单分享一下。在query方法中传入字段表达式</description>
+      <content:encoded><![CDATA[<p>数据分析中筛选是一个很重要的操作，在pandas.DataFrame中如何进行筛选，今天简单分享一下。</p>
+<br>
+<h2 id="一读入数据dataxlsx">一、读入<a href="data.xlsx">数据</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data.xlsx&#39;</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-markdown" data-lang="markdown">|    | birthday   | name    | text                         |   age | gender   |   height |   weight |
+|  0 | 1985/10/08 | Alice   | 我很开心，每天都这么快乐，我很幸福 |    35 | female   |      175 |       55 |
+|  1 | 95.07.07   | Mary    | 我很难过                       |    25 | female   |      165 |       50 |
+|  2 | 01-11-10   | Mike    | 唉，真难受                     |    19 | male     |      180 |       75 |
+|  3 | 90/2/8     | Smith   | 无所谓开心还是难过              |    30 | male     |      175 |       70 |
+|  4 | 93-1-5     | Henry   | 每天赚一万，真爽！              |    27 | male     |      185 |       80 |
+|  5 | 1988/2/9   | William | 爽歪歪                        |    32 | male     |      177 |       76 |
+|  6 | 1986-03-21 | Will    | 天气很凉爽，很舒服              |    34 | male     |      180 |       85 |
+|  7 | 1984.06.9  | Qunique | 每天开心                      |    36 | female   |      168 |       62 |
+|  8 | 1993.07.09 | Sara    | 难过悲伤                      |    27 | female   |      175 |       66 |
+|  9 | 92/08/09   | Hillary | 美满幸福                      |    28 | male     |      190 |       85 |
+</code></pre></div><p><br><br></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#字段的数据类型</span>
+<span class="n">df</span><span class="o">.</span><span class="n">dtypes</span>
+</code></pre></div><pre><code>birthday    object
+name        object
+text        object
+age          int64
+gender      object
+height       int64
+weight       int64
+dtype: object
+</code></pre>
+<p><br><br></p>
+<h2 id="二筛选">二、筛选</h2>
+<p>查询符合条件的记录, 有两种实现方法</p>
+<ul>
+<li>方法1 <code>逻辑布尔值直接传入df[]</code></li>
+<li>方法2 <code>在query方法中传入字段表达式</code></li>
+</ul>
+<br>
+<h3 id="21-方法1">2.1 方法1</h3>
+<p><code>逻辑布尔值直接传入df[]</code></p>
+<p>筛选出年龄大于25岁，身高165以上, <strong>且</strong> 为女性的记录</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#df[(df[&#39;age&#39;] &gt; 25) &amp; (df[&#39;height&#39;] &gt; 165) &amp; (df[&#39;gender&#39;] == &#39;female&#39;)]</span>
+<span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;</span> <span class="mi">25</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">height</span> <span class="o">&gt;</span> <span class="mi">165</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">gender</span><span class="o">==</span><span class="s1">&#39;female&#39;</span><span class="p">)]</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-markdown" data-lang="markdown">|    | birthday   | name    | text                           |   age | gender   |   height |   weight |
+|  0 | 1985/10/08 | Alice   | 我很开心，每天都这么快乐，我很幸福  |    35 | female   |      175 |       55 |
+|  7 | 1984.06.9  | Qunique | 每天开心                        |    36 | female   |      168 |       62 |
+|  8 | 1993.07.09 | Sara    | 难过悲伤                        |    27 | female   |      175 |       66 |
+</code></pre></div><p>​</p>
+<br>
+<h3 id="22-方法2">2.2 方法2</h3>
+<p><code>在query方法中传入字段表达式</code></p>
+<p>筛选出年龄大于25岁，身高165以上, <strong>且</strong> 为女性的记录</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;(age &gt; 25) &amp; (height &gt; 165) &amp; (gender == &#34;female&#34;)&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-markdown" data-lang="markdown">|    | birthday   | name    | text                           |   age | gender   |   height |   weight |
+|  0 | 1985/10/08 | Alice   | 我很开心，每天都这么快乐，我很幸福  |    35 | female   |      175 |       55 |
+|  7 | 1984.06.9  | Qunique | 每天开心                        |    36 | female   |      168 |       62 |
+|  8 | 1993.07.09 | Sara    | 难过悲伤                        |    27 | female   |      175 |       66 |
+</code></pre></div><p><br><br></p>
+<p>可见query让查询和筛选代码变的很简洁，代码更具可阅读性和理解性。</p>
+<p>但如果条件中使用了变量该如何撰写？</p>
+<p><br><br></p>
+<h2 id="三query表达式中的变量">三、query表达式中的变量</h2>
+<p>query字符串表达式中如果含有变量 <code>var</code>， 需要在该变量前加 <code>@</code>,</p>
+<p>即在query字符串表达式中 <code>@var</code> 可以调用表达式字符串外的变量var</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">min_age</span> <span class="o">=</span> <span class="mi">25</span>
+
+<span class="c1">#年龄大于25</span>
+<span class="n">df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;age &gt; @min_age&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-markdown" data-lang="markdown">|    | birthday   | name    | text                         |   age | gender   |   height |   weight |
+|  0 | 1985/10/08 | Alice   | 我很开心，每天都这么快乐，我很幸福 |    35 | female   |      175 |       55 |
+|  3 | 90/2/8     | Smith   | 无所谓开心还是难过              |    30 | male     |      175 |       70 |
+|  4 | 93-1-5     | Henry   | 每天赚一万，真爽！              |    27 | male     |      185 |       80 |
+|  5 | 1988/2/9   | William | 爽歪歪                        |    32 | male     |      177 |       76 |
+|  6 | 1986-03-21 | Will    | 天气很凉爽，很舒服              |    34 | male     |      180 |       85 |
+|  7 | 1984.06.9  | Qunique | 每天开心                      |    36 | female   |      168 |       62 |
+|  8 | 1993.07.09 | Sara    | 难过悲伤                      |    27 | female   |      175 |       66 |
+|  9 | 92/08/09   | Hillary | 美满幸福                      |    28 | male     |      190 |       85 |
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">g</span> <span class="o">=</span> <span class="s1">&#39;female&#39;</span>
+<span class="n">min_age</span> <span class="o">=</span> <span class="mi">25</span>
+<span class="n">min_height</span> <span class="o">=</span> <span class="mi">165</span>
+
+<span class="c1">#筛选出年龄大于25岁，身高165以上, **且** 为女性的记录</span>
+<span class="n">df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;(age &gt; @min_age) &amp; (height &gt; @min_height) &amp; (gender == @g)&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-markdown" data-lang="markdown">|    | birthday   | name    | text                           |   age | gender   |   height |   weight |
+|  0 | 1985/10/08 | Alice   | 我很开心，每天都这么快乐，我很幸福  |    35 | female   |      175 |       55 |
+|  7 | 1984.06.9  | Qunique | 每天开心                        |    36 | female   |      168 |       62 |
+|  8 | 1993.07.09 | Sara    | 难过悲伤                        |    27 | female   |      175 |       66 |
+</code></pre></div><p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>Bloxs包 | 可在notebook中使用的交互可视化包</title>
       <link>https://hidadeng.github.io/blog/bloxs_interactive_visualization/</link>
