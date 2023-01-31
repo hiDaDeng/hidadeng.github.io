@@ -118,6 +118,118 @@ dtype: object
     </item>
     
     <item>
+      <title>使用流水线pipeline模式设计并处理数据</title>
+      <link>https://hidadeng.github.io/blog/2023-01-30-pipeline-for-data-analysis/</link>
+      <pubDate>Mon, 30 Jan 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-01-30-pipeline-for-data-analysis/</guid>
+      <description>在jupyter内进行数据分析，大家都有一种流水线的感觉。从上往下，每一行(坨)代码会解决一个小问题，最终联合在一起解决一个大问题。拆解成三个**环节函数**，并组织成一个流水线。可读性和代码可扩展性大大提高，能轻松应对不同复杂度任务。代价仅仅是多写几行代码。首先需要安装一个实现流水线功能的fastcore库。</description>
+      <content:encoded><![CDATA[<ul>
+<li><a href="https://hidadeng.github.io/blog/2023-01-30-pipeline-for-data-analysis/">使用流水线pipeline模式设计并处理数据</a></li>
+<li></li>
+</ul>
+<h2 id="一任务">一、任务</h2>
+<p>在jupyter内进行数据分析，大家都有一种流水线的感觉。从上往下，每一行(坨)代码会解决一个小问题，最终联合在一起解决一个大问题。</p>
+<p>例如文本分析，这里仅以text一句话为例，完整的预处理流程</p>
+<ol>
+<li>大写转小写</li>
+<li>剔除回车</li>
+<li>剔除开头结尾的空格</li>
+</ol>
+<p>这个预处理任务很简单， 实现方法有以下三种</p>
+<br>
+<h2 id="二实现方法">二、实现方法</h2>
+<ol>
+<li>一坨代码一锅端</li>
+<li>只为你量身定做一个函数</li>
+<li>可拆可组装的流水线</li>
+</ol>
+<br>
+<h3 id="21-一坨代码一锅端">2.1 一坨代码一锅端</h3>
+<p>刚刚学编程，写数据分析代码都是这种style， 可阅读性差，代码扩展性最差。如果遇到的任务像今天这样简单，是最高效的解决办法。但是如果任务变复杂，可扩展性就降低了，会返回造轮子。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">text</span> <span class="o">=</span> <span class="s2">&#34; Python is powerful, so let&#39;s go!</span><span class="se">\n</span><span class="s2"> &#34;</span>
+
+<span class="c1">#大写转小写</span>
+<span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+<span class="c1">#剔除回车</span>
+<span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+<span class="c1">#剔除开头结尾的空格</span>
+<span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+<span class="n">text</span>
+</code></pre></div><pre><code>&quot;python is powerful, so let's go!&quot;
+</code></pre>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python">
+</code></pre></div><h3 id="22-一个函数搞定">2.2 一个函数搞定</h3>
+<p>相比一坨代码，一个函数的可阅读性更高一些。代码能够复用的可能，但是遇到复杂任务时， 可扩展性依然较低。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">text</span> <span class="o">=</span> <span class="s2">&#34; Python is powerful, so let&#39;s go!</span><span class="se">\n</span><span class="s2">&#34;</span>
+
+<span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="c1">#大写转小写</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="c1">#剔除回车</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="c1">#剔除开头结尾的空格</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">text</span>
+
+<span class="n">clean</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>&quot;python is powerful, so let's go!&quot;
+</code></pre>
+<h3 id="23-设计成流水线">2.3 设计成流水线</h3>
+<p>拆解成三个<strong>环节函数</strong>，并组织成一个流水线。可读性和代码可扩展性大大提高，能轻松应对不同复杂度任务。代价仅仅是多写几行代码。首先需要安装一个实现流水线功能的fastcore库。</p>
+<p>安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">fastcore</span>
+</code></pre></div><br>
+<p>设计的三个环节函数，使用fastcore库的Pipeline来组织成一个流水线。代码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">fastcore.transform</span> <span class="kn">import</span> <span class="n">Pipeline</span>
+
+
+<span class="k">def</span> <span class="nf">lower</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="c1">#变小写</span>
+    <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">remove_</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="c1">#剔除回车</span>
+    <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">strip</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="c1">#剔除开头结尾的空格</span>
+    <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+<span class="n">text</span> <span class="o">=</span> <span class="s2">&#34; Python is powerful, so let&#39;s go!</span><span class="se">\n</span><span class="s2">&#34;</span>
+
+<span class="c1">#将环节函数组织成一个流水线</span>
+<span class="n">pipe</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">([</span><span class="n">lower</span><span class="p">,</span> <span class="n">remove_</span><span class="p">,</span> <span class="n">strip</span><span class="p">])</span>
+<span class="n">pipe</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>&quot;python is powerful, so let's go!&quot;
+</code></pre>
+<br>
+<h2 id="三快速响应">三、快速响应</h2>
+<p>如果预处理任务只需要lower和strip， 新的流水线可以快速装配需要的<strong>环节函数</strong>, 以应对新的预处理任务。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">text</span> <span class="o">=</span> <span class="s2">&#34; Python is powerful, so let&#39;s go!&#34;</span>
+
+<span class="c1">#将环节函数组织成一个流水线</span>
+<span class="n">pipe2</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">([</span><span class="n">lower</span><span class="p">,</span> <span class="n">strip</span><span class="p">])</span>
+<span class="n">pipe2</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>&quot;python is powerful, so let's go!&quot;
+</code></pre>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>CheatSheet | Python文本数据处理速查表</title>
       <link>https://hidadeng.github.io/blog/2023-01-27-cheatsheet-about-text-manipulate-in-python/</link>
       <pubDate>Fri, 27 Jan 2023 00:00:00 +0000</pubDate>
