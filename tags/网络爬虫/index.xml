@@ -6,7 +6,280 @@
     <description>Recent content in 网络爬虫 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 03 Dec 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 15 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>使用 chatGPT 写 Python 网络爬虫</title>
+      <link>https://hidadeng.github.io/blog/2023-02-15-write-web-scraper-with-chatgpt/</link>
+      <pubDate>Wed, 15 Feb 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-02-15-write-web-scraper-with-chatgpt/</guid>
+      <description>在以上的操作中，Step1  **找网址规律** 只要你把已经有规律性的内容丢给ta，ta能给你生成对应的代码。Step2  **发起访问** 这一步是需要我们重点测试的，因为chatgpt不能联网，一定确保访问ok，且获取的源代码中含有我们关注的信息。Step3 **解析数据** 把输入的html源代码和输出的数据中蕴含着规律丢给ta，需要重点检查 Step4 **存至csv** 没啥问题 Step5 **代码汇总** **Bug最多，最容易睁眼瞎写代码**。我明明采集hiadadeng.github.io， 结果有几次给我汇总的代码采集的是别的网站。定位方式偷换为BeautifulSoup。所以如果能懂爬虫五步法，可以自己负责提问题，负责每个环节的检查，最终的汇总Step5暂时不要交给chatGPT，还是留给我们自己吧。</description>
+      <content:encoded><![CDATA[<h2 id="相关内容">相关内容</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/2023-02-01-v2net-science-network/">科学上网工具v2net</a></li>
+<li><a href="https://hidadeng.github.io/blog/2023-02-15-how-to-sign-up-the-chatgpt-accout-and-upgrade-to-plus/">如何注册chatGPT账号</a></li>
+<li><a href="https://hidadeng.github.io/blog/2023-02-11-credit_card_for_chatgpt-plus/">使用虚拟信用卡，国内用户升级为chatGPT plus会员</a></li>
+<li><a href="chatgpt-wirte-scraper.png"><strong>本次chatgpt写爬虫完整截图</strong></a></li>
+</ul>
+<p><br><br></p>
+<h2 id="写爬虫流程">写爬虫流程</h2>
+<h3 id="大邓">大邓</h3>
+<p>chatgpt你好，我是大邓，下面是大邓使用Python写爬虫的步骤</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>步骤名</th>
+<th>解决的问题</th>
+<th>实现的功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td>请求</td>
+<td>网页数据在哪里？</td>
+<td>发现网址url规律</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>请求</td>
+<td>如何获取网页数据？</td>
+<td>先尝试使用requests成功访问一个url，拿到一个页面数据</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>解析</td>
+<td>从html中定位需要的数据</td>
+<td>使用pyquery对这一个页面的网页数据进行解析</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>解析</td>
+<td>从json中定位需要的数据</td>
+<td>使用json 或 resp.json() 进行json网页数据解析</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td>存储</td>
+<td>如何存储数据</td>
+<td>使用csv库将数据存储到csv文件中</td>
+</tr>
+<tr>
+<td><strong>5</strong></td>
+<td>整合</td>
+<td>重复2-4</td>
+<td>for循环对所有的url进行访问解析存储</td>
+</tr>
+</tbody>
+</table>
+<p>我将按照步骤逐步提问你。可以开始了吗<br></p>
+<h3 id="chatgpt">chatGPT</h3>
+<p>可以的，我很乐意为您提供帮助。请继续提问。</p>
+<p><br><br></p>
+<h2 id="step1-网页数据在哪里">Step1 网页数据在哪里？</h2>
+<h3 id="大邓-1">大邓</h3>
+<p><img loading="lazy" src="img/blog_post_list.png" alt=""  />
+</p>
+<p>博客 <a href="https://hidadeng.github.io/">https://hidadeng.github.io/</a> 使用的github page构建的，生成的网站是静态网站， 页面是HTML类型。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">page1</span>  <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">hidadeng</span><span class="o">.</span><span class="n">github</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">blog</span><span class="o">/</span><span class="n">page</span><span class="o">/</span><span class="mi">1</span><span class="o">/</span>
+<span class="n">page2</span>  <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">hidadeng</span><span class="o">.</span><span class="n">github</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">blog</span><span class="o">/</span><span class="n">page</span><span class="o">/</span><span class="mi">2</span><span class="o">/</span>
+<span class="n">page3</span>  <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">hidadeng</span><span class="o">.</span><span class="n">github</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">blog</span><span class="o">/</span><span class="n">page</span><span class="o">/</span><span class="mi">3</span><span class="o">/</span>
+<span class="o">......</span>
+</code></pre></div><p>请使用字符串format方法，for循环，生成10页的网址。代码要简洁、易读。</p>
+<br>
+<h3 id="chatgpt-1">chatGPT</h3>
+<p>您可以这样生成10页的网址：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">base_url</span> <span class="o">=</span> <span class="s2">&#34;https://hidadeng.github.io/blog/page/</span><span class="si">{}</span><span class="s2">/&#34;</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">base_url</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</code></pre></div><p>这样的代码很简洁，很容易理解。您只需要在base_url字符串中指定占位符，然后在format方法中填充实际的数字即可。</p>
+<p><br><br></p>
+<h2 id="step2-如何获取网页数据">Step2 如何获取网页数据？</h2>
+<h3 id="大邓-2">大邓</h3>
+<p>写一个完整的代码很难，但是可以把问题抽象成一个局部与整体的关系。先把重复出现的局部搞明白，再使用for循环把整体解决。 现在我试图用requests的get方法访问</p>
+<p>url = <a href="https://hidadeng.github.io/blog/page/2">https://hidadeng.github.io/blog/page/2</a></p>
+<p>注意要加入headers， 代码要简洁，有阅读性！</p>
+<br>
+<h3 id="chatgpt-2">chatGPT</h3>
+<p>您可以这样使用requests库的get方法访问网页数据：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="n">url</span> <span class="o">=</span> <span class="s2">&#34;https://hidadeng.github.io/blog/page/2&#34;</span>
+<span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&#34;User-Agent&#34;</span><span class="p">:</span> <span class="s2">&#34;Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36&#34;</span>
+<span class="p">}</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&#34;Failed to access the page with status code:&#34;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span>
+</code></pre></div><p>这样的代码非常简洁，容易理解。您只需要指定请求的URL和请求头，然后调用requests.get方法即可。如果请求成功（即响应状态码为200），则打印响应的网页数据；否则，打印响应的状态码。</p>
+<p><br><br></p>
+<h2 id="step3-从html中定位需要的数据">Step3 从html中定位需要的数据</h2>
+<h3 id="大邓-3">大邓</h3>
+<p>博客 <a href="https://hidadeng.github.io/">https://hidadeng.github.io/</a> 是静态网站， 页面是HTML类型， 可以使用pyquery对这一个页面的网页数据进行解析。</p>
+<p>由于chatgpt 不能联网访问， 我将</p>
+<p>url = &lsquo;<a href="https://hidadeng.github.io/blog/page/2/">https://hidadeng.github.io/blog/page/2/</a>’</p>
+<p>对应的html源代码提供给你作为 response.text, 提供给你, 我需要你用pyquery帮我抽取出aritcle_infos，为了省事， 这里的 aritcle_infos 我只写了3个记录，请给我输出5个记录的。</p>
+<p>代码要简洁、可阅读性高。返回的代码里不要显示 response.text 源代码内容， 只以变量 response.text 显示。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">response</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">main</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;main&#34;</span><span class="o">&gt;</span> 
+<span class="o">&lt;</span><span class="n">header</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;page-header&#34;</span><span class="o">&gt;&lt;</span><span class="n">div</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;breadcrumbs&#34;</span><span class="o">&gt;&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s2">&#34;/&#34;</span> <span class="n">target</span><span class="o">=</span><span class="s2">&#34;_blank&#34;</span><span class="o">&gt;</span><span class="n">Home</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;&lt;/</span><span class="n">div</span><span class="o">&gt;</span>
+  <span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">Blogs</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+<span class="o">&lt;/</span><span class="n">header</span><span class="o">&gt;</span>
+<span class="o">...</span>
+<span class="o">&lt;</span><span class="n">article</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;post-entry&#34;</span><span class="o">&gt;</span> 
+<span class="o">&lt;</span><span class="n">figure</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;entry-cover&#34;</span><span class="o">&gt;&lt;</span><span class="n">img</span> <span class="n">loading</span><span class="o">=</span><span class="s2">&#34;lazy&#34;</span> <span class="n">src</span><span class="o">=</span><span class="s2">&#34;/images/blog/race-bar-pyanimate.png&#34;</span> <span class="n">alt</span><span class="o">=</span><span class="s2">&#34;&#34;</span><span class="o">&gt;</span>
+<span class="o">&lt;/</span><span class="n">figure</span><span class="o">&gt;</span>
+  <span class="o">&lt;</span><span class="n">header</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;entry-header&#34;</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">h2</span><span class="o">&gt;</span><span class="n">pynimate库</span> <span class="o">|</span> <span class="n">绘制动态可视化图</span>
+    <span class="o">&lt;/</span><span class="n">h2</span><span class="o">&gt;</span>
+  <span class="o">&lt;/</span><span class="n">header</span><span class="o">&gt;</span>
+  <span class="o">&lt;</span><span class="n">section</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;entry-content&#34;</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">pynimate</span> <span class="n">创建条形数据动画</span><span class="err">。</span><span class="o">...&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+
+
+<span class="o">&lt;</span><span class="n">article</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;post-entry&#34;</span><span class="o">&gt;</span> 
+<span class="o">&lt;</span><span class="n">figure</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;entry-cover&#34;</span><span class="o">&gt;&lt;</span><span class="n">img</span> <span class="n">loading</span><span class="o">=</span><span class="s2">&#34;lazy&#34;</span> <span class="n">src</span><span class="o">=</span><span class="s2">&#34;/images/blog/chatgplt-plus.jpg&#34;</span> <span class="n">alt</span><span class="o">=</span><span class="s2">&#34;&#34;</span><span class="o">&gt;</span>
+<span class="o">&lt;/</span><span class="n">figure</span><span class="o">&gt;</span>
+  <span class="o">&lt;</span><span class="n">header</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;entry-header&#34;</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">h2</span><span class="o">&gt;</span><span class="n">使用虚拟信用卡</span><span class="err">，</span><span class="n">国内用户升级为chatGPT</span> <span class="n">plus会员</span>
+    <span class="o">&lt;/</span><span class="n">h2</span><span class="o">&gt;</span>
+  <span class="o">&lt;/</span><span class="n">header</span><span class="o">&gt;</span>
+  <span class="o">&lt;</span><span class="n">section</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;entry-content&#34;</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">使用虚拟信用卡</span><span class="err">，</span><span class="n">国内用户升级为chatGPT</span> <span class="n">plus会员</span><span class="o">...&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+
+    <span class="o">&lt;</span><span class="n">h2</span><span class="o">&gt;</span><span class="n">在巨型语言模型时代竞争</span><span class="err">：</span><span class="n">OpenAI</span> <span class="n">vs</span> <span class="n">谷歌</span>
+    <span class="o">&lt;/</span><span class="n">h2</span><span class="o">&gt;</span>
+  <span class="o">&lt;/</span><span class="n">header</span><span class="o">&gt;</span>
+  <span class="o">&lt;</span><span class="n">section</span> <span class="n">class</span><span class="o">=</span><span class="s2">&#34;entry-content&#34;</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">在未来</span><span class="err">，</span><span class="n">巨型语言模型将继续发挥重要作用</span><span class="err">，</span><span class="n">并不断推动人工智能的发展</span><span class="err">。</span><span class="n">随着技术的不断提高</span><span class="err">，</span><span class="n">它们将越来越智能</span><span class="err">，</span><span class="n">更加逼近人类语言的表达能力</span><span class="err">，</span><span class="n">从而改变人类的生活和工作方式</span><span class="err">。</span><span class="o">...&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+    
+<span class="o">...</span>
+    
+  <span class="o">&lt;/</span><span class="n">nav</span><span class="o">&gt;</span>
+<span class="o">&lt;/</span><span class="n">footer</span><span class="o">&gt;</span>
+    <span class="o">&lt;/</span><span class="n">main</span><span class="o">&gt;</span>
+<span class="s2">&#34;&#34;&#34;
+</span><span class="s2">
+</span><span class="s2">
+</span><span class="s2">aritcle_infos = [(&#39;pynimate库 | 绘制动态可视化图&#39;, 
+</span><span class="s2">   &#39;https://hidadeng.github.io/blog/2023-02-11-pyanimate-create-vis-video/&#39;,
+</span><span class="s2">   &#39;2023-02-09&#39;,
+</span><span class="s2">   &#39;pynimate 创建条形数据动画。...&#39;),
+</span><span class="s2">  
+</span><span class="s2">  (&#39;使用 chatGPT 做词频统计&amp;词云图&#39;,
+</span><span class="s2">   &#39;https://hidadeng.github.io/blog/2023-02-11-chatgpt-plus-for-text-mining/&#39;,
+</span><span class="s2">   &#39;2023-02-09&#39;,
+</span><span class="s2">   &#39;使用 chatGPT 做词频统计&amp;词云图，过程使用pandas、pyecharts、jieba等库。...&#39;),
+</span><span class="s2">   
+</span><span class="s2">   (&#39;使用虚拟信用卡，国内用户升级为chatGPT plus会员&#39;,
+</span><span class="s2">    &#39;https://hidadeng.github.io/blog/2023-02-11-credit_card_for_chatgpt-plus/&#39;,
+</span><span class="s2">    &#39;2023-02-09&#39;,
+</span><span class="s2">    &#39;使用虚拟信用卡，国内用户升级为chatGPT plus会员...&#39;)
+</span><span class="s2">  ]
+</span></code></pre></div><br>
+<h3 id="chatgpt-3">chatGPT</h3>
+<p>使用pyquery解析HTML，可以通过对HTML中的标签和属性进行查询获取相关数据：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pyquery</span> <span class="kn">import</span> <span class="n">PyQuery</span> <span class="k">as</span> <span class="n">pq</span>
+
+<span class="n">html</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="n">pq</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+
+<span class="n">aritcle_infos</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">article</span> <span class="ow">in</span> <span class="n">doc</span><span class="p">(</span><span class="s1">&#39;article.post-entry&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">article</span><span class="p">(</span><span class="s1">&#39;header.entry-header h2&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+    <span class="n">link</span> <span class="o">=</span> <span class="n">article</span><span class="p">(</span><span class="s1">&#39;a.entry-link&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">attr</span><span class="p">(</span><span class="s1">&#39;href&#39;</span><span class="p">)</span>
+    <span class="n">date</span> <span class="o">=</span> <span class="n">article</span><span class="p">(</span><span class="s1">&#39;footer.entry-footer span&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">attr</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">)[:</span><span class="mi">10</span><span class="p">]</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">article</span><span class="p">(</span><span class="s1">&#39;section.entry-content p&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+    <span class="n">aritcle_infos</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">title</span><span class="p">,</span> <span class="n">link</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">description</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">aritcle_infos</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span>
+</code></pre></div><p><br><br></p>
+<h2 id="step4-存储至csv">Step4 存储至csv</h2>
+<h3 id="大邓-4">大邓</h3>
+<p>使用csv库， 把Step3中得到的 aritcle_infos数据， 存储到csv文件中。csv文件编码为 utf-8编码， 字段名依次是title, link, date, intro。代码要简洁、可阅读性高。</p>
+<br>
+<h3 id="chatgpt-4">chatGPT</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">csv</span>
+
+<span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;aritcle_infos.csv&#39;</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;link&#39;</span><span class="p">,</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;intro&#39;</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">aritcle_infos</span><span class="p">:</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+</code></pre></div><p><br><br></p>
+<h2 id="step5-整合">Step5 整合</h2>
+<h3 id="大邓-5">大邓</h3>
+<p>采集hidadeng网 10 个页面的数据，存储到csv。使用for循环，重复Step2、Step3、Step4，  代码整理汇总到这次结果中。</p>
+<p>注意是用requests库、pyquery、csv库代码变量前后衔接对应，代码要简洁、可阅读性高。注意，不要生成新的pyquery定位方式。</p>
+<p>爬虫采集过程中，容易出现小错误，请让代码中带有try-except, 增强代码的健壮性。</p>
+<br>
+<h3 id="chatgpt-5">chatGPT</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">pyquery</span> <span class="kn">import</span> <span class="n">PyQuery</span> <span class="k">as</span> <span class="n">pq</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+
+<span class="k">def</span> <span class="nf">get_article_info</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">html</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span>
+            <span class="n">doc</span> <span class="o">=</span> <span class="n">pq</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">doc</span><span class="p">(</span><span class="s1">&#39;.entry-title a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+            <span class="n">link</span> <span class="o">=</span> <span class="n">doc</span><span class="p">(</span><span class="s1">&#39;.entry-title a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">attr</span><span class="p">(</span><span class="s1">&#39;href&#39;</span><span class="p">)</span>
+            <span class="n">date</span> <span class="o">=</span> <span class="n">doc</span><span class="p">(</span><span class="s1">&#39;.entry-date&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+            <span class="n">intro</span> <span class="o">=</span> <span class="n">doc</span><span class="p">(</span><span class="s1">&#39;.entry-summary p&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+            <span class="n">article_info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s1">&#39;link&#39;</span><span class="p">:</span> <span class="n">link</span><span class="p">,</span> <span class="s1">&#39;date&#39;</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="s1">&#39;intro&#39;</span><span class="p">:</span> <span class="n">intro</span><span class="p">}</span>
+            <span class="k">return</span> <span class="n">article_info</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+<span class="k">def</span> <span class="nf">save_to_csv</span><span class="p">(</span><span class="n">article_infos</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;article_infos.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">fieldnames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;link&#39;</span><span class="p">,</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;intro&#39;</span><span class="p">])</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">article_info</span> <span class="ow">in</span> <span class="n">article_infos</span><span class="p">:</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">article_info</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">base_url</span> <span class="o">=</span> <span class="s1">&#39;https://hidadeng.com/page/&#39;</span>
+    <span class="n">article_infos</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">base_url</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">article_info</span> <span class="o">=</span> <span class="n">get_article_info</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">article_info</span><span class="p">:</span>
+            <span class="n">article_infos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">article_info</span><span class="p">)</span>
+    <span class="n">save_to_csv</span><span class="p">(</span><span class="n">article_infos</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</code></pre></div><p><br><br></p>
+<h2 id="总结">总结</h2>
+<p>在以上的操作中，</p>
+<ul>
+<li>Step1  <strong>找网址规律</strong> 只要你把已经有规律性的内容丢给ta，ta能给你生成对应的代码。</li>
+<li>Step2  <strong>发起访问</strong> 这一步是需要我们重点测试的，因为chatgpt不能联网，一定确保访问ok，且获取的源代码中含有我们关注的信息。</li>
+<li>Step3 <strong>解析数据</strong> 把输入的html源代码和输出的数据中蕴含着规律丢给ta，需要重点检查</li>
+<li>Step4 <strong>存至csv</strong> 没啥问题</li>
+<li>Step5 <strong>代码汇总</strong> <strong>Bug最多，最容易睁眼瞎写代码</strong>。我明明采集hiadadeng.github.io， 结果有几次给我汇总的代码采集的是别的网站。定位方式偷换为BeautifulSoup。</li>
+</ul>
+<p>所以如果能懂爬虫五步法，可以自己负责提问题，负责每个环节的检查，最终的汇总Step5暂时不要交给chatGPT，还是留给我们自己吧。</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">支持开票 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>JM2022综述 | 黄金领域: 为营销研究(新洞察)采集网络数据</title>
       <link>https://hidadeng.github.io/blog/2022-12-03-scraping-web-data-for-marketing-insights/</link>
