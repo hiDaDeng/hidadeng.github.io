@@ -6,7 +6,104 @@
     <description>Recent content in 数据集 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Mon, 13 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 06 Mar 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>数据集 | 马前卒工作室睡前消息文稿汇总</title>
+      <link>https://hidadeng.github.io/blog/2023-03-06-bedtime-news-datasets/</link>
+      <pubDate>Mon, 06 Mar 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-03-06-bedtime-news-datasets/</guid>
+      <description>一直有观看马前卒工作室睡前消息的习惯， 感觉他的内容很理性， 透露着马列科学社会风。 引爆全网的两个话题独山县债务问题、以岭药业连花清瘟胶囊事件。 **数据可以拿来练习词频统计、词云图制作、情感分析、lda话题建模。已整理为csv文件，留给需要的人**。</description>
+      <content:encoded><![CDATA[<p>一直有观看马前卒工作室睡前消息的习惯， 感觉他的内容很理性， 透露着马列科学社会风。 引爆全网的两个话题独山县债务问题、以岭药业连花清瘟胶囊事件。 <strong>数据可以拿来练习词频统计、词云图制作、情感分析、lda话题建模。已整理为csv文件，留给需要的人</strong>。</p>
+<p><img loading="lazy" src="img/yilingyaoye.jpg" alt=""  />
+</p>
+<p><img loading="lazy" src="img/dushanxian.jpeg" alt=""  />
+</p>
+<br>
+<h2 id="一原始数据">一、原始数据</h2>
+<p>『睡前消息』截止2023年3月6日，已经更新至559期. 文稿资源来自 <a href="https://archive.bedtime.news/zh/main">https://archive.bedtime.news/zh/main</a></p>
+<p>原始数据集下载下来是这个样子</p>
+<p><img loading="lazy" src="img/directory.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/sub_dir.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/filelists.png" alt=""  />
+</p>
+<br>
+<p>数据集文件夹的目录树结构</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 睡前消息文本 第1-100期
+    |- 001-010期
+       |- 2019 07 12 第一期.docx
+       |- 2019 07 16 第二期.docx
+       |- 2019 07 19 第三期.docx
+       |- 2019 07 23 第四期.docx
+       |- ...
+    |- 011-020期
+    |- 021-030期
+    |-...
+- 睡前消息文本 第101-200期
+- 睡前消息文本 第201-300期
+- 睡前消息文本 第301-400期
+- 睡前消息文本 第401-500期
+- 睡前消息文本 第501-最新
+- bedtime_news.csv
+- code.ipynb
+</code></pre></div><br>
+<h2 id="一整理数据">一、整理数据</h2>
+<p>原始数据docx文件存储，数据集是2层文件夹结构。可以使用glob库提供文件路径识别功能</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-PYTHON" data-lang="PYTHON"><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">from</span> <span class="nn">pdfdocx</span> <span class="kn">import</span> <span class="n">read_docx</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;bedtime_news.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvf</span><span class="p">:</span>
+    <span class="n">fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">]</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">fieldnames</span> <span class="o">=</span> <span class="n">fieldnames</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+
+    <span class="c1"># 使用glob模块查找所有的docx文件路径</span>
+    <span class="n">docx_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&#34;**/*.docx&#34;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">docx_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">docx_files</span> <span class="k">if</span> <span class="s1">&#39;DS&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
+
+    <span class="c1"># 输出所有docx文件路径</span>
+    <span class="k">for</span> <span class="n">file_path</span> <span class="ow">in</span> <span class="n">docx_files</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;\s&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">file_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;22&#39;</span><span class="p">):</span>
+            <span class="n">file_name</span> <span class="o">=</span> <span class="s1">&#39;2022&#39;</span><span class="o">+</span> <span class="n">file_name</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="n">date</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d</span><span class="si">{8}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">episode</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;.docx&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">read_docx</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;date&#34;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">date</span><span class="p">),</span> 
+                <span class="s2">&#34;name&#34;</span><span class="p">:</span> <span class="n">file_path</span><span class="p">,</span>
+                <span class="s2">&#34;text&#34;</span><span class="p">:</span><span class="n">text</span><span class="p">}</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div><br>
+<h2 id="二导入csv">二、导入csv</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&#34;bedtime_news.csv&#34;</span><span class="p">,</span> <span class="n">converters</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;date&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">})</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">522
+</code></pre></div><br>
+<h2 id="获取方式">获取方式</h2>
+<p>链接: <a href="https://pan.baidu.com/s/1Qor_FNBnGuTsq4NpF3vzVQ">https://pan.baidu.com/s/1Qor_FNBnGuTsq4NpF3vzVQ</a> 提取码: t8pq</p>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>cctv新闻联播文稿数据集</title>
       <link>https://hidadeng.github.io/blog/2023-02-26-cctv1-news-text-dataset/</link>
