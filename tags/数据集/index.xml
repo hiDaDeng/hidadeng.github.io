@@ -336,6 +336,926 @@ Name: CATEGORY, dtype: int64
     </item>
     
     <item>
+      <title>EDGAR | 25年数据的预训练词向量模型</title>
+      <link>https://hidadeng.github.io/blog/2023-03-08-edgar-w2vcorpus/</link>
+      <pubDate>Sat, 10 Dec 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-03-08-edgar-w2vcorpus/</guid>
+      <description>&lt;p&gt;EDGAR 是美国证券交易委员会（SEC）的电子数据收集、分析和检索系统。EDGAR系统允许公众通过互联网访问公司提交给SEC的各种文件，例如注册声明、年度报告和其他披露文件。这些文件包括公司的财务信息、业务信息和其他关键信息，对于投资者和研究人员来说非常有用。&lt;/p&gt;
+&lt;p&gt;金融等方向的同学，如果想用 &lt;strong&gt;词嵌入&lt;/strong&gt; 技术开展研究， 可以考虑使用这个开源的数据集。&lt;/p&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;一edgar-corpus&#34;&gt;一、EDGAR-CORPUS&lt;/h2&gt;
+&lt;p&gt;在 EMNLP 2021同时举办的经济与自然语言处理研讨会（ECONLP）论文集中， 发布了EDGAR-CORPUS，这是一个新颖的语料库，包括美国所有上市公司超过25年的年报。&lt;/p&gt;
+&lt;p&gt;所有报告都已下载，拆分为相应的项目（部分），并以清洁、易于使用的JSON格式提供。&lt;/p&gt;
+&lt;h3 id=&#34;11-下载数据&#34;&gt;1.1 下载数据&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://zenodo.org/record/5528490&#34;&gt;https://zenodo.org/record/5528490&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/edgar-corpus.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;1-2-引用格式&#34;&gt;1. 2 引用格式&lt;/h3&gt;
+&lt;p&gt;Lefteris Loukas, Manos Fergadiotis, Ion Androutsopoulos, &amp;amp; Prodromos Malakasiotis. (2021). EDGAR-CORPUS [Data set]. Zenodo. &lt;a href=&#34;https://doi.org/10.5281/zenodo.5528490&#34;&gt;https://doi.org/10.5281/zenodo.5528490&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二edgar-w2v-embeddings&#34;&gt;二、EDGAR-W2V Embeddings&lt;/h2&gt;
+&lt;p&gt;EDGAR-W2V 是在 EDGAR-CORPUS 上训练的词嵌入模型。 它是一个200维的模型，包含 10 万个金融词汇。EDGAR-W2V的相关信息可以在题为“EDGAR-CORPUS: Billions of Tokens Make The World Go Round”的论文中找到，该论文发表于2021年EMNLP会议上的经济学和自然语言处理研讨会（ECONLP）。&lt;/p&gt;
+&lt;h3 id=&#34;11-下载模型&#34;&gt;1.1 下载模型&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://zenodo.org/record/5524358&#34;&gt;https://zenodo.org/record/5524358&lt;/a&gt;
+&lt;img loading=&#34;lazy&#34; src=&#34;img/edgar-w2v.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;1-2-引用格式-1&#34;&gt;1. 2 引用格式&lt;/h3&gt;
+&lt;p&gt;Lefteris Loukas, Manos Fergadiotis, Ion Androutsopoulos, &amp;amp; Prodromos Malakasiotis. (2021). EDGAR-W2V Embeddings. Zenodo. &lt;a href=&#34;https://doi.org/10.5281/zenodo.5524358&#34;&gt;https://doi.org/10.5281/zenodo.5524358&lt;/a&gt;&lt;/p&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;三代码&#34;&gt;三、代码&lt;/h2&gt;
+&lt;h3 id=&#34;31-导入词汇表&#34;&gt;3.1 导入词汇表&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;vocab&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;edgar.word.w2v.200.vocab&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;词汇量: &amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;vocab&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#显示前100个&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;vocab&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[:&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;100&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;词汇量:  100000
+
+[&amp;#39;the&amp;#39;,
+ &amp;#39;,&amp;#39;,
+ &amp;#39;of&amp;#39;,
+ &amp;#39;.&amp;#39;,
+ &amp;#39;and&amp;#39;,
+ &amp;#39;to&amp;#39;,
+ &amp;#39;NEWLINETOKEN&amp;#39;,
+ &amp;#39;in&amp;#39;,
+ &amp;#39;a&amp;#39;,
+ &amp;#39;for&amp;#39;,
+ ......
+ &amp;#39;including&amp;#39;,
+ &amp;#39;accounting&amp;#39;,
+ &amp;#39;operating&amp;#39;,
+ &amp;#39;1&amp;#39;,
+ &amp;#39;fair&amp;#39;,
+ &amp;#39;also&amp;#39;,
+ &amp;#39;credit&amp;#39;,
+ &amp;#39;capital&amp;#39;,
+ &amp;#39;notes&amp;#39;,
+ &amp;#39;securities&amp;#39;,
+ &amp;#39;rate&amp;#39;]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;31-导入w2v模型文件&#34;&gt;3.1 导入W2V模型文件&lt;/h3&gt;
+&lt;p&gt;edgar.word.w2v.200.bin只存储了&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;gensim.models.keyedvectors&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;KeyedVectors&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;edgar_wv&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;KeyedVectors&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_word2vec_format&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;edgar.word.w2v.200.bin&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                                             &lt;span class=&#34;n&#34;&gt;binary&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                                             &lt;span class=&#34;n&#34;&gt;unicode_errors&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;ignore&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;查看某个词的词向量, 返回长度200维的向量&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;edgar_wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;stock&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;shape&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;edgar_wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;stock&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(200,)
+
+array([ 0.19913645, -0.06109103, -0.20294489, -0.3233174 ,  0.33050874,
+        0.4720499 ,  0.1584721 , -0.73845965, -0.320686  , -0.03934   ,
+        0.24570467,  0.33919033, -0.42398626, -0.0519694 ,  0.5614962 ,
+        0.06250261,  0.12337335,  0.4284085 , -0.18471783,  0.27163157,
+       -0.25374356, -0.30515426, -0.53030056,  0.14488244,  0.23602249,
+        0.17834061,  0.5282402 ,  0.35811898,  0.02480956, -0.27537134,
+        0.46796346,  0.14656937, -0.24058165, -0.02558263,  0.2823333 ,
+        0.13227813, -0.35262054, -0.3534915 , -0.08498703,  0.13652588,
+        0.19062333, -0.59584695,  0.4724787 ,  0.0899151 , -0.30575767,
+        0.0894967 , -0.42695883,  0.14332667,  0.32162446,  0.5205731 ,
+       -0.34024504, -0.15563595,  0.09534936, -0.03550521, -0.24585967,
+       -0.70967376,  0.23757844,  0.19296522, -0.14549816, -0.34093133,
+        0.44992575, -0.31520963, -0.19251363, -0.2664489 ,  0.22087495,
+       -0.0226051 ,  0.02213453, -0.31526777,  0.02245333,  0.01845511,
+        0.4727852 ,  0.0823371 , -0.28313273, -0.96016574, -0.34687626,
+        0.31235287, -0.2581088 , -0.7164211 ,  0.6806588 ,  0.31276935,
+       -0.166056  , -0.5558513 ,  0.10650715, -0.34121472,  0.01264491,
+        0.3823984 , -0.6213977 ,  0.532256  , -0.11913523,  0.22344823,
+        0.3172406 , -0.08887295,  0.14381133,  0.23814514, -0.09513577,
+        0.10691381,  0.13318019, -0.10131137,  0.51121044, -0.13446783,
+       -0.34249052,  0.21858525, -0.66716367, -0.1002802 ,  0.1822924 ,
+       -0.17896068,  0.36693272, -0.26906306,  0.16348957,  0.309529  ,
+       -0.5283489 ,  0.38473064, -0.4563293 , -0.36093566,  0.02899153,
+       -0.16942917, -0.24810787,  0.04769324,  0.07288674,  0.05372427,
+       -0.21368156, -0.2308374 , -0.47956762,  0.26331866,  0.08796341,
+        0.0316316 , -0.04519949,  0.03246075, -0.06966034,  0.08757813,
+        0.16438614, -0.16775173, -0.10321777,  0.21712255,  0.1252789 ,
+       -0.34793332,  0.01499637, -0.32516828,  0.15845637, -0.1023875 ,
+       -0.05895114, -0.08138125,  0.08420486, -0.18958494, -0.22417304,
+        0.5160968 ,  0.13966903,  0.17438166,  0.13805066, -0.1817818 ,
+        0.09644702, -0.34120768,  0.36722133, -0.06767058, -0.3896219 ,
+       -0.1555085 , -0.07321457, -0.24285823, -0.23933856,  0.26198393,
+       -0.12067977,  0.4152437 , -0.5361226 ,  0.02143142, -0.47723222,
+       -0.27638227, -0.272431  ,  0.27474684,  0.02058701,  0.398542  ,
+        0.12495182, -0.43948382, -0.41649124, -0.10416509, -0.013862  ,
+        0.2630676 ,  0.0534305 ,  0.26379627, -0.33174622,  0.30189517,
+        0.13504176, -0.09992695,  0.6300687 , -0.14120325, -0.04877585,
+        0.3973992 ,  0.50578755,  0.07440792, -0.10353652, -0.60702443,
+       -0.09498709,  0.1284441 , -0.13405691, -0.19467972, -0.09931252,
+       -0.28807166, -0.49167937,  0.501096  ,  0.41336802, -0.4281704 ],
+      dtype=float32)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四相关内容&#34;&gt;四、相关内容&lt;/h2&gt;
+&lt;p&gt;如果想了解更多词嵌入(或词向量)信息，可以阅读:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/wordembeddingsinsocialscience/&#34;&gt;转载 | 大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/from_sysbol_to_embeddings_in_computational_social_science/&#34;&gt;转载 | 从符号到嵌入：计算社会科学的两种文本表示&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/&#34;&gt;词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/embeddingsandattitude/&#34;&gt;词嵌入测量不同群体对某概念的态度(偏见)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2022-09-07-management-science-disrupt-science-and-technology&#34;&gt;Management Science | 使用网络算法识别创新的颠覆性与否&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-03-03-extracts-cognitive-information-and-visualization-with-embedings/&#34;&gt;可视化 | 词嵌入模型用于计算社科领域刻板印象等信息（含代码）&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog//2022-11-14-pnas_naming_unrelated_words_predicts_creativity/&#34;&gt;PNAS | 使用语义距离测量一个人的创新力(发散思维)得分&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/douban_w2v/&#34;&gt;豆瓣影评 | 探索词向量妙处&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/whatlies_word2vec/&#34;&gt;whatlies库 | 可视化词向量&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/embeddings_resource_usage_method/&#34;&gt;中文词向量资源汇总 &amp;amp; 使用方法&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/pretained_nlp_models/&#34;&gt;NLP资源 | 汽车、金融等9大领域预训练词向量模型下载资源&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2022-10-16-aligned-word-vectors/&#34;&gt;数据集 | 多语言对齐词向量预训练模型&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://hidadeng.github.io/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://hidadeng.github.io/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://hidadeng.github.io/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<p>EDGAR 是美国证券交易委员会（SEC）的电子数据收集、分析和检索系统。EDGAR系统允许公众通过互联网访问公司提交给SEC的各种文件，例如注册声明、年度报告和其他披露文件。这些文件包括公司的财务信息、业务信息和其他关键信息，对于投资者和研究人员来说非常有用。</p>
+<p>金融等方向的同学，如果想用 <strong>词嵌入</strong> 技术开展研究， 可以考虑使用这个开源的数据集。</p>
+<br>
+<h2 id="一edgar-corpus">一、EDGAR-CORPUS</h2>
+<p>在 EMNLP 2021同时举办的经济与自然语言处理研讨会（ECONLP）论文集中， 发布了EDGAR-CORPUS，这是一个新颖的语料库，包括美国所有上市公司超过25年的年报。</p>
+<p>所有报告都已下载，拆分为相应的项目（部分），并以清洁、易于使用的JSON格式提供。</p>
+<h3 id="11-下载数据">1.1 下载数据</h3>
+<p><a href="https://zenodo.org/record/5528490">https://zenodo.org/record/5528490</a></p>
+<p><img loading="lazy" src="img/edgar-corpus.png" alt=""  />
+</p>
+<br>
+<h3 id="1-2-引用格式">1. 2 引用格式</h3>
+<p>Lefteris Loukas, Manos Fergadiotis, Ion Androutsopoulos, &amp; Prodromos Malakasiotis. (2021). EDGAR-CORPUS [Data set]. Zenodo. <a href="https://doi.org/10.5281/zenodo.5528490">https://doi.org/10.5281/zenodo.5528490</a></p>
+<p><br><br></p>
+<h2 id="二edgar-w2v-embeddings">二、EDGAR-W2V Embeddings</h2>
+<p>EDGAR-W2V 是在 EDGAR-CORPUS 上训练的词嵌入模型。 它是一个200维的模型，包含 10 万个金融词汇。EDGAR-W2V的相关信息可以在题为“EDGAR-CORPUS: Billions of Tokens Make The World Go Round”的论文中找到，该论文发表于2021年EMNLP会议上的经济学和自然语言处理研讨会（ECONLP）。</p>
+<h3 id="11-下载模型">1.1 下载模型</h3>
+<p><a href="https://zenodo.org/record/5524358">https://zenodo.org/record/5524358</a>
+<img loading="lazy" src="img/edgar-w2v.png" alt=""  />
+</p>
+<br>
+<h3 id="1-2-引用格式-1">1. 2 引用格式</h3>
+<p>Lefteris Loukas, Manos Fergadiotis, Ion Androutsopoulos, &amp; Prodromos Malakasiotis. (2021). EDGAR-W2V Embeddings. Zenodo. <a href="https://doi.org/10.5281/zenodo.5524358">https://doi.org/10.5281/zenodo.5524358</a></p>
+<br>
+<h2 id="三代码">三、代码</h2>
+<h3 id="31-导入词汇表">3.1 导入词汇表</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">vocab</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;edgar.word.w2v.200.vocab&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;词汇量: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">vocab</span><span class="p">))</span>
+
+<span class="c1">#显示前100个</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">vocab</span><span class="p">[:</span><span class="mi">100</span><span class="p">])</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">词汇量:  100000
+
+[&#39;the&#39;,
+ &#39;,&#39;,
+ &#39;of&#39;,
+ &#39;.&#39;,
+ &#39;and&#39;,
+ &#39;to&#39;,
+ &#39;NEWLINETOKEN&#39;,
+ &#39;in&#39;,
+ &#39;a&#39;,
+ &#39;for&#39;,
+ ......
+ &#39;including&#39;,
+ &#39;accounting&#39;,
+ &#39;operating&#39;,
+ &#39;1&#39;,
+ &#39;fair&#39;,
+ &#39;also&#39;,
+ &#39;credit&#39;,
+ &#39;capital&#39;,
+ &#39;notes&#39;,
+ &#39;securities&#39;,
+ &#39;rate&#39;]
+</code></pre></div><br>
+<h3 id="31-导入w2v模型文件">3.1 导入W2V模型文件</h3>
+<p>edgar.word.w2v.200.bin只存储了</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">gensim.models.keyedvectors</span> <span class="kn">import</span> <span class="n">KeyedVectors</span>
+
+<span class="n">edgar_wv</span> <span class="o">=</span> <span class="n">KeyedVectors</span><span class="o">.</span><span class="n">load_word2vec_format</span><span class="p">(</span><span class="s1">&#39;edgar.word.w2v.200.bin&#39;</span><span class="p">,</span> 
+                                             <span class="n">binary</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+                                             <span class="n">unicode_errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+</code></pre></div><br>
+<p>查看某个词的词向量, 返回长度200维的向量</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="n">edgar_wv</span><span class="p">[</span><span class="s1">&#39;stock&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">edgar_wv</span><span class="p">[</span><span class="s1">&#39;stock&#39;</span><span class="p">]</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(200,)
+
+array([ 0.19913645, -0.06109103, -0.20294489, -0.3233174 ,  0.33050874,
+        0.4720499 ,  0.1584721 , -0.73845965, -0.320686  , -0.03934   ,
+        0.24570467,  0.33919033, -0.42398626, -0.0519694 ,  0.5614962 ,
+        0.06250261,  0.12337335,  0.4284085 , -0.18471783,  0.27163157,
+       -0.25374356, -0.30515426, -0.53030056,  0.14488244,  0.23602249,
+        0.17834061,  0.5282402 ,  0.35811898,  0.02480956, -0.27537134,
+        0.46796346,  0.14656937, -0.24058165, -0.02558263,  0.2823333 ,
+        0.13227813, -0.35262054, -0.3534915 , -0.08498703,  0.13652588,
+        0.19062333, -0.59584695,  0.4724787 ,  0.0899151 , -0.30575767,
+        0.0894967 , -0.42695883,  0.14332667,  0.32162446,  0.5205731 ,
+       -0.34024504, -0.15563595,  0.09534936, -0.03550521, -0.24585967,
+       -0.70967376,  0.23757844,  0.19296522, -0.14549816, -0.34093133,
+        0.44992575, -0.31520963, -0.19251363, -0.2664489 ,  0.22087495,
+       -0.0226051 ,  0.02213453, -0.31526777,  0.02245333,  0.01845511,
+        0.4727852 ,  0.0823371 , -0.28313273, -0.96016574, -0.34687626,
+        0.31235287, -0.2581088 , -0.7164211 ,  0.6806588 ,  0.31276935,
+       -0.166056  , -0.5558513 ,  0.10650715, -0.34121472,  0.01264491,
+        0.3823984 , -0.6213977 ,  0.532256  , -0.11913523,  0.22344823,
+        0.3172406 , -0.08887295,  0.14381133,  0.23814514, -0.09513577,
+        0.10691381,  0.13318019, -0.10131137,  0.51121044, -0.13446783,
+       -0.34249052,  0.21858525, -0.66716367, -0.1002802 ,  0.1822924 ,
+       -0.17896068,  0.36693272, -0.26906306,  0.16348957,  0.309529  ,
+       -0.5283489 ,  0.38473064, -0.4563293 , -0.36093566,  0.02899153,
+       -0.16942917, -0.24810787,  0.04769324,  0.07288674,  0.05372427,
+       -0.21368156, -0.2308374 , -0.47956762,  0.26331866,  0.08796341,
+        0.0316316 , -0.04519949,  0.03246075, -0.06966034,  0.08757813,
+        0.16438614, -0.16775173, -0.10321777,  0.21712255,  0.1252789 ,
+       -0.34793332,  0.01499637, -0.32516828,  0.15845637, -0.1023875 ,
+       -0.05895114, -0.08138125,  0.08420486, -0.18958494, -0.22417304,
+        0.5160968 ,  0.13966903,  0.17438166,  0.13805066, -0.1817818 ,
+        0.09644702, -0.34120768,  0.36722133, -0.06767058, -0.3896219 ,
+       -0.1555085 , -0.07321457, -0.24285823, -0.23933856,  0.26198393,
+       -0.12067977,  0.4152437 , -0.5361226 ,  0.02143142, -0.47723222,
+       -0.27638227, -0.272431  ,  0.27474684,  0.02058701,  0.398542  ,
+        0.12495182, -0.43948382, -0.41649124, -0.10416509, -0.013862  ,
+        0.2630676 ,  0.0534305 ,  0.26379627, -0.33174622,  0.30189517,
+        0.13504176, -0.09992695,  0.6300687 , -0.14120325, -0.04877585,
+        0.3973992 ,  0.50578755,  0.07440792, -0.10353652, -0.60702443,
+       -0.09498709,  0.1284441 , -0.13405691, -0.19467972, -0.09931252,
+       -0.28807166, -0.49167937,  0.501096  ,  0.41336802, -0.4281704 ],
+      dtype=float32)
+</code></pre></div><p><br><br></p>
+<h2 id="四相关内容">四、相关内容</h2>
+<p>如果想了解更多词嵌入(或词向量)信息，可以阅读:</p>
+<ul>
+<li><a href="https://textdata.cn/blog/wordembeddingsinsocialscience/">转载 | 大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用</a></li>
+<li><a href="https://textdata.cn/blog/from_sysbol_to_embeddings_in_computational_social_science/">转载 | 从符号到嵌入：计算社会科学的两种文本表示</a></li>
+<li><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></li>
+<li><a href="https://textdata.cn/blog/embeddingsandattitude/">词嵌入测量不同群体对某概念的态度(偏见)</a></li>
+<li><a href="https://textdata.cn/blog/2022-09-07-management-science-disrupt-science-and-technology">Management Science | 使用网络算法识别创新的颠覆性与否</a></li>
+<li><a href="https://textdata.cn/blog/2023-03-03-extracts-cognitive-information-and-visualization-with-embedings/">可视化 | 词嵌入模型用于计算社科领域刻板印象等信息（含代码）</a></li>
+<li><a href="https://textdata.cn/blog//2022-11-14-pnas_naming_unrelated_words_predicts_creativity/">PNAS | 使用语义距离测量一个人的创新力(发散思维)得分</a></li>
+<li><a href="https://textdata.cn/blog/douban_w2v/">豆瓣影评 | 探索词向量妙处</a></li>
+<li><a href="https://textdata.cn/blog/whatlies_word2vec/">whatlies库 | 可视化词向量</a></li>
+<li><a href="https://textdata.cn/blog/embeddings_resource_usage_method/">中文词向量资源汇总 &amp; 使用方法</a></li>
+<li><a href="https://textdata.cn/blog/pretained_nlp_models/">NLP资源 | 汽车、金融等9大领域预训练词向量模型下载资源</a></li>
+<li><a href="https://textdata.cn/blog/2022-10-16-aligned-word-vectors/">数据集 | 多语言对齐词向量预训练模型</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>数据集 | 80w知乎用户问答数据</title>
+      <link>https://hidadeng.github.io/blog/2023-03-06-zhihurec-dataset/</link>
+      <pubDate>Sat, 10 Dec 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-03-06-zhihurec-dataset/</guid>
+      <description>ZhihuRec数据集由清华大学信息检索组（THUIR）和知乎公司共同构建，仅供研究使用。ZhihuRec 数据集是从知识共享平台（知乎）收集的，该平台由 10 天内收集的约 100M 交互、798K 用户、165K 问题、554K 答案、240K 作者、70K 主题和超过 501K 用户查询日志组成。 还有用户、答案、问题、作者和主题的描述，这些都是匿名的。 据我们所知，这是用于个性化推荐的最大的真实世界交互数据集。由于ZhihuRec数据集包含约100M的用户回答印象日志，因此也称为ZhihuRec-100M。 还构建了从 ZhihuRec-100M 数据集随机采样的两个较小的数据集，分别称为 ZhihuRec-20M 和 ZhihuRec-1M，以满足各种应用需求。 它们包含大约 20M 和 1M 的用户回答印象日志，可以看作是一个中等大小的数据集和一个相对较小的数据集。</description>
+      <content:encoded><![CDATA[<h2 id="一zhihurec介绍">一、ZhihuRec介绍</h2>
+<p>ZhihuRec数据集由 <strong>清华大学信息检索组</strong>（THUIR）和  <strong>知乎公司</strong> 共同构建，仅供研究使用。ZhihuRec 数据集是从知识共享平台（知乎）收集的，该平台由 10 天内收集的约 一亿(100M) 次交互、798K 用户、165K 问题、554K 答案、240K 作者、70K 主题和超过 501K 用户查询日志组成。 还有用户、答案、问题、作者和主题的描述，这些都是匿名的。 据我们所知，这是用于个性化推荐的最大的真实世界交互数据集。由于ZhihuRec数据集包含约100M的用户回答印象日志，因此也称为ZhihuRec-100M。 还构建了从 ZhihuRec-100M 数据集随机采样的两个较小的数据集，分别称为 ZhihuRec-20M 和 ZhihuRec-1M，以满足各种应用需求。 它们包含大约 20M 和 1M 的用户回答印象日志，可以看作是一个中等大小的数据集和一个相对较小的数据集。</p>
+<br>
+<p><strong>ZhihuRec项目及下载地址</strong></p>
+<ul>
+<li><a href="https://github.com/THUIR/ZhihuRec-Dataset">https://github.com/THUIR/ZhihuRec-Dataset</a></li>
+<li><a href="https://cloud.tsinghua.edu.cn/d/d6c045c55aa14bb39ebc/">https://cloud.tsinghua.edu.cn/d/d6c045c55aa14bb39ebc/</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="二数据集详情">二、数据集详情</h2>
+<h3 id="21-数据集内的文件">2.1 数据集内的文件</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Filename</th>
+<th style="text-align:right">Size</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>inter_impression.csv</code></td>
+<td style="text-align:right">2.6GB</td>
+<td style="text-align:left">user clicks and impressions</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>inter_query.csv</code></td>
+<td style="text-align:right">111MB</td>
+<td style="text-align:left">user queries</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>info_user.csv</code></td>
+<td style="text-align:right">135MB</td>
+<td style="text-align:left">the features of the users occured in the dataset</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>info_answer.csv</code></td>
+<td style="text-align:right">917MB</td>
+<td style="text-align:left">the features of the answers occured in the dataset</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>info_question.csv</code></td>
+<td style="text-align:right">14MB</td>
+<td style="text-align:left">the features of the questions occured in the dataset</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>info_author.csv</code></td>
+<td style="text-align:right">3.1MB</td>
+<td style="text-align:left">the features of the authors occured in the dataset</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>info_topic.csv</code></td>
+<td style="text-align:right">413KB</td>
+<td style="text-align:left">the IDs of the topics occured in the dataset</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>info_token.csv</code></td>
+<td style="text-align:right">409MB</td>
+<td style="text-align:left">the features of the tokens occured in the dataset</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h3 id="22-数据集统计信息">2.2 数据集统计信息</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Dataset</th>
+<th style="text-align:right">ZhihuRec-100M</th>
+<th style="text-align:right">ZhihuRec-20M</th>
+<th style="text-align:right">ZhihuRec-1M</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>#impressions</strong> *</td>
+<td style="text-align:right">99,978,523</td>
+<td style="text-align:right">19,999,857</td>
+<td style="text-align:right">999,970</td>
+</tr>
+<tr>
+<td style="text-align:left">#clicks</td>
+<td style="text-align:right">26,981,583</td>
+<td style="text-align:right">5,402,345</td>
+<td style="text-align:right">268,656</td>
+</tr>
+<tr>
+<td style="text-align:left">#clicks : #non-clicks</td>
+<td style="text-align:right">1 : 2.71</td>
+<td style="text-align:right">1 : 2.70</td>
+<td style="text-align:right">1 : 2.72</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>#queries</strong> *</td>
+<td style="text-align:right">3,899,553</td>
+<td style="text-align:right">776,201</td>
+<td style="text-align:right">38,422</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>#users</strong> *</td>
+<td style="text-align:right">798,086</td>
+<td style="text-align:right">159,642</td>
+<td style="text-align:right">7,974</td>
+</tr>
+<tr>
+<td style="text-align:left">avg #impressions per user</td>
+<td style="text-align:right">125.27</td>
+<td style="text-align:right">125.28</td>
+<td style="text-align:right">125.40</td>
+</tr>
+<tr>
+<td style="text-align:left">avg #clicks per user</td>
+<td style="text-align:right">33.81</td>
+<td style="text-align:right">33.84</td>
+<td style="text-align:right">33.69</td>
+</tr>
+<tr>
+<td style="text-align:left">#users with queries</td>
+<td style="text-align:right">501,893</td>
+<td style="text-align:right">100,271</td>
+<td style="text-align:right">5,047</td>
+</tr>
+<tr>
+<td style="text-align:left">avg #queries per user</td>
+<td style="text-align:right">7.77</td>
+<td style="text-align:right">7.74</td>
+<td style="text-align:right">7.61</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>#answers</strong> *</td>
+<td style="text-align:right">554,976</td>
+<td style="text-align:right">343,103</td>
+<td style="text-align:right">81,563</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>#questions</strong> *</td>
+<td style="text-align:right">165,012</td>
+<td style="text-align:right">104,130</td>
+<td style="text-align:right">29,340</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>#authors</strong> *</td>
+<td style="text-align:right">240,956</td>
+<td style="text-align:right">167,796</td>
+<td style="text-align:right">47,888</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>#topics</strong> *</td>
+<td style="text-align:right">72,318</td>
+<td style="text-align:right">54,785</td>
+<td style="text-align:right">22,897</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>#tokens</strong> *</td>
+<td style="text-align:right">556,546</td>
+<td style="text-align:right">428,334</td>
+<td style="text-align:right">249,586</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h3 id="23--数据集字段">2.3  数据集字段</h3>
+<blockquote>
+<p>Some fields in the data set are null, which are represented by empty strings in the file.</p>
+</blockquote>
+<h3 id="inter_impressioncsv"><code>inter_impression.csv</code></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">Index</th>
+<th style="text-align:center">Nullable</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">user ID</td>
+</tr>
+<tr>
+<td style="text-align:right">1</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">answer ID</td>
+</tr>
+<tr>
+<td style="text-align:right">2</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">impression timestamp</td>
+</tr>
+<tr>
+<td style="text-align:right">3</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">click timestamp (0 for non-click)</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h3 id="inter_querycsv"><code>inter_query.csv</code></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">Index</th>
+<th style="text-align:center">Nullable</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">user ID</td>
+</tr>
+<tr>
+<td style="text-align:right">1</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">token IDs in the query (separated by spaces)</td>
+</tr>
+<tr>
+<td style="text-align:right">2</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">query timestamp</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h3 id="info_usercsv"><code>info_user.csv</code></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">Index</th>
+<th style="text-align:center">Nullable</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">user ID</td>
+</tr>
+<tr>
+<td style="text-align:right">1</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">register timestamp</td>
+</tr>
+<tr>
+<td style="text-align:right">2</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">gender</td>
+</tr>
+<tr>
+<td style="text-align:right">3</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">login frequency</td>
+</tr>
+<tr>
+<td style="text-align:right">4</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#followers</td>
+</tr>
+<tr>
+<td style="text-align:right">5</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#topics followed by this user</td>
+</tr>
+<tr>
+<td style="text-align:right">6</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#questions followed by this user</td>
+</tr>
+<tr>
+<td style="text-align:right">7</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#answers</td>
+</tr>
+<tr>
+<td style="text-align:right">8</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#questions</td>
+</tr>
+<tr>
+<td style="text-align:right">9</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#comments</td>
+</tr>
+<tr>
+<td style="text-align:right">10</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#thanks received by this user</td>
+</tr>
+<tr>
+<td style="text-align:right">11</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#comments received by this user</td>
+</tr>
+<tr>
+<td style="text-align:right">12</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#likes received by this user</td>
+</tr>
+<tr>
+<td style="text-align:right">13</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#dislikes received by this user</td>
+</tr>
+<tr>
+<td style="text-align:right">14</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">register type</td>
+</tr>
+<tr>
+<td style="text-align:right">15</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">register platform</td>
+</tr>
+<tr>
+<td style="text-align:right">16</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">from android or not</td>
+</tr>
+<tr>
+<td style="text-align:right">17</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">from iphone or not</td>
+</tr>
+<tr>
+<td style="text-align:right">18</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">from ipad or not</td>
+</tr>
+<tr>
+<td style="text-align:right">19</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">from pc or not</td>
+</tr>
+<tr>
+<td style="text-align:right">20</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">from mobile web or not</td>
+</tr>
+<tr>
+<td style="text-align:right">21</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">device model</td>
+</tr>
+<tr>
+<td style="text-align:right">22</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">device brand</td>
+</tr>
+<tr>
+<td style="text-align:right">23</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">platform</td>
+</tr>
+<tr>
+<td style="text-align:right">24</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">province</td>
+</tr>
+<tr>
+<td style="text-align:right">25</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">city</td>
+</tr>
+<tr>
+<td style="text-align:right">26</td>
+<td style="text-align:center">$\sqrt{}$</td>
+<td style="text-align:left">topic IDs followed by this user (separated by spaces)</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h3 id="info_answercsv"><code>info_answer.csv</code></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">Index</th>
+<th style="text-align:center">Nullable</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">answer ID</td>
+</tr>
+<tr>
+<td style="text-align:right">1</td>
+<td style="text-align:center">$\sqrt{}$</td>
+<td style="text-align:left">question ID</td>
+</tr>
+<tr>
+<td style="text-align:right">2</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">anonymous or not</td>
+</tr>
+<tr>
+<td style="text-align:right">3</td>
+<td style="text-align:center">$\sqrt{}$</td>
+<td style="text-align:left">author ID (null for anonymous)</td>
+</tr>
+<tr>
+<td style="text-align:right">4</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">labeled high-value answer or not</td>
+</tr>
+<tr>
+<td style="text-align:right">5</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">recommended by the editor or not</td>
+</tr>
+<tr>
+<td style="text-align:right">6</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">create timestamp</td>
+</tr>
+<tr>
+<td style="text-align:right">7</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">contain pictures or not</td>
+</tr>
+<tr>
+<td style="text-align:right">8</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">contain videos or not</td>
+</tr>
+<tr>
+<td style="text-align:right">9</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#thanks</td>
+</tr>
+<tr>
+<td style="text-align:right">10</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#likes</td>
+</tr>
+<tr>
+<td style="text-align:right">11</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#comments</td>
+</tr>
+<tr>
+<td style="text-align:right">12</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#collections</td>
+</tr>
+<tr>
+<td style="text-align:right">13</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#dislikes</td>
+</tr>
+<tr>
+<td style="text-align:right">14</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#reports</td>
+</tr>
+<tr>
+<td style="text-align:right">15</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#helpless</td>
+</tr>
+<tr>
+<td style="text-align:right">16</td>
+<td style="text-align:center">$\sqrt{}$</td>
+<td style="text-align:left">token IDs in the answer (separated by spaces)</td>
+</tr>
+<tr>
+<td style="text-align:right">17</td>
+<td style="text-align:center">$\sqrt{}$</td>
+<td style="text-align:left">topic IDs of the answer (separated by spaces)</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h3 id="info_questioncsv"><code>info_question.csv</code></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">Index</th>
+<th style="text-align:center">Nullable</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">question ID</td>
+</tr>
+<tr>
+<td style="text-align:right">1</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">create timestamp</td>
+</tr>
+<tr>
+<td style="text-align:right">2</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#answers</td>
+</tr>
+<tr>
+<td style="text-align:right">3</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#followers</td>
+</tr>
+<tr>
+<td style="text-align:right">4</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#invitations</td>
+</tr>
+<tr>
+<td style="text-align:right">5</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#comments</td>
+</tr>
+<tr>
+<td style="text-align:right">6</td>
+<td style="text-align:center">$\sqrt{}$</td>
+<td style="text-align:left">token IDs in the question (separated by spaces)</td>
+</tr>
+<tr>
+<td style="text-align:right">7</td>
+<td style="text-align:center">$\sqrt{}$</td>
+<td style="text-align:left">topic IDs of the queation (separated by spaces)</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h3 id="info_authorcsv"><code>info_author.csv</code></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">Index</th>
+<th style="text-align:center">Nullable</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">author ID</td>
+</tr>
+<tr>
+<td style="text-align:right">1</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">is excellent author or not</td>
+</tr>
+<tr>
+<td style="text-align:right">2</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">#followers</td>
+</tr>
+<tr>
+<td style="text-align:right">3</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">is excellent answerer or not</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h3 id="info_topiccsv"><code>info_topic.csv</code></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">Index</th>
+<th style="text-align:center">Nullable</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">topic ID</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h3 id="info_tokencsv"><code>info_token.csv</code></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">Index</th>
+<th style="text-align:center">Nullable</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">token ID *</td>
+</tr>
+<tr>
+<td style="text-align:right">1</td>
+<td style="text-align:center"></td>
+<td style="text-align:left">word vector trained by word2vec (64 dimensions, separated by spaces)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>* ZhihuRec can&rsquo;t provide the corresponding text of tokens for privacy reasons. Researchers can use word vectors in the dataset or train word vectors from scratch.</p>
+</blockquote>
+<p><br><br></p>
+<h2 id="引用说明">引用说明</h2>
+<p>ZhihuRec dataset can be downloaded from <a href="https://cloud.tsinghua.edu.cn/d/d6c045c55aa14bb39ebc/">here</a>, and it is for the paper:</p>
+<p><a href="https://arxiv.org/abs/2106.06467">Bin Hao, Min Zhang, Weizhi Ma, Shaoyun Shi, Xinxing Yu, Houzhi Shan, Yiqun Liu and Shaoping Ma, 2021, A Large-Scale Rich Context Query and Recommendation Dataset in Online Knowledge-Sharing. arXiv preprint arXiv:2106.06467.</a></p>
+<p>please cite the paper if you use this dataset:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">@misc{hao2021largescale,
+      title={A Large-Scale Rich Context Query and Recommendation Dataset in Online Knowledge-Sharing},
+      author={Bin Hao and Min Zhang and Weizhi Ma and Shaoyun Shi and Xinxing Yu and Houzhi Shan and Yiqun Liu and Shaoping Ma},
+      year={2021},
+      eprint={2106.06467},
+      archivePrefix={arXiv},
+      primaryClass={cs.IR}
+}
+</code></pre></div><p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>数据集 | 585w企业工商注册信息</title>
       <link>https://hidadeng.github.io/blog/2022-12-07-585w-chinese-enterprise-registration-data/</link>
       <pubDate>Tue, 06 Dec 2022 00:00:00 +0000</pubDate>
