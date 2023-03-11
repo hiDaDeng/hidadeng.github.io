@@ -5,8 +5,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
-<title>backtrader库|简单均线买入卖出策略 | 大邓和他的PYTHON</title>
-<meta name="keywords" content="量化, 第三方包, 金融" />
+<title>backtrader库 | 简单均线买入卖出策略 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="Python, backtrader, 金融, 投资, 量化, quant" />
 <meta name="description" content="忙活几年不亏不赚可还行">
 <meta name="author" content="大邓">
 <link rel="canonical" href="/blog/backtrader_demo/" />
@@ -59,7 +59,7 @@
         }
 
     </style>
-</noscript><meta property="og:title" content="backtrader库|简单均线买入卖出策略" />
+</noscript><meta property="og:title" content="backtrader库 | 简单均线买入卖出策略" />
 <meta property="og:description" content="忙活几年不亏不赚可还行" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/blog/backtrader_demo/" />
@@ -69,7 +69,7 @@
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="/images/blog/pythonfinance.png" />
-<meta name="twitter:title" content="backtrader库|简单均线买入卖出策略"/>
+<meta name="twitter:title" content="backtrader库 | 简单均线买入卖出策略"/>
 <meta name="twitter:description" content="忙活几年不亏不赚可还行"/>
 
 
@@ -87,7 +87,7 @@
     {
       "@type": "ListItem",
       "position":  1 ,
-      "name": "backtrader库|简单均线买入卖出策略",
+      "name": "backtrader库 | 简单均线买入卖出策略",
       "item": "/blog/backtrader_demo/"
     }
   ]
@@ -97,11 +97,11 @@
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "backtrader库|简单均线买入卖出策略",
-  "name": "backtrader库|简单均线买入卖出策略",
+  "headline": "backtrader库 | 简单均线买入卖出策略",
+  "name": "backtrader库 | 简单均线买入卖出策略",
   "description": "忙活几年不亏不赚可还行",
   "keywords": [
-    "量化", "第三方包", "金融"
+    "Python", "backtrader", "金融", "投资", "量化", "quant"
   ],
   "articleBody": "Backtrader是用于量化回测的python框架，作者是德国人Daniel Rodriguez。相比于zipline等量化回测平台，backtrader是一个易懂、易上手的量化投资框架，今天我们试着用Backtrader进行简单的均线买入卖出量化策略回溯，即5日均线上穿20日均线，则表示股票处于强势，买入。反之，处于弱势，卖出。\n下载 点击下载本文代码数据\n安装 pip3 install backtrader \n快速入门   买入：MA5上穿MA20， 即五日价格移动平均线(MA5)和二十日价格移动平均线(MA20)， 最近处于涨势\n  卖出：MA20下穿MA5， 即五日价格移动平均线(MA5)和二十日价格移动平均线(MA20)， 最近处于涨势\n  import datetime import backtrader as bt if __name__ == \"__main__\": #初始化 cerebro = bt.Cerebro() #设定初始资金 cerebro.broker.setcash(100000.0) #策略执行前的资金 print('启动资金: {}'.format(cerebro.broker.getvalue())) #策略执行 cerebro.run() #策略执行前的资金 print('启动资金: {}'.format(cerebro.broker.getvalue())) 启动资金: 100000.0 启动资金: 100000.0  每次股票交易，证券经纪人会收取一定的佣金，如万三（每一万元交易收三元）即0.003\ncerebro.broker.setcommission(0.003) 交易会有最小的购买/卖出份额，一般一手100股\ncerebro.addsizer(bt.sizers.FixedSize, stake=100) \n加载数据   前复权：保持当前价格不变，将历史价格进行增减，从而使股价连续。 前复权用来看盘非常方便，能一眼看出股价的历史走势，叠加各种技术指标也比较顺畅，是各种行情软件默认的复权方式。 这种方法虽然很常见，但也有两个缺陷需要注意。\n 为了保证当前价格不变，每次股票除权除息，均需要重新调整历史价格，因此其历史价格是时变的。 这会导致在不同时点看到的历史前复权价可能出现差异。 对于有持续分红的公司来说，前复权价可能出现负值。    后复权 ：保证历史价格不变，在每次股票权益事件发生后，调整当前的股票价格。 后复权价格和真实股票价格可能差别较大，不适合用来看盘。 其优点在于，可以被看作投资者的长期财富增长曲线，反映投资者的真实收益率情况。\n  在量化投资研究中普遍采用后复权数据，使用 https://github.com/mpquant/Ashare 下载的股票数据\nBacktrader将数据集称作数据流Data Feeds, 默认数据集是yahoo的股票数据，通过以下代码即可加载:\n# 创建数据 data = bt.feeds.YahooFinanceCSVData( dataname='sz000725.csv', datetime=0, open=1, high=2, low=3, close=4, volume=5, dtformat=('%Y-%m-%d'), fromdate = datetime.datetime(2014, 7, 11), todate = datetime.datetime(2021, 12, 1) ) \n添加指标 backtrader中内置了许多计算值表，比如移动平滑线、MACD、RSI等等， 我们这一篇文章仅需要移动平均线MA， 设置方法如下\nself.sma5 = bt.indicators.MovingAverageSimple(self.datas[0], period=5) self.sma20 = bt.indicators.MovingAverageSimple(self.datas[0], period=20) datas[0]是第一个数据集， period是指多少天的移动平均线，比如5，则返回MA5的相关数据。\n构建策略 使用backtrader构建策略是一件很简单的事情， 继承backtrader的策略类，并重写部分方法，就能实现策略。比如\n 重写属于我们自己的log函数 均线金叉死叉策略  class TestStrategy(bt.Strategy): \"\"\" 继承并构建自己的策略 \"\"\" def log(self, txt, dt=None, doprint=False): \"日志函数，用于统一输出日志格式\" if doprint: dt = dt or self.datas[0].datetime.date(0) print('{}, {}'.format(dt.isoformat(), txt)) def __init__(self): # 初始化相关数据 self.dataclose = self.datas[0].close self.order = None self.buyprice = None self.buycomm = None # 移动平均线初始化 self.sma5 = bt.indicators.MovingAverageSimple(self.datas[0], period=5) self.sma20 = bt.indicators.MovingAverageSimple(self.datas[0], period=20) def notify_order(self, order): \"\"\" 订单状态处理 Arguments: order {object}-- 订单状态 \"\"\" if order.status in [order.Submitted, order.Accepted]: # 如订单已被处理，则不用做任何事情 return # 检查订单是否完成 if order.status in [order.Completed]: if order.isbuy(): self.buyprice = order.executed.price self.buycomm = order.executed.comm self.bar_executed = len(self) # 订单因为缺少资金之类的原因被拒绝执行 elif order.status in [order.Canceled, order.Margin, order.Rejected]: self.log('Order Canceled/Margin/Rejected') # 订单状态处理完成，设为空 self.order = None def notify_trade(self, trade): \"\"\" 交易成果 Arguments: trade {object}-- 交易状态 \"\"\" if not trade.isclosed: return # 显示交易的毛利率和净利润 self.log('OPERATION PROFIT, GROSS {}, NET {}'.format(trade.pnl, trade.pnlcomm), doprint=True) def next(self): ''' 下一次执行 ''' # 记录收盘价 self.log('Close, {}'.format(self.dataclose[0])) # 是否正在下单，如果是的话不能提交第二次订单 if self.order: return # 是否已经买入 if not self.position: # 还没买，如果 MA5  MA10 说明涨势，买入 if self.sma5[0]  self.sma20[0]: self.order = self.buy() else: # 已经买了，如果 MA5 if self.sma5[0]  self.sma20[0]: self.order = self.sell() #def stop(self): #self.log(u'(金叉死叉有用吗) Ending Value {}'.format(self.broker.getvalue()), doprint=True) \n策略回测 为了验证我们开头提到的策略，咱使用了 京东方sz000725 在2014年7月11日至今2021年12月3日的股票数据，将数据命名为sz000725.csv, 我们先用pandas审查下csv\nimport pandas as pd df = pd.read_csv('data/sz000725.csv') df.head() | | Unnamed: 0 | date | open | high | low | close | volume | |---:|-------------:|------------:|-------:|-------:|------:|--------:|------------:| | 0 | 0 | 2.01407e+07 | 2.17 | 2.2 | 2.16 | 2.19 | 7.49341e+07 | | 1 | 1 | 2.01407e+07 | 2.18 | 2.2 | 2.17 | 2.2 | 8.10931e+07 | | 2 | 2 | 2.01407e+07 | 2.19 | 2.21 | 2.18 | 2.2 | 8.19694e+07 | | 3 | 3 | 2.01407e+07 | 2.2 | 2.21 | 2.19 | 2.21 | 7.96481e+07 | | 4 | 4 | 2.01407e+07 | 2.2 | 2.21 | 2.19 | 2.21 | 8.75106e+07 | 在backtrader中，使用GenericCSVData函数来加载csv，需要注明日期始末、open/high/low/close/volume等字段在csv中的列数(第几列，从0开始，0表示第一列)\nimport backtrader as bt import datetime if __name__ == \"__main__\": # 初始化模型 cerebro = bt.Cerebro() init_cash = 100000.0 fromdate = datetime.datetime(2014, 7, 11) todate = datetime.datetime(2021, 12, 3) #构建策略 strategy = cerebro.addstrategy(TestStrategy) #每次买100股 cerebro.addsizer(bt.sizers.FixedSize, stake=100) #加载数据到模型 data = bt.feeds.GenericCSVData( dataname='data/sz000725.csv', fromdate=fromdate, todate=todate, dtformat='%Y%m%d', datetime=1, open=2, high=3, low=4, close=5, volume=6 ) cerebro.adddata(data) # 设定初始资金和佣金 cerebro.broker.setcash(init_cash) cerebro.broker.setcommission(0.003) print('会不会玩了个寂寞？') #策略执行前的资金 print('启动资金: {}'.format(cerebro.broker.getvalue())) #策略执行 cerebro.run() #策略结束时的资金 print('策略结束时资金: {}'.format(cerebro.broker.getvalue())) duration_year = (todate-fromdate).days/360 end_value = cerebro.broker.getvalue() roi = pow(end_value/init_cash, 1/duration_year)-1 print('策略年华收益率: {}%'.format(roi*100)) 会不会玩了个寂寞？ 启动资金: 100000.0 2014-08-27, OPERATION PROFIT, GROSS -3.000000000000025, NET -4.365000000000025 2014-10-28, OPERATION PROFIT, GROSS 10.999999999999988, NET 9.568999999999988 2014-11-24, OPERATION PROFIT, GROSS -4.0000000000000036, NET -5.584000000000003 2015-01-15, OPERATION PROFIT, GROSS 52.0, NET 50.242 2015-05-08, OPERATION PROFIT, GROSS 113.00000000000003, NET 110.82500000000003 2015-07-02, OPERATION PROFIT, GROSS 25.0, NET 22.075 2015-08-25, OPERATION PROFIT, GROSS -96.0, NET -98.076 2015-11-03, OPERATION PROFIT, GROSS -8.999999999999986, NET -10.760999999999985 2015-11-30, OPERATION PROFIT, GROSS -16.000000000000014, NET -17.812000000000015 2015-12-31, OPERATION PROFIT, GROSS -8.999999999999986, NET -10.820999999999986 2016-03-14, OPERATION PROFIT, GROSS -10.999999999999988, NET -12.514999999999988 2016-04-14, OPERATION PROFIT, GROSS 0.0, NET -1.548 2016-06-16, OPERATION PROFIT, GROSS -6.000000000000005, NET -7.404000000000005 2016-07-28, OPERATION PROFIT, GROSS 0.0, NET -1.404 2016-09-08, OPERATION PROFIT, GROSS 8.000000000000007, NET 6.566000000000007 2016-12-19, OPERATION PROFIT, GROSS 31.999999999999986, NET 30.421999999999986 2017-02-10, OPERATION PROFIT, GROSS 14.000000000000012, NET 12.110000000000012 2017-02-20, OPERATION PROFIT, GROSS -4.999999999999982, NET -6.940999999999982 2017-03-06, OPERATION PROFIT, GROSS -10.999999999999988, NET -12.976999999999988 2017-05-12, OPERATION PROFIT, GROSS 44.99999999999997, NET 42.86699999999997 2017-06-01, OPERATION PROFIT, GROSS -22.00000000000002, NET -24.38200000000002 2017-07-13, OPERATION PROFIT, GROSS -14.000000000000012, NET -16.406000000000013 2017-09-18, OPERATION PROFIT, GROSS -2.9999999999999805, NET -5.31899999999998 2017-11-27, OPERATION PROFIT, GROSS 153.00000000000003, NET 150.12900000000002 2018-01-08, OPERATION PROFIT, GROSS -8.000000000000007, NET -11.360000000000007 2018-02-01, OPERATION PROFIT, GROSS 2.000000000000046, NET -1.6419999999999533 2018-03-23, OPERATION PROFIT, GROSS -25.0, NET -28.303 2018-08-07, OPERATION PROFIT, GROSS -12.00000000000001, NET -14.124000000000011 2018-09-04, OPERATION PROFIT, GROSS -27.0, NET -29.115000000000002 2018-11-26, OPERATION PROFIT, GROSS -14.000000000000012, NET -15.668000000000012 2019-01-29, OPERATION PROFIT, GROSS -4.999999999999982, NET -6.598999999999982 2019-03-15, OPERATION PROFIT, GROSS 70.00000000000001, NET 67.90000000000002 2019-04-12, OPERATION PROFIT, GROSS -15.99999999999997, NET -18.35799999999997 2019-04-29, OPERATION PROFIT, GROSS -14.999999999999991, NET -17.34299999999999 2019-06-06, OPERATION PROFIT, GROSS -5.000000000000027, NET -7.043000000000027 2019-06-19, OPERATION PROFIT, GROSS 4.999999999999982, NET 2.9509999999999823 2019-08-07, OPERATION PROFIT, GROSS 36.999999999999964, NET 34.84299999999996 2019-08-30, OPERATION PROFIT, GROSS -10.999999999999988, NET -13.282999999999987 2019-09-27, OPERATION PROFIT, GROSS -41.99999999999995, NET -44.35799999999995 2020-02-04, OPERATION PROFIT, GROSS 30.00000000000003, NET 27.67200000000003 2020-03-06, OPERATION PROFIT, GROSS 9.999999999999964, NET 7.017999999999965 2020-05-28, OPERATION PROFIT, GROSS -25.0, NET -27.301000000000002 2020-07-21, OPERATION PROFIT, GROSS 54.999999999999986, NET 52.25499999999999 2020-09-14, OPERATION PROFIT, GROSS 52.999999999999936, NET 50.002999999999936 2020-10-19, OPERATION PROFIT, GROSS -5.999999999999961, NET -8.98199999999996 2020-12-10, OPERATION PROFIT, GROSS 2.000000000000046, NET -1.083999999999954 2021-02-02, OPERATION PROFIT, GROSS 66.00000000000001, NET 62.454000000000015 2021-03-03, OPERATION PROFIT, GROSS -13.000000000000078, NET -16.67500000000008 2021-03-11, OPERATION PROFIT, GROSS -33.999999999999986, NET -37.64199999999999 2021-05-12, OPERATION PROFIT, GROSS 31.00000000000005, NET 27.12700000000005 2021-07-06, OPERATION PROFIT, GROSS -33.00000000000001, NET -36.717000000000006 2021-07-26, OPERATION PROFIT, GROSS -34.999999999999964, NET -38.70499999999996 2021-09-17, OPERATION PROFIT, GROSS -21.999999999999975, NET -25.467999999999975 2021-11-22, OPERATION PROFIT, GROSS -7.000000000000028, NET -9.979000000000028 策略结束时资金: 100120.964 策略年华收益率: 0.016108152552885002%  策略可视化 from backtrader_plotting import Bokeh from backtrader_plotting.schemes import Tradimo b = Bokeh(style='bar', plot_mode='single', scheme=Tradimo()) cerebro.plot(b)    广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
   "wordCount" : "881",
@@ -237,7 +237,7 @@ onload="renderMathInElement(document.body);"></script>
     
     <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
     <h1 class="post-title">
-      backtrader库|简单均线买入卖出策略
+      backtrader库 | 简单均线买入卖出策略
     </h1>
     <div class="post-meta"><span title='2021-12-03 20:40:10 +0600 +0600'>2021-12-03</span>&nbsp;·&nbsp;5 min&nbsp;·&nbsp;大邓
 
@@ -248,43 +248,43 @@ onload="renderMathInElement(document.body);"></script>
         
 </figure>
 <div class="share-buttons">
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on twitter"
-        href="https://twitter.com/intent/tweet/?text=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;url=%2fblog%2fbacktrader_demo%2f&amp;hashtags=%e9%87%8f%e5%8c%96%2c%e7%ac%ac%e4%b8%89%e6%96%b9%e5%8c%85%2c%e9%87%91%e8%9e%8d">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on twitter"
+        href="https://twitter.com/intent/tweet/?text=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;url=%2fblog%2fbacktrader_demo%2f&amp;hashtags=%e7%ac%ac%e4%b8%89%e6%96%b9%e5%ba%93">
         <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
             <path
                 d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
         </svg>
     </a>
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on linkedin"
-        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2fbacktrader_demo%2f&amp;title=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;summary=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;source=%2fblog%2fbacktrader_demo%2f">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2fbacktrader_demo%2f&amp;title=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;summary=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;source=%2fblog%2fbacktrader_demo%2f">
         <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
             <path
                 d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
         </svg>
     </a>
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on reddit"
-        href="https://reddit.com/submit?url=%2fblog%2fbacktrader_demo%2f&title=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2fbacktrader_demo%2f&title=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5">
         <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
             <path
                 d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
         </svg>
     </a>
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on facebook"
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on facebook"
         href="https://facebook.com/sharer/sharer.php?u=%2fblog%2fbacktrader_demo%2f">
         <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
             <path
                 d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
         </svg>
     </a>
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on whatsapp"
-        href="https://api.whatsapp.com/send?text=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5%20-%20%2fblog%2fbacktrader_demo%2f">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on whatsapp"
+        href="https://api.whatsapp.com/send?text=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5%20-%20%2fblog%2fbacktrader_demo%2f">
         <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
             <path
                 d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
         </svg>
     </a>
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on telegram"
-        href="https://telegram.me/share/url?text=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;url=%2fblog%2fbacktrader_demo%2f">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on telegram"
+        href="https://telegram.me/share/url?text=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;url=%2fblog%2fbacktrader_demo%2f">
         <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
             <path
                 d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
@@ -711,50 +711,48 @@ onload="renderMathInElement(document.body);"></script>
   <footer class="post-footer">
       <ul class="post-tags">
         <b>Tags:  &nbsp;</b>
-        <li><a href="/tags/%E9%87%8F%E5%8C%96/" target='_blank'>量化</a></li>
-        <li><a href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/" target='_blank'>第三方包</a></li>
-        <li><a href="/tags/%E9%87%91%E8%9E%8D/" target='_blank'>金融</a></li>
+        <li><a href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93/" target='_blank'>第三方库</a></li>
       </ul>
 
 
 <div class="share-buttons">
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on twitter"
-        href="https://twitter.com/intent/tweet/?text=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;url=%2fblog%2fbacktrader_demo%2f&amp;hashtags=%e9%87%8f%e5%8c%96%2c%e7%ac%ac%e4%b8%89%e6%96%b9%e5%8c%85%2c%e9%87%91%e8%9e%8d">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on twitter"
+        href="https://twitter.com/intent/tweet/?text=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;url=%2fblog%2fbacktrader_demo%2f&amp;hashtags=%e7%ac%ac%e4%b8%89%e6%96%b9%e5%ba%93">
         <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
             <path
                 d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
         </svg>
     </a>
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on linkedin"
-        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2fbacktrader_demo%2f&amp;title=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;summary=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;source=%2fblog%2fbacktrader_demo%2f">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2fbacktrader_demo%2f&amp;title=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;summary=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;source=%2fblog%2fbacktrader_demo%2f">
         <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
             <path
                 d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
         </svg>
     </a>
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on reddit"
-        href="https://reddit.com/submit?url=%2fblog%2fbacktrader_demo%2f&title=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2fbacktrader_demo%2f&title=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5">
         <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
             <path
                 d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
         </svg>
     </a>
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on facebook"
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on facebook"
         href="https://facebook.com/sharer/sharer.php?u=%2fblog%2fbacktrader_demo%2f">
         <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
             <path
                 d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
         </svg>
     </a>
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on whatsapp"
-        href="https://api.whatsapp.com/send?text=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5%20-%20%2fblog%2fbacktrader_demo%2f">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on whatsapp"
+        href="https://api.whatsapp.com/send?text=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5%20-%20%2fblog%2fbacktrader_demo%2f">
         <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
             <path
                 d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
         </svg>
     </a>
-    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库|简单均线买入卖出策略 on telegram"
-        href="https://telegram.me/share/url?text=backtrader%e5%ba%93%7c%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;url=%2fblog%2fbacktrader_demo%2f">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share backtrader库 | 简单均线买入卖出策略 on telegram"
+        href="https://telegram.me/share/url?text=backtrader%e5%ba%93%20%7c%20%e7%ae%80%e5%8d%95%e5%9d%87%e7%ba%bf%e4%b9%b0%e5%85%a5%e5%8d%96%e5%87%ba%e7%ad%96%e7%95%a5&amp;url=%2fblog%2fbacktrader_demo%2f">
         <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
             <path
                 d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
