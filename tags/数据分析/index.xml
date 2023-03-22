@@ -6,7 +6,222 @@
     <description>Recent content in 数据分析 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 11 Mar 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 22 Mar 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>可视化 | 睡前消息的科学社会、科学技术、社会化抚养话题可视化</title>
+      <link>https://textdata.cn/blog/2023-03-22-bedtime-topic_model_visualization/</link>
+      <pubDate>Wed, 22 Mar 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-03-22-bedtime-topic_model_visualization/</guid>
+      <description>睡前消息是我最喜欢看的节目， 基本上隔两天不看睡不踏实。本次分享，不涉及观点之争，纯属技术玩乐。</description>
+      <content:encoded><![CDATA[<p>我的信仰是科学的唯物史观，虽然一直觉得爷爷是伟人，但是没有系统钻研小本本，所以似懂非懂，好在有睡前消息这个节目，可以时不时的聆听到半个世纪前的伟人智慧。</p>
+<p><img loading="lazy" src="img/df4.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/%e7%a7%91%e5%ad%a6%e7%a4%be%e4%bc%9a.png" alt=""  />
+</p>
+<br>
+<h2 id="一读取数据">一、读取数据</h2>
+<p>睡前消息是我最喜欢看的节目， 基本上隔两天不看睡不踏实。本次分享，不涉及观点之争，纯属技术玩乐。</p>
+<p><a href="https://textdata.cn/blog/2023-03-06-bedtime-news-datasets/">数据集 | 马前卒工作室睡前消息文稿汇总</a></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+<span class="n">bed_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;bedtime_news.csv&#39;</span><span class="p">,</span> <span class="n">converters</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;date&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">})</span>
+<span class="n">bed_df</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">bed_df</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+<span class="n">bed_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df1.png" alt=""  />
+</p>
+<Br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#数据集起始日期</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">bed_df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())[:</span><span class="mi">10</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">bed_df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())[:</span><span class="mi">10</span><span class="p">])</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2019-07-12
+2022-11-29
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#数据集含有的节目数</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">bed_df</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">522
+</code></pre></div><br>
+<br>
+<h2 id="二准备工作">二、准备工作</h2>
+<h3 id="21-自定义词典">2.1 自定义词典</h3>
+<ul>
+<li>科学、技术</li>
+<li>社会化抚养</li>
+<li>债务、独山县</li>
+<li>中医、以岭药业</li>
+</ul>
+<p>将感兴趣的词加入到jieba自定义词典中，防止被错分。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
+
+<span class="n">diywords</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;科学&#39;</span><span class="p">,</span> <span class="s1">&#39;技术&#39;</span><span class="p">,</span> <span class="s1">&#39;社会化抚养&#39;</span><span class="p">,</span> <span class="s1">&#39;债务&#39;</span><span class="p">,</span> <span class="s1">&#39;独山县&#39;</span><span class="p">,</span> <span class="s1">&#39;毛选&#39;</span><span class="p">,</span> <span class="s1">&#39;唯物&#39;</span><span class="p">,</span> <span class="s1">&#39;社会实验&#39;</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">diywords</span><span class="p">:</span>
+    <span class="n">jieba</span><span class="o">.</span><span class="n">add_word</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+</code></pre></div><br>
+<h3 id="22-word_in_context">2.2 word_in_context</h3>
+<p>在这里定义了一个word_in_context函数，可以查看某些关键词上下文环境。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">nltk.tokenize</span> <span class="kn">import</span> <span class="n">word_tokenize</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+
+<span class="k">def</span> <span class="nf">word_in_context</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">keywords</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">lang</span><span class="o">==</span><span class="s1">&#39;chinese&#39;</span><span class="p">:</span>
+        <span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">words</span> <span class="o">=</span> <span class="n">word_tokenize</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&#34;你应该安装nltk和对应的nltk_data, 请看B站https://www.bilibili.com/video/BV14A411i7DB&#34;</span><span class="p">)</span>
+            <span class="n">words</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+    <span class="n">keywords</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">keywords</span><span class="p">]</span>
+    <span class="n">kw_idxss</span> <span class="o">=</span> <span class="p">[[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">words</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="n">keyword</span><span class="p">]</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">keywords</span><span class="p">]</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">keyword</span><span class="p">,</span> <span class="n">kw_idxs</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keywords</span><span class="p">,</span> <span class="n">kw_idxss</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">kw_idxs</span><span class="p">:</span>
+            <span class="n">half</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">window</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">idx</span> <span class="o">-</span> <span class="n">half</span><span class="p">)</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">),</span> <span class="n">idx</span> <span class="o">+</span> <span class="n">half</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;keyword&#39;</span><span class="p">:</span> <span class="n">keyword</span><span class="p">,</span> 
+                   <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="n">start</span><span class="p">:</span> <span class="n">end</span><span class="p">])</span> <span class="k">if</span> <span class="n">lang</span><span class="o">==</span><span class="s1">&#39;chinese&#39;</span> <span class="k">else</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="n">start</span><span class="p">:</span> <span class="n">end</span><span class="p">])</span>
+                      <span class="p">}</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+
+<span class="c1">#测试【打算】前后上下文5个单词</span>
+<span class="n">word_in_context</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s1">&#39;根本没打算过真抓到人，当然也不打算付钱。转发推送：还有一个话题&#39;</span><span class="p">,</span> 
+                <span class="n">keywords</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;打算&#39;</span><span class="p">],</span> 
+                <span class="n">window</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> 
+                <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+</code></pre></div><br>
+<h3 id="23-词云图">2.3 词云图</h3>
+<p>pip install pyecharts==2.0.1</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">plot_wordcloud</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">pyecharts.options</span> <span class="k">as</span> <span class="nn">opts</span>
+    <span class="kn">from</span> <span class="nn">pyecharts.charts</span> <span class="kn">import</span> <span class="n">WordCloud</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;context&#39;</span><span class="p">])</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;[</span><span class="se">\u4e00</span><span class="s1">-</span><span class="se">\u9fa5</span><span class="s1">]+&#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">))</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span><span class="o">&gt;=</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">wordfreqs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">words</span><span class="p">):</span>
+        <span class="n">freq</span> <span class="o">=</span> <span class="n">words</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+        <span class="n">wordfreqs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">word</span><span class="p">,</span> <span class="n">freq</span><span class="p">))</span>
+    <span class="n">wordfreqs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">wordfreqs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">wordfreqs</span> <span class="o">=</span> <span class="p">[(</span><span class="n">w</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">))</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span><span class="n">f</span> <span class="ow">in</span> <span class="n">wordfreqs</span><span class="p">]</span>
+    <span class="n">cloud</span> <span class="o">=</span> <span class="n">WordCloud</span><span class="p">()</span>
+    <span class="n">cloud</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">series_name</span><span class="o">=</span><span class="s2">&#34;&#34;</span><span class="p">,</span> <span class="n">data_pair</span><span class="o">=</span><span class="n">wordfreqs</span><span class="p">,</span> <span class="n">word_size_range</span><span class="o">=</span><span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">100</span><span class="p">])</span>
+    <span class="n">cloud</span><span class="o">.</span><span class="n">set_global_opts</span><span class="p">(</span><span class="n">title_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">TitleOpts</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> 
+                                                    <span class="n">title_textstyle_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">TextStyleOpts</span><span class="p">(</span><span class="n">font_size</span><span class="o">=</span><span class="mi">23</span><span class="p">)),</span>
+                          <span class="n">tooltip_opts</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">TooltipOpts</span><span class="p">(</span><span class="n">is_show</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="n">cloud</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.html&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">title</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">cloud</span><span class="o">.</span><span class="n">render_notebook</span><span class="p">()</span>
+</code></pre></div><p><br><br></p>
+<h2 id="三话题分析">三、话题分析</h2>
+<p>相比LDA机器学习算法的晦涩难懂，其实可以用word_in_context对指定关键词进行定位和分析，数据处理的过程清晰透明。</p>
+<h3 id="31-topic-社会化抚养">3.1 Topic-社会化抚养</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">dfs</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">bed_df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">word_in_context</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span> 
+                            <span class="n">keywords</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;社会化抚养&#39;</span><span class="p">],</span> 
+                            <span class="n">window</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span>
+    <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    
+<span class="n">topic_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">topic_df</span>
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#涉及该主题的节目数</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">topic_df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">65
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#占比</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">topic_df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">bed_df</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0.12452107279693486
+</code></pre></div><br>
+<p>在咱们这个数据集中，睡前消息500多期节目中，有65期谈及社会化抚养的，比例12%。</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">plot_wordcloud</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="n">topic_df</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;社会化抚养&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/%e7%a4%be%e4%bc%9a%e5%8c%96%e6%8a%9a%e5%85%bb.png" alt=""  />
+</p>
+<br>
+<h3 id="32-topic-科学技术">3.2 Topic-科学技术</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">dfs2</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">bed_df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">word_in_context</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span> 
+                            <span class="n">keywords</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;科学&#39;</span><span class="p">,</span> <span class="s1">&#39;技术&#39;</span><span class="p">],</span> 
+                            <span class="n">window</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span>
+    <span class="n">dfs2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    
+<span class="n">topic_df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">topic_df2</span>
+</code></pre></div><p><img loading="lazy" src="img/df3.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#涉及该主题的节目数</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">topic_df2</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">411
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#占比</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">topic_df2</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">bed_df</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0.7873563218390804
+</code></pre></div><br>
+<p>在咱们这个数据集中，睡前消息500多期节目中，有411期谈及社会化抚养的，比例79%。</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">plot_wordcloud</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="n">topic_df</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;科学技术&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/%e7%a7%91%e5%ad%a6%e6%8a%80%e6%9c%af.png" alt=""  />
+</p>
+<br>
+<h2 id="33-科学社会">3.3 科学社会</h2>
+<p>面对社会问题，睡前消息倡导科学社会实验， 也喜欢讲毛选语录， 两者所涉及的是唯物的观点，科学社会的观点。放在一起试试</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">dfs3</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">bed_df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">word_in_context</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span> 
+                            <span class="n">keywords</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;毛选&#39;</span><span class="p">,</span> <span class="s1">&#39;唯物&#39;</span><span class="p">,</span> <span class="s1">&#39;社会实验&#39;</span><span class="p">],</span> 
+                            <span class="n">window</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span>
+    <span class="n">dfs3</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    
+<span class="n">topic_df3</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">topic_df3</span>
+</code></pre></div><p><img loading="lazy" src="img/df4.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#涉及该主题的节目数</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">topic_df3</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">14
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">len</span><span class="p">(</span><span class="n">topic_df3</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">bed_df</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0.02681992337164751
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">plot_wordcloud</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="n">topic_df3</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;科学社会&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/%e7%a7%91%e5%ad%a6%e7%a4%be%e4%bc%9a.png" alt=""  />
+</p>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>数据分析 | 使用决策树分析小红书帖子数据(含代码)</title>
       <link>https://textdata.cn/blog/2023-03-11-xiaohongshu-data-analysis/</link>
