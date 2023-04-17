@@ -6,7 +6,7 @@
     <description>Recent content in 文本分析 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Fri, 14 Apr 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 17 Apr 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>置顶推荐 | 社科(经管)文本分析资料汇总</title>
       <link>https://textdata.cn/blog/the_text_analysis_list_about_ms/</link>
@@ -546,6 +546,197 @@
     </item>
     
     <item>
+      <title>文本分析 | 词典法的两种代码实现</title>
+      <link>https://textdata.cn/blog/2023-04-17-two-method-for-liwc/</link>
+      <pubDate>Mon, 17 Apr 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-04-17-two-method-for-liwc/</guid>
+      <description>但这周末，我使用1.4G的mda数据集， 5w条记录。尝试计算某类词的出现次数， 该词典含几百个词。在我的96G内存的macbook中，运行了十几个小时都没结果。于是同一个问题，本文分享了两种实现方法。一般情况下，使用「方法一」即可。当第一种方法运行不出结果，可以尝试「方法二」。</description>
+      <content:encoded><![CDATA[<h2 id="一问题描述">一、问题描述</h2>
+<p>对csv、xlsx等类型做词典法分析，经常用到apply方法，但是之前分享到案例数据量比较小， 词典都是几个词， 一般都能运行出结果。</p>
+<blockquote>
+<p><a href="https://textdata.cn/blog/liwc_python_text_mining/">liwc其实就是一种词典法</a></p>
+</blockquote>
+<p>但这周末，我使用1.4G的mda数据集， 5w条记录。尝试计算某类词的出现次数， 该词典含几百个词。在我的96G内存的macbook中，运行了十几个小时都没结果。</p>
+<p>于是同一个问题，本文分享了两种实现方法。<strong>一般情况下，使用「方法一」即可。当第一种方法运行不出结果，可以尝试「方法二」。</strong></p>
+<p><br><br></p>
+<h2 id="二方法一">二、方法一</h2>
+<h3 id="21-读取数据">2.1 读取数据</h3>
+<p>导入含5000条记录的mda数据 test_mda.csv ，这里声明格式，防止年份和股票代码被识别为数字。</p>
+<blockquote>
+<p>如果想要完整的mda数据，可以前往购买[]</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python">
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#导入1000条测试数据</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;test_mda.csv&#39;</span><span class="p">,</span> <span class="n">converters</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">})</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df1.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div><pre><code>5000
+</code></pre>
+<br>
+<h3 id="22-准备词典">2.2 准备词典</h3>
+<p>为了节约时间，也构造了只有几个词语的词典。</p>
+<blockquote>
+<p>自己随机手写的词典，如果需要应用的自己的研究中, 请将这几个概念词典扩充的完备一些，词汇量尽可能多一些。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#创新</span>
+<span class="n">inovation_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;科技&#39;</span><span class="p">,</span> <span class="s1">&#39;研发&#39;</span><span class="p">,</span> <span class="s1">&#39;高校&#39;</span><span class="p">,</span> <span class="s1">&#39;技术&#39;</span><span class="p">,</span> <span class="s1">&#39;科学&#39;</span><span class="p">,</span> <span class="s1">&#39;理论&#39;</span><span class="p">,</span> <span class="s1">&#39;专利&#39;</span><span class="p">,</span> <span class="s1">&#39;攻克&#39;</span><span class="p">,</span> <span class="s1">&#39;改良&#39;</span><span class="p">,</span> <span class="s1">&#39;工艺&#39;</span><span class="p">,</span> <span class="s1">&#39;前沿&#39;</span><span class="p">,</span> <span class="s1">&#39;尖端&#39;</span><span class="p">]</span>
+
+<span class="c1">#环保</span>
+<span class="n">green_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;绿色&#39;</span><span class="p">,</span> <span class="s1">&#39;节能&#39;</span><span class="p">,</span> <span class="s1">&#39;低碳&#39;</span><span class="p">,</span> <span class="s1">&#39;环保&#39;</span><span class="p">,</span> <span class="s1">&#39;环境友好&#39;</span><span class="p">,</span> <span class="s1">&#39;无污染&#39;</span><span class="p">]</span>
+
+<span class="c1">#短视主义</span>
+<span class="n">push_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;加快&#39;</span><span class="p">,</span> <span class="s1">&#39;尽快&#39;</span><span class="p">,</span> <span class="s1">&#39;抓紧&#39;</span><span class="p">,</span> <span class="s1">&#39;月底&#39;</span><span class="p">,</span> <span class="s1">&#39;年底&#39;</span><span class="p">,</span> <span class="s1">&#39;争取&#39;</span><span class="p">,</span> <span class="s1">&#39;马上&#39;</span><span class="p">,</span> <span class="s1">&#39;立刻&#39;</span><span class="p">,</span> <span class="s1">&#39;年内&#39;</span><span class="p">,</span> <span class="s1">&#39;数月&#39;</span><span class="p">,</span> <span class="s1">&#39;数年&#39;</span><span class="p">]</span>
+
+<span class="c1">#模棱两可</span>
+
+<span class="n">prob_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;可能&#39;</span><span class="p">,</span> <span class="s1">&#39;大概&#39;</span><span class="p">,</span> <span class="s1">&#39;左右&#39;</span><span class="p">,</span> <span class="s1">&#39;估计&#39;</span><span class="p">,</span> <span class="s1">&#39;大约&#39;</span><span class="p">]</span>
+</code></pre></div><br>
+<h3 id="23-设计函数">2.3 设计函数</h3>
+<p>该函数能实现对 inovation_words 和  green_words两类词的词频统计;</p>
+<p>返回的结果包括总词频、green词频、 inovation词频。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#创新</span>
+<span class="n">inovation_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;科技&#39;</span><span class="p">,</span> <span class="s1">&#39;研发&#39;</span><span class="p">,</span> <span class="s1">&#39;高校&#39;</span><span class="p">,</span> <span class="s1">&#39;技术&#39;</span><span class="p">,</span> <span class="s1">&#39;科学&#39;</span><span class="p">,</span> <span class="s1">&#39;理论&#39;</span><span class="p">,</span> <span class="s1">&#39;专利&#39;</span><span class="p">,</span> <span class="s1">&#39;攻克&#39;</span><span class="p">,</span> <span class="s1">&#39;改良&#39;</span><span class="p">,</span> <span class="s1">&#39;工艺&#39;</span><span class="p">,</span> <span class="s1">&#39;前沿&#39;</span><span class="p">,</span> <span class="s1">&#39;尖端&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+<span class="c1">#环保</span>
+<span class="n">green_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;绿色&#39;</span><span class="p">,</span> <span class="s1">&#39;节能&#39;</span><span class="p">,</span> <span class="s1">&#39;低碳&#39;</span><span class="p">,</span> <span class="s1">&#39;环保&#39;</span><span class="p">,</span> <span class="s1">&#39;环境友好&#39;</span><span class="p">,</span> <span class="s1">&#39;无污染&#39;</span><span class="p">]</span>
+<span class="c1">#短视主义</span>
+<span class="n">push_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;加快&#39;</span><span class="p">,</span> <span class="s1">&#39;尽快&#39;</span><span class="p">,</span> <span class="s1">&#39;抓紧&#39;</span><span class="p">,</span> <span class="s1">&#39;月底&#39;</span><span class="p">,</span> <span class="s1">&#39;年底&#39;</span><span class="p">,</span> <span class="s1">&#39;争取&#39;</span><span class="p">,</span> <span class="s1">&#39;马上&#39;</span><span class="p">,</span> <span class="s1">&#39;立刻&#39;</span><span class="p">,</span> <span class="s1">&#39;年内&#39;</span><span class="p">,</span> <span class="s1">&#39;数月&#39;</span><span class="p">,</span> <span class="s1">&#39;数年&#39;</span><span class="p">]</span>
+<span class="c1">#模棱两可</span>
+<span class="n">prob_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;可能&#39;</span><span class="p">,</span> <span class="s1">&#39;大概&#39;</span><span class="p">,</span> <span class="s1">&#39;左右&#39;</span><span class="p">,</span> <span class="s1">&#39;估计&#39;</span><span class="p">,</span> <span class="s1">&#39;大约&#39;</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">analysis_info</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">inovation_num</span><span class="p">,</span> <span class="n">green_num</span><span class="p">,</span> <span class="n">push_num</span><span class="p">,</span> <span class="n">prob_num</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="n">push_num</span> 
+    
+    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">inovation_words</span><span class="p">:</span>
+        <span class="n">inovation_num</span> <span class="o">=</span> <span class="n">inovation_num</span> <span class="o">+</span> <span class="n">words</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">green_words</span><span class="p">:</span>
+        <span class="n">green_num</span> <span class="o">=</span> <span class="n">green_num</span> <span class="o">+</span> <span class="n">words</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        
+    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">push_words</span><span class="p">:</span>
+        <span class="n">push_num</span> <span class="o">=</span> <span class="n">push_num</span> <span class="o">+</span> <span class="n">words</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        
+    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">prob_words</span><span class="p">:</span>
+        <span class="n">prob_num</span> <span class="o">=</span> <span class="n">prob_num</span> <span class="o">+</span> <span class="n">words</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        
+    <span class="n">res</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;words&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">),</span>
+        <span class="s1">&#39;inovation&#39;</span><span class="p">:</span> <span class="n">inovation_num</span><span class="p">,</span>
+        <span class="s1">&#39;green&#39;</span><span class="p">:</span> <span class="n">green_num</span><span class="p">,</span>
+        <span class="s1">&#39;push&#39;</span><span class="p">:</span> <span class="n">push_num</span><span class="p">,</span>
+        <span class="s1">&#39;prob&#39;</span><span class="p">:</span> <span class="n">prob_num</span>
+    <span class="p">}</span>
+    
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+<span class="n">analysis_info</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s1">&#39;2022年是公司规范运作，坚持科技创新，保持持续发展。&#39;</span><span class="p">)</span>
+</code></pre></div><pre><code>words        15
+inovation     2
+green         0
+push          0
+prob          0
+dtype: int64
+</code></pre>
+<br>
+<h3 id="24-批量计算">2.4 批量计算</h3>
+<p>选中text列，对该列批量运行 analysis_info 。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="n">info_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">analysis_info</span><span class="p">)</span>
+<span class="n">res_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">info_df</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;耗时 </span><span class="si">{}</span><span class="s1"> s&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)))</span>
+
+<span class="n">res_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">耗时 112 s
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三方法二">三、方法二</h2>
+<p>将中文分词后， 使用bag-of-words构造词语词频矩阵</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span> 
+<span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="kn">import</span> <span class="n">CountVectorizer</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">jieba</span>
+
+<span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;new_text&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">text</span><span class="p">:</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">jieba</span><span class="o">.</span><span class="n">cut</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span>
+
+<span class="n">vectorize</span> <span class="o">=</span> <span class="n">CountVectorizer</span><span class="p">()</span>
+<span class="n">dtm</span> <span class="o">=</span> <span class="n">vectorize</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">new_text</span><span class="p">)</span>
+<span class="n">bagofword_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dtm</span><span class="o">.</span><span class="n">toarray</span><span class="p">(),</span> 
+                            <span class="n">columns</span><span class="o">=</span><span class="n">vectorize</span><span class="o">.</span><span class="n">get_feature_names_out</span><span class="p">())</span> 
+
+
+<span class="c1">#创新</span>
+<span class="n">inovation_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;科技&#39;</span><span class="p">,</span> <span class="s1">&#39;研发&#39;</span><span class="p">,</span> <span class="s1">&#39;高校&#39;</span><span class="p">,</span> <span class="s1">&#39;技术&#39;</span><span class="p">,</span> <span class="s1">&#39;科学&#39;</span><span class="p">,</span> <span class="s1">&#39;理论&#39;</span><span class="p">,</span> <span class="s1">&#39;专利&#39;</span><span class="p">,</span> <span class="s1">&#39;攻克&#39;</span><span class="p">,</span> <span class="s1">&#39;改良&#39;</span><span class="p">,</span> <span class="s1">&#39;工艺&#39;</span><span class="p">,</span> <span class="s1">&#39;前沿&#39;</span><span class="p">,</span> <span class="s1">&#39;尖端&#39;</span><span class="p">]</span>
+<span class="c1">#环保</span>
+<span class="n">green_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;绿色&#39;</span><span class="p">,</span> <span class="s1">&#39;节能&#39;</span><span class="p">,</span> <span class="s1">&#39;低碳&#39;</span><span class="p">,</span> <span class="s1">&#39;环保&#39;</span><span class="p">,</span> <span class="s1">&#39;环境友好&#39;</span><span class="p">,</span> <span class="s1">&#39;无污染&#39;</span><span class="p">]</span>
+<span class="c1">#短视主义</span>
+<span class="n">push_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;加快&#39;</span><span class="p">,</span> <span class="s1">&#39;尽快&#39;</span><span class="p">,</span> <span class="s1">&#39;抓紧&#39;</span><span class="p">,</span> <span class="s1">&#39;月底&#39;</span><span class="p">,</span> <span class="s1">&#39;年底&#39;</span><span class="p">,</span> <span class="s1">&#39;争取&#39;</span><span class="p">,</span> <span class="s1">&#39;马上&#39;</span><span class="p">,</span> <span class="s1">&#39;立刻&#39;</span><span class="p">,</span> <span class="s1">&#39;年内&#39;</span><span class="p">,</span> <span class="s1">&#39;数月&#39;</span><span class="p">,</span> <span class="s1">&#39;数年&#39;</span><span class="p">]</span>
+<span class="c1">#模棱两可</span>
+<span class="n">prob_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;可能&#39;</span><span class="p">,</span> <span class="s1">&#39;大概&#39;</span><span class="p">,</span> <span class="s1">&#39;左右&#39;</span><span class="p">,</span> <span class="s1">&#39;估计&#39;</span><span class="p">,</span> <span class="s1">&#39;大约&#39;</span><span class="p">]</span>
+
+<span class="n">INOVATION_WORDS</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">inovation_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">bagofword_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+<span class="n">GREEN_WORDS</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">green_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">bagofword_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+<span class="n">PUSH_WORDS</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">push_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">bagofword_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+<span class="n">PROB_WORDS</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">prob_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">bagofword_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span>
+        
+        <span class="s1">&#39;inovation&#39;</span><span class="p">:</span> <span class="n">bagofword_df</span><span class="p">[</span><span class="n">INOVATION_WORDS</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s1">&#39;green&#39;</span><span class="p">:</span> <span class="n">bagofword_df</span><span class="p">[</span><span class="n">GREEN_WORDS</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s1">&#39;push&#39;</span><span class="p">:</span> <span class="n">bagofword_df</span><span class="p">[</span><span class="n">PUSH_WORDS</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s1">&#39;prob&#39;</span><span class="p">:</span> <span class="n">bagofword_df</span><span class="p">[</span><span class="n">PROB_WORDS</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s1">&#39;words&#39;</span><span class="p">:</span> <span class="n">bagofword_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="nb">sum</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">}</span>
+
+
+<span class="n">res_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;耗时 </span><span class="si">{}</span><span class="s1"> s&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)))</span>
+
+<span class="n">res_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">耗时 164 s
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="四讨论">四、讨论</h2>
+<p>analysis_info(text) 函数内含有4个for循环，for循环是效率很低的操作。 随着所要计算的词典数n的增加， 方法一时间会随着n的增长而线性增长。</p>
+<p>而方法二， 最费时间的瓶颈是将文本转化为数字(比较费时间)，后续的计算均为向量化(矩阵化)的数值计算，随着词典数n的增加， 所消耗的时间会越来越短。</p>
+<p><strong>一般情况下，使用「方法一」即可。当第一种方法运行不出结果，可以尝试「方法二」。</strong></p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>不要当真 | 词云图看婚姻的本质是什么</title>
       <link>https://textdata.cn/blog/2023-04-14-what-is-the-nature-of-marriage/</link>
       <pubDate>Fri, 14 Apr 2023 00:00:00 +0000</pubDate>
@@ -869,197 +1060,6 @@
 通过Python文本分析工具，可以对叙事内容的变化和评价进行跟踪和分析，了解叙事的评价和变革过程，进而探讨叙事对经济发展的影响。这些分析结果可以帮助研究者更好地理解叙事的演变和发展趋势，为叙事经济学的研究提供理论支持。</p>
 </li>
 </ol>
-<p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
-]]></content:encoded>
-    </item>
-    
-    <item>
-      <title>文本分析 | 词典法的两种代码实现</title>
-      <link>https://textdata.cn/blog/2023-04-17-two-method-for-liwc/</link>
-      <pubDate>Fri, 07 Apr 2023 00:00:00 +0000</pubDate>
-      
-      <guid>/blog/2023-04-17-two-method-for-liwc/</guid>
-      <description>但这周末，我使用1.4G的mda数据集， 5w条记录。尝试计算某类词的出现次数， 该词典含几百个词。在我的96G内存的macbook中，运行了十几个小时都没结果。于是同一个问题，本文分享了两种实现方法。一般情况下，使用「方法一」即可。当第一种方法运行不出结果，可以尝试「方法二」。</description>
-      <content:encoded><![CDATA[<h2 id="一问题描述">一、问题描述</h2>
-<p>对csv、xlsx等类型做词典法分析，经常用到apply方法，但是之前分享到案例数据量比较小， 词典都是几个词， 一般都能运行出结果。</p>
-<blockquote>
-<p><a href="https://textdata.cn/blog/liwc_python_text_mining/">liwc其实就是一种词典法</a></p>
-</blockquote>
-<p>但这周末，我使用1.4G的mda数据集， 5w条记录。尝试计算某类词的出现次数， 该词典含几百个词。在我的96G内存的macbook中，运行了十几个小时都没结果。</p>
-<p>于是同一个问题，本文分享了两种实现方法。<strong>一般情况下，使用「方法一」即可。当第一种方法运行不出结果，可以尝试「方法二」。</strong></p>
-<p><br><br></p>
-<h2 id="二方法一">二、方法一</h2>
-<h3 id="21-读取数据">2.1 读取数据</h3>
-<p>导入含5000条记录的mda数据 test_mda.csv ，这里声明格式，防止年份和股票代码被识别为数字。</p>
-<blockquote>
-<p>如果想要完整的mda数据，可以前往购买[]</p>
-</blockquote>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python">
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="c1">#导入1000条测试数据</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;test_mda.csv&#39;</span><span class="p">,</span> <span class="n">converters</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">})</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p><img loading="lazy" src="img/df1.png" alt=""  />
-</p>
-<br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-</code></pre></div><pre><code>5000
-</code></pre>
-<br>
-<h3 id="22-准备词典">2.2 准备词典</h3>
-<p>为了节约时间，也构造了只有几个词语的词典。</p>
-<blockquote>
-<p>自己随机手写的词典，如果需要应用的自己的研究中, 请将这几个概念词典扩充的完备一些，词汇量尽可能多一些。</p>
-</blockquote>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#创新</span>
-<span class="n">inovation_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;科技&#39;</span><span class="p">,</span> <span class="s1">&#39;研发&#39;</span><span class="p">,</span> <span class="s1">&#39;高校&#39;</span><span class="p">,</span> <span class="s1">&#39;技术&#39;</span><span class="p">,</span> <span class="s1">&#39;科学&#39;</span><span class="p">,</span> <span class="s1">&#39;理论&#39;</span><span class="p">,</span> <span class="s1">&#39;专利&#39;</span><span class="p">,</span> <span class="s1">&#39;攻克&#39;</span><span class="p">,</span> <span class="s1">&#39;改良&#39;</span><span class="p">,</span> <span class="s1">&#39;工艺&#39;</span><span class="p">,</span> <span class="s1">&#39;前沿&#39;</span><span class="p">,</span> <span class="s1">&#39;尖端&#39;</span><span class="p">]</span>
-
-<span class="c1">#环保</span>
-<span class="n">green_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;绿色&#39;</span><span class="p">,</span> <span class="s1">&#39;节能&#39;</span><span class="p">,</span> <span class="s1">&#39;低碳&#39;</span><span class="p">,</span> <span class="s1">&#39;环保&#39;</span><span class="p">,</span> <span class="s1">&#39;环境友好&#39;</span><span class="p">,</span> <span class="s1">&#39;无污染&#39;</span><span class="p">]</span>
-
-<span class="c1">#短视主义</span>
-<span class="n">push_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;加快&#39;</span><span class="p">,</span> <span class="s1">&#39;尽快&#39;</span><span class="p">,</span> <span class="s1">&#39;抓紧&#39;</span><span class="p">,</span> <span class="s1">&#39;月底&#39;</span><span class="p">,</span> <span class="s1">&#39;年底&#39;</span><span class="p">,</span> <span class="s1">&#39;争取&#39;</span><span class="p">,</span> <span class="s1">&#39;马上&#39;</span><span class="p">,</span> <span class="s1">&#39;立刻&#39;</span><span class="p">,</span> <span class="s1">&#39;年内&#39;</span><span class="p">,</span> <span class="s1">&#39;数月&#39;</span><span class="p">,</span> <span class="s1">&#39;数年&#39;</span><span class="p">]</span>
-
-<span class="c1">#模棱两可</span>
-
-<span class="n">prob_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;可能&#39;</span><span class="p">,</span> <span class="s1">&#39;大概&#39;</span><span class="p">,</span> <span class="s1">&#39;左右&#39;</span><span class="p">,</span> <span class="s1">&#39;估计&#39;</span><span class="p">,</span> <span class="s1">&#39;大约&#39;</span><span class="p">]</span>
-</code></pre></div><br>
-<h3 id="23-设计函数">2.3 设计函数</h3>
-<p>该函数能实现对 inovation_words 和  green_words两类词的词频统计;</p>
-<p>返回的结果包括总词频、green词频、 inovation词频。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="c1">#创新</span>
-<span class="n">inovation_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;科技&#39;</span><span class="p">,</span> <span class="s1">&#39;研发&#39;</span><span class="p">,</span> <span class="s1">&#39;高校&#39;</span><span class="p">,</span> <span class="s1">&#39;技术&#39;</span><span class="p">,</span> <span class="s1">&#39;科学&#39;</span><span class="p">,</span> <span class="s1">&#39;理论&#39;</span><span class="p">,</span> <span class="s1">&#39;专利&#39;</span><span class="p">,</span> <span class="s1">&#39;攻克&#39;</span><span class="p">,</span> <span class="s1">&#39;改良&#39;</span><span class="p">,</span> <span class="s1">&#39;工艺&#39;</span><span class="p">,</span> <span class="s1">&#39;前沿&#39;</span><span class="p">,</span> <span class="s1">&#39;尖端&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
-<span class="c1">#环保</span>
-<span class="n">green_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;绿色&#39;</span><span class="p">,</span> <span class="s1">&#39;节能&#39;</span><span class="p">,</span> <span class="s1">&#39;低碳&#39;</span><span class="p">,</span> <span class="s1">&#39;环保&#39;</span><span class="p">,</span> <span class="s1">&#39;环境友好&#39;</span><span class="p">,</span> <span class="s1">&#39;无污染&#39;</span><span class="p">]</span>
-<span class="c1">#短视主义</span>
-<span class="n">push_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;加快&#39;</span><span class="p">,</span> <span class="s1">&#39;尽快&#39;</span><span class="p">,</span> <span class="s1">&#39;抓紧&#39;</span><span class="p">,</span> <span class="s1">&#39;月底&#39;</span><span class="p">,</span> <span class="s1">&#39;年底&#39;</span><span class="p">,</span> <span class="s1">&#39;争取&#39;</span><span class="p">,</span> <span class="s1">&#39;马上&#39;</span><span class="p">,</span> <span class="s1">&#39;立刻&#39;</span><span class="p">,</span> <span class="s1">&#39;年内&#39;</span><span class="p">,</span> <span class="s1">&#39;数月&#39;</span><span class="p">,</span> <span class="s1">&#39;数年&#39;</span><span class="p">]</span>
-<span class="c1">#模棱两可</span>
-<span class="n">prob_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;可能&#39;</span><span class="p">,</span> <span class="s1">&#39;大概&#39;</span><span class="p">,</span> <span class="s1">&#39;左右&#39;</span><span class="p">,</span> <span class="s1">&#39;估计&#39;</span><span class="p">,</span> <span class="s1">&#39;大约&#39;</span><span class="p">]</span>
-
-
-<span class="k">def</span> <span class="nf">analysis_info</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-    <span class="n">inovation_num</span><span class="p">,</span> <span class="n">green_num</span><span class="p">,</span> <span class="n">push_num</span><span class="p">,</span> <span class="n">prob_num</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
-    <span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-    <span class="n">push_num</span> 
-    
-    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">inovation_words</span><span class="p">:</span>
-        <span class="n">inovation_num</span> <span class="o">=</span> <span class="n">inovation_num</span> <span class="o">+</span> <span class="n">words</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">green_words</span><span class="p">:</span>
-        <span class="n">green_num</span> <span class="o">=</span> <span class="n">green_num</span> <span class="o">+</span> <span class="n">words</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
-        
-    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">push_words</span><span class="p">:</span>
-        <span class="n">push_num</span> <span class="o">=</span> <span class="n">push_num</span> <span class="o">+</span> <span class="n">words</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
-        
-    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">prob_words</span><span class="p">:</span>
-        <span class="n">prob_num</span> <span class="o">=</span> <span class="n">prob_num</span> <span class="o">+</span> <span class="n">words</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
-        
-    <span class="n">res</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;words&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">),</span>
-        <span class="s1">&#39;inovation&#39;</span><span class="p">:</span> <span class="n">inovation_num</span><span class="p">,</span>
-        <span class="s1">&#39;green&#39;</span><span class="p">:</span> <span class="n">green_num</span><span class="p">,</span>
-        <span class="s1">&#39;push&#39;</span><span class="p">:</span> <span class="n">push_num</span><span class="p">,</span>
-        <span class="s1">&#39;prob&#39;</span><span class="p">:</span> <span class="n">prob_num</span>
-    <span class="p">}</span>
-    
-    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
-
-<span class="n">analysis_info</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s1">&#39;2022年是公司规范运作，坚持科技创新，保持持续发展。&#39;</span><span class="p">)</span>
-</code></pre></div><pre><code>words        15
-inovation     2
-green         0
-push          0
-prob          0
-dtype: int64
-</code></pre>
-<br>
-<h3 id="24-批量计算">2.4 批量计算</h3>
-<p>选中text列，对该列批量运行 analysis_info 。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">time</span>
-
-<span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
-<span class="n">info_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">analysis_info</span><span class="p">)</span>
-<span class="n">res_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">info_df</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-<span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;耗时 </span><span class="si">{}</span><span class="s1"> s&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)))</span>
-
-<span class="n">res_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-
-</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">耗时 112 s
-</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
-</p>
-<p><br><br></p>
-<h2 id="三方法二">三、方法二</h2>
-<p>将中文分词后， 使用bag-of-words构造词语词频矩阵</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span> 
-<span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="kn">import</span> <span class="n">CountVectorizer</span>
-<span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">jieba</span>
-
-<span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
-<span class="n">df</span><span class="p">[</span><span class="s1">&#39;new_text&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">text</span><span class="p">:</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">jieba</span><span class="o">.</span><span class="n">cut</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span>
-
-<span class="n">vectorize</span> <span class="o">=</span> <span class="n">CountVectorizer</span><span class="p">()</span>
-<span class="n">dtm</span> <span class="o">=</span> <span class="n">vectorize</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">new_text</span><span class="p">)</span>
-<span class="n">bagofword_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dtm</span><span class="o">.</span><span class="n">toarray</span><span class="p">(),</span> 
-                            <span class="n">columns</span><span class="o">=</span><span class="n">vectorize</span><span class="o">.</span><span class="n">get_feature_names_out</span><span class="p">())</span> 
-
-
-<span class="c1">#创新</span>
-<span class="n">inovation_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;科技&#39;</span><span class="p">,</span> <span class="s1">&#39;研发&#39;</span><span class="p">,</span> <span class="s1">&#39;高校&#39;</span><span class="p">,</span> <span class="s1">&#39;技术&#39;</span><span class="p">,</span> <span class="s1">&#39;科学&#39;</span><span class="p">,</span> <span class="s1">&#39;理论&#39;</span><span class="p">,</span> <span class="s1">&#39;专利&#39;</span><span class="p">,</span> <span class="s1">&#39;攻克&#39;</span><span class="p">,</span> <span class="s1">&#39;改良&#39;</span><span class="p">,</span> <span class="s1">&#39;工艺&#39;</span><span class="p">,</span> <span class="s1">&#39;前沿&#39;</span><span class="p">,</span> <span class="s1">&#39;尖端&#39;</span><span class="p">]</span>
-<span class="c1">#环保</span>
-<span class="n">green_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;绿色&#39;</span><span class="p">,</span> <span class="s1">&#39;节能&#39;</span><span class="p">,</span> <span class="s1">&#39;低碳&#39;</span><span class="p">,</span> <span class="s1">&#39;环保&#39;</span><span class="p">,</span> <span class="s1">&#39;环境友好&#39;</span><span class="p">,</span> <span class="s1">&#39;无污染&#39;</span><span class="p">]</span>
-<span class="c1">#短视主义</span>
-<span class="n">push_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;加快&#39;</span><span class="p">,</span> <span class="s1">&#39;尽快&#39;</span><span class="p">,</span> <span class="s1">&#39;抓紧&#39;</span><span class="p">,</span> <span class="s1">&#39;月底&#39;</span><span class="p">,</span> <span class="s1">&#39;年底&#39;</span><span class="p">,</span> <span class="s1">&#39;争取&#39;</span><span class="p">,</span> <span class="s1">&#39;马上&#39;</span><span class="p">,</span> <span class="s1">&#39;立刻&#39;</span><span class="p">,</span> <span class="s1">&#39;年内&#39;</span><span class="p">,</span> <span class="s1">&#39;数月&#39;</span><span class="p">,</span> <span class="s1">&#39;数年&#39;</span><span class="p">]</span>
-<span class="c1">#模棱两可</span>
-<span class="n">prob_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;可能&#39;</span><span class="p">,</span> <span class="s1">&#39;大概&#39;</span><span class="p">,</span> <span class="s1">&#39;左右&#39;</span><span class="p">,</span> <span class="s1">&#39;估计&#39;</span><span class="p">,</span> <span class="s1">&#39;大约&#39;</span><span class="p">]</span>
-
-<span class="n">INOVATION_WORDS</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">inovation_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">bagofword_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
-<span class="n">GREEN_WORDS</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">green_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">bagofword_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
-<span class="n">PUSH_WORDS</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">push_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">bagofword_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
-<span class="n">PROB_WORDS</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">prob_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">bagofword_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
-
-<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span>
-        
-        <span class="s1">&#39;inovation&#39;</span><span class="p">:</span> <span class="n">bagofword_df</span><span class="p">[</span><span class="n">INOVATION_WORDS</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-        <span class="s1">&#39;green&#39;</span><span class="p">:</span> <span class="n">bagofword_df</span><span class="p">[</span><span class="n">GREEN_WORDS</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-        <span class="s1">&#39;push&#39;</span><span class="p">:</span> <span class="n">bagofword_df</span><span class="p">[</span><span class="n">PUSH_WORDS</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-        <span class="s1">&#39;prob&#39;</span><span class="p">:</span> <span class="n">bagofword_df</span><span class="p">[</span><span class="n">PROB_WORDS</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-        <span class="s1">&#39;words&#39;</span><span class="p">:</span> <span class="n">bagofword_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="nb">sum</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="p">}</span>
-
-
-<span class="n">res_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;耗时 </span><span class="si">{}</span><span class="s1"> s&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)))</span>
-
-<span class="n">res_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-
-</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">耗时 164 s
-</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
-</p>
-<p><br><br></p>
-<h2 id="四讨论">四、讨论</h2>
-<p>analysis_info(text) 函数内含有4个for循环，for循环是效率很低的操作。 随着所要计算的词典数n的增加， 方法一时间会随着n的增长而线性增长。</p>
-<p>而方法二， 最费时间的瓶颈是将文本转化为数字(比较费时间)，后续的计算均为向量化(矩阵化)的数值计算，随着词典数n的增加， 所消耗的时间会越来越短。</p>
-<p><strong>一般情况下，使用「方法一」即可。当第一种方法运行不出结果，可以尝试「方法二」。</strong></p>
 <p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
 <ul>

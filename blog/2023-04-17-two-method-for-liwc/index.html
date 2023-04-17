@@ -64,8 +64,8 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/blog/2023-04-17-two-method-for-liwc/" />
 <meta property="og:image" content="/images/blog/text-mining-books.png" /><meta property="article:section" content="blog" />
-<meta property="article:published_time" content="2023-04-07T00:00:00&#43;00:00" />
-<meta property="article:modified_time" content="2023-04-07T00:00:00&#43;00:00" />
+<meta property="article:published_time" content="2023-04-17T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2023-04-17T00:00:00&#43;00:00" />
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="/images/blog/text-mining-books.png" />
@@ -106,8 +106,8 @@
   "articleBody": "一、问题描述 对csv、xlsx等类型做词典法分析，经常用到apply方法，但是之前分享到案例数据量比较小， 词典都是几个词， 一般都能运行出结果。\n liwc其实就是一种词典法\n 但这周末，我使用1.4G的mda数据集， 5w条记录。尝试计算某类词的出现次数， 该词典含几百个词。在我的96G内存的macbook中，运行了十几个小时都没结果。\n于是同一个问题，本文分享了两种实现方法。一般情况下，使用「方法一」即可。当第一种方法运行不出结果，可以尝试「方法二」。\n\n二、方法一 2.1 读取数据 导入含5000条记录的mda数据 test_mda.csv ，这里声明格式，防止年份和股票代码被识别为数字。\n 如果想要完整的mda数据，可以前往购买[]\n import pandas as pd #导入1000条测试数据 df = pd.read_csv('test_mda.csv', converters={'year': str, 'code': str}) df.head() len(df) 5000  2.2 准备词典 为了节约时间，也构造了只有几个词语的词典。\n 自己随机手写的词典，如果需要应用的自己的研究中, 请将这几个概念词典扩充的完备一些，词汇量尽可能多一些。\n #创新 inovation_words = ['创新', '科技', '研发', '高校', '技术', '科学', '理论', '专利', '攻克', '改良', '工艺', '前沿', '尖端'] #环保 green_words = ['绿色', '节能', '低碳', '环保', '环境友好', '无污染'] #短视主义 push_words = ['加快', '尽快', '抓紧', '月底', '年底', '争取', '马上', '立刻', '年内', '数月', '数年'] #模棱两可 prob_words = ['可能', '大概', '左右', '估计', '大约'] \n2.3 设计函数 该函数能实现对 inovation_words 和 green_words两类词的词频统计;\n返回的结果包括总词频、green词频、 inovation词频。\nimport jieba import pandas as pd #创新 inovation_words = ['创新', '科技', '研发', '高校', '技术', '科学', '理论', '专利', '攻克', '改良', '工艺', '前沿', '尖端', ''] #环保 green_words = ['绿色', '节能', '低碳', '环保', '环境友好', '无污染'] #短视主义 push_words = ['加快', '尽快', '抓紧', '月底', '年底', '争取', '马上', '立刻', '年内', '数月', '数年'] #模棱两可 prob_words = ['可能', '大概', '左右', '估计', '大约'] def analysis_info(text): inovation_num, green_num, push_num, prob_num = 0, 0, 0, 0 words = jieba.lcut(text) push_num for w in inovation_words: inovation_num = inovation_num + words.count(w) for w in green_words: green_num = green_num + words.count(w) for w in push_words: push_num = push_num + words.count(w) for w in prob_words: prob_num = prob_num + words.count(w) res = { 'words': len(words), 'inovation': inovation_num, 'green': green_num, 'push': push_num, 'prob': prob_num } return pd.Series(res) analysis_info(text='2022年是公司规范运作，坚持科技创新，保持持续发展。') words 15 inovation 2 green 0 push 0 prob 0 dtype: int64  2.4 批量计算 选中text列，对该列批量运行 analysis_info 。\nimport time start = time.time() info_df = df['text'].apply(analysis_info) res_df = pd.concat([df, info_df], axis=1) end = time.time() print('耗时 {}s'.format(int(end-start))) res_df.head() 耗时 112 s \n三、方法二 将中文分词后， 使用bag-of-words构造词语词频矩阵\nimport pandas as pd from sklearn.feature_extraction.text import CountVectorizer import time import jieba start = time.time() df['new_text'] = df['text'].apply(lambda text: ' '.join(jieba.cut(text))) vectorize = CountVectorizer() dtm = vectorize.fit_transform(df.new_text) bagofword_df = pd.DataFrame(dtm.toarray(), columns=vectorize.get_feature_names_out()) #创新 inovation_words = ['创新', '科技', '研发', '高校', '技术', '科学', '理论', '专利', '攻克', '改良', '工艺', '前沿', '尖端'] #环保 green_words = ['绿色', '节能', '低碳', '环保', '环境友好', '无污染'] #短视主义 push_words = ['加快', '尽快', '抓紧', '月底', '年底', '争取', '马上', '立刻', '年内', '数月', '数年'] #模棱两可 prob_words = ['可能', '大概', '左右', '估计', '大约'] INOVATION_WORDS = [w for w in inovation_words if w in bagofword_df.columns] GREEN_WORDS = [w for w in green_words if w in bagofword_df.columns] PUSH_WORDS = [w for w in push_words if w in bagofword_df.columns] PROB_WORDS = [w for w in prob_words if w in bagofword_df.columns] data = {'year': df['year'], 'code': df['code'], 'text': df['text'], 'inovation': bagofword_df[INOVATION_WORDS].sum(axis=1), 'green': bagofword_df[GREEN_WORDS].sum(axis=1), 'push': bagofword_df[PUSH_WORDS].sum(axis=1), 'prob': bagofword_df[PROB_WORDS].sum(axis=1), 'words': bagofword_df.apply(sum, axis=1) } res_df = pd.DataFrame(data) end = time.time() print('耗时 {}s'.format(int(end-start))) res_df.head() 耗时 164 s \n四、讨论 analysis_info(text) 函数内含有4个for循环，for循环是效率很低的操作。 随着所要计算的词典数n的增加， 方法一时间会随着n的增长而线性增长。\n而方法二， 最费时间的瓶颈是将文本转化为数字(比较费时间)，后续的计算均为向量化(矩阵化)的数值计算，随着词典数n的增加， 所消耗的时间会越来越短。\n一般情况下，使用「方法一」即可。当第一种方法运行不出结果，可以尝试「方法二」。\n\n广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
   "wordCount" : "424",
   "inLanguage": "en",
-  "image":"/images/blog/text-mining-books.png","datePublished": "2023-04-07T00:00:00Z",
-  "dateModified": "2023-04-07T00:00:00Z",
+  "image":"/images/blog/text-mining-books.png","datePublished": "2023-04-17T00:00:00Z",
+  "dateModified": "2023-04-17T00:00:00Z",
   "author":{
     "@type": "Person",
     "name": "大邓"
@@ -239,7 +239,7 @@ onload="renderMathInElement(document.body);"></script>
     <h1 class="post-title">
       文本分析 | 词典法的两种代码实现
     </h1>
-    <div class="post-meta"><span title='2023-04-07 00:00:00 +0000 UTC'>2023-04-07</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
+    <div class="post-meta"><span title='2023-04-17 00:00:00 +0000 UTC'>2023-04-17</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
 
 </div>
   </header> 
