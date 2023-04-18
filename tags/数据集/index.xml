@@ -195,6 +195,217 @@
     </item>
     
     <item>
+      <title>「问询函」数据集</title>
+      <link>https://textdata.cn/blog/2023-04-17-china-a-market-inquiry-letter-datasets/</link>
+      <pubDate>Mon, 17 Apr 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-04-17-china-a-market-inquiry-letter-datasets/</guid>
+      <description>数据量不大，只有400多M， 但依然做很多分析。本文只是分享Python代码，大家可以结合之前公众号内的分享，做情感分析、词频统计、情感分析等。</description>
+      <content:encoded><![CDATA[<p><strong>问询函</strong>，是指上海证券交易所和深圳证券交易所在审核上市公司相关公告过程中如果发现未达到“直接监管标准”(一般表现为信息披露不准确或内容不全)的问题时，会针对财务报告、并购重组、关联交易、股票异常波动和媒体报道的社会热点等事件发出问询函，要求上市公司在规定时间内书面回函并公开披露。倘若上市公司仍存在信息披露不准确或不全的问题，交易所会再次问询。</p>
+<br>
+<h2 id="一数据集详情">一、数据集详情</h2>
+<p><strong>问询数据集</strong>，有 <strong>11714</strong> 条问询记录， 时间范围  <strong>2014.12~2021.12</strong> 。</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>code</strong></td>
+<td>股票代码</td>
+</tr>
+<tr>
+<td><strong>corp_name</strong></td>
+<td>上市公司简称</td>
+</tr>
+<tr>
+<td><strong>let_cat</strong></td>
+<td><strong>监管机构</strong>发出的问询函所属类别</td>
+</tr>
+<tr>
+<td><strong>inq_title</strong></td>
+<td>问询函的标题</td>
+</tr>
+<tr>
+<td><strong>inq_content</strong></td>
+<td>问询函中询问的具体内容</td>
+</tr>
+<tr>
+<td><strong>reply_content</strong></td>
+<td>上市公司回复的详细内容</td>
+</tr>
+<tr>
+<td><strong>inq_date</strong></td>
+<td>监管机构发函日期</td>
+</tr>
+<tr>
+<td><strong>ddl_date</strong></td>
+<td>规定限期回复日期</td>
+</tr>
+<tr>
+<td><strong>reply_date</strong></td>
+<td>公司实际回复日期</td>
+</tr>
+</tbody>
+</table>
+<p>数据量不大，只有400多M， 但依然做很多分析。本文只是分享Python代码，大家可以结合之前公众号内的分享，做情感分析、词频统计、情感分析等。</p>
+<p><br><br></p>
+<h2 id="二导入数据">二、导入数据</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;监管问询.csv&#39;</span><span class="p">,</span> 
+                 <span class="n">converters</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">},</span>  <span class="c1">#防止股票代码被识别为数字</span>
+                 <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>  
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#字段含</span>
+<span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Index([&#39;code&#39;, &#39;corp_name&#39;, &#39;let_cat&#39;, &#39;inq_title&#39;, &#39;inq_content&#39;,
+       &#39;reply_content&#39;, &#39;inq_date&#39;, &#39;ddl_date&#39;, &#39;reply_date&#39;],
+          dtype=&#39;object&#39;)
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#数据量</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">11714
+</code></pre></div><p><br><br></p>
+<h2 id="三数据分析">三、数据分析</h2>
+<h3 id="31-更改日期格式">3.1 更改日期格式</h3>
+<p>将日期字符串数据改为datetime类型数据，即可做日期间隔的计算。这里只演示公司回复日期与监管机构发函日期时间间隔。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;inq_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;inq_date&#39;</span><span class="p">])</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;ddl_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ddl_date&#39;</span><span class="p">])</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;reply_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;reply_date&#39;</span><span class="p">])</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;duration1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;reply_date&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;inq_date&#39;</span><span class="p">]</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#数据集的时间跨度</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;inq_date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;inq_date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2014-12-04 00:00:00
+2021-12-31 00:00:00
+</code></pre></div><br>
+<h3 id="32-问询量年度变化">3.2 问询量年度变化</h3>
+<p>随着我国金融市场发展，监管越来越到位，再加上上市公司会越来越多， 问询量年度变化应该是越来越多。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">matplotlib_inline</span>
+<span class="n">matplotlib_inline</span><span class="o">.</span><span class="n">backend_inline</span><span class="o">.</span><span class="n">set_matplotlib_formats</span><span class="p">(</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="s1">&#39;svg&#39;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">scienceplots</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">([</span><span class="s1">&#39;science&#39;</span><span class="p">,</span> <span class="s1">&#39;no-latex&#39;</span><span class="p">,</span> <span class="s1">&#39;cjk-sc-font&#39;</span><span class="p">])</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>  <span class="c1"># 获取操作系统类型</span>
+
+<span class="k">if</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Windows&#39;</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;SimHei&#39;</span><span class="p">}</span>
+<span class="k">elif</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Darwin&#39;</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;Arial Unicode MS&#39;</span><span class="p">}</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;sans-serif&#39;</span><span class="p">}</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">font</span><span class="p">)</span>  <span class="c1"># 设置全局字体</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;inq_date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;监管机构发起问询量年度变化&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;问询量&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;年份&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/output_8_1.svg" alt="svg"  />
+</p>
+<br>
+<h3 id="33-问询回复间隔">3.3 问询回复间隔</h3>
+<p>从监管机构发起问询与公司回复之间的时间差， 按道理</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;duration1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;duration1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df3.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">sz_mean</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">duration1</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">sh_mean</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;6&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">duration1</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;深市平均回复时间&#39;</span><span class="p">,</span> <span class="n">sz_mean</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;沪市平均回复时间&#39;</span><span class="p">,</span> <span class="n">sh_mean</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">深市平均回复时间 13.90656874745002
+沪市平均回复时间 25.54510661563696
+</code></pre></div><p>似乎沪市的上市公司回复的更慢</p>
+<br>
+<h3 id="34-公司回复问询函速度">3.4 公司回复问询函速度</h3>
+<p>公司回复问询函的速度是越来越快还是越来越久？</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;inq_date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span><span class="p">)[</span><span class="s1">&#39;duration1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;line&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;公司为回复监管机构问询函所需准备的时间(单位: 天)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;准备天数&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;年份&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/output_13_1.svg" alt="svg"  />
+
+​</p>
+<br>
+<h3 id="34-文本长度静态对比">3.4 文本长度静态对比</h3>
+<p>不考虑时间，比较沪深问询函内容及回复内容文本长度</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;inq_len&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="n">df</span><span class="p">[</span><span class="s1">&#39;inq_content&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;reply_len&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="n">df</span><span class="p">[</span><span class="s1">&#39;reply_content&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span>
+
+
+<span class="n">sz_inq_len_mean</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">inq_len</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">sh_inq_len_mean</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;6&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">inq_len</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;深市-监管机构平均问询函内容长度&#39;</span><span class="p">,</span> <span class="n">sz_inq_len_mean</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;沪市-监管机构平均问询函内容长度&#39;</span><span class="p">,</span> <span class="n">sh_inq_len_mean</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">40</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+<span class="n">sz_reply_len_mean</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">reply_len</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">sh_reply_len_mean</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;6&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">reply_len</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;深市公司平均回复长度&#39;</span><span class="p">,</span> <span class="n">sz_reply_len_mean</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;沪市公司平均回复时间&#39;</span><span class="p">,</span> <span class="n">sh_reply_len_mean</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">
+深市-监管机构平均问询函内容长度 1909.5531135531135
+沪市-监管机构平均问询函内容长度 2084.0572959604287
+----------------------------------------  
+    
+深市公司平均回复长度 13776.946043165468
+沪市公司平均回复时间 17136.937894736842
+</code></pre></div><p>似乎监管机构对沪市公司发起的问询内容更长， 而沪市的上市公司对应回应问询的内容也更长。</p>
+<br>
+<h3 id="35-随时间文本长度变化">3.5 随时间文本长度变化</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;inq_date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span><span class="p">)[</span><span class="s1">&#39;inq_len&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;line&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;监管机构问询函内容长度随时间的变化趋势&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;问询函长度&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;年份&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/output_17_1.svg" alt="svg"  />
+
+​</p>
+<br>
+<h2 id="代码及数据集获取">代码及数据集获取</h2>
+<p>数据&amp;代码整理不易，需要的话， <a href="https://mp.weixin.qq.com/s/TicAXv6moHA2joYctE3fYQ">点击链接进入购买页面</a>， 有疑问，加微信372335839， 备注「姓名-学校-专业」</p>
+ <br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>文本分析 | 词典法的两种代码实现</title>
       <link>https://textdata.cn/blog/2023-04-17-two-method-for-liwc/</link>
       <pubDate>Mon, 17 Apr 2023 00:00:00 +0000</pubDate>
