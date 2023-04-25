@@ -6,7 +6,333 @@
     <description>Recent content in 数据分析 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 23 Apr 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 25 Apr 2023 11:43:10 +0600</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>tomotopy | 速度最快的LDA主题模型</title>
+      <link>https://textdata.cn/blog/tomotopy_is_the_fastest_topic_model/</link>
+      <pubDate>Tue, 25 Apr 2023 11:43:10 +0600</pubDate>
+      
+      <guid>/blog/tomotopy_is_the_fastest_topic_model/</guid>
+      <description>接近C的速度，比市面的sklearn、gensim快十几倍</description>
+      <content:encoded><![CDATA[<h2 id="代码下载tomotopy_codezip"><a href="tomotopy_code.zip">代码下载</a></h2>
+<br>
+<h2 id="tomotopy简介">tomotopy简介？</h2>
+<p>tomotopy 是 tomoto（主题建模工具）的 Python 扩展，它是用 C++ 编写的基于 Gibbs 采样的主题模型库。支持的主题模型包括 LDA、DMR、HDP、MG-LDA、PA 和 HPA， 利用现代 CPU 的矢量化来最大化速度。</p>
+<p><a href="https://github.com/bab2min/tomotopy">https://github.com/bab2min/tomotopy</a></p>
+<p><strong>下图中同样的数据集， tomotopy迭代200次，gensim迭代10次的情况下， tomotopy与gensim耗时对比图，由此可见tomotopy训练主题模型速度之快。</strong>
+<img loading="lazy" src="img/TomotopyVsGensim.png" alt=""  />
+</p>
+<p>当前版本的 tomotopy 支持的主题模型包括</p>
+<ul>
+<li>潜在狄利克雷分配（LDAModel）</li>
+<li>标记的 LDA（LLDA 模型）</li>
+<li>部分标记的 LDA（PLDA 模型）</li>
+<li>监督LDA（SLDA模型）</li>
+<li>Dirichlet 多项回归 (DMRModel)</li>
+<li>广义狄利克雷多项回归 (GDMRModel)</li>
+<li>分层狄利克雷过程 (HDPModel)</li>
+<li>分层LDA（HLDA模型）</li>
+<li>多粒 LDA（MGLDA 模型）</li>
+<li>弹珠盘分配（PAModel）</li>
+<li>分层 PA (HPAModel)</li>
+<li>相关主题模型（CTModel）</li>
+<li>动态主题模型 (DTModel)</li>
+<li>基于伪文档的主题模型（PTModel）。</li>
+</ul>
+<br>
+<h2 id="安装">安装</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">tomotopy</span><span class="o">==</span><span class="mf">0.12.2</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">pyLDAvis</span><span class="o">==</span><span class="mf">3.3.1</span>  
+</code></pre></div><p>目前，tomotopy 可以利用 AVX2、AVX 或 SSE2 SIMD 指令集来最大程度利用PC的性能。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">tomotopy</span> <span class="k">as</span> <span class="nn">tp</span>
+
+<span class="n">tp</span><span class="o">.</span><span class="n">isa</span>
+</code></pre></div><p>Run</p>
+<pre><code>'avx2'
+</code></pre>
+<p>如果 tp.isa 返回 None，则训练过程可能需要很长时间。</p>
+<br>
+<h2 id="1-导入数据">1. 导入数据</h2>
+<p>准备一个自己很熟悉的数据disaster_news.csv，一共有332条，话题数K=5，（正常情况下K是需要探索的）。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;disaster_news.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df1.png" alt=""  />
+</p>
+<br>
+<h2 id="2-整理数据">2. 整理数据</h2>
+<p>分词、去除停用词</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">jieba</span>
+<span class="kn">from</span> <span class="nn">cntext</span> <span class="kn">import</span> <span class="n">STOPWORDS_zh</span>
+
+
+<span class="k">def</span> <span class="nf">segment</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STOPWORDS_zh</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">words</span>
+
+<span class="n">test</span> <span class="o">=</span> <span class="s2">&#34;云南永善县级地震已致人伤间民房受损中新网月日电据云南昭通市防震减灾局官方网站消息截至日时云南昭通永善县级地震已造成人受伤其中重伤人轻伤人已全部送医院救治民房受损户间倒塌户间个乡镇所学校不同程度受损目前被损毁电力交通通讯设施已全部抢通修复当地已调拨帐篷顶紧急转移万人月日时分云南昭通永善县发生里氏级地震震源深度公里当地震感强烈此外成都等四川多地也有明显震感&#34;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">segment</span><span class="p">(</span><span class="n">test</span><span class="p">))</span>
+</code></pre></div><pre><code>['云南', '永善县', '级', '地震', '已致', '伤间', '民房', '受损', '中新网', '日电', '云南', '昭通市', '防震', '减灾', '局', '官方网站', '消息', '日时', '云南', '昭通', '永善县', '级', '地震', '造成', '受伤', '重伤', '轻伤', '送', '医院', '救治', '民房', '受损', '户间', '倒塌', '户间', '乡镇', '学校', '不同', '程度', '受损', '目前', '损毁', '电力', '交通', '通讯', '设施', '抢通', '修复', '调拨', '帐篷', '顶', '紧急', '转移', '万人', '时分', '云南', '昭通', '永善县', '发生', '里氏', '级', '地震', '震源', '深度', '公里', '震感', '强烈', '成都', '四川', '多地', '明显', '震感']
+</code></pre>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<br>
+<h2 id="3-找到最佳k">3. 找到最佳K</h2>
+<p>正常的步骤应该认真对待这步，在一定区间范围内，根据模型得分找到合理的K。这里使用tomotopy提供的主题一致性coherence得分假装找一下。</p>
+<p>我们期望的图应该的topic coherence随着 number of topics增加而增加，然后到某个topic值趋于平稳。</p>
+<p>tomotopy每次运行得到的图形状不一样，为了保证运行结果具有可比性，设置了随机种子seed为555，你也可以根据需要改为自己需要的随机状态。(这里有点像炼丹)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">find_k</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="n">min_k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_k</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="c1">#min_df 词语最少出现在2个文档中</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_k</span><span class="p">,</span> <span class="n">max_k</span><span class="p">):</span>
+        <span class="c1">#seed随机种子，保证在大邓这里运行结果与你运行的结果一样</span>
+        <span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">min_df</span><span class="o">=</span><span class="n">min_df</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">555</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">words</span><span class="p">:</span>
+                <span class="n">mdl</span><span class="o">.</span><span class="n">add_doc</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
+        <span class="n">mdl</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">coh</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">coherence</span><span class="o">.</span><span class="n">Coherence</span><span class="p">(</span><span class="n">mdl</span><span class="p">)</span>
+        <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coh</span><span class="o">.</span><span class="n">get_score</span><span class="p">())</span>
+
+    <span class="c1">#x = list(range(min_k, max_k - 1))  # 区间最右侧的值。注意：不能大于max_k</span>
+    <span class="c1">#print(x)</span>
+    <span class="c1">#print()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">min_k</span><span class="p">,</span> <span class="n">max_k</span><span class="p">),</span> <span class="n">scores</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&#34;number of topics&#34;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&#34;coherence&#34;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    
+    
+<span class="n">find_k</span><span class="p">(</span><span class="n">docs</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">],</span> <span class="n">min_k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/output_11_0.png" alt="png"  />
+</p>
+<br>
+<h2 id="4-训练lda">4. 训练lda</h2>
+<p>使用tomotopy的LDA模型， 话题数K=5</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">tomotopy</span> <span class="k">as</span> <span class="nn">tp</span>
+
+<span class="c1">#初始化LDA</span>
+<span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">555</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">]:</span>
+    <span class="c1">#确认words 是 非空词语列表</span>
+    <span class="k">if</span> <span class="n">words</span><span class="p">:</span>
+        <span class="n">mdl</span><span class="o">.</span><span class="n">add_doc</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">)</span>
+
+<span class="c1">#训练</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+<span class="c1">#查看每个topic feature words</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Top 10 words of topic #</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">get_topic_words</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">top_n</span><span class="o">=</span><span class="mi">10</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    Top 10 words of topic #0
+    [(&#39;一辆&#39;, 0.02751251682639122), (&#39;事故&#39;, 0.021704642102122307), (&#39;记者&#39;, 0.018342189490795135), (&#39;死亡&#39;, 0.01650812290608883), (&#39;造成&#39;, 0.014062701724469662), (&#39;人员&#39;, 0.013909862376749516), (&#39;现场&#39;, 0.013451346196234226), (&#39;受伤&#39;, 0.012687151320278645), (&#39;相撞&#39;, 0.011922957375645638), (&#39;货车&#39;, 0.011922957375645638)]
+
+
+​    
+​    Top 10 words of topic #1
+​    [(&#39;学生&#39;, 0.02709135226905346), (&#39;食物中毒&#39;, 0.02498047426342964), (&#39;出现&#39;, 0.019175563007593155), (&#39;医院&#39;, 0.016185153275728226), (&#39;事件&#39;, 0.013546556234359741), (&#39;调查&#39;, 0.013194743543863297), (&#39;年月日&#39;, 0.012842929922044277), (&#39;治疗&#39;, 0.012667023576796055), (&#39;症状&#39;, 0.011787491850554943), (&#39;名&#39;, 0.011259771883487701)]
+
+
+​    
+​    Top 10 words of topic #2
+​    [(&#39;现场&#39;, 0.018848909065127373), (&#39;发生&#39;, 0.01677251048386097), (&#39;医院&#39;, 0.015015557408332825), (&#39;起火&#39;, 0.014216942712664604), (&#39;原因&#39;, 0.012140544131398201), (&#39;目前&#39;, 0.012140544131398201), (&#39;救治&#39;, 0.01150165218859911), (&#39;进行&#39;, 0.011022482998669147), (&#39;名&#39;, 0.009425252676010132), (&#39;火势&#39;, 0.009265529923141003)]
+
+
+​    
+​    Top 10 words of topic #3
+​    [(&#39;发生&#39;, 0.03348556533455849), (&#39;爆炸&#39;, 0.022389251738786697), (&#39;造成&#39;, 0.019663840532302856), (&#39;死亡&#39;, 0.01713310182094574), (&#39;受伤&#39;, 0.016938429325819016), (&#39;年月日&#39;, 0.016354413703083992), (&#39;轿车&#39;, 0.012655640952289104), (&#39;警方&#39;, 0.012460969388484955), (&#39;袭击&#39;, 0.012266295962035656), (&#39;事件&#39;, 0.011487606912851334)]
+
+
+​    
+​    Top 10 words of topic #4
+​    [(&#39;地震&#39;, 0.047826822847127914), (&#39;发生&#39;, 0.03555167838931084), (&#39;火灾&#39;, 0.03140682727098465), (&#39;时分&#39;, 0.020885275676846504), (&#39;级&#39;, 0.015783920884132385), (&#39;时间&#39;, 0.013870910741388798), (&#39;公里&#39;, 0.013711493462324142), (&#39;人员伤亡&#39;, 0.013073823414742947), (&#39;记者&#39;, 0.013073823414742947), (&#39;震感&#39;, 0.012276736088097095)]
+</code></pre></div><br>
+<p>查看话题模型信息</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">mdl</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mysql" data-lang="mysql"><span class="w">
+</span><span class="w">    </span><span class="o">&lt;</span><span class="n">Basic</span><span class="w"> </span><span class="n">Info</span><span class="o">&gt;</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="nf">LDAModel</span><span class="w"> </span><span class="p">(</span><span class="n">current</span><span class="w"> </span><span class="n">version</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">12</span><span class="p">.</span><span class="mi">2</span><span class="p">)</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="mi">332</span><span class="w"> </span><span class="n">docs</span><span class="p">,</span><span class="w"> </span><span class="mi">29749</span><span class="w"> </span><span class="n">words</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Total</span><span class="w"> </span><span class="n">Vocabs</span><span class="p">:</span><span class="w"> </span><span class="mi">8428</span><span class="p">,</span><span class="w"> </span><span class="n">Used</span><span class="w"> </span><span class="n">Vocabs</span><span class="p">:</span><span class="w"> </span><span class="mi">2984</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Entropy</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">words</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">.</span><span class="mi">10665</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Entropy</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">term</span><span class="o">-</span><span class="n">weighted</span><span class="w"> </span><span class="n">words</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">.</span><span class="mi">10665</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Removed</span><span class="w"> </span><span class="n">Vocabs</span><span class="p">:</span><span class="w"> </span><span class="o">&lt;</span><span class="n">NA</span><span class="o">&gt;</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w">
+</span><span class="w">    </span><span class="o">&lt;</span><span class="n">Training</span><span class="w"> </span><span class="n">Info</span><span class="o">&gt;</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Iterations</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="n">Burn</span><span class="o">-</span><span class="k">in</span><span class="w"> </span><span class="n">steps</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Optimization</span><span class="w"> </span><span class="k">Interval</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Log</span><span class="o">-</span><span class="n">likelihood</span><span class="w"> </span><span class="n">per</span><span class="w"> </span><span class="n">word</span><span class="p">:</span><span class="w"> </span><span class="o">-</span><span class="mi">7</span><span class="p">.</span><span class="mi">79934</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w">
+</span><span class="w">    </span><span class="o">&lt;</span><span class="n">Initial</span><span class="w"> </span><span class="n">Parameters</span><span class="o">&gt;</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">tw</span><span class="p">:</span><span class="w"> </span><span class="n">TermWeight</span><span class="p">.</span><span class="n">ONE</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">min_cf</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">(</span><span class="n">minimum</span><span class="w"> </span><span class="n">collection</span><span class="w"> </span><span class="n">frequency</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">words</span><span class="p">)</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">min_df</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">(</span><span class="n">minimum</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">frequency</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">words</span><span class="p">)</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">rm_top</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">(</span><span class="n">the</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">top</span><span class="w"> </span><span class="n">words</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">removed</span><span class="p">)</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">k</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="p">(</span><span class="n">the</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">topics</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="mi">32767</span><span class="p">)</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">alpha</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="p">(</span><span class="n">hyperparameter</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">Dirichlet</span><span class="w"> </span><span class="n">distribution</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">document</span><span class="o">-</span><span class="n">topic</span><span class="p">,</span><span class="w"> </span><span class="n">given</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">single</span><span class="w"> </span><span class="o">`</span><span class="kt">float</span><span class="o">`</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">case</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">symmetric</span><span class="w"> </span><span class="n">prior</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">`</span><span class="n">k</span><span class="o">`</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="o">`</span><span class="kt">float</span><span class="o">`</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">case</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">asymmetric</span><span class="w"> </span><span class="n">prior</span><span class="p">.)</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">eta</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">01</span><span class="w"> </span><span class="p">(</span><span class="n">hyperparameter</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">Dirichlet</span><span class="w"> </span><span class="n">distribution</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">topic</span><span class="o">-</span><span class="n">word</span><span class="p">)</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">seed</span><span class="p">:</span><span class="w"> </span><span class="mi">555</span><span class="w"> </span><span class="p">(</span><span class="n">random</span><span class="w"> </span><span class="n">seed</span><span class="p">)</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">trained</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">12</span><span class="p">.</span><span class="mi">2</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w">
+</span><span class="w">    </span><span class="o">&lt;</span><span class="n">Parameters</span><span class="o">&gt;</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="nf">alpha</span><span class="w"> </span><span class="p">(</span><span class="n">Dirichlet</span><span class="w"> </span><span class="n">prior</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">per</span><span class="o">-</span><span class="n">document</span><span class="w"> </span><span class="n">topic</span><span class="w"> </span><span class="n">distributions</span><span class="p">)</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="p">[</span><span class="mi">0</span><span class="p">.</span><span class="mi">7143365</span><span class="w">  </span><span class="mi">0</span><span class="p">.</span><span class="mi">6852513</span><span class="w">  </span><span class="mi">0</span><span class="p">.</span><span class="mi">75089616</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">6204677</span><span class="w">  </span><span class="mi">0</span><span class="p">.</span><span class="mi">7040125</span><span class="w"> </span><span class="p">]</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="nf">eta</span><span class="w"> </span><span class="p">(</span><span class="n">Dirichlet</span><span class="w"> </span><span class="n">prior</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">per</span><span class="o">-</span><span class="n">topic</span><span class="w"> </span><span class="n">word</span><span class="w"> </span><span class="n">distribution</span><span class="p">)</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mi">0</span><span class="p">.</span><span class="mi">01</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w">
+</span><span class="w">    </span><span class="o">&lt;</span><span class="n">Topics</span><span class="o">&gt;</span><span class="w">
+</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="c1">#0 (6513) : 一辆 事故 记者 死亡 造成
+</span><span class="c1"></span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="c1">#1 (5655) : 学生 食物中毒 出现 医院 事件
+</span><span class="c1"></span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="c1">#2 (6231) : 现场 发生 医院 起火 原因
+</span><span class="c1"></span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="c1">#3 (5107) : 发生 爆炸 造成 死亡 受伤
+</span><span class="c1"></span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="c1">#4 (6243) : 地震 发生 火灾 时分 级
+</span></code></pre></div><h3 id="topic解读">topic解读</h3>
+<p>根据每个话题top10的特征词，5个话题解读为</p>
+<ul>
+<li>交通事故| #0 (6513) : 一辆 事故 记者 死亡 造成</li>
+<li>食品安全| #1 (5655) : 学生 食物中毒 出现 医院 事件</li>
+<li>火灾新闻| #2 (6231) : 现场 发生 医院 起火 原因</li>
+<li>恐怖袭击| #3 (5107) : 发生 爆炸 造成 死亡 受伤</li>
+<li>地震灾害| #4 (6243) : 地震 发生 火灾 时分 级</li>
+</ul>
+<br>
+<h2 id="5-可视化">5. 可视化</h2>
+<p>使用pyLDAvis</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pyLDAvis</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">Warning</span><span class="p">)</span>
+
+<span class="c1">#在notebook显示</span>
+<span class="n">pyLDAvis</span><span class="o">.</span><span class="n">enable_notebook</span><span class="p">()</span>
+
+<span class="c1">#获取pyldavis需要的参数</span>
+<span class="n">topic_term_dists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">mdl</span><span class="o">.</span><span class="n">get_topic_word_dist</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">k</span><span class="p">)])</span>
+<span class="n">doc_topic_dists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">doc</span><span class="o">.</span><span class="n">get_topic_dist</span><span class="p">()</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">mdl</span><span class="o">.</span><span class="n">docs</span><span class="p">])</span>
+<span class="n">doc_topic_dists</span> <span class="o">/=</span> <span class="n">doc_topic_dists</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">doc_lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">words</span><span class="p">)</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">mdl</span><span class="o">.</span><span class="n">docs</span><span class="p">])</span>
+<span class="n">vocab</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">used_vocabs</span><span class="p">)</span>
+<span class="n">term_frequency</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">used_vocab_freq</span>
+
+
+<span class="n">prepared_data</span> <span class="o">=</span> <span class="n">pyLDAvis</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span>
+    <span class="n">topic_term_dists</span><span class="p">,</span> 
+    <span class="n">doc_topic_dists</span><span class="p">,</span> 
+    <span class="n">doc_lengths</span><span class="p">,</span> 
+    <span class="n">vocab</span><span class="p">,</span> 
+    <span class="n">term_frequency</span><span class="p">,</span>
+    <span class="n">start_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1"># tomotopy话题id从0开始，pyLDAvis话题id从1开始</span>
+    <span class="n">sort_topics</span><span class="o">=</span><span class="kc">False</span> <span class="c1">#注意：否则pyLDAvis与tomotopy内的话题无法一一对应。 </span>
+<span class="p">)</span>
+
+
+<span class="c1">#可视化结果存到html文件中</span>
+<span class="c1">#pyLDAvis.save_html(prepared_data, &#39;ldavis.html&#39;)</span>
+
+<span class="c1">#notebook中显示</span>
+<span class="n">pyLDAvis</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">prepared_data</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/ldavis.png" alt=""  />
+</p>
+<br>
+<h2 id="6-预测">6. 预测</h2>
+<p>预测某文档的话题</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
+<span class="kn">from</span> <span class="nn">cntext</span> <span class="kn">import</span> <span class="n">STOPWORDS_zh</span>
+
+<span class="c1">#预测</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="s1">&#39;云南永善县级地震已致伤间民房受损中新网日电云南昭通市防震减灾局官方网站消息日时云南昭通永善县级地震造成受伤重伤轻伤送医院救治民房受损户间倒塌户间乡镇学校不同程度受损目前损毁电力交通通讯设施抢通修复调拨帐篷顶紧急转移万人时分云南昭通永善县发生里氏级地震震源深度公里震感强烈成都四川多地明显震感&#39;</span>
+<span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STOPWORDS_zh</span><span class="p">]</span>
+
+<span class="c1">#构造tomotopy需要的数据</span>
+<span class="n">doc_inst</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">make_doc</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">)</span>
+<span class="n">topic_dist</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">infer</span><span class="p">(</span><span class="n">doc_inst</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&#34;Topic Distribution for Unseen Docs: &#34;</span><span class="p">,</span> <span class="n">topic_dist</span><span class="p">)</span>
+
+</code></pre></div><pre><code>Topic Distribution for Unseen Docs:  [0.11645161 0.10240361 0.5342029  0.03622254 0.21071935]
+</code></pre>
+<p>列表长度为5， 列表第三个数值(topic #2)数值最大，该文本最大的可能性是topic #2</p>
+<br>
+<h2 id="补充-指定主题特征词">补充: 指定主题特征词</h2>
+<p>如果对数据比较了解，已经知道有一些主题，可以把比较明显的词语分配给指定的topic_id。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">555</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">words</span><span class="p">:</span>
+        <span class="n">mdl</span><span class="o">.</span><span class="n">add_doc</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
+
+<span class="c1">#把word相撞 分配给topic_0, 权重设置为1， 其他topic权重设置为0.1</span>
+<span class="c1">#注意这里的range(5) 5是对应的k值</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;相撞&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+<span class="c1">#把word地震 分配给topic_1, 权重设置为1， 其他topic权重设置为0.1</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;地震&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+<span class="c1">#把word火灾 分配给topic_2, 权重设置为1， 其他topic权重设置为0.1</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;火灾&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+<span class="c1">#把word中毒 分配给topic_3, 权重设置为1， 其他topic权重设置为0.1</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;中毒&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">3</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+<span class="c1">#把word袭击 分配给topic_4, 权重设置为1， 其他topic权重设置为0.1</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;袭击&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">4</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+
+<span class="n">mdl</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+<span class="n">mdl</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>  
+</code></pre></div><pre><code>&lt;Basic Info&gt;
+| LDAModel (current version: 0.12.2)
+| 332 docs, 29749 words
+| Total Vocabs: 8428, Used Vocabs: 2984
+| Entropy of words: 7.10665
+| Entropy of term-weighted words: 7.10665
+| Removed Vocabs: &lt;NA&gt;
+|
+&lt;Training Info&gt;
+| Iterations: 10, Burn-in steps: 0
+| Optimization Interval: 10
+| Log-likelihood per word: -7.72251
+|
+&lt;Initial Parameters&gt;
+| tw: TermWeight.ONE
+| min_cf: 0 (minimum collection frequency of words)
+| min_df: 2 (minimum document frequency of words)
+| rm_top: 0 (the number of top words to be removed)
+| k: 5 (the number of topics between 1 ~ 32767)
+| alpha: [0.1] (hyperparameter of Dirichlet distribution for document-topic, given as a single `float` in case of symmetric prior and as a list with length `k` of `float` in case of asymmetric prior.)
+| eta: 0.01 (hyperparameter of Dirichlet distribution for topic-word)
+| seed: 555 (random seed)
+| trained in version 0.12.2
+|
+&lt;Parameters&gt;
+| alpha (Dirichlet prior on the per-document topic distributions)
+|  [0.7106193  0.60264444 0.5734784  0.71375024 0.6234263 ]
+| eta (Dirichlet prior on the per-topic word distribution)
+|  0.01
+|
+&lt;Topics&gt;
+| #0 (6599) : 一辆 事故 死亡 发生 造成
+| #1 (6087) : 地震 发生 级 公里 年月日
+| #2 (5892) : 火灾 发生 现场 大火 起火
+| #3 (6402) : 医院 学生 食物中毒 出现 名
+| #4 (4769) : 事件 发生 袭击 人员 工作
+|
+</code></pre>
+<br>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>数据分析 | 知乎热门话题「全职儿女」</title>
       <link>https://textdata.cn/blog/2023-04-25-zhihu-parent-child-relationship/</link>
@@ -7896,335 +8222,6 @@ Name: Amount, dtype: float64[0m
 <h2 id="最好的文件格式不是-csv">最好的文件格式不是 CSV</h2>
 <p>CSV 是一种糟糕的格式。 除了解析效率低下之外，缺少类型数据意味着解析总是比具有实际列类型的结构化文件格式更容易出错和模棱两可。 因此，如果可以，请避免使用 CSV 并使用更好的格式，尽量选择其他高效类型，如 Parquet。</p>
 <p>如果你被 CSV 卡住了，考虑在 Pandas 1.4 中使用新的 PyArrow CSV 解析器； 你会得到很好的加速，特别是如果你的程序当前没有利用多个 CPU。</p>
-<br>
-<br>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
-]]></content:encoded>
-    </item>
-    
-    <item>
-      <title>tomotopy | 速度最快的LDA主题模型</title>
-      <link>https://textdata.cn/blog/tomotopy_is_the_fastest_topic_model/</link>
-      <pubDate>Fri, 07 Jan 2022 11:43:10 +0600</pubDate>
-      
-      <guid>/blog/tomotopy_is_the_fastest_topic_model/</guid>
-      <description>接近C的速度，比市面的sklearn、gensim快十几倍</description>
-      <content:encoded><![CDATA[<h2 id="代码下载tomotopy_codezip"><a href="tomotopy_code.zip">代码下载</a></h2>
-<br>
-<p><a href="https://textdata.cn/blog/2022workshop/"><img loading="lazy" src="img/workshop.png" alt="寒假工作坊"  />
-</a></p>
-<br>
-<h2 id="tomotopy简介">tomotopy简介？</h2>
-<p>tomotopy 是 tomoto（主题建模工具）的 Python 扩展，它是用 C++ 编写的基于 Gibbs 采样的主题模型库。支持的主题模型包括 LDA、DMR、HDP、MG-LDA、PA 和 HPA， 利用现代 CPU 的矢量化来最大化速度。</p>
-<p><a href="https://github.com/bab2min/tomotopy">https://github.com/bab2min/tomotopy</a></p>
-<p><strong>下图中同样的数据集， tomotopy迭代200次，gensim迭代10次的情况下， tomotopy与gensim耗时对比图，由此可见tomotopy训练主题模型速度之快。</strong>
-<img loading="lazy" src="img/TomotopyVsGensim.png" alt=""  />
-</p>
-<p>当前版本的 tomotopy 支持的主题模型包括</p>
-<ul>
-<li>潜在狄利克雷分配（LDAModel）</li>
-<li>标记的 LDA（LLDA 模型）</li>
-<li>部分标记的 LDA（PLDA 模型）</li>
-<li>监督LDA（SLDA模型）</li>
-<li>Dirichlet 多项回归 (DMRModel)</li>
-<li>广义狄利克雷多项回归 (GDMRModel)</li>
-<li>分层狄利克雷过程 (HDPModel)</li>
-<li>分层LDA（HLDA模型）</li>
-<li>多粒 LDA（MGLDA 模型）</li>
-<li>弹珠盘分配（PAModel）</li>
-<li>分层 PA (HPAModel)</li>
-<li>相关主题模型（CTModel）</li>
-<li>动态主题模型 (DTModel)</li>
-<li>基于伪文档的主题模型（PTModel）。</li>
-</ul>
-<br>
-<h2 id="安装">安装</h2>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">tomotopy</span><span class="o">==</span><span class="mf">0.12.2</span>
-<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">pyLDAvis</span><span class="o">==</span><span class="mf">3.3.1</span>  
-</code></pre></div><p>目前，tomotopy 可以利用 AVX2、AVX 或 SSE2 SIMD 指令集来最大程度利用PC的性能。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">tomotopy</span> <span class="k">as</span> <span class="nn">tp</span>
-
-<span class="n">tp</span><span class="o">.</span><span class="n">isa</span>
-</code></pre></div><p>Run</p>
-<pre><code>'avx2'
-</code></pre>
-<p>如果 tp.isa 返回 None，则训练过程可能需要很长时间。</p>
-<br>
-<h2 id="1-导入数据">1. 导入数据</h2>
-<p>准备一个自己很熟悉的数据disaster_news.csv，一共有332条，话题数K=5，（正常情况下K是需要探索的）。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;disaster_news.csv&#39;</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p><img loading="lazy" src="img/df1.png" alt=""  />
-</p>
-<br>
-<h2 id="2-整理数据">2. 整理数据</h2>
-<p>分词、去除停用词</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">jieba</span>
-<span class="kn">from</span> <span class="nn">cntext</span> <span class="kn">import</span> <span class="n">STOPWORDS_zh</span>
-
-
-<span class="k">def</span> <span class="nf">segment</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-    <span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STOPWORDS_zh</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">words</span>
-
-<span class="n">test</span> <span class="o">=</span> <span class="s2">&#34;云南永善县级地震已致人伤间民房受损中新网月日电据云南昭通市防震减灾局官方网站消息截至日时云南昭通永善县级地震已造成人受伤其中重伤人轻伤人已全部送医院救治民房受损户间倒塌户间个乡镇所学校不同程度受损目前被损毁电力交通通讯设施已全部抢通修复当地已调拨帐篷顶紧急转移万人月日时分云南昭通永善县发生里氏级地震震源深度公里当地震感强烈此外成都等四川多地也有明显震感&#34;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">segment</span><span class="p">(</span><span class="n">test</span><span class="p">))</span>
-</code></pre></div><pre><code>['云南', '永善县', '级', '地震', '已致', '伤间', '民房', '受损', '中新网', '日电', '云南', '昭通市', '防震', '减灾', '局', '官方网站', '消息', '日时', '云南', '昭通', '永善县', '级', '地震', '造成', '受伤', '重伤', '轻伤', '送', '医院', '救治', '民房', '受损', '户间', '倒塌', '户间', '乡镇', '学校', '不同', '程度', '受损', '目前', '损毁', '电力', '交通', '通讯', '设施', '抢通', '修复', '调拨', '帐篷', '顶', '紧急', '转移', '万人', '时分', '云南', '昭通', '永善县', '发生', '里氏', '级', '地震', '震源', '深度', '公里', '震感', '强烈', '成都', '四川', '多地', '明显', '震感']
-</code></pre>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
-</p>
-<br>
-<h2 id="3-找到最佳k">3. 找到最佳K</h2>
-<p>正常的步骤应该认真对待这步，在一定区间范围内，根据模型得分找到合理的K。这里使用tomotopy提供的主题一致性coherence得分假装找一下。</p>
-<p>我们期望的图应该的topic coherence随着 number of topics增加而增加，然后到某个topic值趋于平稳。</p>
-<p>tomotopy每次运行得到的图形状不一样，为了保证运行结果具有可比性，设置了随机种子seed为555，你也可以根据需要改为自己需要的随机状态。(这里有点像炼丹)</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">find_k</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="n">min_k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_k</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
-    <span class="c1">#min_df 词语最少出现在2个文档中</span>
-    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-    <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_k</span><span class="p">,</span> <span class="n">max_k</span><span class="p">):</span>
-        <span class="c1">#seed随机种子，保证在大邓这里运行结果与你运行的结果一样</span>
-        <span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">min_df</span><span class="o">=</span><span class="n">min_df</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">555</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">words</span><span class="p">:</span>
-                <span class="n">mdl</span><span class="o">.</span><span class="n">add_doc</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
-        <span class="n">mdl</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
-        <span class="n">coh</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">coherence</span><span class="o">.</span><span class="n">Coherence</span><span class="p">(</span><span class="n">mdl</span><span class="p">)</span>
-        <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coh</span><span class="o">.</span><span class="n">get_score</span><span class="p">())</span>
-
-    <span class="c1">#x = list(range(min_k, max_k - 1))  # 区间最右侧的值。注意：不能大于max_k</span>
-    <span class="c1">#print(x)</span>
-    <span class="c1">#print()</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">min_k</span><span class="p">,</span> <span class="n">max_k</span><span class="p">),</span> <span class="n">scores</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&#34;number of topics&#34;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&#34;coherence&#34;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-    
-    
-<span class="n">find_k</span><span class="p">(</span><span class="n">docs</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">],</span> <span class="n">min_k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-</code></pre></div><p><img loading="lazy" src="img/output_11_0.png" alt="png"  />
-</p>
-<br>
-<h2 id="4-训练lda">4. 训练lda</h2>
-<p>使用tomotopy的LDA模型， 话题数K=5</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">tomotopy</span> <span class="k">as</span> <span class="nn">tp</span>
-
-<span class="c1">#初始化LDA</span>
-<span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">555</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">]:</span>
-    <span class="c1">#确认words 是 非空词语列表</span>
-    <span class="k">if</span> <span class="n">words</span><span class="p">:</span>
-        <span class="n">mdl</span><span class="o">.</span><span class="n">add_doc</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">)</span>
-
-<span class="c1">#训练</span>
-<span class="n">mdl</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
-
-<span class="c1">#查看每个topic feature words</span>
-<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Top 10 words of topic #</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">get_topic_words</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">top_n</span><span class="o">=</span><span class="mi">10</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    Top 10 words of topic #0
-    [(&#39;一辆&#39;, 0.02751251682639122), (&#39;事故&#39;, 0.021704642102122307), (&#39;记者&#39;, 0.018342189490795135), (&#39;死亡&#39;, 0.01650812290608883), (&#39;造成&#39;, 0.014062701724469662), (&#39;人员&#39;, 0.013909862376749516), (&#39;现场&#39;, 0.013451346196234226), (&#39;受伤&#39;, 0.012687151320278645), (&#39;相撞&#39;, 0.011922957375645638), (&#39;货车&#39;, 0.011922957375645638)]
-
-
-​    
-​    Top 10 words of topic #1
-​    [(&#39;学生&#39;, 0.02709135226905346), (&#39;食物中毒&#39;, 0.02498047426342964), (&#39;出现&#39;, 0.019175563007593155), (&#39;医院&#39;, 0.016185153275728226), (&#39;事件&#39;, 0.013546556234359741), (&#39;调查&#39;, 0.013194743543863297), (&#39;年月日&#39;, 0.012842929922044277), (&#39;治疗&#39;, 0.012667023576796055), (&#39;症状&#39;, 0.011787491850554943), (&#39;名&#39;, 0.011259771883487701)]
-
-
-​    
-​    Top 10 words of topic #2
-​    [(&#39;现场&#39;, 0.018848909065127373), (&#39;发生&#39;, 0.01677251048386097), (&#39;医院&#39;, 0.015015557408332825), (&#39;起火&#39;, 0.014216942712664604), (&#39;原因&#39;, 0.012140544131398201), (&#39;目前&#39;, 0.012140544131398201), (&#39;救治&#39;, 0.01150165218859911), (&#39;进行&#39;, 0.011022482998669147), (&#39;名&#39;, 0.009425252676010132), (&#39;火势&#39;, 0.009265529923141003)]
-
-
-​    
-​    Top 10 words of topic #3
-​    [(&#39;发生&#39;, 0.03348556533455849), (&#39;爆炸&#39;, 0.022389251738786697), (&#39;造成&#39;, 0.019663840532302856), (&#39;死亡&#39;, 0.01713310182094574), (&#39;受伤&#39;, 0.016938429325819016), (&#39;年月日&#39;, 0.016354413703083992), (&#39;轿车&#39;, 0.012655640952289104), (&#39;警方&#39;, 0.012460969388484955), (&#39;袭击&#39;, 0.012266295962035656), (&#39;事件&#39;, 0.011487606912851334)]
-
-
-​    
-​    Top 10 words of topic #4
-​    [(&#39;地震&#39;, 0.047826822847127914), (&#39;发生&#39;, 0.03555167838931084), (&#39;火灾&#39;, 0.03140682727098465), (&#39;时分&#39;, 0.020885275676846504), (&#39;级&#39;, 0.015783920884132385), (&#39;时间&#39;, 0.013870910741388798), (&#39;公里&#39;, 0.013711493462324142), (&#39;人员伤亡&#39;, 0.013073823414742947), (&#39;记者&#39;, 0.013073823414742947), (&#39;震感&#39;, 0.012276736088097095)]
-</code></pre></div><br>
-<p>查看话题模型信息</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">mdl</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mysql" data-lang="mysql"><span class="w">
-</span><span class="w">    </span><span class="o">&lt;</span><span class="n">Basic</span><span class="w"> </span><span class="n">Info</span><span class="o">&gt;</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="nf">LDAModel</span><span class="w"> </span><span class="p">(</span><span class="n">current</span><span class="w"> </span><span class="n">version</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">12</span><span class="p">.</span><span class="mi">2</span><span class="p">)</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="mi">332</span><span class="w"> </span><span class="n">docs</span><span class="p">,</span><span class="w"> </span><span class="mi">29749</span><span class="w"> </span><span class="n">words</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Total</span><span class="w"> </span><span class="n">Vocabs</span><span class="p">:</span><span class="w"> </span><span class="mi">8428</span><span class="p">,</span><span class="w"> </span><span class="n">Used</span><span class="w"> </span><span class="n">Vocabs</span><span class="p">:</span><span class="w"> </span><span class="mi">2984</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Entropy</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">words</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">.</span><span class="mi">10665</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Entropy</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">term</span><span class="o">-</span><span class="n">weighted</span><span class="w"> </span><span class="n">words</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">.</span><span class="mi">10665</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Removed</span><span class="w"> </span><span class="n">Vocabs</span><span class="p">:</span><span class="w"> </span><span class="o">&lt;</span><span class="n">NA</span><span class="o">&gt;</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w">
-</span><span class="w">    </span><span class="o">&lt;</span><span class="n">Training</span><span class="w"> </span><span class="n">Info</span><span class="o">&gt;</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Iterations</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="n">Burn</span><span class="o">-</span><span class="k">in</span><span class="w"> </span><span class="n">steps</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Optimization</span><span class="w"> </span><span class="k">Interval</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Log</span><span class="o">-</span><span class="n">likelihood</span><span class="w"> </span><span class="n">per</span><span class="w"> </span><span class="n">word</span><span class="p">:</span><span class="w"> </span><span class="o">-</span><span class="mi">7</span><span class="p">.</span><span class="mi">79934</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w">
-</span><span class="w">    </span><span class="o">&lt;</span><span class="n">Initial</span><span class="w"> </span><span class="n">Parameters</span><span class="o">&gt;</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">tw</span><span class="p">:</span><span class="w"> </span><span class="n">TermWeight</span><span class="p">.</span><span class="n">ONE</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">min_cf</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">(</span><span class="n">minimum</span><span class="w"> </span><span class="n">collection</span><span class="w"> </span><span class="n">frequency</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">words</span><span class="p">)</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">min_df</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">(</span><span class="n">minimum</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">frequency</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">words</span><span class="p">)</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">rm_top</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">(</span><span class="n">the</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">top</span><span class="w"> </span><span class="n">words</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">removed</span><span class="p">)</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">k</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="p">(</span><span class="n">the</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">topics</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="mi">32767</span><span class="p">)</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">alpha</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="p">(</span><span class="n">hyperparameter</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">Dirichlet</span><span class="w"> </span><span class="n">distribution</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">document</span><span class="o">-</span><span class="n">topic</span><span class="p">,</span><span class="w"> </span><span class="n">given</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">single</span><span class="w"> </span><span class="o">`</span><span class="kt">float</span><span class="o">`</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">case</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">symmetric</span><span class="w"> </span><span class="n">prior</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">`</span><span class="n">k</span><span class="o">`</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="o">`</span><span class="kt">float</span><span class="o">`</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">case</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">asymmetric</span><span class="w"> </span><span class="n">prior</span><span class="p">.)</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">eta</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">01</span><span class="w"> </span><span class="p">(</span><span class="n">hyperparameter</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">Dirichlet</span><span class="w"> </span><span class="n">distribution</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">topic</span><span class="o">-</span><span class="n">word</span><span class="p">)</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">seed</span><span class="p">:</span><span class="w"> </span><span class="mi">555</span><span class="w"> </span><span class="p">(</span><span class="n">random</span><span class="w"> </span><span class="n">seed</span><span class="p">)</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">trained</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">12</span><span class="p">.</span><span class="mi">2</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w">
-</span><span class="w">    </span><span class="o">&lt;</span><span class="n">Parameters</span><span class="o">&gt;</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="nf">alpha</span><span class="w"> </span><span class="p">(</span><span class="n">Dirichlet</span><span class="w"> </span><span class="n">prior</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">per</span><span class="o">-</span><span class="n">document</span><span class="w"> </span><span class="n">topic</span><span class="w"> </span><span class="n">distributions</span><span class="p">)</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="p">[</span><span class="mi">0</span><span class="p">.</span><span class="mi">7143365</span><span class="w">  </span><span class="mi">0</span><span class="p">.</span><span class="mi">6852513</span><span class="w">  </span><span class="mi">0</span><span class="p">.</span><span class="mi">75089616</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">6204677</span><span class="w">  </span><span class="mi">0</span><span class="p">.</span><span class="mi">7040125</span><span class="w"> </span><span class="p">]</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="nf">eta</span><span class="w"> </span><span class="p">(</span><span class="n">Dirichlet</span><span class="w"> </span><span class="n">prior</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">per</span><span class="o">-</span><span class="n">topic</span><span class="w"> </span><span class="n">word</span><span class="w"> </span><span class="n">distribution</span><span class="p">)</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mi">0</span><span class="p">.</span><span class="mi">01</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w">
-</span><span class="w">    </span><span class="o">&lt;</span><span class="n">Topics</span><span class="o">&gt;</span><span class="w">
-</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="c1">#0 (6513) : 一辆 事故 记者 死亡 造成
-</span><span class="c1"></span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="c1">#1 (5655) : 学生 食物中毒 出现 医院 事件
-</span><span class="c1"></span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="c1">#2 (6231) : 现场 发生 医院 起火 原因
-</span><span class="c1"></span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="c1">#3 (5107) : 发生 爆炸 造成 死亡 受伤
-</span><span class="c1"></span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="c1">#4 (6243) : 地震 发生 火灾 时分 级
-</span></code></pre></div><h3 id="topic解读">topic解读</h3>
-<p>根据每个话题top10的特征词，5个话题解读为</p>
-<ul>
-<li>交通事故| #0 (6513) : 一辆 事故 记者 死亡 造成</li>
-<li>食品安全| #1 (5655) : 学生 食物中毒 出现 医院 事件</li>
-<li>火灾新闻| #2 (6231) : 现场 发生 医院 起火 原因</li>
-<li>恐怖袭击| #3 (5107) : 发生 爆炸 造成 死亡 受伤</li>
-<li>地震灾害| #4 (6243) : 地震 发生 火灾 时分 级</li>
-</ul>
-<br>
-<h2 id="5-可视化">5. 可视化</h2>
-<p>使用pyLDAvis</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pyLDAvis</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">Warning</span><span class="p">)</span>
-
-<span class="c1">#在notebook显示</span>
-<span class="n">pyLDAvis</span><span class="o">.</span><span class="n">enable_notebook</span><span class="p">()</span>
-
-<span class="c1">#获取pyldavis需要的参数</span>
-<span class="n">topic_term_dists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">mdl</span><span class="o">.</span><span class="n">get_topic_word_dist</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">k</span><span class="p">)])</span>
-<span class="n">doc_topic_dists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">doc</span><span class="o">.</span><span class="n">get_topic_dist</span><span class="p">()</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">mdl</span><span class="o">.</span><span class="n">docs</span><span class="p">])</span>
-<span class="n">doc_topic_dists</span> <span class="o">/=</span> <span class="n">doc_topic_dists</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">doc_lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">words</span><span class="p">)</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">mdl</span><span class="o">.</span><span class="n">docs</span><span class="p">])</span>
-<span class="n">vocab</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">used_vocabs</span><span class="p">)</span>
-<span class="n">term_frequency</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">used_vocab_freq</span>
-
-
-<span class="n">prepared_data</span> <span class="o">=</span> <span class="n">pyLDAvis</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span>
-    <span class="n">topic_term_dists</span><span class="p">,</span> 
-    <span class="n">doc_topic_dists</span><span class="p">,</span> 
-    <span class="n">doc_lengths</span><span class="p">,</span> 
-    <span class="n">vocab</span><span class="p">,</span> 
-    <span class="n">term_frequency</span><span class="p">,</span>
-    <span class="n">start_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1"># tomotopy话题id从0开始，pyLDAvis话题id从1开始</span>
-    <span class="n">sort_topics</span><span class="o">=</span><span class="kc">False</span> <span class="c1">#注意：否则pyLDAvis与tomotopy内的话题无法一一对应。 </span>
-<span class="p">)</span>
-
-
-<span class="c1">#可视化结果存到html文件中</span>
-<span class="c1">#pyLDAvis.save_html(prepared_data, &#39;ldavis.html&#39;)</span>
-
-<span class="c1">#notebook中显示</span>
-<span class="n">pyLDAvis</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">prepared_data</span><span class="p">)</span>
-</code></pre></div><p><img loading="lazy" src="img/ldavis.png" alt=""  />
-</p>
-<br>
-<h2 id="6-预测">6. 预测</h2>
-<p>预测某文档的话题</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
-<span class="kn">from</span> <span class="nn">cntext</span> <span class="kn">import</span> <span class="n">STOPWORDS_zh</span>
-
-<span class="c1">#预测</span>
-<span class="n">doc</span> <span class="o">=</span> <span class="s1">&#39;云南永善县级地震已致伤间民房受损中新网日电云南昭通市防震减灾局官方网站消息日时云南昭通永善县级地震造成受伤重伤轻伤送医院救治民房受损户间倒塌户间乡镇学校不同程度受损目前损毁电力交通通讯设施抢通修复调拨帐篷顶紧急转移万人时分云南昭通永善县发生里氏级地震震源深度公里震感强烈成都四川多地明显震感&#39;</span>
-<span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STOPWORDS_zh</span><span class="p">]</span>
-
-<span class="c1">#构造tomotopy需要的数据</span>
-<span class="n">doc_inst</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">make_doc</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">)</span>
-<span class="n">topic_dist</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">infer</span><span class="p">(</span><span class="n">doc_inst</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&#34;Topic Distribution for Unseen Docs: &#34;</span><span class="p">,</span> <span class="n">topic_dist</span><span class="p">)</span>
-
-</code></pre></div><pre><code>Topic Distribution for Unseen Docs:  [0.11645161 0.10240361 0.5342029  0.03622254 0.21071935]
-</code></pre>
-<p>列表长度为5， 列表第三个数值(topic #2)数值最大，该文本最大的可能性是topic #2</p>
-<br>
-<h2 id="补充-指定主题特征词">补充: 指定主题特征词</h2>
-<p>如果对数据比较了解，已经知道有一些主题，可以把比较明显的词语分配给指定的topic_id。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">555</span><span class="p">)</span>
-
-<span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">]:</span>
-    <span class="k">if</span> <span class="n">words</span><span class="p">:</span>
-        <span class="n">mdl</span><span class="o">.</span><span class="n">add_doc</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
-
-<span class="c1">#把word相撞 分配给topic_0, 权重设置为1， 其他topic权重设置为0.1</span>
-<span class="c1">#注意这里的range(5) 5是对应的k值</span>
-<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;相撞&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
-<span class="c1">#把word地震 分配给topic_1, 权重设置为1， 其他topic权重设置为0.1</span>
-<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;地震&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
-<span class="c1">#把word火灾 分配给topic_2, 权重设置为1， 其他topic权重设置为0.1</span>
-<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;火灾&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
-<span class="c1">#把word中毒 分配给topic_3, 权重设置为1， 其他topic权重设置为0.1</span>
-<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;中毒&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">3</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
-<span class="c1">#把word袭击 分配给topic_4, 权重设置为1， 其他topic权重设置为0.1</span>
-<span class="n">mdl</span><span class="o">.</span><span class="n">set_word_prior</span><span class="p">(</span><span class="s1">&#39;袭击&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">4</span> <span class="k">else</span> <span class="mf">0.1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
-
-<span class="n">mdl</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
-<span class="n">mdl</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>  
-</code></pre></div><pre><code>&lt;Basic Info&gt;
-| LDAModel (current version: 0.12.2)
-| 332 docs, 29749 words
-| Total Vocabs: 8428, Used Vocabs: 2984
-| Entropy of words: 7.10665
-| Entropy of term-weighted words: 7.10665
-| Removed Vocabs: &lt;NA&gt;
-|
-&lt;Training Info&gt;
-| Iterations: 10, Burn-in steps: 0
-| Optimization Interval: 10
-| Log-likelihood per word: -7.72251
-|
-&lt;Initial Parameters&gt;
-| tw: TermWeight.ONE
-| min_cf: 0 (minimum collection frequency of words)
-| min_df: 2 (minimum document frequency of words)
-| rm_top: 0 (the number of top words to be removed)
-| k: 5 (the number of topics between 1 ~ 32767)
-| alpha: [0.1] (hyperparameter of Dirichlet distribution for document-topic, given as a single `float` in case of symmetric prior and as a list with length `k` of `float` in case of asymmetric prior.)
-| eta: 0.01 (hyperparameter of Dirichlet distribution for topic-word)
-| seed: 555 (random seed)
-| trained in version 0.12.2
-|
-&lt;Parameters&gt;
-| alpha (Dirichlet prior on the per-document topic distributions)
-|  [0.7106193  0.60264444 0.5734784  0.71375024 0.6234263 ]
-| eta (Dirichlet prior on the per-topic word distribution)
-|  0.01
-|
-&lt;Topics&gt;
-| #0 (6599) : 一辆 事故 死亡 发生 造成
-| #1 (6087) : 地震 发生 级 公里 年月日
-| #2 (5892) : 火灾 发生 现场 大火 起火
-| #3 (6402) : 医院 学生 食物中毒 出现 名
-| #4 (4769) : 事件 发生 袭击 人员 工作
-|
-</code></pre>
 <br>
 <br>
 <h2 id="广而告之">广而告之</h2>
