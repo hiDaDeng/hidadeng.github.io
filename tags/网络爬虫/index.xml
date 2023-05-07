@@ -6,7 +6,154 @@
     <description>Recent content in 网络爬虫 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 23 Apr 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 26 Apr 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>网络爬虫 | 使用Python披露采集 Up 主视频详情信息</title>
+      <link>https://textdata.cn/blog/2023-05-07-bilibili-video-info-list/</link>
+      <pubDate>Wed, 26 Apr 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-05-07-bilibili-video-info-list/</guid>
+      <description>使用Python披露采集 Up 主视频详情信息</description>
+      <content:encoded><![CDATA[<br>
+<h2 id="一问题">一、问题</h2>
+<p>看到一个B站账号-祖国街景，使用行车记录仪记录中国城市，同时该账号还有youtube账号(中国街景)， <strong>感觉视频的评论和弹幕可以用来做城市形象方面的数据分析</strong>。之前也分享过评论和弹幕的数据采集，</p>
+<ul>
+<li><a href="https://textdata.cn/blog/2023-04-23-data-collector-for-bilibili-danmu/">网络爬虫 | 使用Python采集B站弹幕和评论数据</a></li>
+</ul>
+<br>
+<p>但是需要有每个视频的Bvid才能采集。 今天要分享的内容是  <strong>如何获取某Up主的所有视频对应的Bvid等信息</strong> 。 完整的爬虫撰写步骤:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1. 发现网址规律，获得批量url
+2. 对某个url发起成功的访问
+3. 解析该url对应的网页数据
+4. 存储到csv
+5. 对所有url， 重复步骤2-4
+</code></pre></div><p>为了减少工作量， 我就简单分析下网址规律，直接上代码。</p>
+<br>
+<br>
+<h2 id="二网址规律">二、网址规律</h2>
+<p>要获取某Up主视频Bvid等信息，只需要获得视频列表mid值，如下图。</p>
+<p><img loading="lazy" src="img/01-screen-mid.png" alt=""  />
+</p>
+<p>如果学过大邓的网络爬虫， 找网址规律的方法是打开开发者工具Network面板， 在当前网页刷新， 按照截图标号顺序点击鼠标， 得到网址规律(下方截图红3)。 剔除了对结果影响不大的参数，最终得到网址规律模板 template 。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">template =  &#39;https://api.bilibili.com/x/space/wbi/arc/search?mid={mid}&amp;ps=30&amp;pn={page}&#39;
+</code></pre></div><p><img loading="lazy" src="img/02-url-encode.png" alt=""  />
+</p>
+<br>
+<br>
+<h2 id="三-爬虫代码">三、 爬虫代码</h2>
+<p>下方代码只需要改变 Up 主 mid 值，其他地方不要改动。 我设置了限速，每秒访问一次， 直接运行代码，假设Up主有 9 页， 程序大概运行 9s 左右。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+
+<span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;user-agent&#34;</span><span class="p">:</span> <span class="s2">&#34;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36&#34;</span><span class="p">}</span>
+<span class="n">template</span> <span class="o">=</span>  <span class="s1">&#39;https://api.bilibili.com/x/space/wbi/arc/search?mid=</span><span class="si">{mid}</span><span class="s1">&amp;ps=30&amp;pn=</span><span class="si">{page}</span><span class="s1">&#39;</span>
+
+<span class="c1">#只需更改这个参数，就能爬视频列表信息</span>
+<span class="n">mid</span> <span class="o">=</span> <span class="s1">&#39;373489046&#39;</span>
+
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{mid}</span><span class="s1">_infos.csv&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mid</span><span class="o">=</span><span class="n">mid</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvf</span><span class="p">:</span>
+    <span class="n">fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;comment&#39;</span><span class="p">,</span> <span class="s1">&#39;typeid&#39;</span><span class="p">,</span> <span class="s1">&#39;play&#39;</span><span class="p">,</span> <span class="s1">&#39;pic&#39;</span><span class="p">,</span> <span class="s1">&#39;subtitle&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">,</span> <span class="s1">&#39;copyright&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;review&#39;</span><span class="p">,</span> <span class="s1">&#39;author&#39;</span><span class="p">,</span> <span class="s1">&#39;mid&#39;</span><span class="p">,</span> <span class="s1">&#39;created&#39;</span><span class="p">,</span> <span class="s1">&#39;length&#39;</span><span class="p">,</span> <span class="s1">&#39;video_review&#39;</span><span class="p">,</span> <span class="s1">&#39;aid&#39;</span><span class="p">,</span> <span class="s1">&#39;bvid&#39;</span><span class="p">,</span> <span class="s1">&#39;hide_click&#39;</span><span class="p">,</span> <span class="s1">&#39;is_pay&#39;</span><span class="p">,</span> <span class="s1">&#39;is_union_video&#39;</span><span class="p">,</span> <span class="s1">&#39;is_steins_gate&#39;</span><span class="p">,</span> <span class="s1">&#39;is_live_playback&#39;</span><span class="p">,</span> <span class="s1">&#39;meta&#39;</span><span class="p">,</span> <span class="s1">&#39;is_avoided&#39;</span><span class="p">,</span> <span class="s1">&#39;attribute&#39;</span><span class="p">]</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">fieldnames</span><span class="o">=</span><span class="n">fieldnames</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+
+    <span class="n">url</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mid</span><span class="o">=</span><span class="n">mid</span><span class="p">,</span> <span class="n">page</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        
+    <span class="n">record_num</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;page&#39;</span><span class="p">][</span><span class="s1">&#39;count&#39;</span><span class="p">]</span>
+    <span class="n">max_page</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">record_num</span><span class="o">/</span><span class="mi">30</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+
+
+    <span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_page</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;正在爬Up主第 </span><span class="si">{}</span><span class="s1"> 页&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">page</span><span class="p">))</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mid</span><span class="o">=</span><span class="n">mid</span><span class="p">,</span> <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">)</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        <span class="n">vlist</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;list&#39;</span><span class="p">][</span><span class="s1">&#39;vlist&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">video</span> <span class="ow">in</span> <span class="n">vlist</span><span class="p">:</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
+            
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    正在爬Up主第 1 页
+    正在爬Up主第 2 页
+    正在爬Up主第 3 页
+    正在爬Up主第 4 页
+    正在爬Up主第 5 页
+    正在爬Up主第 6 页
+    正在爬Up主第 7 页
+    正在爬Up主第 8 页
+    正在爬Up主第 9 页
+</code></pre></div><br>
+<br>
+<h2 id="四导入数据">四、导入数据</h2>
+<p>获取到Up主「祖国街景」的258个视频信息，含有的字段</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">comment 评论数
+typeid 视频类型(猜测)
+play 播放次数
+pic 封面图链接
+subtitle 副标题
+description 视频描述
+copyright 是否原创(猜测)
+title 视频标题
+review 评论数
+author Up主昵称
+mid Up主mid
+created 创建时间(时间戳)
+length 视频时长
+video_review  是否原创(猜测)
+aid 视频aid号
+bvid 视频Bvid号
+hide_click 未知
+is_pay 是否付费
+is_union_video 是否为联合制作
+is_steins_gate 未知
+is_live_playback 是否为直播回放
+meta 视频元信息（含投币量、喜欢数、分享数）
+is_avoided 未知
+attribute 未知
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;373489046_infos.csv&#39;</span><span class="p">)</span>
+
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/03-df.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#视频数量</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">259
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#前5个内容</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[:</span><span class="mi">5</span><span class="p">]</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    [&#39;“800公里”时速（8倍速）从厦门开2000公里的车到成都是什么样的体验？&#39;,
+     &#39;重庆至上海-G50沪渝高速全程，经安庆、池州、铜陵、宣城、湖州到达上海【下】&#39;,
+     &#39;重庆至上海-G50沪渝高速全程【中】，经宜昌、荆州、武汉、鄂州、黄石&#39;,
+     &#39;重庆至上海-G50沪渝高速全程，1751公里原声原速【上】&#39;,
+     &#39;厦门至成都-横跨半个中国，G76厦蓉高速，经毕节、泸州、内江、资阳【下】&#39;]
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#视频元信息（含投币量、喜欢数、分享数）</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;meta&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[:</span><span class="mi">5</span><span class="p">]</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    [&#34;{&#39;id&#39;: 124822, &#39;title&#39;: &#39;高速公路&#39;, &#39;cover&#39;: &#39;https://archive.biliimg.com/bfs/archive/634c1b4659e6958cba47322cca344a69f8121f34.jpg&#39;, &#39;mid&#39;: 373489046, &#39;intro&#39;: &#39;&#39;, &#39;sign_state&#39;: 0, &#39;attribute&#39;: 140, &#39;stat&#39;: {&#39;season_id&#39;: 124822, &#39;view&#39;: 1835970, &#39;danmaku&#39;: 14479, &#39;reply&#39;: 7495, &#39;favorite&#39;: 21838, &#39;coin&#39;: 10240, &#39;share&#39;: 5473, &#39;like&#39;: 40496, &#39;mtime&#39;: 1683437054, &#39;vt&#39;: 6497104, &#39;vv&#39;: 0}, &#39;ep_count&#39;: 38, &#39;first_aid&#39;: 253218067, &#39;ptime&#39;: 1683417600, &#39;ep_num&#39;: 0}&#34;,
+     &#34;{&#39;id&#39;: 124822, &#39;title&#39;: &#39;高速公路&#39;, &#39;cover&#39;: &#39;https://archive.biliimg.com/bfs/archive/634c1b4659e6958cba47322cca344a69f8121f34.jpg&#39;, &#39;mid&#39;: 373489046, &#39;intro&#39;: &#39;&#39;, &#39;sign_state&#39;: 0, &#39;attribute&#39;: 140, &#39;stat&#39;: {&#39;season_id&#39;: 124822, &#39;view&#39;: 1835970, &#39;danmaku&#39;: 14479, &#39;reply&#39;: 7495, &#39;favorite&#39;: 21838, &#39;coin&#39;: 10240, &#39;share&#39;: 5473, &#39;like&#39;: 40496, &#39;mtime&#39;: 1683437054, &#39;vt&#39;: 6497104, &#39;vv&#39;: 0}, &#39;ep_count&#39;: 38, &#39;first_aid&#39;: 253218067, &#39;ptime&#39;: 1683417600, &#39;ep_num&#39;: 0}&#34;,
+     &#34;{&#39;id&#39;: 124822, &#39;title&#39;: &#39;高速公路&#39;, &#39;cover&#39;: &#39;https://archive.biliimg.com/bfs/archive/634c1b4659e6958cba47322cca344a69f8121f34.jpg&#39;, &#39;mid&#39;: 373489046, &#39;intro&#39;: &#39;&#39;, &#39;sign_state&#39;: 0, &#39;attribute&#39;: 140, &#39;stat&#39;: {&#39;season_id&#39;: 124822, &#39;view&#39;: 1835970, &#39;danmaku&#39;: 14479, &#39;reply&#39;: 7495, &#39;favorite&#39;: 21838, &#39;coin&#39;: 10240, &#39;share&#39;: 5473, &#39;like&#39;: 40496, &#39;mtime&#39;: 1683437054, &#39;vt&#39;: 6497104, &#39;vv&#39;: 0}, &#39;ep_count&#39;: 38, &#39;first_aid&#39;: 253218067, &#39;ptime&#39;: 1683417600, &#39;ep_num&#39;: 0}&#34;,
+     &#34;{&#39;id&#39;: 124822, &#39;title&#39;: &#39;高速公路&#39;, &#39;cover&#39;: &#39;https://archive.biliimg.com/bfs/archive/634c1b4659e6958cba47322cca344a69f8121f34.jpg&#39;, &#39;mid&#39;: 373489046, &#39;intro&#39;: &#39;&#39;, &#39;sign_state&#39;: 0, &#39;attribute&#39;: 140, &#39;stat&#39;: {&#39;season_id&#39;: 124822, &#39;view&#39;: 1835970, &#39;danmaku&#39;: 14479, &#39;reply&#39;: 7495, &#39;favorite&#39;: 21838, &#39;coin&#39;: 10240, &#39;share&#39;: 5473, &#39;like&#39;: 40496, &#39;mtime&#39;: 1683437054, &#39;vt&#39;: 6497104, &#39;vv&#39;: 0}, &#39;ep_count&#39;: 38, &#39;first_aid&#39;: 253218067, &#39;ptime&#39;: 1683417600, &#39;ep_num&#39;: 0}&#34;,
+     &#34;{&#39;id&#39;: 124822, &#39;title&#39;: &#39;高速公路&#39;, &#39;cover&#39;: &#39;https://archive.biliimg.com/bfs/archive/634c1b4659e6958cba47322cca344a69f8121f34.jpg&#39;, &#39;mid&#39;: 373489046, &#39;intro&#39;: &#39;&#39;, &#39;sign_state&#39;: 0, &#39;attribute&#39;: 140, &#39;stat&#39;: {&#39;season_id&#39;: 124822, &#39;view&#39;: 1835970, &#39;danmaku&#39;: 14479, &#39;reply&#39;: 7495, &#39;favorite&#39;: 21838, &#39;coin&#39;: 10240, &#39;share&#39;: 5473, &#39;like&#39;: 40496, &#39;mtime&#39;: 1683437054, &#39;vt&#39;: 6497104, &#39;vv&#39;: 0}, &#39;ep_count&#39;: 38, &#39;first_aid&#39;: 253218067, &#39;ptime&#39;: 1683417600, &#39;ep_num&#39;: 0}&#34;]
+</code></pre></div><p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>数据分析 | 知乎热门话题「全职儿女」</title>
       <link>https://textdata.cn/blog/2023-04-25-zhihu-parent-child-relationship/</link>
