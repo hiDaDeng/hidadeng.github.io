@@ -6,7 +6,547 @@
     <description>Recent content in pandas on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 31 May 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pandas/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 07 Aug 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pandas/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Pandas库 | 对高管数据xlsx中的简介字段做文本分析</title>
+      <link>https://textdata.cn/blog/2023-08-07-using-str-contains-method-to-judge-some-specific-content-in-excel/</link>
+      <pubDate>Mon, 07 Aug 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-08-07-using-str-contains-method-to-judge-some-specific-content-in-excel/</guid>
+      <description>&lt;h2 id=&#34;一高管数据集&#34;&gt;一、高管数据集&lt;/h2&gt;
+&lt;h3 id=&#34;11-介绍&#34;&gt;1.1 介绍&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2022-11-25-senior-manager-resume-dataset/&#34;&gt;数据集 | 90w条中国上市公司高管数据&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;90w 条中国上市公司高管简历，数据源-新浪财经，统计的日期范围&lt;strong&gt;1990-2021&lt;/strong&gt;年。&lt;/p&gt;
+&lt;h3 id=&#34;12-字段&#34;&gt;1.2 字段&lt;/h3&gt;
+&lt;p&gt;数据集的字段含，大多是从「个人简历」中计算衍生出来的。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;- ID
+- 姓名
+- 证券代码
+- 统计截止日期
+- 个人简历
+- 国籍
+- 籍贯
+- 籍贯所在地区代码
+- 出生地
+- 出生地所在地区代码
+- 性别
+- 年龄
+- 毕业院校
+- 学历  1=中专及中专以下； 2=大专； 3=本科； 4=硕士研究生； 5=博士研究生； 6=其他（以其他形式公布的学历，如荣誉博士、函授等）； 7=MBA/EMBA
+- 专业
+- 职称
+- 是否领取薪酬
+- 报告期报酬总额
+- 年末持股数
+- 是否高管团队成员
+- 是否董事会成员
+- 是否独立董事
+- 是否兼任董事长和CEO
+- 是否监事
+- 具体职务
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;13-应用价值&#34;&gt;1.3 应用价值&lt;/h3&gt;
+&lt;p&gt;这里粘贴部分应用高管数据论文&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;何瑛,于文蕾,戴逸驰,王砚羽.高管职业经历与企业创新[J].管理世界,2019,35(11):174-192.&lt;/li&gt;
+&lt;li&gt;杨林,和欣,顾红芳.高管团队经验、动态能力与企业战略突变：管理自主权的调节效应[J].管理世界,2020,36(06):168-188+201+252.&lt;/li&gt;
+&lt;li&gt;周楷唐,麻志明,吴联生.高管学术经历与公司债务融资成本[J].经济研究,2017,52(07):169-183.&lt;/li&gt;
+&lt;li&gt;陆瑶,张叶青,黎波,赵浩宇.高管个人特征与公司业绩——基于机器学习的经验证据[J].管理科学学报,2020,23(02):120-140.&lt;/li&gt;
+&lt;li&gt;柳光强,孔高文.高管经管教育背景与企业内部薪酬差距[J].会计研究,2021,(03):110-121.&lt;/li&gt;
+&lt;li&gt;郑建明,孙诗璐,李金甜.高管文化背景与企业债务成本——基于劳模文化的视角[J].会计研究,2021,(03):137-145.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二代码案例&#34;&gt;二、代码案例&lt;/h2&gt;
+&lt;p&gt;用Python实现以下五个技术难题，主要对高管简介进行操作&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;读取xlsx文件（90w高管数据）&lt;/li&gt;
+&lt;li&gt;简介文本中是否含指定词语(例如找出有【清华大学】求学经历的高管)&lt;/li&gt;
+&lt;li&gt;大学高管数量排行榜&lt;/li&gt;
+&lt;li&gt;统计文本中指定词语出现次数(例如统计每位高管内【大学】出现次数)&lt;/li&gt;
+&lt;li&gt;找出每位高管的出生年份(用正则表达式)&lt;/li&gt;
+&lt;li&gt;统计每位高管经历的时间点个数
+&amp;hellip;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;21-导入数据&#34;&gt;2.1 导入数据&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_excel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;高管数据.xlsx&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#剔除「个人简历」字段中的缺失值&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dropna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;subset&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;inplace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;head&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;22-简介文本长度&#34;&gt;2.2 简介文本长度&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#新增一个字段length，将简介文本长度保存到length中&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#df[&amp;#39;length&amp;#39;] = df[&amp;#39;个人简历&amp;#39;].str.len()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;0         161
+1         154
+2         395
+3         306
+4         335
+         ... 
+900882     40
+900883     54
+900884     71
+900885     41
+900886     62
+Name: 个人简历, Length: 736970, dtype: int64
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;23-简介文本中是否含指定词语&#34;&gt;2.3 简介文本中是否含指定词语&lt;/h3&gt;
+&lt;p&gt;例如找出有【清华大学】求学经历的高管,这里直接使用**Series.str.contains()**方法来直接搜某字段(Series)是否含某个词&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;len(df[df[&#39;个人简历&#39;].str.contains(&#39;清华大学&#39;)])&lt;/code&gt; 保留有「清华大学」学习经历的高管&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;len(df[df[&#39;个人简历&#39;].str.contains(&#39;北京大学&#39;)])&lt;/code&gt; 保留有「北京大学」学习经历的高管&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;len(df[df[&#39;个人简历&#39;].str.contains(&#39;清华大学|北京大学&#39;)])&lt;/code&gt; 保留有「清华大学」或「北京大学」学习经历的高管&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;len(df[df[&#39;个人简历&#39;].str.contains(&#39;清华大学&#39;) &amp;amp; df[&#39;个人简历&#39;].str.contains(&#39;北京大学&#39;)])&lt;/code&gt; 保留同时有「清华大学」和「北京大学」学习经历的高管&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;第三个(北大清华)表达式的数量应该是最多的(前两者之和)， 第四个表达式是最少。 注意, 逻辑【或|】【且&amp;amp;】可以有任意多个&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#统计有【清华大学】学习经历的高管人数&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;contains&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;清华大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)])&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;10377
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;contains&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;北京大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)])&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;8709
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;contains&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;清华大学|北京大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)])&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;18647
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;contains&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;清华大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;contains&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;北京大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)])&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;439
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;24-大学高管数量排行榜&#34;&gt;2.4 大学高管数量排行榜&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#测试列表(凭记忆手动输入的大学，各位可以自己设计测试列表)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;test_universitys&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;清华大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;北京大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;中国人民大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;浙江大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                    &lt;span class=&#34;s1&#34;&gt;&amp;#39;上海交通大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;西安交通大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;同济大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;南开大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;天津大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                    &lt;span class=&#34;s1&#34;&gt;&amp;#39;武汉大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;华中科技大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;中国科学技术大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;南京大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+                    &lt;span class=&#34;s1&#34;&gt;&amp;#39;中山大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;中南大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;四川大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;重庆大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;兰州大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;湖南大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                    &lt;span class=&#34;s1&#34;&gt;&amp;#39;山东大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;吉林大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;大连理工大大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;东北大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;北京航空航天大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;中国地质大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+
+
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;大学高管人数排行&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;uni_infos&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;university&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;test_universitys&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;contains&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;university&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)])&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;uni_infos&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;university&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;num&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+    
+&lt;span class=&#34;n&#34;&gt;uni_infos&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;sorted&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;uni_infos&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;lambda&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;k&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;k&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;reverse&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;uni_infos&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;大学高管人数排行
+
+[(&#39;清华大学&#39;, 10377),
+ (&#39;北京大学&#39;, 8709),
+ (&#39;中国人民大学&#39;, 7012),
+ (&#39;浙江大学&#39;, 5816),
+ (&#39;中山大学&#39;, 4065),
+ (&#39;上海交通大学&#39;, 3844),
+ (&#39;武汉大学&#39;, 3578),
+ (&#39;南京大学&#39;, 3272),
+ (&#39;西安交通大学&#39;, 2972),
+ (&#39;南开大学&#39;, 2716),
+ (&#39;湖南大学&#39;, 2502),
+ (&#39;华中科技大学&#39;, 2356),
+ (&#39;同济大学&#39;, 2089),
+ (&#39;吉林大学&#39;, 2044),
+ (&#39;四川大学&#39;, 1934),
+ (&#39;山东大学&#39;, 1847),
+ (&#39;中南大学&#39;, 1615),
+ (&#39;天津大学&#39;, 1598),
+ (&#39;重庆大学&#39;, 1440),
+ (&#39;北京航空航天大学&#39;, 1334),
+ (&#39;东北大学&#39;, 1241),
+ (&#39;中国科学技术大学&#39;, 842),
+ (&#39;兰州大学&#39;, 745),
+ (&#39;中国地质大学&#39;, 437),
+ (&#39;大连理工大大学&#39;, 0)]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;25-统计文本中指定词语出现次数&#34;&gt;2.5 统计文本中指定词语出现次数&lt;/h3&gt;
+&lt;p&gt;例如统计每位高管内【大学】出现次数&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;0         0
+1         2
+2         0
+3         0
+4         0
+         ..
+900882    0
+900883    0
+900884    0
+900885    0
+900886    0
+Name: 个人简历, Length: 736970, dtype: int64
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;高管总人数: &amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#简历中无「大学」字眼&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;无大学经历高管人数:&amp;#39;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;==&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]))&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#简历中有「大学」字眼&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;有大学经历高管人数:&amp;#39;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;高管总人数:  736970
+无大学经历高管人数: 515172
+有大学经历高管人数: 221798
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#有些企业单位名字中带有「大学」，但这类企业非常少。&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#「大学」词语出现次数可以近似看做学习经历次数&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#如此， 1可以看做本科学历，2看做研究生学历， 3看做博士学历&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;大学&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;value_counts&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;normalize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;plot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;bar&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;output_14_1.png&#34; alt=&#34;png&#34;  /&gt;
+
+​&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;26-找出每位高管的出生年份用正则表达式&#34;&gt;2.6 找出每位高管的出生年份(用正则表达式)&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;findall&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;\d&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{4}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;0                                                    [1969]
+1                      [1965, 1984, 1986, 1990, 1994, 1995]
+2         [1972, 1998, 1999, 2000, 2015, 2002, 2016, 200...
+3         [1960, 1982, 1989, 1990, 1991, 1991, 2002, 200...
+4         [1962, 2009, 1985, 1996, 1996, 2008, 1993, 200...
+                                ...                        
+900882                                                   []
+900883                                                   []
+900884                                                   []
+900885                                                   []
+900886                                                   []
+Name: 个人简历, Length: 736970, dtype: object
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;birth_year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;years&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;c1&#34;&gt;#返回出生年份&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;years&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;c1&#34;&gt;#没有年份的，返回0&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;
+    
+    
+&lt;span class=&#34;c1&#34;&gt;#高管出生年份&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;findall&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;\d&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{4}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;birth_year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;0         1969
+1         1965
+2         1972
+3         1960
+4         1962
+          ... 
+900882       0
+900883       0
+900884       0
+900885       0
+900886       0
+Name: 个人简历, Length: 736970, dtype: object
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#高管时间点个数(感觉可以看做经历的个数)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;个人简历&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;findall&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;\d&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{4}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;lambda&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ys&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;set&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ys&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;0          1
+1          6
+2         10
+3         10
+4          8
+          ..
+900882     0
+900883     0
+900884     0
+900885     0
+900886     0
+Name: 个人简历, Length: 736970, dtype: int64
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;获取代码&#34;&gt;获取代码&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;top-ceo.ipynb&#34;&gt;&lt;strong&gt;点击下载ipynb代码文件&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<h2 id="一高管数据集">一、高管数据集</h2>
+<h3 id="11-介绍">1.1 介绍</h3>
+<p><a href="https://textdata.cn/blog/2022-11-25-senior-manager-resume-dataset/">数据集 | 90w条中国上市公司高管数据</a></p>
+<p>90w 条中国上市公司高管简历，数据源-新浪财经，统计的日期范围<strong>1990-2021</strong>年。</p>
+<h3 id="12-字段">1.2 字段</h3>
+<p>数据集的字段含，大多是从「个人简历」中计算衍生出来的。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- ID
+- 姓名
+- 证券代码
+- 统计截止日期
+- 个人简历
+- 国籍
+- 籍贯
+- 籍贯所在地区代码
+- 出生地
+- 出生地所在地区代码
+- 性别
+- 年龄
+- 毕业院校
+- 学历  1=中专及中专以下； 2=大专； 3=本科； 4=硕士研究生； 5=博士研究生； 6=其他（以其他形式公布的学历，如荣誉博士、函授等）； 7=MBA/EMBA
+- 专业
+- 职称
+- 是否领取薪酬
+- 报告期报酬总额
+- 年末持股数
+- 是否高管团队成员
+- 是否董事会成员
+- 是否独立董事
+- 是否兼任董事长和CEO
+- 是否监事
+- 具体职务
+</code></pre></div><br>
+<h3 id="13-应用价值">1.3 应用价值</h3>
+<p>这里粘贴部分应用高管数据论文</p>
+<ul>
+<li>何瑛,于文蕾,戴逸驰,王砚羽.高管职业经历与企业创新[J].管理世界,2019,35(11):174-192.</li>
+<li>杨林,和欣,顾红芳.高管团队经验、动态能力与企业战略突变：管理自主权的调节效应[J].管理世界,2020,36(06):168-188+201+252.</li>
+<li>周楷唐,麻志明,吴联生.高管学术经历与公司债务融资成本[J].经济研究,2017,52(07):169-183.</li>
+<li>陆瑶,张叶青,黎波,赵浩宇.高管个人特征与公司业绩——基于机器学习的经验证据[J].管理科学学报,2020,23(02):120-140.</li>
+<li>柳光强,孔高文.高管经管教育背景与企业内部薪酬差距[J].会计研究,2021,(03):110-121.</li>
+<li>郑建明,孙诗璐,李金甜.高管文化背景与企业债务成本——基于劳模文化的视角[J].会计研究,2021,(03):137-145.</li>
+</ul>
+<p><br><br></p>
+<h2 id="二代码案例">二、代码案例</h2>
+<p>用Python实现以下五个技术难题，主要对高管简介进行操作</p>
+<ol>
+<li>读取xlsx文件（90w高管数据）</li>
+<li>简介文本中是否含指定词语(例如找出有【清华大学】求学经历的高管)</li>
+<li>大学高管数量排行榜</li>
+<li>统计文本中指定词语出现次数(例如统计每位高管内【大学】出现次数)</li>
+<li>找出每位高管的出生年份(用正则表达式)</li>
+<li>统计每位高管经历的时间点个数
+&hellip;</li>
+</ol>
+<h3 id="21-导入数据">2.1 导入数据</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;高管数据.xlsx&#39;</span><span class="p">)</span>
+<span class="c1">#剔除「个人简历」字段中的缺失值</span>
+<span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><br>
+<h3 id="22-简介文本长度">2.2 简介文本长度</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span>
+
+<span class="c1">#新增一个字段length，将简介文本长度保存到length中</span>
+<span class="c1">#df[&#39;length&#39;] = df[&#39;个人简历&#39;].str.len()</span>
+</code></pre></div><pre><code>0         161
+1         154
+2         395
+3         306
+4         335
+         ... 
+900882     40
+900883     54
+900884     71
+900885     41
+900886     62
+Name: 个人简历, Length: 736970, dtype: int64
+</code></pre>
+<br>
+<h3 id="23-简介文本中是否含指定词语">2.3 简介文本中是否含指定词语</h3>
+<p>例如找出有【清华大学】求学经历的高管,这里直接使用**Series.str.contains()**方法来直接搜某字段(Series)是否含某个词</p>
+<ul>
+<li><code>len(df[df['个人简历'].str.contains('清华大学')])</code> 保留有「清华大学」学习经历的高管</li>
+<li><code>len(df[df['个人简历'].str.contains('北京大学')])</code> 保留有「北京大学」学习经历的高管</li>
+<li><code>len(df[df['个人简历'].str.contains('清华大学|北京大学')])</code> 保留有「清华大学」或「北京大学」学习经历的高管</li>
+<li><code>len(df[df['个人简历'].str.contains('清华大学') &amp; df['个人简历'].str.contains('北京大学')])</code> 保留同时有「清华大学」和「北京大学」学习经历的高管</li>
+</ul>
+<p>第三个(北大清华)表达式的数量应该是最多的(前两者之和)， 第四个表达式是最少。 注意, 逻辑【或|】【且&amp;】可以有任意多个</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#统计有【清华大学】学习经历的高管人数</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;清华大学&#39;</span><span class="p">)])</span>
+</code></pre></div><p>Run</p>
+<pre><code>10377
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;北京大学&#39;</span><span class="p">)])</span>
+</code></pre></div><p>Run</p>
+<pre><code>8709
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;清华大学|北京大学&#39;</span><span class="p">)])</span>
+</code></pre></div><p>Run</p>
+<pre><code>18647
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;清华大学&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;北京大学&#39;</span><span class="p">)])</span>
+</code></pre></div><p>Run</p>
+<pre><code>439
+</code></pre>
+<br>
+<h3 id="24-大学高管数量排行榜">2.4 大学高管数量排行榜</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#测试列表(凭记忆手动输入的大学，各位可以自己设计测试列表)</span>
+<span class="n">test_universitys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;清华大学&#39;</span><span class="p">,</span> <span class="s1">&#39;北京大学&#39;</span><span class="p">,</span> <span class="s1">&#39;中国人民大学&#39;</span><span class="p">,</span> <span class="s1">&#39;浙江大学&#39;</span><span class="p">,</span> 
+                    <span class="s1">&#39;上海交通大学&#39;</span><span class="p">,</span> <span class="s1">&#39;西安交通大学&#39;</span><span class="p">,</span> <span class="s1">&#39;同济大学&#39;</span><span class="p">,</span> <span class="s1">&#39;南开大学&#39;</span><span class="p">,</span> <span class="s1">&#39;天津大学&#39;</span><span class="p">,</span> 
+                    <span class="s1">&#39;武汉大学&#39;</span><span class="p">,</span> <span class="s1">&#39;华中科技大学&#39;</span><span class="p">,</span> <span class="s1">&#39;中国科学技术大学&#39;</span><span class="p">,</span> <span class="s1">&#39;南京大学&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;中山大学&#39;</span><span class="p">,</span> <span class="s1">&#39;中南大学&#39;</span><span class="p">,</span> <span class="s1">&#39;四川大学&#39;</span><span class="p">,</span> <span class="s1">&#39;重庆大学&#39;</span><span class="p">,</span> <span class="s1">&#39;兰州大学&#39;</span><span class="p">,</span> <span class="s1">&#39;湖南大学&#39;</span><span class="p">,</span> 
+                    <span class="s1">&#39;山东大学&#39;</span><span class="p">,</span> <span class="s1">&#39;吉林大学&#39;</span><span class="p">,</span> <span class="s1">&#39;大连理工大大学&#39;</span><span class="p">,</span> <span class="s1">&#39;东北大学&#39;</span><span class="p">,</span> <span class="s1">&#39;北京航空航天大学&#39;</span><span class="p">,</span> <span class="s1">&#39;中国地质大学&#39;</span><span class="p">]</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;大学高管人数排行&#39;</span><span class="p">)</span>
+
+<span class="n">uni_infos</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">university</span> <span class="ow">in</span> <span class="n">test_universitys</span><span class="p">:</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">university</span><span class="p">)])</span>
+    <span class="n">uni_infos</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">university</span><span class="p">,</span> <span class="n">num</span><span class="p">))</span>
+    
+<span class="n">uni_infos</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">uni_infos</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">uni_infos</span>
+</code></pre></div><p>Run</p>
+<pre><code>大学高管人数排行
+
+[('清华大学', 10377),
+ ('北京大学', 8709),
+ ('中国人民大学', 7012),
+ ('浙江大学', 5816),
+ ('中山大学', 4065),
+ ('上海交通大学', 3844),
+ ('武汉大学', 3578),
+ ('南京大学', 3272),
+ ('西安交通大学', 2972),
+ ('南开大学', 2716),
+ ('湖南大学', 2502),
+ ('华中科技大学', 2356),
+ ('同济大学', 2089),
+ ('吉林大学', 2044),
+ ('四川大学', 1934),
+ ('山东大学', 1847),
+ ('中南大学', 1615),
+ ('天津大学', 1598),
+ ('重庆大学', 1440),
+ ('北京航空航天大学', 1334),
+ ('东北大学', 1241),
+ ('中国科学技术大学', 842),
+ ('兰州大学', 745),
+ ('中国地质大学', 437),
+ ('大连理工大大学', 0)]
+</code></pre>
+<br>
+<h3 id="25-统计文本中指定词语出现次数">2.5 统计文本中指定词语出现次数</h3>
+<p>例如统计每位高管内【大学】出现次数</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;大学&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>0         0
+1         2
+2         0
+3         0
+4         0
+         ..
+900882    0
+900883    0
+900884    0
+900885    0
+900886    0
+Name: 个人简历, Length: 736970, dtype: int64
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;高管总人数: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+<span class="c1">#简历中无「大学」字眼</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;无大学经历高管人数:&#39;</span> <span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;大学&#39;</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">]))</span>
+<span class="c1">#简历中有「大学」字眼</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;有大学经历高管人数:&#39;</span> <span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;大学&#39;</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">]))</span>
+</code></pre></div><p>Run</p>
+<pre><code>高管总人数:  736970
+无大学经历高管人数: 515172
+有大学经历高管人数: 221798
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#有些企业单位名字中带有「大学」，但这类企业非常少。</span>
+<span class="c1">#「大学」词语出现次数可以近似看做学习经历次数</span>
+<span class="c1">#如此， 1可以看做本科学历，2看做研究生学历， 3看做博士学历</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;大学&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="output_14_1.png" alt="png"  />
+
+​</p>
+<br>
+<h3 id="26-找出每位高管的出生年份用正则表达式">2.6 找出每位高管的出生年份(用正则表达式)</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>0                                                    [1969]
+1                      [1965, 1984, 1986, 1990, 1994, 1995]
+2         [1972, 1998, 1999, 2000, 2015, 2002, 2016, 200...
+3         [1960, 1982, 1989, 1990, 1991, 1991, 2002, 200...
+4         [1962, 2009, 1985, 1996, 1996, 2008, 1993, 200...
+                                ...                        
+900882                                                   []
+900883                                                   []
+900884                                                   []
+900885                                                   []
+900886                                                   []
+Name: 个人简历, Length: 736970, dtype: object
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">birth_year</span><span class="p">(</span><span class="n">years</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1">#返回出生年份</span>
+        <span class="k">return</span> <span class="n">years</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1">#没有年份的，返回0</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    
+    
+<span class="c1">#高管出生年份</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">birth_year</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>0         1969
+1         1965
+2         1972
+3         1960
+4         1962
+          ... 
+900882       0
+900883       0
+900884       0
+900885       0
+900886       0
+Name: 个人简历, Length: 736970, dtype: object
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#高管时间点个数(感觉可以看做经历的个数)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;个人简历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">ys</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">ys</span><span class="p">)))</span>
+</code></pre></div><p>Run</p>
+<pre><code>0          1
+1          6
+2         10
+3         10
+4          8
+          ..
+900882     0
+900883     0
+900884     0
+900885     0
+900886     0
+Name: 个人简历, Length: 736970, dtype: int64
+</code></pre>
+<p><br><br></p>
+<h2 id="获取代码">获取代码</h2>
+<p><a href="top-ceo.ipynb"><strong>点击下载ipynb代码文件</strong></a></p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>可视化 | 使用groupby或resample按月份分组绘制高管违规量趋势图</title>
       <link>https://textdata.cn/blog/2023-05-31-resample-groupby-in-pandas/</link>

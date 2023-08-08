@@ -536,7 +536,20 @@ class Config {
 				url: 'http://www.gaoxiaojob.com/',
 				category: 'BInformation'
 			},
-{
+			{
+				site: '虎嗅网',
+				icon: 'huxiu',
+				url: 'https://www.huxiu.com/article/',
+				category: 'Cnews'
+			},
+			{
+				site: '凤凰网',
+				icon: 'ifeng',
+				url: 'https://www.ifeng.com/',
+				category: 'Cnews'
+			},
+			
+			{
 				site: '国家统计局',
 				icon: 'stats_gov',
 				url: 'https://data.stats.gov.cn/',
