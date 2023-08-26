@@ -569,6 +569,12 @@ class Config {
 				category: 'BInformation'
 			},
 			{
+				site: '人人都是产品经理',
+				icon: 'manager',
+				url: 'https://www.woshipm.com/news',
+				category: 'CNews'
+			},
+			{
 				site: '黑龙江政府网',
 				icon: 'heilongjiang',
 				url: 'https://hrbthx.zwfw.hlj.gov.cn/?flag=false',
