@@ -6,7 +6,7 @@
     <description>Recent content in 可视化 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Fri, 02 Jun 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 28 Aug 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>可视化 | 99-21年地方政府报告环保、科技、三农等关键词变化趋势</title>
       <link>https://textdata.cn/blog/2023-03-19-visualize-8-province-gov-anual-report/</link>
@@ -185,6 +185,851 @@
 <br>
 <p>基本跟自己的记忆产生了联系，数据可视化效果还是挺不错的。</p>
 <br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>可视化 | Netflix 数据可视化最佳实践</title>
+      <link>https://textdata.cn/blog/2023-08-28-netflix-data-visualization/</link>
+      <pubDate>Mon, 28 Aug 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-08-28-netflix-data-visualization/</guid>
+      <description>本笔记本的目的是练习数据可视化，并希望在此过程中传达一些最佳实践。</description>
+      <content:encoded><![CDATA[<p>本笔记本的目的是练习数据可视化，并希望在此过程中传达一些最佳实践。</p>
+<ul>
+<li>
+<p>作者JOSH</p>
+</li>
+<li>
+<p>原文: <a href="https://www.kaggle.com/code/joshuaswords/netflix-data-visualization/notebook?scriptVersionId=58425238&amp;cellId=17">https://www.kaggle.com/code/joshuaswords/netflix-data-visualization/notebook?scriptVersionId=58425238&amp;cellId=17</a></p>
+</li>
+<li>
+<p><a href="netflix_titles.csv">下载本文数据</a></p>
+</li>
+<li>
+<p><a href="netflix-data-visualization.ipynb">下载本文代码</a></p>
+</li>
+</ul>
+<p><br><br></p>
+<h2 id="一数据预处理">一、数据预处理</h2>
+<h3 id="11-导入数据">1.1 导入数据</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&#34;ignore&#34;</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;netflix_titles.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/df.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="n">null_rate</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span>
+    <span class="k">if</span> <span class="n">null_rate</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&#34;</span><span class="si">{}</span><span class="s2"> null rate: </span><span class="si">{}</span><span class="s2">%&#34;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">null_rate</span><span class="p">,</span><span class="mi">2</span><span class="p">)))</span>
+</code></pre></div><pre><code>director null rate: 29.91%
+cast null rate: 9.37%
+country null rate: 9.44%
+date_added null rate: 0.11%
+rating null rate: 0.05%
+duration null rate: 0.03%
+</code></pre>
+<p>数据集中有5个字段存在缺失值记录，其中director字段中有近三成记录是缺失值。</p>
+<p><br><br></p>
+<h3 id="12-缺失值字段处理">1.2 缺失值字段处理</h3>
+<p>这始终取决于场景，但在这种情况下，我会：</p>
+<ul>
+<li>将空白国家/地区country替换为模式（最常见）国家/地区</li>
+<li>我想保留导演director字段，因为看某个导演的电影可能会很有趣</li>
+<li>我想保留演员阵容cast字段，因为看某个演员的电影可能会很有趣</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Replacments替换</span>
+<span class="c1">#将空白国家/地区替换为模式（最常见）国家/地区</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;country&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;country&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;country&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mode</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+<span class="c1">#我想保留演员阵容，因为看某个演员的电影可能会很有趣</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;cast&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="s1">&#39;No Data&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1">#我想保留导演，因为看某个导演的电影可能会很有趣</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;director&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="s1">&#39;No Data&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="c1"># Drops删除</span>
+<span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Drop Duplicates剔除重复</span>
+<span class="n">df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+
+
+<span class="c1">#查看各字段null数量</span>
+<span class="n">df</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</code></pre></div><pre><code>show_id         0
+type            0
+title           0
+director        0
+cast            0
+country         0
+date_added      0
+release_year    0
+rating          0
+duration        0
+listed_in       0
+description     0
+dtype: int64
+</code></pre>
+<p><br><br></p>
+<h3 id="13-日期处理">1.3 日期处理</h3>
+<p>将日期更改为datetime类型， 并新增month_added、month_name_added、year_added三个字段</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date_added&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date_added&#39;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;mixed&#39;</span><span class="p">)</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;month_added&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date_added&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">month</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;month_name_added&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date_added&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">month_name</span><span class="p">()</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;year_added&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date_added&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span>
+
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二可视化">二、可视化</h2>
+<h3 id="21-配色">2.1 配色</h3>
+<p>可视化配色统一选择奈飞Netflix标志性色， 以体现专业性，保持读者的参与性。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.dpi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">140</span>
+
+<span class="c1"># Palette</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">palplot</span><span class="p">([</span><span class="s1">&#39;#221f1f&#39;</span><span class="p">,</span> <span class="s1">&#39;#b20710&#39;</span><span class="p">,</span> <span class="s1">&#39;#e50914&#39;</span><span class="p">,</span><span class="s1">&#39;#f5f5f1&#39;</span><span class="p">])</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&#34;Netflix brand palette &#34;</span><span class="p">,</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span><span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_8_0.png" alt=""  />
+</p>
+<p><br><br></p>
+<h3 id="22-netflix发展时间线可视化">2.2 Netflix发展时间线可视化</h3>
+<p>Netflix 以 DVD 租赁起家，现在拥有超过 1.5 亿观众 - 这就是他们的故事。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># Timeline code from Subin An&#39;s awesome notebook</span>
+<span class="c1"># https://www.kaggle.com/subinium/awesome-visualization-with-titanic-dataset</span>
+
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="c1">## these go on the numbers below</span>
+<span class="n">tl_dates</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&#34;1997</span><span class="se">\n</span><span class="s2">Founded&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;1998</span><span class="se">\n</span><span class="s2">Mail Service&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;2003</span><span class="se">\n</span><span class="s2">Goes Public&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;2007</span><span class="se">\n</span><span class="s2">Streaming service&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;2016</span><span class="se">\n</span><span class="s2">Goes Global&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;2021</span><span class="se">\n</span><span class="s2">Netflix &amp; Chill&#34;</span>
+<span class="p">]</span>
+
+<span class="n">tl_x</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mf">5.3</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]</span>
+
+<span class="c1">## these go on the numbers</span>
+<span class="n">tl_sub_x</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mf">6.5</span><span class="p">,</span> <span class="mi">7</span><span class="p">]</span>
+
+
+<span class="n">tl_sub_times</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&#34;1998&#34;</span><span class="p">,</span><span class="s2">&#34;2000&#34;</span><span class="p">,</span><span class="s2">&#34;2006&#34;</span><span class="p">,</span><span class="s2">&#34;2010&#34;</span><span class="p">,</span><span class="s2">&#34;2012&#34;</span>
+<span class="p">]</span>
+
+<span class="n">tl_text</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&#34;Netflix.com launched&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;Starts</span><span class="se">\n</span><span class="s2">Personal</span><span class="se">\n</span><span class="s2">Recommendations&#34;</span><span class="p">,</span><span class="s2">&#34;Billionth DVD Delivery&#34;</span><span class="p">,</span><span class="s2">&#34;Canadian</span><span class="se">\n</span><span class="s2">Launch&#34;</span><span class="p">,</span><span class="s2">&#34;UK Launch</span><span class="se">\n</span><span class="s2">(my birthplace)&#34;</span><span class="p">]</span>
+
+
+
+<span class="c1"># Set figure &amp; Axes</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mf">1.75</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+
+<span class="c1"># Timeline : line</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="c1"># Timeline : Date Points</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">tl_x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tl_x</span><span class="p">)),</span> <span class="n">s</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">tl_x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tl_x</span><span class="p">)),</span> <span class="n">s</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;#fafafa&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="c1"># Timeline : Time Points</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">tl_sub_x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tl_sub_x</span><span class="p">)),</span> <span class="n">s</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span><span class="p">,</span><span class="n">zorder</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+<span class="c1"># Date Text</span>
+<span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">date</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tl_x</span><span class="p">,</span> <span class="n">tl_dates</span><span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.55</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> 
+            <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    
+
+<span class="c1"># Stemplot : vertical line</span>
+<span class="n">levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tl_sub_x</span><span class="p">))</span>    
+<span class="n">levels</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.3</span>
+<span class="n">levels</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.3</span>
+<span class="n">markerline</span><span class="p">,</span> <span class="n">stemline</span><span class="p">,</span> <span class="n">baseline</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="n">tl_sub_x</span><span class="p">,</span> <span class="n">levels</span><span class="p">,</span> <span class="n">use_line_collection</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>    
+<span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">baseline</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">markerline</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">stemline</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span><span class="p">)</span>
+
+<span class="c1"># Text</span>
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">txt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tl_sub_x</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">tl_sub_x</span><span class="p">,</span> <span class="n">tl_sub_times</span><span class="p">,</span> <span class="n">tl_text</span><span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">1.3</span><span class="o">*</span><span class="p">(</span><span class="n">idx</span><span class="o">%</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> 
+            <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span> <span class="k">if</span> <span class="n">idx</span><span class="o">!=</span><span class="nb">len</span><span class="p">(</span><span class="n">tl_sub_x</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;#b20710&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+    
+    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">1.3</span><span class="o">*</span><span class="p">(</span><span class="n">idx</span><span class="o">%</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">txt</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> 
+        <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span> <span class="k">if</span> <span class="n">idx</span><span class="o">!=</span><span class="nb">len</span><span class="p">(</span><span class="n">tl_sub_x</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;#b20710&#39;</span><span class="p">)</span>
+
+
+
+<span class="c1"># Spine</span>
+<span class="k">for</span> <span class="n">spine</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&#34;left&#34;</span><span class="p">,</span> <span class="s2">&#34;top&#34;</span><span class="p">,</span> <span class="s2">&#34;right&#34;</span><span class="p">,</span> <span class="s2">&#34;bottom&#34;</span><span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="n">spine</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># Ticks    </span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span> 
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span> 
+
+<span class="c1"># Title</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&#34;Netflix through the years&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">2.4</span><span class="p">,</span><span class="mf">1.57</span><span class="p">,</span><span class="s2">&#34;From DVD rentals to a global audience of over 150m people - is it time for Netflix to Chill?&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_10_0.png" alt="png"  />
+</p>
+<p><br><br></p>
+<h3 id="23-内容分布">2.3 内容分布</h3>
+<p>现在我们已经了解了 Netflix 如何主宰我们的电视屏幕，让我们看看他们提供的内容&hellip;&hellip;</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">x</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;type&#39;</span><span class="p">])[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="n">y</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">r</span> <span class="o">=</span> <span class="p">((</span><span class="n">x</span><span class="o">/</span><span class="n">y</span><span class="p">))</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">mf_ratio</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">6.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span><span class="n">mf_ratio</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">mf_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">],</span> 
+        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#b20710&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Male&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span><span class="n">mf_ratio</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">mf_ratio</span><span class="p">[</span><span class="s1">&#39;TV Show&#39;</span><span class="p">],</span> <span class="n">left</span><span class="o">=</span><span class="n">mf_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">],</span> 
+        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#221f1f&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Female&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
+<span class="c1">#ax.set_yticklabels(mf_ratio.index, fontfamily=&#39;serif&#39;, fontsize=11)</span>
+
+
+<span class="c1"># movie percentage</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mf_ratio</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">mf_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span><span class="si">}</span><span class="s2">%&#34;</span><span class="p">,</span> 
+                   <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">mf_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">i</span><span class="p">),</span>
+                   <span class="n">va</span> <span class="o">=</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span>
+                   <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="s2">&#34;Movie&#34;</span><span class="p">,</span> 
+                   <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">mf_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.25</span><span class="p">),</span>
+                   <span class="n">va</span> <span class="o">=</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span>
+                   <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+    
+    
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mf_ratio</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">mf_ratio</span><span class="p">[</span><span class="s1">&#39;TV Show&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span><span class="si">}</span><span class="s2">%&#34;</span><span class="p">,</span> 
+                   <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">mf_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">mf_ratio</span><span class="p">[</span><span class="s1">&#39;TV Show&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">i</span><span class="p">),</span>
+                   <span class="n">va</span> <span class="o">=</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span>
+                   <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="s2">&#34;TV Show&#34;</span><span class="p">,</span> 
+                   <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">mf_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">mf_ratio</span><span class="p">[</span><span class="s1">&#39;TV Show&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.25</span><span class="p">),</span>
+                   <span class="n">va</span> <span class="o">=</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span>
+                   <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+
+    
+<span class="c1"># Title &amp; Subtitle</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.125</span><span class="p">,</span><span class="mf">1.03</span><span class="p">,</span><span class="s1">&#39;Movie &amp; TV Show distribution&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.125</span><span class="p">,</span><span class="mf">0.92</span><span class="p">,</span><span class="s1">&#39;We see vastly more movies than TV shows on Netflix.&#39;</span><span class="p">,</span><span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>  
+
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">,</span> <span class="s1">&#39;bottom&#39;</span><span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    
+
+
+<span class="c1">#ax.legend(loc=&#39;lower center&#39;, ncol=3, bbox_to_anchor=(0.5, -0.06))</span>
+
+<span class="c1"># Removing legend due to labelled plot</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_12_0.png" alt=""  />
+</p>
+<p><br><br></p>
+<h3 id="24-国别内容制作量">2.4 国别内容制作量</h3>
+<p>所以我们现在知道 Netflix 上的电影比电视节目多得多（这让我感到惊讶！）。</p>
+<p>如果我们按国家查看内容呢？</p>
+<p>我想美国将拥有最多的内容。 我想知道我的国家英国会如何比较？</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># Quick feature engineering</span>
+
+<span class="c1"># Helper column for various plots</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1"># Many productions have several countries listed - this will skew our results , we&#39;ll grab the first one mentioned</span>
+
+<span class="c1"># Lets retrieve just the first country</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;first_country&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;country&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&#34;,&#34;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;first_country&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+
+<span class="c1"># Rating ages from this notebook: https://www.kaggle.com/andreshg/eda-beginner-to-expert-plotly (thank you!)</span>
+
+<span class="n">ratings_ages</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;TV-PG&#39;</span><span class="p">:</span> <span class="s1">&#39;Older Kids&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TV-MA&#39;</span><span class="p">:</span> <span class="s1">&#39;Adults&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TV-Y7-FV&#39;</span><span class="p">:</span> <span class="s1">&#39;Older Kids&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TV-Y7&#39;</span><span class="p">:</span> <span class="s1">&#39;Older Kids&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TV-14&#39;</span><span class="p">:</span> <span class="s1">&#39;Teens&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;R&#39;</span><span class="p">:</span> <span class="s1">&#39;Adults&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TV-Y&#39;</span><span class="p">:</span> <span class="s1">&#39;Kids&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;NR&#39;</span><span class="p">:</span> <span class="s1">&#39;Adults&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PG-13&#39;</span><span class="p">:</span> <span class="s1">&#39;Teens&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TV-G&#39;</span><span class="p">:</span> <span class="s1">&#39;Kids&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PG&#39;</span><span class="p">:</span> <span class="s1">&#39;Older Kids&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;G&#39;</span><span class="p">:</span> <span class="s1">&#39;Kids&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;UR&#39;</span><span class="p">:</span> <span class="s1">&#39;Adults&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;NC-17&#39;</span><span class="p">:</span> <span class="s1">&#39;Adults&#39;</span>
+<span class="p">}</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;target_ages&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">ratings_ages</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;target_ages&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+
+<span class="c1"># Genre</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;genre&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;listed_in&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span>  <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; ,&#39;</span><span class="p">,</span><span class="s1">&#39;,&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">,</span><span class="s1">&#39;,&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span> 
+
+<span class="c1"># Reducing name length</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;first_country&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;United States&#39;</span><span class="p">,</span> <span class="s1">&#39;USA&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;first_country&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;United Kingdom&#39;</span><span class="p">,</span> <span class="s1">&#39;UK&#39;</span><span class="p">,</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;first_country&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;South Korea&#39;</span><span class="p">,</span> <span class="s1">&#39;S. Korea&#39;</span><span class="p">,</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;first_country&#39;</span><span class="p">)[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)[:</span><span class="mi">10</span><span class="p">]</span>
+
+<span class="c1"># Plot</span>
+
+<span class="n">color_map</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;#f5f5f1&#39;</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>
+<span class="n">color_map</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">color_map</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">color_map</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span>  <span class="s1">&#39;#b20710&#39;</span> <span class="c1"># color highlight</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> 
+       <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;darkgray&#39;</span><span class="p">,</span>
+       <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="n">color_map</span><span class="p">)</span>
+
+<span class="c1">#annotations</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;</span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">,</span> 
+                   <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">150</span><span class="p">),</span> <span class="c1">#i like to change this to roughly 5% of the highest cat</span>
+                   <span class="n">va</span> <span class="o">=</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+
+
+
+<span class="c1"># Remove border from plot</span>
+
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    
+<span class="c1"># Tick labels</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Title and sub-title</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.09</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Top 10 countries on Netflix&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="s1">&#39;The three most frequent countries have been highlighted.&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.01</span><span class="p">,</span> <span class="s1">&#39;Insight&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.67</span><span class="p">,</span> <span class="s1">&#39;&#39;&#39;
+</span><span class="s1">The most prolific producers of
+</span><span class="s1">content for Netflix are, primarily,
+</span><span class="s1">the USA, with India and the UK
+</span><span class="s1">a significant distance behind.
+</span><span class="s1">
+</span><span class="s1">It makes sense that the USA produces 
+</span><span class="s1">the most content as, afterall, 
+</span><span class="s1">Netflix is a US company.
+</span><span class="s1">&#39;&#39;&#39;</span>
+         <span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>   
+
+<span class="n">grid_y_ticks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4000</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span> <span class="c1"># y ticks, min, max, then step</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">grid_y_ticks</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axisbelow</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1">#Axis labels</span>
+
+<span class="c1">#plt.xlabel(&#34;Country&#34;, fontsize=12, fontweight=&#39;light&#39;, fontfamily=&#39;serif&#39;,loc=&#39;left&#39;,y=-1.5)</span>
+<span class="c1">#plt.ylabel(&#34;Count&#34;, fontsize=12, fontweight=&#39;light&#39;, fontfamily=&#39;serif&#39;)</span>
+ <span class="c1">#plt.legend(loc=&#39;upper right&#39;)</span>
+    
+<span class="c1"># thicken the bottom line if you want to</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linewidth</span> <span class="o">=</span> <span class="mf">1.3</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">.7</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+
+
+<span class="kn">import</span> <span class="nn">matplotlib.lines</span> <span class="k">as</span> <span class="nn">lines</span>
+<span class="n">l1</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">Line2D</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">transform</span><span class="o">=</span><span class="n">fig</span><span class="o">.</span><span class="n">transFigure</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span><span class="n">lw</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">l1</span><span class="p">])</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;both&#39;</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_15_0.png" alt=""  />
+</p>
+<p><br><br></p>
+<h3 id="25-各国家不同类别内容占比">2.5 各国家不同类别内容占比</h3>
+<p>正如预测的那样，美国占据主导地位。</p>
+<p>英国也是顶级竞争者，但仍落后印度一些。</p>
+<p>不同国家/地区的内容有何不同？</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">country_order</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;first_country&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()[:</span><span class="mi">11</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+<span class="n">data_q2q3</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="s1">&#39;first_country&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;first_country&#39;</span><span class="p">)[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">country_order</span><span class="p">]</span>
+<span class="n">data_q2q3</span><span class="p">[</span><span class="s1">&#39;sum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_q2q3</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">data_q2q3_ratio</span> <span class="o">=</span> <span class="p">(</span><span class="n">data_q2q3</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">data_q2q3</span><span class="p">[</span><span class="s1">&#39;sum&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">[[</span><span class="s1">&#39;Movie&#39;</span><span class="p">,</span> <span class="s1">&#39;TV Show&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;Movie&#39;</span><span class="p">,</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+
+
+
+<span class="c1">###</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">8</span><span class="p">),)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span><span class="n">data_q2q3_ratio</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">data_q2q3_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">],</span> 
+        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#b20710&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Movie&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span><span class="n">data_q2q3_ratio</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">data_q2q3_ratio</span><span class="p">[</span><span class="s1">&#39;TV Show&#39;</span><span class="p">],</span> <span class="n">left</span><span class="o">=</span><span class="n">data_q2q3_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">],</span> 
+        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#221f1f&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;TV Show&#39;</span><span class="p">)</span>
+
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">data_q2q3_ratio</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+
+<span class="c1"># male percentage</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data_q2q3_ratio</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;</span><span class="si">{</span><span class="n">data_q2q3_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.3</span><span class="si">}</span><span class="s2">%&#34;</span><span class="p">,</span> 
+                   <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">data_q2q3_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">i</span><span class="p">),</span>
+                   <span class="n">va</span> <span class="o">=</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span>
+                   <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data_q2q3_ratio</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;</span><span class="si">{</span><span class="n">data_q2q3_ratio</span><span class="p">[</span><span class="s1">&#39;TV Show&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.3</span><span class="si">}</span><span class="s2">%&#34;</span><span class="p">,</span> 
+                   <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">data_q2q3_ratio</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">data_q2q3_ratio</span><span class="p">[</span><span class="s1">&#39;TV Show&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">i</span><span class="p">),</span>
+                   <span class="n">va</span> <span class="o">=</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span>
+                   <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+    
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.93</span><span class="p">,</span> <span class="s1">&#39;Top 10 countries Movie &amp; TV Show split&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>   
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.131</span><span class="p">,</span> <span class="mf">0.89</span><span class="p">,</span> <span class="s1">&#39;Percent Stacked Bar Chart&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span><span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>   
+
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">,</span> <span class="s1">&#39;bottom&#39;</span><span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    
+<span class="c1">#ax.legend(loc=&#39;lower center&#39;, ncol=3, bbox_to_anchor=(0.5, -0.06))</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.75</span><span class="p">,</span><span class="mf">0.9</span><span class="p">,</span><span class="s2">&#34;Movie&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#b20710&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.81</span><span class="p">,</span><span class="mf">0.9</span><span class="p">,</span><span class="s2">&#34;|&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.82</span><span class="p">,</span><span class="mf">0.9</span><span class="p">,</span><span class="s2">&#34;TV Show&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#221f1f&#39;</span><span class="p">)</span>
+
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.93</span><span class="p">,</span> <span class="s1">&#39;Insight&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.44</span><span class="p">,</span> <span class="s1">&#39;&#39;&#39;
+</span><span class="s1">Interestingly, Netflix in India
+</span><span class="s1">is made up nearly entirely of Movies. 
+</span><span class="s1">
+</span><span class="s1">Bollywood is big business, and perhaps
+</span><span class="s1">the main focus of this industry is Movies
+</span><span class="s1">and not TV Shows.
+</span><span class="s1">
+</span><span class="s1">South Korean Netflix on the other hand is 
+</span><span class="s1">almost entirely TV Shows.
+</span><span class="s1">
+</span><span class="s1">The underlying resons for the difference 
+</span><span class="s1">in content must be due to market research
+</span><span class="s1">conducted by Netflix.
+</span><span class="s1">&#39;&#39;&#39;</span>
+         <span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+
+
+
+<span class="kn">import</span> <span class="nn">matplotlib.lines</span> <span class="k">as</span> <span class="nn">lines</span>
+<span class="n">l1</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">Line2D</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">transform</span><span class="o">=</span><span class="n">fig</span><span class="o">.</span><span class="n">transFigure</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span><span class="n">lw</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">l1</span><span class="p">])</span>
+
+
+
+
+<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;both&#39;</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_17_0.png" alt=""  />
+</p>
+<br>
+<p>正如我在对情节的见解中所指出的，看到电视节目和电影的划分如何因国家/地区而异真的很有趣。</p>
+<p>韩国以电视节目为主, 我是韩国电影的超级粉丝，我知道他们有很棒的电影选择。</p>
+<p>同样，印度也以电影为主。 我认为这可能是由于宝莱坞 - 如果您有任何其他想法，请在下面评论！</p>
+<p><br><br></p>
+<h3 id="26-评分">2.6 评分</h3>
+<p>让我们简单看看评分是如何分配的</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">order</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;rating&#39;</span><span class="p">)[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">())</span>
+<span class="n">rating_order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">order</span><span class="p">[</span><span class="s1">&#39;rating&#39;</span><span class="p">])</span>
+
+<span class="n">mf</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">)[</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)[</span><span class="n">rating_order</span><span class="p">]</span>
+
+<span class="n">movie</span> <span class="o">=</span> <span class="n">mf</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">]</span>
+<span class="n">tv</span> <span class="o">=</span> <span class="o">-</span> <span class="n">mf</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;TV Show&#39;</span><span class="p">]</span>
+
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">movie</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">movie</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#b20710&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Movie&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">tv</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">tv</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#221f1f&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;TV Show&#39;</span><span class="p">)</span>
+<span class="c1">#ax.set_ylim(-35, 50)</span>
+
+<span class="c1"># Annotations</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tv</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;</span><span class="si">{</span><span class="o">-</span><span class="n">tv</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">,</span> 
+                   <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">tv</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mi">60</span><span class="p">),</span>
+                   <span class="n">va</span> <span class="o">=</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span>
+                   <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span><span class="p">)</span>   
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">movie</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;</span><span class="si">{</span><span class="n">movie</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">,</span> 
+                   <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">movie</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">60</span><span class="p">),</span>
+                   <span class="n">va</span> <span class="o">=</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span>
+                   <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#4a4a4a&#39;</span><span class="p">)</span>
+    
+ 
+
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">,</span> <span class="s1">&#39;bottom&#39;</span><span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">mf</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>    
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.16</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Rating distribution by Film &amp; TV Show&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.89</span><span class="p">,</span> 
+<span class="s1">&#39;&#39;&#39;We observe that some ratings are only applicable to Movies. 
+</span><span class="s1">The most common for both Movies &amp; TV Shows are TV-MA and TV-14.
+</span><span class="s1">&#39;&#39;&#39;</span>
+
+<span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.755</span><span class="p">,</span><span class="mf">0.924</span><span class="p">,</span><span class="s2">&#34;Movie&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#b20710&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.815</span><span class="p">,</span><span class="mf">0.924</span><span class="p">,</span><span class="s2">&#34;|&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.825</span><span class="p">,</span><span class="mf">0.924</span><span class="p">,</span><span class="s2">&#34;TV Show&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#221f1f&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_19_0.png" alt=""  />
+</p>
+<p><br><br></p>
+<h3 id="27-这些年来内容是如何添加的">2.7 这些年来内容是如何添加的？</h3>
+<p>正如我们在分析开始时的时间线中看到的那样，Netflix 于 2016 年走向全球, 电影内容的增加是显着的。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">color</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;#b20710&#34;</span><span class="p">,</span> <span class="s2">&#34;#221f1f&#34;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">mtv</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+    <span class="n">mtv_rel</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">mtv</span><span class="p">][</span><span class="s1">&#39;year_added&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mtv_rel</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">mtv_rel</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="n">mtv</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">mtv_rel</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">mtv_rel</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+    
+<span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">tick_right</span><span class="p">()</span>
+    
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linewidth</span> <span class="o">=</span> <span class="mf">1.3</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">.7</span><span class="p">)</span>
+
+<span class="c1">#ax.set_ylim(0, 50)</span>
+<span class="c1">#ax.legend(loc=&#39;upper left&#39;)</span>
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">,</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span><span class="s1">&#39;left&#39;</span><span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">2008</span><span class="p">,</span><span class="mi">2020</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2008</span><span class="p">,</span> <span class="mi">2021</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">,</span> <span class="s1">&#39;Movies &amp; TV Shows added over time&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.59</span><span class="p">,</span> 
+<span class="s1">&#39;&#39;&#39;We see a slow start for Netflix over several years. 
+</span><span class="s1">Things begin to pick up in 2015 and then there is a 
+</span><span class="s1">rapid increase from 2016.
+</span><span class="s1">
+</span><span class="s1">It looks like content additions have slowed down in 2020, 
+</span><span class="s1">likely due to the COVID-19 pandemic.
+</span><span class="s1">&#39;&#39;&#39;</span>
+
+<span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.13</span><span class="p">,</span><span class="mf">0.2</span><span class="p">,</span><span class="s2">&#34;Movie&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#b20710&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.19</span><span class="p">,</span><span class="mf">0.2</span><span class="p">,</span><span class="s2">&#34;|&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">0.2</span><span class="p">,</span><span class="s2">&#34;TV Show&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#221f1f&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;both&#39;</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_21_0.png" alt=""  />
+</p>
+<p><br><br></p>
+<h3 id="28-我们可以查看相同的图但作为累积总数">2.8 我们可以查看相同的图，但作为累积总数&hellip;&hellip;</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">data_sub</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">)[</span><span class="s1">&#39;year_added&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="s1">&#39;TV Show&#39;</span><span class="p">,</span><span class="s1">&#39;Movie&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">color</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;#b20710&#34;</span><span class="p">,</span> <span class="s2">&#34;#221f1f&#34;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">mtv</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+    <span class="n">mtv_rel</span> <span class="o">=</span> <span class="n">data_sub</span><span class="p">[</span><span class="n">mtv</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">mtv_rel</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">mtv_rel</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="n">mtv</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+    
+
+    
+<span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">tick_right</span><span class="p">()</span>
+    
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linewidth</span> <span class="o">=</span> <span class="mf">1.3</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">.7</span><span class="p">)</span>
+
+<span class="c1">#ax.set_ylim(0, 50)</span>
+<span class="c1">#ax.legend(loc=&#39;upper left&#39;)</span>
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">,</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span><span class="s1">&#39;left&#39;</span><span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">2008</span><span class="p">,</span><span class="mi">2020</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2008</span><span class="p">,</span> <span class="mi">2021</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">,</span> <span class="s1">&#39;Movies &amp; TV Shows added over time [Cumulative Total]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.58</span><span class="p">,</span> 
+<span class="s1">&#39;&#39;&#39;Netflix peak global content amount was in 2019.
+</span><span class="s1">
+</span><span class="s1">It appears that Netflix has focused more attention
+</span><span class="s1">on increasing Movie content that TV Shows. 
+</span><span class="s1">Movies have increased much more dramatically
+</span><span class="s1">than TV shows.
+</span><span class="s1">&#39;&#39;&#39;</span>
+
+<span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+
+
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.13</span><span class="p">,</span><span class="mf">0.2</span><span class="p">,</span><span class="s2">&#34;Movie&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#b20710&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.19</span><span class="p">,</span><span class="mf">0.2</span><span class="p">,</span><span class="s2">&#34;|&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">0.2</span><span class="p">,</span><span class="s2">&#34;TV Show&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#221f1f&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;both&#39;</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_23_0.png" alt=""  />
+</p>
+<p><br><br></p>
+<h3 id="28-逐月">2.8 逐月¶</h3>
+<p>我们已经看到这些年来内容是如何增加的，但是平均而言，是否有某些月份倾向于享受更多内容的添加？</p>
+<p>我将以多种方式展示这一点 - 累积年视图，以及径向图&hellip;&hellip;</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">month_order</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;January&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;February&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;March&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;April&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;May&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;June&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;July&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;August&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;September&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;October&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;November&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;December&#39;</span><span class="p">]</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;month_name_added&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;month_name_added&#39;</span><span class="p">],</span> <span class="n">categories</span><span class="o">=</span><span class="n">month_order</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="n">data_sub</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">)[</span><span class="s1">&#39;month_name_added&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="s1">&#39;TV Show&#39;</span><span class="p">,</span><span class="s1">&#39;Movie&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">color</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;#b20710&#34;</span><span class="p">,</span> <span class="s2">&#34;#221f1f&#34;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">mtv</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+    <span class="n">mtv_rel</span> <span class="o">=</span> <span class="n">data_sub</span><span class="p">[</span><span class="n">mtv</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">mtv_rel</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">mtv_rel</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="n">mtv</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+    
+
+    
+<span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">tick_right</span><span class="p">()</span>
+    
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linewidth</span> <span class="o">=</span> <span class="mf">1.3</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">.4</span><span class="p">)</span>
+
+<span class="c1">#ax.set_ylim(0, 50)</span>
+<span class="c1">#ax.legend(loc=&#39;upper left&#39;)</span>
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">,</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span><span class="s1">&#39;left&#39;</span><span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">data_sub</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># remove white spaces next to margins</span>
+
+<span class="c1">#ax.set_xlim(2008,2020)</span>
+<span class="c1">#plt.xticks(np.arange(2008, 2021, 1))</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="s1">&#39;Content added by month [Cumulative Total]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.905</span><span class="p">,</span> 
+<span class="s2">&#34;The end &amp; beginnings of each year seem to be Netflix&#39;s preference for adding content.&#34;</span>
+
+<span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">)</span>
+
+
+
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.13</span><span class="p">,</span><span class="mf">0.855</span><span class="p">,</span><span class="s2">&#34;Movie&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#b20710&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.19</span><span class="p">,</span><span class="mf">0.855</span><span class="p">,</span><span class="s2">&#34;|&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">0.855</span><span class="p">,</span><span class="s2">&#34;TV Show&#34;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&#34;bold&#34;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#221f1f&#39;</span><span class="p">)</span>
+
+
+<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;both&#39;</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_25_0.png" alt=""  />
+</p>
+<p><br><br></p>
+<h3 id="29-有没有一种更有趣的方式来查看全年内容的添加情况">2.9 有没有一种更有趣的方式来查看全年内容的添加情况？</h3>
+<p>有时可视化应该是引人注目的——我认为这种视觉效果可以实现这一点，即使它不是最精确的。通过突出显示某些月份，读者的注意力可以准确地吸引到我们想要的地方。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">data_sub2</span> <span class="o">=</span> <span class="n">data_sub</span>
+
+<span class="n">data_sub2</span><span class="p">[</span><span class="s1">&#39;Value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_sub2</span><span class="p">[</span><span class="s1">&#39;Movie&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">data_sub2</span><span class="p">[</span><span class="s1">&#39;TV Show&#39;</span><span class="p">]</span>
+<span class="n">data_sub2</span> <span class="o">=</span> <span class="n">data_sub2</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+<span class="n">df_polar</span> <span class="o">=</span> <span class="n">data_sub2</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;month_name_added&#39;</span><span class="p">,</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="n">color_map</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;#221f1f&#39;</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">)]</span>
+<span class="n">color_map</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">color_map</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span> <span class="o">=</span>  <span class="s1">&#39;#b20710&#39;</span> <span class="c1"># color highlight</span>
+
+
+<span class="c1"># initialize the figure</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">polar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+
+<span class="c1"># Constants = parameters controling the plot layout:</span>
+<span class="n">upperLimit</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">lowerLimit</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">labelPadding</span> <span class="o">=</span> <span class="mi">30</span>
+
+<span class="c1"># Compute max and min in the dataset</span>
+<span class="nb">max</span> <span class="o">=</span> <span class="n">df_polar</span><span class="p">[</span><span class="s1">&#39;Value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+<span class="c1"># Let&#39;s compute heights: they are a conversion of each item value in those new coordinates</span>
+<span class="c1"># In our example, 0 in the dataset will be converted to the lowerLimit (10)</span>
+<span class="c1"># The maximum will be converted to the upperLimit (100)</span>
+<span class="n">slope</span> <span class="o">=</span> <span class="p">(</span><span class="nb">max</span> <span class="o">-</span> <span class="n">lowerLimit</span><span class="p">)</span> <span class="o">/</span> <span class="nb">max</span>
+<span class="n">heights</span> <span class="o">=</span> <span class="n">slope</span> <span class="o">*</span> <span class="n">df_polar</span><span class="o">.</span><span class="n">Value</span> <span class="o">+</span> <span class="n">lowerLimit</span>
+
+<span class="c1"># Compute the width of each bar. In total we have 2*Pi = 360°</span>
+<span class="n">width</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_polar</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+<span class="c1"># Compute the angle each bar is centered on:</span>
+<span class="n">indexes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_polar</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">angles</span> <span class="o">=</span> <span class="p">[</span><span class="n">element</span> <span class="o">*</span> <span class="n">width</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">indexes</span><span class="p">]</span>
+<span class="n">angles</span>
+
+<span class="c1"># Draw bars</span>
+<span class="n">bars</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
+    <span class="n">x</span><span class="o">=</span><span class="n">angles</span><span class="p">,</span> 
+    <span class="n">height</span><span class="o">=</span><span class="n">heights</span><span class="p">,</span> 
+    <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> 
+    <span class="n">bottom</span><span class="o">=</span><span class="n">lowerLimit</span><span class="p">,</span>
+    <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+    <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&#34;white&#34;</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="n">color_map</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span>
+<span class="p">)</span>
+
+<span class="c1"># Add labels</span>
+<span class="k">for</span> <span class="n">bar</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">bars</span><span class="p">,</span><span class="n">angles</span><span class="p">,</span> <span class="n">heights</span><span class="p">,</span> <span class="n">df_polar</span><span class="p">[</span><span class="s2">&#34;month_name_added&#34;</span><span class="p">]):</span>
+
+    <span class="c1"># Labels are rotated. Rotation must be specified in degrees :(</span>
+    <span class="n">rotation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+
+    <span class="c1"># Flip some labels upside down</span>
+    <span class="n">alignment</span> <span class="o">=</span> <span class="s2">&#34;&#34;</span>
+    <span class="k">if</span> <span class="n">angle</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span> <span class="ow">and</span> <span class="n">angle</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+        <span class="n">alignment</span> <span class="o">=</span> <span class="s2">&#34;right&#34;</span>
+        <span class="n">rotation</span> <span class="o">=</span> <span class="n">rotation</span> <span class="o">+</span> <span class="mi">180</span>
+    <span class="k">else</span><span class="p">:</span> 
+        <span class="n">alignment</span> <span class="o">=</span> <span class="s2">&#34;left&#34;</span>
+
+    <span class="c1"># Finally add the labels</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">angle</span><span class="p">,</span> 
+        <span class="n">y</span><span class="o">=</span><span class="n">lowerLimit</span> <span class="o">+</span> <span class="n">bar</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">+</span> <span class="n">labelPadding</span><span class="p">,</span> 
+        <span class="n">s</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> 
+        <span class="n">ha</span><span class="o">=</span><span class="n">alignment</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span>
+        <span class="n">va</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> 
+        <span class="n">rotation</span><span class="o">=</span><span class="n">rotation</span><span class="p">,</span> 
+        <span class="n">rotation_mode</span><span class="o">=</span><span class="s2">&#34;anchor&#34;</span><span class="p">)</span> 
+</code></pre></div><p><img loading="lazy" src="img/output_27_0.png" alt=""  />
+</p>
+<p>是的，十二月和一月绝对是新内容的最佳月份。 也许 Netflix 知道人们在这段时间有很多休假时间，是吸引人们的好时机？</p>
+<p>二月是最糟糕的——为什么会这样呢？ 欢迎提出想法！</p>
+<p><br><br></p>
+<h3 id="210-电影类型">2.10 电影类型</h3>
+<p>现在让我们稍微探讨一下电影类型&hellip;&hellip;</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># Genres</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">MultiLabelBinarizer</span> 
+
+<span class="kn">import</span> <span class="nn">matplotlib.colors</span>
+
+
+<span class="c1"># Custom colour map based on Netflix palette</span>
+<span class="n">cmap</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LinearSegmentedColormap</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span><span class="s2">&#34;&#34;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;#221f1f&#39;</span><span class="p">,</span> <span class="s1">&#39;#b20710&#39;</span><span class="p">,</span><span class="s1">&#39;#f5f5f1&#39;</span><span class="p">])</span>
+
+
+
+<span class="k">def</span> <span class="nf">genre_heatmap</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;genre&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;listed_in&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span>  <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; ,&#39;</span><span class="p">,</span><span class="s1">&#39;,&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">,</span><span class="s1">&#39;,&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span> 
+    <span class="n">Types</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;genre&#39;</span><span class="p">]:</span> <span class="n">Types</span> <span class="o">+=</span> <span class="n">i</span>
+    <span class="n">Types</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">Types</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&#34;There are </span><span class="si">{}</span><span class="s2"> types in the Netflix </span><span class="si">{}</span><span class="s2"> Dataset&#34;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Types</span><span class="p">),</span><span class="n">title</span><span class="p">))</span>    
+    <span class="n">test</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;genre&#39;</span><span class="p">]</span>
+    <span class="n">mlb</span> <span class="o">=</span> <span class="n">MultiLabelBinarizer</span><span class="p">()</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">mlb</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">test</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="n">mlb</span><span class="o">.</span><span class="n">classes_</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">test</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">corr</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">corr</span><span class="p">()</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">mask</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">triu_indices_from</span><span class="p">(</span><span class="n">mask</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">.54</span><span class="p">,</span><span class="mf">.88</span><span class="p">,</span><span class="s1">&#39;Genre correlation&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span><span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">.75</span><span class="p">,</span><span class="mf">.665</span><span class="p">,</span>
+            <span class="s1">&#39;&#39;&#39;
+</span><span class="s1">             It is interesting that Independant Movies
+</span><span class="s1">             tend to be Dramas. 
+</span><span class="s1">             
+</span><span class="s1">             Another observation is that 
+</span><span class="s1">             Internatinal Movies are rarely
+</span><span class="s1">             in the Children&#39;s genre.
+</span><span class="s1">             &#39;&#39;&#39;</span><span class="p">,</span> <span class="n">fontfamily</span><span class="o">=</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span><span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span>
+    <span class="n">pl</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">.3</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mf">.3</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linewidths</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    
+    
+<span class="n">df_tv</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&#34;type&#34;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&#34;TV Show&#34;</span><span class="p">]</span>
+<span class="n">df_movies</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&#34;type&#34;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&#34;Movie&#34;</span><span class="p">]</span>
+
+
+<span class="n">genre_heatmap</span><span class="p">(</span><span class="n">df_movies</span><span class="p">,</span> <span class="s1">&#39;Movie&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><pre><code>There are 20 types in the Netflix Movie Dataset
+</code></pre>
+<p><img loading="lazy" src="img/output_29_1.png" alt=""  />
+</p>
+<p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
 <ul>
 <li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
