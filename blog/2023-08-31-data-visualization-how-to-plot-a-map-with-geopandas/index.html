@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>可视化 | 使用geopandas可视化地图数据 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="Python, 可视化, matplotlib, geopandas" />
+<meta name="description" content="GeoDataFrame是GeoPandas中的核心数据结构，可以存储几何列并执行空间操作。GeoSeries 数据结构可以包含任何几何类型，例如点、线、多边形等。">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas/" />
+<meta name="baidu-site-verification" content="codeva-q71uASYfGi" />
+<meta name="360-site-verification" content="6b9b733ec558a1bb12cee8aa82f2529e" />
+<meta name="sogou-site-verification" content="dZHPIorOhK" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="可视化 | 使用geopandas可视化地图数据" />
+<meta property="og:description" content="GeoDataFrame是GeoPandas中的核心数据结构，可以存储几何列并执行空间操作。GeoSeries 数据结构可以包含任何几何类型，例如点、线、多边形等。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas/" />
+<meta property="og:image" content="/images/blog/geopandas-world-map.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2023-08-31T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2023-08-31T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/geopandas-world-map.png" />
+<meta name="twitter:title" content="可视化 | 使用geopandas可视化地图数据"/>
+<meta name="twitter:description" content="GeoDataFrame是GeoPandas中的核心数据结构，可以存储几何列并执行空间操作。GeoSeries 数据结构可以包含任何几何类型，例如点、线、多边形等。"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "可视化 | 使用geopandas可视化地图数据",
+      "item": "/blog/2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "可视化 | 使用geopandas可视化地图数据",
+  "name": "可视化 | 使用geopandas可视化地图数据",
+  "description": "GeoDataFrame是GeoPandas中的核心数据结构，可以存储几何列并执行空间操作。GeoSeries 数据结构可以包含任何几何类型，例如点、线、多边形等。",
+  "keywords": [
+    "Python", "可视化", "matplotlib", "geopandas"
+  ],
+  "articleBody": "本文代码 \nPandas 可能是最流行的用于数据分析的 Python 库。GeoPandas 扩展了 Pandas 的数据类型，使我们能够更轻松地在 Python 中处理地理空间数据。它目前有两种数据类型结构：GeoSeries 和 GeoDataFrame，它们分别是 pandas.Series 和 pandas.DataFrame 的子类。\nGeoDataFrame 是 GeoPandas 中的核心数据结构，可以存储几何列并执行空间操作。GeoSeries 数据结构可以包含任何几何类型，例如点、线、多边形等。\n总体上，GeoDataFrame 是 pandas.Series 和 geopandas.GeoSeries 的组合。\n为了按照本文中的方法进行操作，您需要从 ArcGIS Hub 下载一个世界国家的 Shapefile (https://hub.arcgis.com/datasets/esri::world-countries-generalized/)。 如果您已经有自己的 Shapefile 数据，也可以使用您自己的数据。\n \n一、安装GeoPandas GeoPandas库是纯 Python 编写的，但是它的一些依赖库是用 C 编写的，比如 GEOS、GDAL、PROJ。有时在 Windows 上安装这些 C 库并不容易。\n!pip3 install pyogrio !pip3 install pyproj !pip3 install rtree !pip3 install shapely !pip3 install geopandas import geopandas as gpd import warnings warnings.filterwarnings('ignore') print('Geopandas版本号: ', gpd.__version__) Geopandas版本号: 0.13.2  \n二、读写数据 2.1 读入数据 geopandas库支持多种数据格式\n shp geojson  import os os.listdir('data') ['.DS_Store', 'World_Countries_Generalized', 'World_Countries_Generalized.geojson', 'world-population.geo.json']  2.1.1 shp import geopandas as gpd #shp必须与shx同处于一个文件夹内 gdf = gpd.read_file('data/World_Countries_Generalized/World_Countries_Generalized.shp') gdf.head() 2.1.2 geojson GeoJson是Json文件，所以该类数据文件尾缀名一般为.geojson 或 .json\nimport geopandas as gpd gdf2 = gpd.read_file('data/world-population.geo.json') gdf2.head() \n2.2 保存数据 我们可以使用 GeoDataFrame.to_file() 将切片或修改后的 GeoDataFrame 写回文件。\n gdf.to_file(‘shp文件路径’) gdf.to_file(‘GeoJson文件路径’, driver=‘GeoJSON’)  默认的文件格式是 Shapefile，但我们可以使用 driver 关键字指定其他格式。例如，让我们将 DataFrame 保存为 GeoJSON 格式。\ngdf2.to_file('output/World_Countries_Generalized.shp') gdf2.to_file('output/World_Countries_Generalized.geojson', driver='GeoJSON') \n三、GeoDataFrame数据类型 让我们以 gdf GeoDataFrame 为例。大多数用于 pandas 的方法在 GeoPandas 中仍然适用。在本节中，我们只会看到一些示例。\n#数据形状 gdf2.shape (211, 10)  211行，8列，最后一列是多边形几何数据\n3.1 坐标参考系统（CRS） 通常我们使用一个二维坐标系统，其中经度（垂直的南北线）和纬度（东西方向的水平线）用于标识地球表面上的位置。\nGeoDataFrame 包含了将几何列中定义的多边形映射到地球表面的CRS信息。要检查CRS，我们使用 .crs 方法。\ngdf2.crs Name: WGS 84 Axis Info [ellipsoidal]: - Lat[north]: Geodetic latitude (degree) - Lon[east]: Geodetic longitude (degree) Area of Use: - name: World. - bounds: (-180.0, -90.0, 180.0, 90.0) Datum: World Geodetic System 1984 ensemble - Ellipsoid: WGS 84 - Prime Meridian: Greenwich  3.2 筛选 筛选出中国的数据\ngdf2[gdf2['NAME']=='China'] 3.2 中心 每个记录所代码实体(国家、省州、城市)的地理中心\ngdf2.centroid 0 POINT (66.02695 33.83959) 1 POINT (20.06466 41.14350) 2 POINT (2.63167 28.16258) 3 POINT (1.58730 42.54147) 4 POINT (17.54495 -12.29359) ... 206 POINT (47.59134 15.77731) 207 POINT (20.80471 44.02662) 208 POINT (23.65690 -2.87535) 209 POINT (27.79925 -13.45302) 210 POINT (29.87045 -19.00312) Length: 211, dtype: geometry  3.3 投影 几何数据（多边形）转换到 EPSG 3857 坐标参考系统，并计算每个多边形的中心点（centroid）。 EPSG 3857 通常被称为 「Web Mercator 投影」，用于在 Web 地图上呈现地理数据。转换为此坐标参考系统可以用于生成更适合在 Web 地图上显示的数据。\n根据代码运行提示， 更改代码。\ngdf2.to_crs(3857).centroid 0 POINT (7354486.896 4017736.603) 1 POINT (2233478.912 5035365.825) 2 POINT (292615.786 3302567.699) 3 POINT (176697.417 5242446.985) 4 POINT (1953402.929 -1385745.990) ... 206 POINT (5299033.934 1780605.357) 207 POINT (2315093.566 5473720.440) 208 POINT (2633886.156 -323258.251) 209 POINT (3092719.338 -1515282.005) 210 POINT (3325201.834 -2158042.585) Length: 211, dtype: geometry  3.4 计算区域面积 数据已经包含了一个 SHAPE_Area 列。假设没有这样的列，我们可以通过几何数据来计算面积。为了获得正确的面积，您必须使用等面积投影。适用于您的代码的投影是 EPSG 6933。它是柱面等面积投影。\ngdf2.to_crs(6933).area 0 6.419639e+11 1 2.875576e+10 2 2.318240e+12 3 4.702513e+08 4 1.247851e+12 ... 206 3.990873e+11 207 8.856234e+10 208 2.325712e+12 209 7.521495e+11 210 3.892279e+11 Length: 211, dtype: float64  \n四、可视化 因为geopandas绘图功能是在matplotlib的基础上实现的，gdf.plot()一行代码就能绘图\n4.1 最简地图 gdf2.plot() 4.2 更改颜色 图的颜色和边界的颜色的更改\ngdf2.plot(color='green', edgecolor='white') 4.3 colormap 使用matplotlib的colormaps配色\ngdf2.plot(cmap='jet', linewidth=0.2, edgecolor='gray', column='NAME', figsize=(10, 5)) 4.4 Legend Colorbar 图例配色\nimport matplotlib.pyplot as plt gdf2['POP2005']=gdf2['POP2005'].astype(float) gdf2.plot(cmap='hot',linewidth=0.2, edgecolor='gray',column='POP2005',legend=True,figsize=(10, 5)) plt.title('World Population') plt.show() 4.5 局部 使用gdf2除了可以绘制全世界地图，还可以绘制局部地图，如美国地图\ngdf2[gdf2['NAME']=='China'] china_mainland = gdf2[gdf2['NAME'] =='China'] china_taiwan = gdf2[gdf2['NAME'] =='Taiwan'] fig, ax = plt.subplots(figsize=(10, 5)) china_mainland.plot(ax=ax) china_taiwan.plot(ax=ax) plt.title('Map of China') \n广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
+  "wordCount" : "412",
+  "inLanguage": "en",
+  "image":"/images/blog/geopandas-world-map.png","datePublished": "2023-08-31T00:00:00Z",
+  "dateModified": "2023-08-31T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif" rel="stylesheet">
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/management_python_course/" title="课程" target="_blank">
+                    <span>课程</span>
+                </a>
+            </li>
+            <li>
+                <a href="/index.xml" title="RSS" target="_blank">
+                    <span>RSS</span>
+                </a>
+            </li>
+            <li>
+                <a href="/support/" title="支持一下" target="_blank">
+                    <span>支持一下</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      可视化 | 使用geopandas可视化地图数据
+    </h1>
+    <div class="post-meta"><span title='2023-08-31 00:00:00 +0000 UTC'>2023-08-31</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/geopandas-world-map.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/geopandas-world-map.png" alt=""></a>
+        
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae&amp;url=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f&amp;hashtags=%e5%8f%af%e8%a7%86%e5%8c%96%2c%e7%bb%8f%e6%b5%8e%e7%ae%a1%e7%90%86">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f&amp;title=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae&amp;summary=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae&amp;source=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f&title=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae%20-%20%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on telegram"
+        href="https://telegram.me/share/url?text=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae&amp;url=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e6%9c%ac%e6%96%87%e4%bb%a3%e7%a0%81codezip" aria-label="本文代码"><a href="code.zip">本文代码</a></a></li>
+                    <li>
+                        <a href="#%e4%b8%80%e5%ae%89%e8%a3%85geopandas" aria-label="一、安装GeoPandas">一、安装GeoPandas</a></li>
+                    <li>
+                        <a href="#%e4%ba%8c%e8%af%bb%e5%86%99%e6%95%b0%e6%8d%ae" aria-label="二、读写数据">二、读写数据</a><ul>
+                            
+                    <li>
+                        <a href="#21-%e8%af%bb%e5%85%a5%e6%95%b0%e6%8d%ae" aria-label="2.1 读入数据">2.1 读入数据</a><ul>
+                            
+                    <li>
+                        <a href="#211-shp" aria-label="2.1.1 shp">2.1.1 shp</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#212-geojson" aria-label="2.1.2 geojson">2.1.2 geojson</a></li>
+                    <li>
+                        <a href="#22-%e4%bf%9d%e5%ad%98%e6%95%b0%e6%8d%ae" aria-label="2.2 保存数据">2.2 保存数据</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e4%b8%89geodataframe%e6%95%b0%e6%8d%ae%e7%b1%bb%e5%9e%8b" aria-label="三、GeoDataFrame数据类型">三、GeoDataFrame数据类型</a><ul>
+                            
+                    <li>
+                        <a href="#31-%e5%9d%90%e6%a0%87%e5%8f%82%e8%80%83%e7%b3%bb%e7%bb%9fcrs" aria-label="3.1 坐标参考系统（CRS）">3.1 坐标参考系统（CRS）</a></li>
+                    <li>
+                        <a href="#32-%e7%ad%9b%e9%80%89" aria-label="3.2 筛选">3.2 筛选</a></li>
+                    <li>
+                        <a href="#32-%e4%b8%ad%e5%bf%83" aria-label="3.2 中心">3.2 中心</a></li>
+                    <li>
+                        <a href="#33-%e6%8a%95%e5%bd%b1" aria-label="3.3 投影">3.3 投影</a></li>
+                    <li>
+                        <a href="#34-%e8%ae%a1%e7%ae%97%e5%8c%ba%e5%9f%9f%e9%9d%a2%e7%a7%af" aria-label="3.4 计算区域面积">3.4 计算区域面积</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e5%9b%9b%e5%8f%af%e8%a7%86%e5%8c%96" aria-label="四、可视化">四、可视化</a><ul>
+                            
+                    <li>
+                        <a href="#41-%e6%9c%80%e7%ae%80%e5%9c%b0%e5%9b%be" aria-label="4.1 最简地图">4.1 最简地图</a></li>
+                    <li>
+                        <a href="#42-%e6%9b%b4%e6%94%b9%e9%a2%9c%e8%89%b2" aria-label="4.2 更改颜色">4.2 更改颜色</a></li>
+                    <li>
+                        <a href="#43-colormap" aria-label="4.3 colormap">4.3 colormap</a></li>
+                    <li>
+                        <a href="#44-legend-colorbar" aria-label="4.4 Legend Colorbar">4.4 Legend Colorbar</a></li>
+                    <li>
+                        <a href="#45-%e5%b1%80%e9%83%a8" aria-label="4.5 局部">4.5 局部</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e5%b9%bf%e8%80%8c%e5%91%8a%e4%b9%8b" aria-label="广而告之">广而告之</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><h2 id="本文代码codezip"><a href="code.zip">本文代码</a><a hidden class="anchor" aria-hidden="true" href="#本文代码codezip">#</a></h2>
+<p><br><br></p>
+<p>Pandas 可能是最流行的用于数据分析的 Python 库。GeoPandas 扩展了 Pandas 的数据类型，使我们能够更轻松地在 Python 中处理地理空间数据。它目前有两种数据类型结构：GeoSeries 和 GeoDataFrame，它们分别是 pandas.Series 和 pandas.DataFrame 的子类。</p>
+<p><strong>GeoDataFrame</strong> 是 <strong>GeoPandas</strong> 中的核心数据结构，可以存储几何列并执行空间操作。GeoSeries 数据结构可以包含任何几何类型，例如点、线、多边形等。</p>
+<p>总体上，GeoDataFrame 是 pandas.Series 和 geopandas.GeoSeries 的组合。</p>
+<p>为了按照本文中的方法进行操作，您需要从 ArcGIS Hub 下载一个世界国家的 Shapefile (<a href="https://hub.arcgis.com/datasets/esri::world-countries-generalized/">https://hub.arcgis.com/datasets/esri::world-countries-generalized/</a>)。 如果您已经有自己的 Shapefile 数据，也可以使用您自己的数据。</p>
+<p><img loading="lazy" src="img/01-arcgis.png" alt=""  />
+</p>
+<h2 id="heading"><a hidden class="anchor" aria-hidden="true" href="#heading">#</a></h2>
+<p><br><br></p>
+<h2 id="一安装geopandas">一、安装GeoPandas<a hidden class="anchor" aria-hidden="true" href="#一安装geopandas">#</a></h2>
+<p>GeoPandas库是纯 Python 编写的，但是它的一些依赖库是用 C 编写的，比如 GEOS、GDAL、PROJ。有时在 Windows 上安装这些 C 库并不容易。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">pyogrio</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">pyproj</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">rtree</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">shapely</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">geopandas</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Geopandas版本号: &#39;</span><span class="p">,</span> <span class="n">gpd</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+</code></pre></div><pre><code>Geopandas版本号:  0.13.2
+</code></pre>
+<p><br><br></p>
+<h2 id="二读写数据">二、读写数据<a hidden class="anchor" aria-hidden="true" href="#二读写数据">#</a></h2>
+<h3 id="21-读入数据">2.1 读入数据<a hidden class="anchor" aria-hidden="true" href="#21-读入数据">#</a></h3>
+<p>geopandas库支持多种数据格式</p>
+<ul>
+<li>shp</li>
+<li>geojson</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span>
+</code></pre></div><pre><code>['.DS_Store',
+ 'World_Countries_Generalized',
+ 'World_Countries_Generalized.geojson',
+ 'world-population.geo.json']
+</code></pre>
+<h4 id="211-shp">2.1.1 shp<a hidden class="anchor" aria-hidden="true" href="#211-shp">#</a></h4>
+<p><img loading="lazy" src="img/02-shp_data.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+
+<span class="c1">#shp必须与shx同处于一个文件夹内</span>
+<span class="n">gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s1">&#39;data/World_Countries_Generalized/World_Countries_Generalized.shp&#39;</span><span class="p">)</span>
+<span class="n">gdf</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df.png" alt=""  />
+</p>
+<br>
+<h3 id="212-geojson">2.1.2 geojson<a hidden class="anchor" aria-hidden="true" href="#212-geojson">#</a></h3>
+<p>GeoJson是Json文件，所以该类数据文件尾缀名一般为<code>.geojson</code> 或  <code>.json</code></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+
+<span class="n">gdf2</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s1">&#39;data/world-population.geo.json&#39;</span><span class="p">)</span>
+<span class="n">gdf2</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<p><br><br></p>
+<h3 id="22-保存数据">2.2 保存数据<a hidden class="anchor" aria-hidden="true" href="#22-保存数据">#</a></h3>
+<p>我们可以使用 GeoDataFrame.to_file() 将切片或修改后的 GeoDataFrame 写回文件。</p>
+<ul>
+<li>gdf.to_file(&lsquo;shp文件路径&rsquo;)</li>
+<li>gdf.to_file(&lsquo;GeoJson文件路径&rsquo;, driver=&lsquo;GeoJSON&rsquo;)</li>
+</ul>
+<p>默认的文件格式是 Shapefile，但我们可以使用 driver 关键字指定其他格式。例如，让我们将 DataFrame 保存为 GeoJSON 格式。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gdf2</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s1">&#39;output/World_Countries_Generalized.shp&#39;</span><span class="p">)</span>
+<span class="n">gdf2</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s1">&#39;output/World_Countries_Generalized.geojson&#39;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s1">&#39;GeoJSON&#39;</span><span class="p">)</span>
+</code></pre></div><p><br><br></p>
+<h2 id="三geodataframe数据类型">三、GeoDataFrame数据类型<a hidden class="anchor" aria-hidden="true" href="#三geodataframe数据类型">#</a></h2>
+<p>让我们以 gdf GeoDataFrame 为例。大多数用于 pandas 的方法在 GeoPandas 中仍然适用。在本节中，我们只会看到一些示例。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#数据形状</span>
+<span class="n">gdf2</span><span class="o">.</span><span class="n">shape</span>
+</code></pre></div><pre><code>(211, 10)
+</code></pre>
+<p>211行，8列，最后一列是多边形几何数据</p>
+<br>
+<h3 id="31-坐标参考系统crs">3.1 坐标参考系统（CRS）<a hidden class="anchor" aria-hidden="true" href="#31-坐标参考系统crs">#</a></h3>
+<p>通常我们使用一个二维坐标系统，其中经度（垂直的南北线）和纬度（东西方向的水平线）用于标识地球表面上的位置。</p>
+<p>GeoDataFrame 包含了将几何列中定义的多边形映射到地球表面的CRS信息。要检查CRS，我们使用 .crs 方法。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gdf2</span><span class="o">.</span><span class="n">crs</span>
+</code></pre></div><pre><code>&lt;Geographic 2D CRS: EPSG:4326&gt;
+Name: WGS 84
+Axis Info [ellipsoidal]:
+- Lat[north]: Geodetic latitude (degree)
+- Lon[east]: Geodetic longitude (degree)
+Area of Use:
+- name: World.
+- bounds: (-180.0, -90.0, 180.0, 90.0)
+Datum: World Geodetic System 1984 ensemble
+- Ellipsoid: WGS 84
+- Prime Meridian: Greenwich
+</code></pre>
+<br>
+<h3 id="32-筛选">3.2 筛选<a hidden class="anchor" aria-hidden="true" href="#32-筛选">#</a></h3>
+<p>筛选出中国的数据</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gdf2</span><span class="p">[</span><span class="n">gdf2</span><span class="p">[</span><span class="s1">&#39;NAME&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;China&#39;</span><span class="p">]</span>
+</code></pre></div><p><img loading="lazy" src="img/df3.png" alt=""  />
+</p>
+<br>
+<h3 id="32-中心">3.2 中心<a hidden class="anchor" aria-hidden="true" href="#32-中心">#</a></h3>
+<p>每个记录所代码实体(国家、省州、城市)的地理中心</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gdf2</span><span class="o">.</span><span class="n">centroid</span>
+</code></pre></div><pre><code>0       POINT (66.02695 33.83959)
+1       POINT (20.06466 41.14350)
+2        POINT (2.63167 28.16258)
+3        POINT (1.58730 42.54147)
+4      POINT (17.54495 -12.29359)
+                  ...            
+206     POINT (47.59134 15.77731)
+207     POINT (20.80471 44.02662)
+208     POINT (23.65690 -2.87535)
+209    POINT (27.79925 -13.45302)
+210    POINT (29.87045 -19.00312)
+Length: 211, dtype: geometry
+</code></pre>
+<br>
+<h3 id="33-投影">3.3 投影<a hidden class="anchor" aria-hidden="true" href="#33-投影">#</a></h3>
+<p>几何数据（多边形）转换到 EPSG 3857 坐标参考系统，并计算每个多边形的中心点（centroid）。 EPSG 3857 通常被称为 「Web Mercator 投影」，用于在 Web 地图上呈现地理数据。转换为此坐标参考系统可以用于生成更适合在 Web 地图上显示的数据。</p>
+<p>根据代码运行提示， 更改代码。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gdf2</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="mi">3857</span><span class="p">)</span><span class="o">.</span><span class="n">centroid</span>
+</code></pre></div><pre><code>0       POINT (7354486.896 4017736.603)
+1       POINT (2233478.912 5035365.825)
+2        POINT (292615.786 3302567.699)
+3        POINT (176697.417 5242446.985)
+4      POINT (1953402.929 -1385745.990)
+                     ...               
+206     POINT (5299033.934 1780605.357)
+207     POINT (2315093.566 5473720.440)
+208     POINT (2633886.156 -323258.251)
+209    POINT (3092719.338 -1515282.005)
+210    POINT (3325201.834 -2158042.585)
+Length: 211, dtype: geometry
+</code></pre>
+<br>
+<h3 id="34-计算区域面积">3.4 计算区域面积<a hidden class="anchor" aria-hidden="true" href="#34-计算区域面积">#</a></h3>
+<p>数据已经包含了一个 SHAPE_Area 列。假设没有这样的列，我们可以通过几何数据来计算面积。为了获得正确的面积，您必须使用<strong>等面积投影</strong>。适用于您的代码的投影是 EPSG 6933。它是柱面等面积投影。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gdf2</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="mi">6933</span><span class="p">)</span><span class="o">.</span><span class="n">area</span>
+</code></pre></div><pre><code>0      6.419639e+11
+1      2.875576e+10
+2      2.318240e+12
+3      4.702513e+08
+4      1.247851e+12
+           ...     
+206    3.990873e+11
+207    8.856234e+10
+208    2.325712e+12
+209    7.521495e+11
+210    3.892279e+11
+Length: 211, dtype: float64
+</code></pre>
+<p><br><br></p>
+<h2 id="四可视化">四、可视化<a hidden class="anchor" aria-hidden="true" href="#四可视化">#</a></h2>
+<p>因为geopandas绘图功能是在matplotlib的基础上实现的，gdf.plot()一行代码就能绘图</p>
+<h3 id="41-最简地图">4.1 最简地图<a hidden class="anchor" aria-hidden="true" href="#41-最简地图">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gdf2</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_26_1.png" alt=""  />
+</p>
+<br>
+<h3 id="42-更改颜色">4.2 更改颜色<a hidden class="anchor" aria-hidden="true" href="#42-更改颜色">#</a></h3>
+<p>图的颜色和边界的颜色的更改</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gdf2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/output_28_1.png" alt=""  />
+</p>
+<br>
+<h3 id="43-colormap">4.3 colormap<a hidden class="anchor" aria-hidden="true" href="#43-colormap">#</a></h3>
+<p>使用matplotlib的colormaps配色</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gdf2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="s1">&#39;NAME&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+</code></pre></div><p><img loading="lazy" src="img/output_30_1.png" alt=""  />
+</p>
+<br>
+<h3 id="44-legend-colorbar">4.4 Legend Colorbar<a hidden class="anchor" aria-hidden="true" href="#44-legend-colorbar">#</a></h3>
+<p>图例配色</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">gdf2</span><span class="p">[</span><span class="s1">&#39;POP2005&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">gdf2</span><span class="p">[</span><span class="s1">&#39;POP2005&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+<span class="n">gdf2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;hot&#39;</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;POP2005&#39;</span><span class="p">,</span><span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;World Population&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_32_0.png" alt=""  />
+</p>
+<br>
+<h3 id="45-局部">4.5 局部<a hidden class="anchor" aria-hidden="true" href="#45-局部">#</a></h3>
+<p>使用gdf2除了可以绘制全世界地图，还可以绘制局部地图，如美国地图</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gdf2</span><span class="p">[</span><span class="n">gdf2</span><span class="p">[</span><span class="s1">&#39;NAME&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;China&#39;</span><span class="p">]</span>
+</code></pre></div><p><img loading="lazy" src="img/df3.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">china_mainland</span> <span class="o">=</span> <span class="n">gdf2</span><span class="p">[</span><span class="n">gdf2</span><span class="p">[</span><span class="s1">&#39;NAME&#39;</span><span class="p">]</span> <span class="o">==</span><span class="s1">&#39;China&#39;</span><span class="p">]</span>
+<span class="n">china_taiwan</span> <span class="o">=</span> <span class="n">gdf2</span><span class="p">[</span><span class="n">gdf2</span><span class="p">[</span><span class="s1">&#39;NAME&#39;</span><span class="p">]</span> <span class="o">==</span><span class="s1">&#39;Taiwan&#39;</span><span class="p">]</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="n">china_mainland</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span> 
+<span class="n">china_taiwan</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Map of China&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/output_35_1.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之<a hidden class="anchor" aria-hidden="true" href="#广而告之">#</a></h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/" target='_blank'>可视化</a></li>
+        <li><a href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/" target='_blank'>经济管理</a></li>
+      </ul>
+
+
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae&amp;url=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f&amp;hashtags=%e5%8f%af%e8%a7%86%e5%8c%96%2c%e7%bb%8f%e6%b5%8e%e7%ae%a1%e7%90%86">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f&amp;title=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae&amp;summary=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae&amp;source=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f&title=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae%20-%20%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 可视化 | 使用geopandas可视化地图数据 on telegram"
+        href="https://telegram.me/share/url?text=%e5%8f%af%e8%a7%86%e5%8c%96%20%7c%20%e4%bd%bf%e7%94%a8geopandas%e5%8f%af%e8%a7%86%e5%8c%96%e5%9c%b0%e5%9b%be%e6%95%b0%e6%8d%ae&amp;url=%2fblog%2f2023-08-31-data-visualization-how-to-plot-a-map-with-geopandas%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'Copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+
+
+    
+    
+</body>
+
+</html>
