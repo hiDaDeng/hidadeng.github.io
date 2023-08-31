@@ -155,6 +155,20 @@ class Config {
 			},
 
 			{
+				site: 'ChatGPT',
+				icon: 'chatgpt',
+				url: 'https://chat.openai.com/',
+				category: 'Academic Tools'
+			},
+
+			{
+				site: '文心一言',
+				icon: 'wenxinyiyan',
+				url: 'https://yiyan.baidu.com/',
+				category: 'Academic Tools'
+			},
+
+			{
 				site: '知网',
 				icon: 'zhiwang',
 				url: 'https://www.cnki.net/',
