@@ -6,7 +6,7 @@
     <description>Recent content in 数据集 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Thu, 31 Aug 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 08 Sep 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>可视化 | 99-21年地方政府报告环保、科技、三农等关键词变化趋势</title>
       <link>https://textdata.cn/blog/2023-03-19-visualize-8-province-gov-anual-report/</link>
@@ -195,6 +195,561 @@
     </item>
     
     <item>
+      <title>中国管理科学 | 使用业绩说明会文本数据测量上市公司前瞻性信息</title>
+      <link>https://textdata.cn/blog/2023-09-08-earnings-communication-conference-forward-looking-statements-information/</link>
+      <pubDate>Fri, 08 Sep 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-09-08-earnings-communication-conference-forward-looking-statements-information/</guid>
+      <description>业绩说明会， 是我国上市公司和中小投资 者沟通交流的重要载体。 在年报披露后， 能够 帮助投资者快速、准确地抓取信息披露重点， 全面了解企业发展状况， 增进对企业价值及经 营理念的认同。上市公司的业绩说明会是金融领域中的重要事件，它为投资者、分析师和其他利益相关者提供了一个与公司管理层直接交流的平台。这种数据集的学术价值多方面体现。</description>
+      <content:encoded><![CDATA[<p>最近几个月没怎么分享长技术文，正好昨天分享的付费数据集涉及到一篇论文，感觉用到了很多Python的地方，就想着做一期。这篇论文的Python实现，技术要点有两个部分</p>
+<ol>
+<li><strong>「构建词典」</strong>； 训练word2vec预训练语言模型，并使用该模型扩展出<strong>前瞻性词典集</strong></li>
+<li><strong>「算前瞻性指标</strong>」； 根据<strong>前瞻性词典集</strong>,统计每个企业业绩说明会内的前瞻性词在总词数中的比例</li>
+</ol>
+<p>这两部分，分别对应本文 <strong>「二、实验-构建词典」</strong>、<strong>「三、计算前瞻性」</strong>。</p>
+<p><strong>内容较长， 可能对初学小白不友好。 学完大邓课程「<a href="https://textdata.cn/blog/management_python_course/">Python实证指标构建与文本分析</a>」的同学，阅读起来会轻松一些</strong>。</p>
+<p><br><br></p>
+<p><strong>许帅,邵帅,何贤杰.业绩说明会前瞻性信息对分析师盈余预测准确性的影响——信口雌黄还是言而有征[J].中国管理科学:1-15.</strong></p>
+<blockquote>
+<p>摘要:本文以2007—2020年上市公司业绩说明会为背景，研究前瞻性信息披露对分析师预测的影响，发现业绩说明会中的前瞻性信息可以显著提升分析师盈余预测准确性。公司的信息不对称程度越高，前瞻性信息对分析师预测准确性提升越多。分析师专长工作经验越丰富，具备更强的信息捕捉能力，可以更好地吸收与理解业绩说明会中的前瞻性信息，做出更准确的预测。进一步，本文对前瞻性信息影响分析师预测的路径进行了讨论，认为前瞻性信息可能通过吸引分析师和机构投资者调研，增进分析师对上市公司经营状况的了解，进而提升盈余预测准确性。此外，本文发现，前瞻性信息中业绩相关类信息因具有更高的可信度，且与盈余因子直接相关，能够显著提升分析师盈余预测准确性。本研究为管理层披露与分析师的互动研究提供了增量证据，研究结果支持了业绩说明会有效性，对未来监管部门制定相关信息披露政策提供依据和建议。</p>
+</blockquote>
+<p><br><br></p>
+<h2 id="一前瞻性指标衡量">一、前瞻性指标衡量</h2>
+<p>本文关注业绩说明会中前瞻性信息披露的比重， 借鉴Li [5] 、Muslu等 [6] 和马黎珺等 [14] 对前瞻性信息的定义， 采用 “ 词袋法 ” 构建前瞻性 指标， <strong>运用Python软件中jieba中文分词技术统计在问答阶段前瞻性词汇词频占业绩说明会文本总词频（去除停用词）的比例</strong>。 同时， 手工剔除了诸如“请关注后续公告”、“详见以后公告”等不具备实质性前瞻性信息的词频。</p>
+<p>在词典的选取上， 本文前瞻性词典集借鉴胡楠和薛付婧 [15] 的种子词汇， 为了保证词汇的全面性， 还将所有种子词导入到开源分析工具 word2vec中， 并在业绩说明会语料库中寻找与种子词内容接近程度最高的词汇，其中包含（1） 管理团队的预测，譬如“计划/预计/预测”等表 述；（2）出现未来时点的表述， 譬如“未来/以 后/明年/下半年”等表述；（3）暗示企业即将发 生的动作， 譬如“有望/后续”等表述， 共计 174个前瞻性词汇（详见附录2）。前瞻性指标比重越大，表明公司的前瞻性信息披露越多。</p>
+<p><img loading="lazy" src="img/formular.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/dict1.png" alt=""  />
+</p>
+<br>
+<h2 id="二实验-构建词典">二、实验-构建词典</h2>
+<h3 id="21-整理数据">2.1 整理数据</h3>
+<p>把 [<strong>数据集 | 84w条业绩说明会问答数据(2005-2023)</strong>](<a href="https://textdata.cn/blog/2023-09-08-china-a-share-market-listed-company-earnings">https://textdata.cn/blog/2023-09-08-china-a-share-market-listed-company-earnings</a> communication-conference/)汇总到一个txt文件内。为了保证问答上下文一致， 问答要放在相邻处。 可能需要安装</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install openpyxl
+pip3 install pandas
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;业绩说明会问答05-23.xlsx&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;提问内容&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;回答内容&#39;</span><span class="p">]</span>
+<span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df1.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;业绩说明会05-23.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    
+    <span class="c1">#为了保证问答上下文一致， 问答要放在相邻处</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">())</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div><br>
+<h3 id="22-训练word2vec">2.2 训练word2vec</h3>
+<p>一般都是使用gensim库，对  <strong>「业绩说明会05-23.txt」</strong> 数据集进行训练，我已经封装到的cntext库内。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install cntext==1.8.6
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<span class="c1">#Init W2VModels. Support English and Chinese</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">W2VModels</span><span class="p">(</span><span class="n">cwd</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> 
+                     <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>  <span class="c1">#corpus data w2v_corpus.txt</span>
+
+
+<span class="c1">#训练结束后，「业绩说明会05-23.100.6.bin」会出现在「output/Word2Vec」文件夹内 </span>
+<span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">input_txt_file</span><span class="o">=</span><span class="s1">&#39;业绩说明会05-23.txt&#39;</span><span class="p">,</span> 
+            <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;业绩说明会05-23.100.6.bin&#39;</span><span class="p">)</span>
+</code></pre></div><br>
+<p>需要注意， output/word2vec文件夹内会同时含有</p>
+<ul>
+<li><strong>业绩说明会05-23.100.6.bin</strong></li>
+<li><strong>业绩说明会05-23.100.6.bin.vectors.npy</strong></li>
+</ul>
+<p>两个文件都不要删除， 这些是预训练词向量文件。</p>
+<br>
+<h3 id="23-扩展词典">2.3 扩展词典</h3>
+<p>根据前瞻性研究需要，整理了一些种子词</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">seedwords</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;计划&#39;</span><span class="p">,</span> <span class="s1">&#39;预计&#39;</span><span class="p">,</span> <span class="s1">&#39;未来&#39;</span><span class="p">,</span> <span class="s1">&#39;目标&#39;</span><span class="p">,</span> <span class="s1">&#39;可能&#39;</span><span class="p">,</span> <span class="s1">&#39;如果&#39;</span><span class="p">,</span> <span class="s1">&#39;机遇&#39;</span><span class="p">,</span> <span class="s1">&#39;预期&#39;</span><span class="p">,</span> <span class="s1">&#39;挑战&#39;</span><span class="p">,</span> <span class="s1">&#39;预测&#39;</span><span class="p">,</span> <span class="s1">&#39;今后&#39;</span><span class="p">,</span> <span class="s1">&#39;目的&#39;</span><span class="p">,</span> <span class="s1">&#39;契机&#39;</span><span class="p">,</span> <span class="s1">&#39;前景&#39;</span><span class="p">,</span> <span class="s1">&#39;希望&#39;</span><span class="p">,</span> <span class="s1">&#39;展望&#39;</span><span class="p">,</span> <span class="s1">&#39;相信&#39;</span><span class="p">,</span> <span class="s1">&#39;愿景&#39;</span><span class="p">,</span> <span class="s1">&#39;期待&#39;</span><span class="p">,</span> <span class="s1">&#39;明年&#39;</span><span class="p">,</span> <span class="s1">&#39;期望&#39;</span><span class="p">]</span>
+</code></pre></div><ol>
+<li>导入word2vec预训练语言模型文件 <strong>业绩说明会05-23.100.6.bin</strong></li>
+<li>寻找与种子词语义最相似的n个词。</li>
+<li>经过人工检查，剔除n个词中与 <strong>前瞻性</strong> 无关的词语，最终得到 <strong>前瞻性词典</strong>(论文中是174个词)。</li>
+</ol>
+<p>但是，经过大邓测试发现业绩说明会训练得到的业绩说明会word2vec(05-23.100.6.bin)模型表现很差。</p>
+<p>之前大邓用01-21年管理层讨论与分析训练过一个word2vec(<strong>mda01-21.200.6.bin</strong>)，</p>
+<blockquote>
+<p><a href="https://textdata.cn/blog/2023-03-24-load-w2v-and-expand-your-concpet-dicitonary/">预训练模型 | 金融会计类word2vec， 可扩展或构建领域内概念情感词典</a></p>
+</blockquote>
+<p>在这次前瞻性扩展词任务中，mda01-21.200.6.bin表现要远好于05-23.100.6.bin。</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">gensim.models</span> <span class="kn">import</span> <span class="n">KeyedVectors</span>
+
+<span class="k">def</span> <span class="nf">load_w2v</span><span class="p">(</span><span class="n">w2v_path</span><span class="p">):</span>
+    <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">    Load word2vec model
+</span><span class="s2">
+</span><span class="s2">    Args:
+</span><span class="s2">        w2v_path (str): path of word2vec model
+</span><span class="s2">
+</span><span class="s2">    Returns:
+</span><span class="s2">        model: word2vec model
+</span><span class="s2">    &#34;&#34;&#34;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading word2vec model...&#39;</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">KeyedVectors</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">w2v_path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span>
+
+
+<span class="n">wv</span> <span class="o">=</span> <span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;Embeddings/业绩说明会05-23.100.6.bin&#39;</span><span class="p">)</span>
+<span class="n">wv2</span> <span class="o">=</span> <span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;Embeddings/mda01-21.200.6.bin&#39;</span><span class="p">)</span>
+</code></pre></div><pre><code>Loading word2vec model...
+Loading word2vec model...
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#词汇量</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">wv</span><span class="o">.</span><span class="n">index_to_key</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">wv2</span><span class="o">.</span><span class="n">index_to_key</span><span class="p">))</span>
+</code></pre></div><pre><code>198776
+789539
+</code></pre>
+<p>​ <br>
+<br></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#查询某词的词向量</span>
+<span class="n">wv</span><span class="o">.</span><span class="n">get_vector</span><span class="p">(</span><span class="s1">&#39;创新&#39;</span><span class="p">)</span>
+
+<span class="c1">#查询多个词的词向量</span>
+<span class="c1">#wv.get_mean_vector([&#39;创新&#39;, &#39;研发&#39;])</span>
+</code></pre></div><pre><code>array([ 0.43675017,  0.74739504,  3.3765798 , -0.29287583,  0.40125442,
+    0.9364979 ,  0.62465197,  0.06480039,  0.12256158, -2.0735328 ,
+   -0.256066  , -1.7680115 , -0.8514873 , -0.756108  ,  1.3441261 ,
+   -0.18098126,  2.7290103 , -4.6596766 ,  0.4046495 , -4.0644083 ,
+    0.6022293 ,  1.3569978 ,  1.0036035 ,  0.06123297, -2.0733726 ,
+    2.2704456 , -1.2935334 , -0.2855776 ,  1.588003  ,  1.5027634 ,
+    2.0897112 , -0.8861778 ,  0.4014722 , -0.41474393, -1.5390201 ,
+    0.23899865, -0.9823706 , -2.986944  , -2.6887195 , -2.2386284 ,
+    0.04810223,  1.3241886 , -0.71262985, -0.8015585 ,  1.5249555 ,
+   -3.611584  , -1.4187033 , -1.6014036 ,  0.816903  ,  3.1821172 ,
+   -1.7302881 , -0.8280679 , -1.2833163 ,  0.65565586, -0.8857021 ,
+    2.098562  ,  1.4773984 ,  1.0931807 , -0.02242889,  1.1279039 ,
+   -2.2318523 ,  0.24540211,  0.17126203,  2.5631666 , -1.7135285 ,
+    0.60896975, -0.2654438 ,  0.5718087 , -1.4996717 ,  1.0189433 ,
+    1.0205768 ,  3.7439635 , -0.3575424 , -3.189775  ,  0.6117708 ,
+   -0.60615975,  2.940066  , -0.89338064, -0.626806  , -1.4389508 ,
+   -1.1291629 , -2.2354846 , -0.6873424 ,  1.9574465 , -1.2231802 ,
+    1.2850708 , -0.7581777 ,  0.8184319 ,  1.542834  , -0.8685869 ,
+    1.1841776 , -0.4524089 , -0.8068617 ,  0.01519055, -0.23408687,
+   -0.51564324,  0.20584114,  0.14295417,  0.5481142 ,  2.523313  ],
+  dtype=float32)
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">expand_dictionary</span><span class="p">(</span><span class="n">wv</span><span class="p">,</span> <span class="n">seedwords</span><span class="p">,</span> <span class="n">topn</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">    According to the seed word file, select the top n words with the most similar semantics and save them in the directory save_dir.
+</span><span class="s2">    
+</span><span class="s2">    Args:
+</span><span class="s2">        wv (Word2VecKeyedVectors): the word embedding model
+</span><span class="s2">        seedwords (list): 种子词
+</span><span class="s2">        topn (int, optional): Set the number of most similar words to retrieve to topn. Defaults to 100.
+</span><span class="s2">        save_dir (str, optional): the directory to save the candidate words. Defaults to &#39;Word2Vec&#39;.
+</span><span class="s2">    
+</span><span class="s2">    Returns:
+</span><span class="s2">    &#34;&#34;&#34;</span>
+    <span class="n">simidx_scores</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">similars_candidate_idxs</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1">#the candidate words of seedwords</span>
+    <span class="n">dictionary</span> <span class="o">=</span> <span class="n">wv</span><span class="o">.</span><span class="n">key_to_index</span>
+    <span class="n">seedidxs</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1">#transform word to index</span>
+    <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="n">seedwords</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">in</span> <span class="n">dictionary</span><span class="p">:</span>
+            <span class="n">seedidx</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="n">seed</span><span class="p">]</span>
+            <span class="n">seedidxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seedidx</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">seedidx</span> <span class="ow">in</span> <span class="n">seedidxs</span><span class="p">:</span>
+        <span class="c1"># sims_words such as [(&#39;by&#39;, 0.99984), (&#39;or&#39;, 0.99982), (&#39;an&#39;, 0.99981), (&#39;up&#39;, 0.99980)]</span>
+        <span class="n">sims_words</span> <span class="o">=</span> <span class="n">wv</span><span class="o">.</span><span class="n">similar_by_word</span><span class="p">(</span><span class="n">seedidx</span><span class="p">,</span> <span class="n">topn</span><span class="o">=</span><span class="n">topn</span><span class="p">)</span>
+        <span class="c1">#Convert words to index and store them</span>
+        <span class="n">similars_candidate_idxs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">dictionary</span><span class="p">[</span><span class="n">sim</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="k">for</span> <span class="n">sim</span> <span class="ow">in</span> <span class="n">sims_words</span><span class="p">])</span>
+    <span class="n">similars_candidate_idxs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">similars_candidate_idxs</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">similars_candidate_idxs</span><span class="p">:</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">wv</span><span class="o">.</span><span class="n">n_similarity</span><span class="p">([</span><span class="n">idx</span><span class="p">],</span> <span class="n">seedidxs</span><span class="p">)</span>
+        <span class="n">simidx_scores</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">idx</span><span class="p">,</span> <span class="n">score</span><span class="p">))</span>
+    <span class="n">simidxs</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">simidx_scores</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+
+    <span class="n">simwords</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">wv</span><span class="o">.</span><span class="n">index_to_key</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">simidxs</span><span class="p">][:</span><span class="n">topn</span><span class="p">]</span>
+
+    <span class="n">resultwords</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">resultwords</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">seedwords</span><span class="p">)</span>
+    <span class="n">resultwords</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">simwords</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">resultwords</span>
+
+
+<span class="c1">#为了节省板面，这里设置为50</span>
+<span class="c1">#论文中经过筛选留下174个词，实际上topn应该远大于174，</span>
+<span class="n">expand_dictionary</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span> 
+                  <span class="c1">#前瞻性种子词</span>
+                  <span class="n">seedwords</span><span class="o">=</span> <span class="p">[</span><span class="s1">&#39;计划&#39;</span><span class="p">,</span> <span class="s1">&#39;预计&#39;</span><span class="p">,</span> <span class="s1">&#39;未来&#39;</span><span class="p">,</span> <span class="s1">&#39;目标&#39;</span><span class="p">,</span> <span class="s1">&#39;可能&#39;</span><span class="p">,</span> <span class="s1">&#39;如果&#39;</span><span class="p">,</span> <span class="s1">&#39;机遇&#39;</span><span class="p">,</span> <span class="s1">&#39;预期&#39;</span><span class="p">,</span> <span class="s1">&#39;挑战&#39;</span><span class="p">,</span> <span class="s1">&#39;预测&#39;</span><span class="p">,</span> <span class="s1">&#39;今后&#39;</span><span class="p">,</span> <span class="s1">&#39;目的&#39;</span><span class="p">,</span> <span class="s1">&#39;契机&#39;</span><span class="p">,</span> <span class="s1">&#39;前景&#39;</span><span class="p">,</span> <span class="s1">&#39;希望&#39;</span><span class="p">,</span> <span class="s1">&#39;展望&#39;</span><span class="p">,</span> <span class="s1">&#39;相信&#39;</span><span class="p">,</span> <span class="s1">&#39;愿景&#39;</span><span class="p">,</span> <span class="s1">&#39;期待&#39;</span><span class="p">,</span> <span class="s1">&#39;明年&#39;</span><span class="p">,</span> <span class="s1">&#39;期望&#39;</span><span class="p">],</span>
+                  <span class="n">topn</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;计划&#39;,
+ &#39;预计&#39;,
+ ......
+ &#39;几年&#39;,
+ &#39;积极影响&#39;,
+ &#39;有何&#39;,
+ &#39;谢谢您提问&#39;,
+ &#39;今后&#39;,
+ &#39;这块&#39;,
+ &#39;近几年&#39;,
+ &#39;近两年&#39;,
+ &#39;请问李&#39;,
+ &#39;裁员&#39;,
+ &#39;亮点&#39;,
+ &#39;准备采取&#39;,
+ &#39;将会&#39;,
+ &#39;接下来&#39;,
+ &#39;有何规划&#39;,
+ &#39;前景&#39;,
+ &#39;管理层是否&#39;,
+ &#39;未来几年&#39;,
+ &#39;有没有新&#39;,
+ &#39;发展状况&#39;,
+ &#39;一块&#39;,
+ &#39;当前&#39;,
+ &#39;很大&#39;,
+ &#39;这块业务&#39;,
+ &#39;LNG船&#39;,
+ &#39;具体措施您好&#39;,
+ &#39;当下&#39;,
+ &#39;是否能够&#39;,
+ &#39;明后&#39;,
+ &#39;一个台阶&#39;,
+ &#39;是否符合&#39;,
+ &#39;巨大&#39;,
+ &#39;预判&#39;,
+ &#39;对此&#39;,
+ &#39;未来三年&#39;,
+ &#39;资本开支&#39;,
+ &#39;不少&#39;,
+ &#39;未来是否&#39;,
+ &#39;这方面&#39;,
+ &#39;看法&#39;,
+ &#39;今年以来&#39;,
+ &#39;疫情结束&#39;,
+ &#39;想知道&#39;,
+ &#39;取得不错&#39;,
+ &#39;谈谈&#39;,
+ &#39;一步&#39;,
+ &#39;今年是否&#39;,
+ &#39;发展前景&#39;,
+ &#39;东宝&#39;,
+ &#39;现状&#39;]
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">expand_dictionary</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv2</span><span class="p">,</span> 
+                  <span class="c1">#前瞻性种子词</span>
+                  <span class="n">seedwords</span><span class="o">=</span> <span class="p">[</span><span class="s1">&#39;计划&#39;</span><span class="p">,</span> <span class="s1">&#39;预计&#39;</span><span class="p">,</span> <span class="s1">&#39;未来&#39;</span><span class="p">,</span> <span class="s1">&#39;目标&#39;</span><span class="p">,</span> <span class="s1">&#39;可能&#39;</span><span class="p">,</span> <span class="s1">&#39;如果&#39;</span><span class="p">,</span> <span class="s1">&#39;机遇&#39;</span><span class="p">,</span> <span class="s1">&#39;预期&#39;</span><span class="p">,</span> <span class="s1">&#39;挑战&#39;</span><span class="p">,</span> <span class="s1">&#39;预测&#39;</span><span class="p">,</span> <span class="s1">&#39;今后&#39;</span><span class="p">,</span> <span class="s1">&#39;目的&#39;</span><span class="p">,</span> <span class="s1">&#39;契机&#39;</span><span class="p">,</span> <span class="s1">&#39;前景&#39;</span><span class="p">,</span> <span class="s1">&#39;希望&#39;</span><span class="p">,</span> <span class="s1">&#39;展望&#39;</span><span class="p">,</span> <span class="s1">&#39;相信&#39;</span><span class="p">,</span> <span class="s1">&#39;愿景&#39;</span><span class="p">,</span> <span class="s1">&#39;期待&#39;</span><span class="p">,</span> <span class="s1">&#39;明年&#39;</span><span class="p">,</span> <span class="s1">&#39;期望&#39;</span><span class="p">],</span>
+                  <span class="n">topn</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;计划&#39;,
+ &#39;预计&#39;,
+  ......
+ &#39;相信&#39;,
+ &#39;将会&#39;,
+ &#39;未来&#39;,
+ &#39;希望&#39;,
+ &#39;预见&#39;,
+ &#39;预期&#39;,
+ &#39;可能&#39;,
+ &#39;必将&#39;,
+ &#39;应该&#39;,
+ &#39;未来几年&#39;,
+ &#39;今后&#39;,
+ &#39;有望&#39;,
+ &#39;目标&#39;,
+ &#39;这一&#39;,
+ &#39;当前&#39;,
+ &#39;当下&#39;,
+ &#39;无疑&#39;,
+ &#39;期望&#39;,
+ &#39;接下来&#39;,
+ &#39;意味着&#39;,
+ &#39;背景&#39;,
+ &#39;期待&#39;,
+ &#39;近期&#39;,
+ &#39;下一阶段&#39;,
+ &#39;机会&#39;,
+ &#39;看到&#39;,
+ &#39;预示&#39;,
+ &#39;能够&#39;,
+ &#39;短期内&#39;,
+ &#39;未来一段时间&#39;,
+ &#39;将来&#39;,
+ &#39;展望未来&#39;,
+ &#39;必须&#39;,
+ &#39;真正&#39;,
+ &#39;眼光&#39;,
+ &#39;必然&#39;,
+ &#39;还会&#39;,
+ &#39;预计&#39;,
+ &#39;未来十年&#39;,
+ &#39;机遇&#39;,
+ &#39;可能性&#39;,
+ &#39;后续&#39;,
+ &#39;潜在&#39;,
+ &#39;决心&#39;,
+ &#39;信心&#39;,
+ &#39;仍然&#39;,
+ &#39;非常&#39;,
+ &#39;这为&#39;,
+ &#39;未来五年&#39;,
+ &#39;短时间&#39;]
+</code></pre></div><p><strong>大邓假装经过很多检查，剔除不相关词语，最终跟论文一样，都得到了174个前瞻性词语。  需要说明，大邓已经将174个词内置到了cntext库(1.8.6中)</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import cntext as ct
+
+#cntext已内置了论文中的174个前瞻性词集
+fls_words = ct.load_pkl_dict(&#39;Chinese_FLS.pkl&#39;)[&#39;Chinese_FLS&#39;]
+fls_words
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;计划&#39;,
+ &#39;预计&#39;,
+ &#39;未来&#39;,
+ &#39;目标&#39;,
+ ......
+ &#39;企业宗旨&#39;,
+ &#39;宗旨&#39;,
+ &#39;该愿景&#39;,
+ &#39;愿望&#39;,
+ &#39;心愿&#39;,
+ &#39;盼望&#39;,
+ &#39;祝愿&#39;,
+ &#39;今年年底&#39;,
+ &#39;今年底&#39;,
+ &#39;明年初&#39;,
+ &#39;第二季度&#39;,
+ &#39;上半年&#39;,
+ &#39;下半年&#39;,
+ &#39;本月底&#39;,
+ &#39;下周&#39;,
+ &#39;马上&#39;,
+ &#39;厚望&#39;,
+ &#39;期盼&#39;,
+ &#39;鞭策&#39;,
+ &#39;梦想&#39;,
+ &#39;愿&#39;]
+</code></pre></div><p><br><br></p>
+<h2 id="三计算前瞻性">三、计算前瞻性</h2>
+<ol>
+<li>汇总记录； 将同一年同一家上市公司的所有问答合并为一条记录，存储于df2中。</li>
+<li>设计前瞻性计算函数 <strong>compute_fls</strong></li>
+<li>对df2[&lsquo;text&rsquo;]使用前瞻性计算函数<strong>compute_fls</strong>，计算结果保存到字段<strong>Forward</strong></li>
+</ol>
+<h3 id="31-汇总记录">3.1 汇总记录</h3>
+<p>将同一年同一家上市公司的所有问答合并为一条记录，存储于新df的text中。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">])[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+<span class="n">df2</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">df2</span>
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<br>
+<h3 id="32--设计前瞻性计算函数compute_fls">3.2  设计前瞻性计算函数compute_fls</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">jieba</span>
+
+
+<span class="n">fls_words</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_pkl_dict</span><span class="p">(</span><span class="s1">&#39;Chinese_FLS.pkl&#39;</span><span class="p">)[</span><span class="s1">&#39;Chinese_FLS&#39;</span><span class="p">]</span>
+<span class="n">stopwords</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_pkl_dict</span><span class="p">(</span><span class="s1">&#39;STOPWORDS.pkl&#39;</span><span class="p">)[</span><span class="s1">&#39;STOPWORDS&#39;</span><span class="p">][</span><span class="s1">&#39;chinese&#39;</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">compute_fls</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stopwords</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">fls_words</span><span class="p">:</span>
+            <span class="n">num</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="c1">#+1是为了防止分母为0的情况</span>
+    <span class="k">return</span> <span class="n">num</span><span class="o">/</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div><br>
+<h3 id="33-批量计算df2text">3.3 批量计算df2[&lsquo;text&rsquo;]</h3>
+<p>对df2[&lsquo;text&rsquo;]批量使用前瞻性计算函数<strong>compute_fls</strong>，计算结果保存到字段<strong>Forward</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df2[&#39;Forward&#39;] = df2[&#39;text&#39;].apply(compute_fls)
+
+df2.head()
+</code></pre></div><p><img loading="lazy" src="img/df3.png" alt=""  />
+</p>
+<br>
+<p>下图是论文中的Forward描述性统计，</p>
+<p><img loading="lazy" src="img/stats.png" alt=""  />
+</p>
+<p>我们试着看看分析结果 <strong>df2[&lsquo;Forward&rsquo;]</strong> 的</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Forward最小值: &#39;</span><span class="p">,</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;Forward&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Forward中位数: &#39;</span><span class="p">,</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;Forward&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">median</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Forward均值: &#39;</span><span class="p">,</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;Forward&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Forward最大值: &#39;</span><span class="p">,</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;Forward&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Forward标准层: &#39;</span><span class="p">,</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;Forward&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">())</span>
+</code></pre></div><p>可以发现描述性统计信息与论文的存在较大差异，可能的原因包括但不限于</p>
+<pre><code>  1. 数据集存在差异。**论文中选取2007-2020年中小板和创业板上市公司作为研究对象。**而本实验使用的A股2005年-2023年所有的上市公司作为实验对象。
+  2. 可能筛选记录，文本太短的会议剔除。
+  3. 使用的停用词表不同
+  4. jieba导入自定义词典
+</code></pre>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>数据集 | 84w条业绩说明会问答数据(2005-2023)</title>
+      <link>https://textdata.cn/blog/2023-09-08-china-a-share-market-listed-company-earnings-communication-conference/</link>
+      <pubDate>Fri, 08 Sep 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-09-08-china-a-share-market-listed-company-earnings-communication-conference/</guid>
+      <description>业绩说明会， 是我国上市公司和中小投资 者沟通交流的重要载体。 在年报披露后， 能够 帮助投资者快速、准确地抓取信息披露重点， 全面了解企业发展状况， 增进对企业价值及经 营理念的认同。上市公司的业绩说明会是金融领域中的重要事件，它为投资者、分析师和其他利益相关者提供了一个与公司管理层直接交流的平台。这种数据集的学术价值多方面体现。</description>
+      <content:encoded><![CDATA[<p>业绩说明会， 是我国上市公司和中小投资 者沟通交流的重要载体。 在年报披露后， 能够 帮助投资者快速、准确地抓取信息披露重点， 全面了解企业发展状况， 增进对企业价值及经 营理念的认同。上市公司的业绩说明会是金融领域中的重要事件，它为投资者、分析师和其他利益相关者提供了一个与公司管理层直接交流的平台。这种数据集的学术价值多方面体现。</p>
+<ul>
+<li>公司沟通策略的研究：业绩说明会的数据可以帮助研究者深入了解公司如何与公众沟通其财务状况、业务策略和未来展望。这对于传播学、公关和企业战略研究领域都是宝贵的。</li>
+<li>情感分析与市场反应：通过对业绩说明会中的语言和情感进行分析，研究者可以探索市场对公司信息披露的反应。这对于金融经济学和计量经济学的研究尤为重要。</li>
+<li>公司治理与透明度：业绩说明会的频率、内容和与投资者的互动可以为研究者提供关于公司治理质量和透明度的线索。</li>
+<li>预测模型的建立：这种数据集可以用于建立预测模型，预测公司的未来业绩、股价走势或其他相关指标。</li>
+<li>行为金融学的研究：业绩说明会中的问题和答案可以为研究者提供关于投资者和分析师行为和心理的深入了解，从而深化我们对市场非理性行为的理解。</li>
+<li>宏观经济指标的研究：通过对多家公司的业绩说明会数据进行汇总和分析，研究者可以获得宏观经济趋势和行业动态的宝贵见解。</li>
+</ul>
+<p>总之，上市公司业绩说明会数据集为学术界提供了一个独特的、多维度的研究视角，有助于深化我们对金融市场、公司策略和投资者行为的理解。</p>
+<p><br><br></p>
+<h2 id="数据集介绍">数据集介绍</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">上市公司业绩说明会问答数据
+
+【年度】
+ 2005-2023年
+
+【字段】
+ - 股票代码
+ - 会计年度
+ - 问题序号
+ - 提问内容
+ - 提问时间
+ - 回答人
+ - 回答时间
+ - 回答内容
+ 
+ 【数据量】
+  841876
+</code></pre></div><p><a href="code.ipynb">点击获取代码</a></p>
+<p><a href="https://mp.weixin.qq.com/s/w7BWPwyI_UxQ6zprC96-qw">点击获取数据</a></p>
+<p><br><br></p>
+<h2 id="导入数据">导入数据</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;业绩说明会问答05-23.xlsx&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/df.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="s1">&#39;数据集覆盖的年度: </span><span class="si">{start}</span><span class="s1">~</span><span class="si">{end}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> 
+                                 <span class="n">end</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+</code></pre></div><pre><code>'数据集覆盖的年度: 2005~2023'
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#数据量</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div><pre><code>841876
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#字段包括</span>
+<span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+</code></pre></div><pre><code>Index(['股票代码', '会计年度', '问题序号', '提问内容', '提问时间', '回答人', '回答时间', '回答内容'], dtype='object')
+</code></pre>
+<br>
+<p>设置matplotlib</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">matplotlib_inline</span>
+<span class="n">matplotlib_inline</span><span class="o">.</span><span class="n">backend_inline</span><span class="o">.</span><span class="n">set_matplotlib_formats</span><span class="p">(</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="s1">&#39;svg&#39;</span><span class="p">)</span>
+<span class="c1">#pip3 install scienceplots</span>
+<span class="kn">import</span> <span class="nn">scienceplots</span> 
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">([</span><span class="s1">&#39;science&#39;</span><span class="p">,</span> <span class="s1">&#39;no-latex&#39;</span><span class="p">,</span> <span class="s1">&#39;cjk-sc-font&#39;</span><span class="p">])</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>  <span class="c1"># 获取操作系统类型</span>
+
+<span class="k">if</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Windows&#39;</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;SimHei&#39;</span><span class="p">}</span>
+<span class="k">elif</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Darwin&#39;</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;Arial Unicode MS&#39;</span><span class="p">}</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;sans-serif&#39;</span><span class="p">}</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">font</span><span class="p">)</span>  <span class="c1"># 设置全局字体</span>
+    
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#年份变化(业绩说明会数量)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+</code></pre></div><pre><code>会计年度
+2005     4042
+2006    10051
+2007    18906
+2008    31782
+2009    35802
+2010    47141
+2011    69439
+2012    73231
+2013    80456
+2014    80690
+2015    62764
+2016    61820
+2017    52543
+2018    44279
+2019    42009
+2020    37026
+2021    53898
+2022    35917
+2023       80
+Name: count, dtype: int64
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;会计年度&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;业绩说明会数量&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;业绩说明会数量年份变化&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_5_0.svg" alt="svg"  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">])[</span><span class="s1">&#39;问题序号&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;会计年度&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;会计年度&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;年度问答次数&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;业绩说明会平均问答次数年份变化&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output_6_0.svg" alt="svg"  />
+</p>
+<p><br><br></p>
+<h2 id="相关文献">相关文献</h2>
+<p>许帅,邵帅,何贤杰.业绩说明会前瞻性信息对分析师盈余预测准确性的影响——信口雌黄还是言而有征[J].中国管理科学:1-15.</p>
+<blockquote>
+<p>摘要:本文以2007—2020年上市公司业绩说明会为背景，研究前瞻性信息披露对分析师预测的影响，发现业绩说明会中的前瞻性信息可以显著提升分析师盈余预测准确性。公司的信息不对称程度越高，前瞻性信息对分析师预测准确性提升越多。分析师专长工作经验越丰富，具备更强的信息捕捉能力，可以更好地吸收与理解业绩说明会中的前瞻性信息，做出更准确的预测。进一步，本文对前瞻性信息影响分析师预测的路径进行了讨论，认为前瞻性信息可能通过吸引分析师和机构投资者调研，增进分析师对上市公司经营状况的了解，进而提升盈余预测准确性。此外，本文发现，前瞻性信息中业绩相关类信息因具有更高的可信度，且与盈余因子直接相关，能够显著提升分析师盈余预测准确性。本研究为管理层披露与分析师的互动研究提供了增量证据，研究结果支持了业绩说明会有效性，对未来监管部门制定相关信息披露政策提供依据和建议。</p>
+</blockquote>
+<br>
+<p>卞世博,管之凡,阎志鹏.答非所问与市场反应:基于业绩说明会的研究[J].管理科学学报,2021,24(04):109-126.</p>
+<blockquote>
+<p>摘要:对上市公司业绩说明会中投资者与管理层问答互动中管理层答非所问的现象进行了研究.本文以中小板和创业板上市公司召开的业绩说明会作为研究样本,利用文本分析方法对业绩说明会中管理层在回答投资者提问时答非所问的程度进行度量,进而实证分析了管理层的答非所问与市场反应和公司未来业绩表现之间的可能关联.结果发现:在控制其它因素之后,管理层的答非所问与市场反应之间呈现显著的负相关关系,即公司管理层的答非所问程度越高,随后公司股票的市场表现则就会越差,并且对于那些低分析师关注的公司尤为明显;而在公司未来业绩表现方面,管理层答非所问的程度越高,则公司未来的业绩表现则会越差.</p>
+</blockquote>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>数据集 | 200w政府采购合同公告明细数据（1996.6-2022.12）</title>
       <link>https://textdata.cn/blog/2023-09-03-government-procurement-contract-data/</link>
       <pubDate>Thu, 31 Aug 2023 00:00:00 +0000</pubDate>
@@ -356,153 +911,6 @@ Name: count, dtype: int64
 </code></pre></div><p><br><br></p>
 <h2 id="获取数据">获取数据</h2>
 <p><a href="https://mp.weixin.qq.com/s/mwTg7KSYT88j4q4Yki3ZUA">数据整理不易， 需要点击付费获取</a></p>
-<p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
-]]></content:encoded>
-    </item>
-    
-    <item>
-      <title>数据集 | 84w条业绩说明会问答数据(2005-2023)</title>
-      <link>https://textdata.cn/blog/2023-09-08-china-a-share-market-listed-company-performance-briefing/</link>
-      <pubDate>Mon, 28 Aug 2023 00:00:00 +0000</pubDate>
-      
-      <guid>/blog/2023-09-08-china-a-share-market-listed-company-performance-briefing/</guid>
-      <description>业绩说明会， 是我国上市公司和中小投资 者沟通交流的重要载体。 在年报披露后， 能够 帮助投资者快速、准确地抓取信息披露重点， 全面了解企业发展状况， 增进对企业价值及经 营理念的认同。上市公司的业绩说明会是金融领域中的重要事件，它为投资者、分析师和其他利益相关者提供了一个与公司管理层直接交流的平台。这种数据集的学术价值多方面体现。</description>
-      <content:encoded><![CDATA[<p>业绩说明会， 是我国上市公司和中小投资 者沟通交流的重要载体。 在年报披露后， 能够 帮助投资者快速、准确地抓取信息披露重点， 全面了解企业发展状况， 增进对企业价值及经 营理念的认同。上市公司的业绩说明会是金融领域中的重要事件，它为投资者、分析师和其他利益相关者提供了一个与公司管理层直接交流的平台。这种数据集的学术价值多方面体现。</p>
-<ul>
-<li>公司沟通策略的研究：业绩说明会的数据可以帮助研究者深入了解公司如何与公众沟通其财务状况、业务策略和未来展望。这对于传播学、公关和企业战略研究领域都是宝贵的。</li>
-<li>情感分析与市场反应：通过对业绩说明会中的语言和情感进行分析，研究者可以探索市场对公司信息披露的反应。这对于金融经济学和计量经济学的研究尤为重要。</li>
-<li>公司治理与透明度：业绩说明会的频率、内容和与投资者的互动可以为研究者提供关于公司治理质量和透明度的线索。</li>
-<li>预测模型的建立：这种数据集可以用于建立预测模型，预测公司的未来业绩、股价走势或其他相关指标。</li>
-<li>行为金融学的研究：业绩说明会中的问题和答案可以为研究者提供关于投资者和分析师行为和心理的深入了解，从而深化我们对市场非理性行为的理解。</li>
-<li>宏观经济指标的研究：通过对多家公司的业绩说明会数据进行汇总和分析，研究者可以获得宏观经济趋势和行业动态的宝贵见解。</li>
-</ul>
-<p>总之，上市公司业绩说明会数据集为学术界提供了一个独特的、多维度的研究视角，有助于深化我们对金融市场、公司策略和投资者行为的理解。</p>
-<p><br><br></p>
-<h2 id="数据集介绍">数据集介绍</h2>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">上市公司业绩说明会问答数据
-
-【年度】
- 2005-2023年
-
-【字段】
- - 股票代码
- - 会计年度
- - 问题序号
- - 提问内容
- - 提问时间
- - 回答人
- - 回答时间
- - 回答内容
- 
- 【数据量】
-  841876
-</code></pre></div><p><a href="code.ipynb">点击获取代码</a></p>
-<p><a href="https://mp.weixin.qq.com/s/w7BWPwyI_UxQ6zprC96-qw">点击获取数据</a></p>
-<p><br><br></p>
-<h2 id="导入数据">导入数据</h2>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;业绩说明会问答05-23.xlsx&#39;</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p><img loading="lazy" src="img/df.png" alt=""  />
-</p>
-<br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="s1">&#39;数据集覆盖的年度: </span><span class="si">{start}</span><span class="s1">~</span><span class="si">{end}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> 
-                                 <span class="n">end</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-</code></pre></div><pre><code>'数据集覆盖的年度: 2005~2023'
-</code></pre>
-<br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#数据量</span>
-<span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-</code></pre></div><pre><code>841876
-</code></pre>
-<br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#字段包括</span>
-<span class="n">df</span><span class="o">.</span><span class="n">columns</span>
-</code></pre></div><pre><code>Index(['股票代码', '会计年度', '问题序号', '提问内容', '提问时间', '回答人', '回答时间', '回答内容'], dtype='object')
-</code></pre>
-<br>
-<p>设置matplotlib</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="kn">import</span> <span class="nn">matplotlib_inline</span>
-<span class="n">matplotlib_inline</span><span class="o">.</span><span class="n">backend_inline</span><span class="o">.</span><span class="n">set_matplotlib_formats</span><span class="p">(</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="s1">&#39;svg&#39;</span><span class="p">)</span>
-<span class="c1">#pip3 install scienceplots</span>
-<span class="kn">import</span> <span class="nn">scienceplots</span> 
-<span class="kn">import</span> <span class="nn">platform</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">([</span><span class="s1">&#39;science&#39;</span><span class="p">,</span> <span class="s1">&#39;no-latex&#39;</span><span class="p">,</span> <span class="s1">&#39;cjk-sc-font&#39;</span><span class="p">])</span>
-<span class="n">system</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>  <span class="c1"># 获取操作系统类型</span>
-
-<span class="k">if</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Windows&#39;</span><span class="p">:</span>
-    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;SimHei&#39;</span><span class="p">}</span>
-<span class="k">elif</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Darwin&#39;</span><span class="p">:</span>
-    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;Arial Unicode MS&#39;</span><span class="p">}</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;sans-serif&#39;</span><span class="p">}</span>
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">font</span><span class="p">)</span>  <span class="c1"># 设置全局字体</span>
-    
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#年份变化(业绩说明会数量)</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
-</code></pre></div><pre><code>会计年度
-2005     4042
-2006    10051
-2007    18906
-2008    31782
-2009    35802
-2010    47141
-2011    69439
-2012    73231
-2013    80456
-2014    80690
-2015    62764
-2016    61820
-2017    52543
-2018    44279
-2019    42009
-2020    37026
-2021    53898
-2022    35917
-2023       80
-Name: count, dtype: int64
-</code></pre>
-<br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;会计年度&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;业绩说明会数量&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;业绩说明会数量年份变化&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</code></pre></div><p><img loading="lazy" src="img/output_5_0.svg" alt="svg"  />
-</p>
-<br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">])[</span><span class="s1">&#39;问题序号&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;会计年度&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;会计年度&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;年度问答次数&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;业绩说明会平均问答次数年份变化&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</code></pre></div><p><img loading="lazy" src="img/output_6_0.svg" alt="svg"  />
-</p>
-<p><br><br></p>
-<h2 id="相关文献">相关文献</h2>
-<p>许帅,邵帅,何贤杰.业绩说明会前瞻性信息对分析师盈余预测准确性的影响——信口雌黄还是言而有征[J].中国管理科学:1-15.</p>
-<blockquote>
-<p>摘要:本文以2007—2020年上市公司业绩说明会为背景，研究前瞻性信息披露对分析师预测的影响，发现业绩说明会中的前瞻性信息可以显著提升分析师盈余预测准确性。公司的信息不对称程度越高，前瞻性信息对分析师预测准确性提升越多。分析师专长工作经验越丰富，具备更强的信息捕捉能力，可以更好地吸收与理解业绩说明会中的前瞻性信息，做出更准确的预测。进一步，本文对前瞻性信息影响分析师预测的路径进行了讨论，认为前瞻性信息可能通过吸引分析师和机构投资者调研，增进分析师对上市公司经营状况的了解，进而提升盈余预测准确性。此外，本文发现，前瞻性信息中业绩相关类信息因具有更高的可信度，且与盈余因子直接相关，能够显著提升分析师盈余预测准确性。本研究为管理层披露与分析师的互动研究提供了增量证据，研究结果支持了业绩说明会有效性，对未来监管部门制定相关信息披露政策提供依据和建议。</p>
-</blockquote>
-<br>
-<p>卞世博,管之凡,阎志鹏.答非所问与市场反应:基于业绩说明会的研究[J].管理科学学报,2021,24(04):109-126.</p>
-<blockquote>
-<p>摘要:对上市公司业绩说明会中投资者与管理层问答互动中管理层答非所问的现象进行了研究.本文以中小板和创业板上市公司召开的业绩说明会作为研究样本,利用文本分析方法对业绩说明会中管理层在回答投资者提问时答非所问的程度进行度量,进而实证分析了管理层的答非所问与市场反应和公司未来业绩表现之间的可能关联.结果发现:在控制其它因素之后,管理层的答非所问与市场反应之间呈现显著的负相关关系,即公司管理层的答非所问程度越高,随后公司股票的市场表现则就会越差,并且对于那些低分析师关注的公司尤为明显;而在公司未来业绩表现方面,管理层答非所问的程度越高,则公司未来的业绩表现则会越差.</p>
-</blockquote>
 <p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
 <ul>
