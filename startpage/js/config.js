@@ -417,6 +417,12 @@ class Config {
                 category: 'cNews'
             },
 			{
+                site: 'Zaker',
+                icon: 'zaker',
+                url: 'https://www.myzaker.com/',
+                category: 'cNews'
+            },
+			{
 				site: 'Zhihu',
 				icon: 'zhihu',
 				url: 'https://www.zhihu.com/hot',
