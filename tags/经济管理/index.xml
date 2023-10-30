@@ -6,7 +6,401 @@
     <description>Recent content in 经济管理 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Fri, 27 Oct 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 30 Oct 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>案例代码 | 使用正则表达式判别微博用户mbti类型</title>
+      <link>https://textdata.cn/blog/2023-10-30-raw-mbti-users/</link>
+      <pubDate>Mon, 30 Oct 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-10-30-raw-mbti-users/</guid>
+      <description>&lt;p&gt;使用Python爬虫采集「微博搜索」中含mbti信息的推文， 使用正则表达式判别用户mbti类型。 相比实验室做实验或者发调查问卷，这种方式收集到的用户类别是非常自然且真实的。今日爬虫不是今日主题，就不做分享了。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;code.ipynb&#34;&gt;&lt;strong&gt;点击下载code.ipynb&lt;/strong&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;mbti_test.csv&#34;&gt;&lt;strong&gt;点击下载mbti_test.csv&lt;/strong&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;br&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/weibo.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#采集自微博搜索中含mbti类型的推文&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;mbti_test.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#剔除content列中的nan数据&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dropna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;inplace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;subset&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/1.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;正则练习&#34;&gt;正则练习&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;提取含有mbti的记录&lt;/li&gt;
+&lt;li&gt;提取出含mbti类型出现的前后5个字符的文本(前5个字符，后5个字符， 含mbti本身， 窗体最长的长度是14)&lt;/li&gt;
+&lt;li&gt;识别出含mbti的记录中对应的mbti类型， 未识别的标记为&amp;quot;未识别&amp;quot;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;一-提取含有mbti的记录&#34;&gt;一、 提取含有mbti的记录&lt;/h2&gt;
+&lt;p&gt;实现方法有两种&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;pd.Series.str.contains(regex_pattern)&lt;/li&gt;
+&lt;li&gt;定义一个正则处理函数regex_func， 使用pd.Series.apply(regex_func)&lt;/li&gt;
+&lt;/ol&gt;
+&lt;br&gt;
+&lt;p&gt;&lt;strong&gt;正则表达式含义&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;mbtis&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;[infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj]&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;[ 和 ]&lt;/code&gt;：这是字符类（character class）的起始和结束标记，表示要匹配方括号内的任何字符。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj&lt;/code&gt;：这是一个字符类内的字符集合，用于匹配MBTI类型词汇。每个MBTI类型词汇都以竖线 | 分隔，表示“或”的关系。这意味着正则表达式会匹配其中任何一个MBTI类型词汇。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;+&lt;/code&gt;：这是一个量词，表示匹配前面的字符集合（MBTI类型词汇）一次或多次。它使正则表达式可以匹配包含一个或多个MBTI类型词汇的文本。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;mbtis&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;[infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj]&amp;#39;&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;content&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;contains&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mbtis&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;0       True
+1       True
+2       True
+3       True
+4       True
+       ...  
+495    False
+496    False
+497    False
+498    False
+499    False
+Name: content, Length: 497, dtype: bool
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;re&lt;/span&gt;
+
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;has_mbti&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;mbtis&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;[infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj]+&amp;#39;&lt;/span&gt;
+
+    &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;re&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;findall&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mbtis&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;False&lt;/span&gt;
+    
+    
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;content&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;has_mbti&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;0       True
+1       True
+2       True
+3       True
+4       True
+       ...  
+495    False
+496    False
+497     True
+498    False
+499     True
+Name: content, Length: 497, dtype: bool
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#将结果存储到df中&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;hasMBTI&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;has_mbti&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/2.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二mbti前后内容&#34;&gt;二、mbti前后内容&lt;/h2&gt;
+&lt;p&gt;提取出含mbti类型出现的前后5个字符的文本(前5个字符，后5个字符， 含mbti本身， 窗体最长的长度是14)。&lt;/p&gt;
+&lt;p&gt;这样后续的分析任务，就可以通过查看mbti字眼前后出现的字符，来更新正则表达式。&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;&lt;strong&gt;正则表达式含义&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;mbti_win = &amp;#34;(.{0,5}(?:infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj).{0,5})&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;(&lt;/code&gt; 和 &lt;code&gt;)&lt;/code&gt;这些括号用于将整个匹配结果捕获为一个分组&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;.{0,5}&lt;/code&gt; ：这是一个量词，表示匹配前面的字符（.表示匹配任意字符）零次到五次。这部分用于匹配前面的文本，确保最多匹配前面的五个字符。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;(?:infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj)&lt;/code&gt;：这是一个非捕获分组，用于将多个MBTI类型词汇用 | 连接起来，表示匹配其中任何一个。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;.{0,5}&lt;/code&gt; ：这部分同样是一个量词，表示匹配后面的字符，确保最多匹配后面的五个字符。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;mbti_window&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;#识别mbti的正则表达式 &lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;mbti_win&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;(.{0,5}(?:infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj).{0,5})&amp;#34;&lt;/span&gt;
+
+    &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;re&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;findall&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mbti_win&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;未识别&amp;#34;&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;MBTI_win&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mbti_window&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/3.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三识别mbti类型&#34;&gt;三、识别mbti类型&lt;/h2&gt;
+&lt;p&gt;刚刚的代码比较粗糙，只能判断文本中是否有mbti信息，但并不能判断该用户是否为某种mbti类型。&lt;/p&gt;
+&lt;p&gt;微博文本中，只有 &lt;code&gt;//@&lt;/code&gt; 前字符内容是微博用户所写内容。为了识别用户的mbti类型，可以先将我们看到的表达方式列举一下&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;``我是[mbti]&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;自己是[mbti]&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;从[mbti]变为[mbti]&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;一直是[mbti]&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;[mbti]我&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;本[mbti]&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&amp;hellip;&amp;hellip;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;可以基于此设计一个严格的正则表达式，能识别到的记录，肯定能判断该用户的mbti类型。 未识别到的标记为 &amp;ldquo;未识别&amp;rdquo;&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;&lt;strong&gt;正则表达式含义&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;mbti_regex&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;[我|自己|变成|一直|是|本]*(infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj)[我|俺|本|自己]*&amp;#34;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;[我|自己|变成|一直|是|本]*&lt;/code&gt;：这部分是一个字符集合，用于匹配前面的字符（关键词）。方括号 &lt;code&gt;[...]&lt;/code&gt; 表示字符类，其中的字符是可选的，并且 * 表示匹配零次或多次。这意味着它可以匹配零个或多个出现在方括号中的字符，例如可以匹配&amp;quot;我&amp;quot;、&amp;ldquo;自己&amp;rdquo;、&amp;ldquo;变成&amp;rdquo;、&amp;ldquo;一直&amp;rdquo;、&amp;ldquo;是&amp;rdquo;、&amp;ldquo;本&amp;quot;等这些关键词。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;(infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj)&lt;/code&gt; ：这是一个分组，其中包含了MBTI类型词汇，用竖线 &lt;code&gt;|&lt;/code&gt; 分隔，表示&amp;quot;或&amp;quot;的关系。这部分用于匹配任意一个MBTI类型词汇。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;[我|俺|本|自己]*&lt;/code&gt; ：这部分与第1部分类似，是一个字符集合，用于匹配后面的字符（关键词）。同样，方括号 &lt;code&gt;[...]&lt;/code&gt; 表示字符类，其中的字符是可选的，并且 &lt;code&gt;*&lt;/code&gt; 表示匹配零次或多次。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;identify_mbti&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;//@&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;new_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;//@&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;new_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;
+
+    &lt;span class=&#34;c1&#34;&gt;#识别mbti的正则表达式 &lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;mbti_regex&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;[我|自己|变成|一直|是|本]*(infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj)[我|俺|本|自己]*&amp;#34;&lt;/span&gt;
+
+    &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;re&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;findall&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mbti_regex&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;未识别&amp;#34;&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#mbti类型&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;MBTI_Cat&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;identify_mbti&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/4.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#各类型记录数&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;MBTI_Cat&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;value_counts&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;MBTI_Cat
+未识别     297
+infp     35
+isfj     20
+enfp     18
+intp     17
+isfp     16
+intj     14
+entp     12
+entj     11
+infj     11
+enfj      8
+estj      8
+istp      8
+istj      7
+esfp      6
+estp      5
+esfj      4
+Name: count, dtype: int64
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<p>使用Python爬虫采集「微博搜索」中含mbti信息的推文， 使用正则表达式判别用户mbti类型。 相比实验室做实验或者发调查问卷，这种方式收集到的用户类别是非常自然且真实的。今日爬虫不是今日主题，就不做分享了。</p>
+<ul>
+<li><a href="code.ipynb"><strong>点击下载code.ipynb</strong></a></li>
+<li><a href="mbti_test.csv"><strong>点击下载mbti_test.csv</strong></a></li>
+</ul>
+<br>
+<p><img loading="lazy" src="img/weibo.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#采集自微博搜索中含mbti类型的推文</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mbti_test.csv&#39;</span><span class="p">)</span>
+<span class="c1">#剔除content列中的nan数据</span>
+<span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">])</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/1.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="正则练习">正则练习</h2>
+<ol>
+<li>提取含有mbti的记录</li>
+<li>提取出含mbti类型出现的前后5个字符的文本(前5个字符，后5个字符， 含mbti本身， 窗体最长的长度是14)</li>
+<li>识别出含mbti的记录中对应的mbti类型， 未识别的标记为&quot;未识别&quot;</li>
+</ol>
+<p><br><br></p>
+<h2 id="一-提取含有mbti的记录">一、 提取含有mbti的记录</h2>
+<p>实现方法有两种</p>
+<ol>
+<li>pd.Series.str.contains(regex_pattern)</li>
+<li>定义一个正则处理函数regex_func， 使用pd.Series.apply(regex_func)</li>
+</ol>
+<br>
+<p><strong>正则表达式含义</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">mbtis</span> <span class="o">=</span> <span class="s1">&#39;[infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj]&#39;</span>
+</code></pre></div><ul>
+<li>
+<p><code>[ 和 ]</code>：这是字符类（character class）的起始和结束标记，表示要匹配方括号内的任何字符。</p>
+</li>
+<li>
+<p><code>infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj</code>：这是一个字符类内的字符集合，用于匹配MBTI类型词汇。每个MBTI类型词汇都以竖线 | 分隔，表示“或”的关系。这意味着正则表达式会匹配其中任何一个MBTI类型词汇。</p>
+</li>
+<li>
+<p><code>+</code>：这是一个量词，表示匹配前面的字符集合（MBTI类型词汇）一次或多次。它使正则表达式可以匹配包含一个或多个MBTI类型词汇的文本。</p>
+</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">mbtis</span> <span class="o">=</span> <span class="s1">&#39;[infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj]&#39;</span>
+
+<span class="n">df</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">mbtis</span><span class="p">)</span>
+</code></pre></div><pre><code>0       True
+1       True
+2       True
+3       True
+4       True
+       ...  
+495    False
+496    False
+497    False
+498    False
+499    False
+Name: content, Length: 497, dtype: bool
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+
+
+<span class="k">def</span> <span class="nf">has_mbti</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">mbtis</span> <span class="o">=</span> <span class="s1">&#39;[infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj]+&#39;</span>
+
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">mbtis</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    
+    
+<span class="n">df</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">has_mbti</span><span class="p">)</span>
+</code></pre></div><pre><code>0       True
+1       True
+2       True
+3       True
+4       True
+       ...  
+495    False
+496    False
+497     True
+498    False
+499     True
+Name: content, Length: 497, dtype: bool
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#将结果存储到df中</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;hasMBTI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">has_mbti</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/2.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二mbti前后内容">二、mbti前后内容</h2>
+<p>提取出含mbti类型出现的前后5个字符的文本(前5个字符，后5个字符， 含mbti本身， 窗体最长的长度是14)。</p>
+<p>这样后续的分析任务，就可以通过查看mbti字眼前后出现的字符，来更新正则表达式。</p>
+<br>
+<p><strong>正则表达式含义</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">mbti_win = &#34;(.{0,5}(?:infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj).{0,5})&#34;
+</code></pre></div><ul>
+<li><code>(</code> 和 <code>)</code>这些括号用于将整个匹配结果捕获为一个分组</li>
+<li><code>.{0,5}</code> ：这是一个量词，表示匹配前面的字符（.表示匹配任意字符）零次到五次。这部分用于匹配前面的文本，确保最多匹配前面的五个字符。</li>
+<li><code>(?:infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj)</code>：这是一个非捕获分组，用于将多个MBTI类型词汇用 | 连接起来，表示匹配其中任何一个。</li>
+<li><code>.{0,5}</code> ：这部分同样是一个量词，表示匹配后面的字符，确保最多匹配后面的五个字符。</li>
+</ul>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">mbti_window</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="c1">#识别mbti的正则表达式 </span>
+    <span class="n">mbti_win</span> <span class="o">=</span> <span class="s2">&#34;(.{0,5}(?:infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj).{0,5})&#34;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">mbti_win</span><span class="p">,</span> <span class="n">text</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&#34;未识别&#34;</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;MBTI_win&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">mbti_window</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/3.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三识别mbti类型">三、识别mbti类型</h2>
+<p>刚刚的代码比较粗糙，只能判断文本中是否有mbti信息，但并不能判断该用户是否为某种mbti类型。</p>
+<p>微博文本中，只有 <code>//@</code> 前字符内容是微博用户所写内容。为了识别用户的mbti类型，可以先将我们看到的表达方式列举一下</p>
+<ul>
+<li>``我是[mbti]</li>
+<li><code>自己是[mbti]</code></li>
+<li><code>从[mbti]变为[mbti]</code></li>
+<li><code>一直是[mbti]</code></li>
+<li><code>[mbti]我</code></li>
+<li><code>本[mbti]</code></li>
+<li>&hellip;&hellip;</li>
+</ul>
+<p>可以基于此设计一个严格的正则表达式，能识别到的记录，肯定能判断该用户的mbti类型。 未识别到的标记为 &ldquo;未识别&rdquo;</p>
+<br>
+<p><strong>正则表达式含义</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">mbti_regex</span> <span class="o">=</span> <span class="s2">&#34;[我|自己|变成|一直|是|本]*(infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj)[我|俺|本|自己]*&#34;</span>
+</code></pre></div><ul>
+<li><code>[我|自己|变成|一直|是|本]*</code>：这部分是一个字符集合，用于匹配前面的字符（关键词）。方括号 <code>[...]</code> 表示字符类，其中的字符是可选的，并且 * 表示匹配零次或多次。这意味着它可以匹配零个或多个出现在方括号中的字符，例如可以匹配&quot;我&quot;、&ldquo;自己&rdquo;、&ldquo;变成&rdquo;、&ldquo;一直&rdquo;、&ldquo;是&rdquo;、&ldquo;本&quot;等这些关键词。</li>
+<li><code>(infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj)</code> ：这是一个分组，其中包含了MBTI类型词汇，用竖线 <code>|</code> 分隔，表示&quot;或&quot;的关系。这部分用于匹配任意一个MBTI类型词汇。</li>
+<li><code>[我|俺|本|自己]*</code> ：这部分与第1部分类似，是一个字符集合，用于匹配后面的字符（关键词）。同样，方括号 <code>[...]</code> 表示字符类，其中的字符是可选的，并且 <code>*</code> 表示匹配零次或多次。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python">
+<span class="k">def</span> <span class="nf">identify_mbti</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s1">&#39;//@&#39;</span> <span class="ow">in</span> <span class="n">text</span><span class="p">:</span>
+        <span class="n">new_text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;//@&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new_text</span> <span class="o">=</span> <span class="n">text</span>
+
+    <span class="c1">#识别mbti的正则表达式 </span>
+    <span class="n">mbti_regex</span> <span class="o">=</span> <span class="s2">&#34;[我|自己|变成|一直|是|本]*(infj|entp|intp|intj|entj|enfj|infp|enfp|isfp|istp|isfj|istj|estp|esfp|estj|esfj)[我|俺|本|自己]*&#34;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">mbti_regex</span><span class="p">,</span> <span class="n">text</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&#34;未识别&#34;</span>
+
+<span class="c1">#mbti类型</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;MBTI_Cat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">identify_mbti</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/4.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#各类型记录数</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;MBTI_Cat&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</code></pre></div><pre><code>MBTI_Cat
+未识别     297
+infp     35
+isfj     20
+enfp     18
+intp     17
+isfp     16
+intj     14
+entp     12
+entj     11
+infj     11
+enfj      8
+estj      8
+istp      8
+istj      7
+esfp      6
+estp      5
+esfj      4
+Name: count, dtype: int64
+</code></pre>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>GTE中文通用文本向量表示模型</title>
       <link>https://textdata.cn/blog/2023-10-27-nlp_gte_sentence-embedding_chinese/</link>
