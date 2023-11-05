@@ -214,6 +214,12 @@ class Config {
 				category: 'Academic Search Engine'
 			},
 			{
+				site: 'PubScholar',
+				icon: 'pubscholar',
+				url: 'https://pubscholar.cn/explore',
+				category: 'Academic Search Engine'
+			},
+			{
 				site: 'Zenodo',
 				icon: 'zenodo',
 				url: 'https://zenodo.org/',
