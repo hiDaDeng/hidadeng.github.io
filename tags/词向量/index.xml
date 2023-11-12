@@ -6,7 +6,555 @@
     <description>Recent content in 词向量 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Fri, 10 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E8%AF%8D%E5%90%91%E9%87%8F/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 12 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E8%AF%8D%E5%90%91%E9%87%8F/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>词向量 | 使用1亿B站用户签名训练word2vec词向量</title>
+      <link>https://textdata.cn/blog/2023-11-12-using-100m-bilibili-user-sign-data-to-training-word2vec/</link>
+      <pubDate>Sun, 12 Nov 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-12-using-100m-bilibili-user-sign-data-to-training-word2vec/</guid>
+      <description>&lt;h2 id=&#34;一用户签名&#34;&gt;一、用户签名&lt;/h2&gt;
+&lt;p&gt;1亿B站用户群体十分庞大，文本中蕴含着这个群体的认知信息(如兴趣、身份、座右铭等)，如果能用签名训练word2vec词向量模型，说不定就有利用这个模型，对每个用户签名进行量化,  对用户进行分类。 本文要解决&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;构建语料训练出模型&lt;/li&gt;
+&lt;li&gt;简单看看模型训练效果&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二准备语料&#34;&gt;二、准备语料&lt;/h2&gt;
+&lt;p&gt;Kaggle网有1亿B站用户数据集，下载地址&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.kaggle.com/datasets/beats0/bilibili-user&#34;&gt;https://www.kaggle.com/datasets/beats0/bilibili-user&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;之前分享过 &lt;a href=&#34;&#34;&gt;数据集 | 哔哩哔哩 1 亿用户数据&lt;/a&gt; ， 阅读此文可以熟悉pandas的一些基本操作，如数据读取、文本操作等。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#从kaggle下载B站1亿用户数据&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;User.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#签名非空的记录&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df2&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dropna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;subset&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;sign&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;数据集用户数量: &amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df2&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;数据集用户数量: 100000000
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df2.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;将9093092个非空签名汇总到 &lt;em&gt;&lt;strong&gt;B站用户签名语料.txt&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;B站用户签名语料.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;w&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df2&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sign&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;tolist&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;代码运行后，得到 302M &lt;em&gt;&lt;strong&gt;B站用户签名语料.txt&lt;/strong&gt;&lt;/em&gt; 。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三训练word2vec&#34;&gt;三、训练Word2Vec&lt;/h2&gt;
+&lt;p&gt;我使用的自己 &lt;strong&gt;未公开&lt;/strong&gt; 的cntext 2.0.0版本， Bug频出，等调整好了再公开。&lt;/p&gt;
+&lt;h3 id=&#34;31-安装cntext&#34;&gt;3.1 安装cntext&lt;/h3&gt;
+&lt;p&gt;将 cntext-2.0.0-py3-none-any.whl 放置于桌面，打开 &lt;strong&gt;cmd&lt;/strong&gt;  (苹果电脑打开terminal)， 输入cd desktop&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd desktop
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;之后在 &lt;strong&gt;cmd&lt;/strong&gt;  (苹果电脑打开terminal) 中使用pip3 安装&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install cntext-2.0.0-py3-none-any.whl
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;文末有cntext-2.0.0-py3-none-any.whl获取方式&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;32-训练word2vec&#34;&gt;3.2 训练word2vec&lt;/h3&gt;
+&lt;p&gt;cntext训练时候Word2Vec模型参数&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;window = 6&lt;/li&gt;
+&lt;li&gt;vector_size = 100&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#cntext2.0.0未公开，获取2.0.0请阅读文末获取方式&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;W2VModel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;B站用户签名语料.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;train&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;window&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;100&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Starting Processing Corpus ...
+Start Training! This may take a while. Please be patient...
+Traning word2vec model took 1329 seconds
+Note: The Word2Vec model has been saved to output/Word2Vec
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;耗时1329s， 模型训练完成！得到的模型文件，如下截图&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/word2vec.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四使用word2vec&#34;&gt;四、使用word2vec&lt;/h2&gt;
+&lt;h3 id=&#34;41-读取模型&#34;&gt;4.1 读取模型&lt;/h3&gt;
+&lt;p&gt;使用gensim录入模型 “&lt;strong&gt;B站用户签名语料&lt;/strong&gt;.100.6.bin” ,&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;gensim.models&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;KeyedVectors&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;KeyedVectors&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/Word2Vec/B站用户签名语料.100.6.bin&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;模型词汇量: &amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;模型词汇量:  343650
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;42-查询某词的词向量&#34;&gt;4.2 查询某词的词向量&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;w2v.wv[&amp;#39;高冷&amp;#39;]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;array([-1.1872591e+00, -1.2438694e+00, -9.4200081e-01, -4.0355644e+00,
+        3.3588424e-01, -4.2525402e-01, -4.1175735e-01,  1.8802526e+00,
+       -3.5992053e-01,  2.8361969e+00, -1.1437206e+00,  4.4662678e-01,
+        1.2098696e+00,  7.2761238e-02,  3.0633178e-01,  6.7496544e-01,
+       -3.0175522e-01, -1.1573459e+00, -7.4999934e-01,  1.6484009e+00,
+        1.3102854e+00,  1.0134944e+00,  1.0711597e+00, -1.2194906e+00,
+        2.1523576e+00, -4.4606316e-01,  1.0664939e+00,  5.3640699e-01,
+        1.1061722e+00, -2.7679250e-01,  8.6652651e-02,  1.6876321e-02,
+        6.3120401e-01, -1.6914845e-02,  9.6446878e-01,  1.7046971e+00,
+       -1.7395537e+00,  1.7914917e+00, -1.3069035e+00,  6.6770411e-01,
+       -3.4902021e-01, -1.3345592e-02, -4.3595994e-01, -5.1443088e-01,
+        1.0884547e+00, -3.3695351e-02, -5.7088321e-01,  1.4533000e+00,
+        8.0498764e-03,  9.2341286e-01, -1.6219637e-01, -2.5400406e-01,
+       -1.4215972e-01,  7.1577376e-01, -1.2812414e+00, -1.7630520e-01,
+       -1.7600318e+00, -1.4759690e+00, -2.3313001e-01, -8.8995326e-01,
+        4.5749718e-01,  2.1950055e-02,  2.5749078e-01, -7.6623499e-01,
+        3.1834408e-03,  7.2732526e-01, -2.5459883e+00, -1.5240467e+00,
+        2.4574394e+00,  7.3715413e-01,  2.2769032e+00,  1.7492032e+00,
+       -4.1084039e-01,  6.4300962e-02,  6.2454116e-01, -4.0486854e-02,
+        7.7100635e-01, -1.9729427e+00, -8.4130460e-01, -3.0110097e-01,
+       -1.0786959e+00, -1.9136167e+00, -1.7037696e-01, -7.3208618e-03,
+        4.8502678e-01, -1.0348318e+00,  3.1141058e-01,  2.9913974e-01,
+       -2.1714316e-01, -3.1645024e+00,  7.0972210e-03,  7.8701675e-01,
+       -2.2510442e-01, -9.8428482e-01,  1.0685140e+00,  2.1938827e+00,
+       -9.1963351e-01,  6.3011467e-01, -1.1531134e+00, -9.2123538e-02],
+      dtype=float32)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;43-查看近义词&#34;&gt;4.3 查看近义词&lt;/h3&gt;
+&lt;p&gt;通过给定词语，查看其近义词，可以了解模型训练的好坏。语义捕捉的合理，说明语料合理，模型训练的好。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#列表中可以传入任意多个词，这里大邓偷懒，都只传入了一两个词&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;高冷&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;腹黑&amp;#39;, 0.8282514810562134),
+ (&amp;#39;呆萌&amp;#39;, 0.8148132562637329),
+ (&amp;#39;傲娇&amp;#39;, 0.7791209816932678),
+ (&amp;#39;逗比&amp;#39;, 0.7720615863800049),
+ (&amp;#39;闷骚&amp;#39;, 0.7617782354354858),
+ (&amp;#39;精分&amp;#39;, 0.7545589208602905),
+ (&amp;#39;文静&amp;#39;, 0.7545390725135803),
+ (&amp;#39;慢热&amp;#39;, 0.7387350797653198),
+ (&amp;#39;自恋&amp;#39;, 0.7299264669418335),
+ (&amp;#39;淑女&amp;#39;, 0.7261008620262146),
+ (&amp;#39;耿直&amp;#39;, 0.7238353490829468),
+ (&amp;#39;帅气&amp;#39;, 0.7233086824417114),
+ (&amp;#39;暖男&amp;#39;, 0.720333456993103),
+ (&amp;#39;内向&amp;#39;, 0.7159033417701721),
+ (&amp;#39;蠢&amp;#39;, 0.7157402038574219),
+ (&amp;#39;逗逼&amp;#39;, 0.7091616988182068),
+ (&amp;#39;神经质&amp;#39;, 0.7085140347480774),
+ (&amp;#39;女汉子&amp;#39;, 0.707956850528717),
+ (&amp;#39;毒舌&amp;#39;, 0.7058071494102478),
+ (&amp;#39;逗&amp;#39;, 0.7048983573913574)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;女汉子&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;女汉纸&amp;#39;, 0.8832258582115173),
+ (&amp;#39;汉子&amp;#39;, 0.8506060838699341),
+ (&amp;#39;萌妹子&amp;#39;, 0.8475067615509033),
+ (&amp;#39;暖男&amp;#39;, 0.8445340394973755),
+ (&amp;#39;女神经&amp;#39;, 0.838117241859436),
+ (&amp;#39;萌妹纸&amp;#39;, 0.8303463459014893),
+ (&amp;#39;闷骚&amp;#39;, 0.8296418786048889),
+ (&amp;#39;妹纸&amp;#39;, 0.8289912343025208),
+ (&amp;#39;软妹子&amp;#39;, 0.8211091756820679),
+ (&amp;#39;腹黑&amp;#39;, 0.8019399046897888),
+ (&amp;#39;汉纸&amp;#39;, 0.7941007614135742),
+ (&amp;#39;糙汉子&amp;#39;, 0.7915611267089844),
+ (&amp;#39;孩纸&amp;#39;, 0.783301055431366),
+ (&amp;#39;处女座&amp;#39;, 0.7807960510253906),
+ (&amp;#39;腐女&amp;#39;, 0.779699444770813),
+ (&amp;#39;宅女&amp;#39;, 0.7794589400291443),
+ (&amp;#39;软妹&amp;#39;, 0.7725212574005127),
+ (&amp;#39;小萝莉&amp;#39;, 0.7603519558906555),
+ (&amp;#39;摩羯座&amp;#39;, 0.7602179646492004),
+ (&amp;#39;呆萌&amp;#39;, 0.7555979490280151)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;流氓&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;风骚&amp;#39;, 0.7411526441574097),
+ (&amp;#39;气质&amp;#39;, 0.7314842343330383),
+ (&amp;#39;霸道&amp;#39;, 0.7147162556648254),
+ (&amp;#39;伪装成&amp;#39;, 0.7128302454948425),
+ (&amp;#39;天生&amp;#39;, 0.7044478058815002),
+ (&amp;#39;十足&amp;#39;, 0.6987764835357666),
+ (&amp;#39;斯文&amp;#39;, 0.6978859901428223),
+ (&amp;#39;禽兽&amp;#39;, 0.6960264444351196),
+ (&amp;#39;病态&amp;#39;, 0.6890178322792053),
+ (&amp;#39;才华&amp;#39;, 0.6817525029182434),
+ (&amp;#39;正派&amp;#39;, 0.6785053610801697),
+ (&amp;#39;文静&amp;#39;, 0.6763062477111816),
+ (&amp;#39;聪慧&amp;#39;, 0.6758238077163696),
+ (&amp;#39;自恋&amp;#39;, 0.6680983901023865),
+ (&amp;#39;凡夫俗子&amp;#39;, 0.6680223345756531),
+ (&amp;#39;冷血&amp;#39;, 0.6673165559768677),
+ (&amp;#39;白痴&amp;#39;, 0.666796863079071),
+ (&amp;#39;清纯&amp;#39;, 0.6666175127029419),
+ (&amp;#39;愤青&amp;#39;, 0.6663431525230408),
+ (&amp;#39;颇具&amp;#39;, 0.6648291945457458)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;内向&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;外向&amp;#39;, 0.8674373030662537),
+ (&amp;#39;腼腆&amp;#39;, 0.8610992431640625),
+ (&amp;#39;开朗&amp;#39;, 0.8451307415962219),
+ (&amp;#39;神经质&amp;#39;, 0.8253246545791626),
+ (&amp;#39;孤僻&amp;#39;, 0.8227512836456299),
+ (&amp;#39;胆小&amp;#39;, 0.7949897050857544),
+ (&amp;#39;慢热&amp;#39;, 0.7939849495887756),
+ (&amp;#39;大大咧咧&amp;#39;, 0.7869692444801331),
+ (&amp;#39;古怪&amp;#39;, 0.7838969230651855),
+ (&amp;#39;情绪化&amp;#39;, 0.7805034518241882),
+ (&amp;#39;幽默&amp;#39;, 0.7713088989257812),
+ (&amp;#39;不爱说话&amp;#39;, 0.76982182264328),
+ (&amp;#39;活泼&amp;#39;, 0.7689502239227295),
+ (&amp;#39;闷骚&amp;#39;, 0.766051173210144),
+ (&amp;#39;记仇&amp;#39;, 0.7653043270111084),
+ (&amp;#39;极度&amp;#39;, 0.7642502784729004),
+ (&amp;#39;敏感&amp;#39;, 0.7624457478523254),
+ (&amp;#39;自卑&amp;#39;, 0.7609980702400208),
+ (&amp;#39;很宅&amp;#39;, 0.7600659132003784),
+ (&amp;#39;矫情&amp;#39;, 0.7573622465133667)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;牛&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;牛B&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;牛皮&amp;#39;, 0.7266886830329895),
+ (&amp;#39;叼&amp;#39;, 0.7169520258903503),
+ (&amp;#39;吊&amp;#39;, 0.7075901627540588),
+ (&amp;#39;流弊&amp;#39;, 0.6949068307876587),
+ (&amp;#39;张嘴&amp;#39;, 0.6911835074424744),
+ (&amp;#39;逼人&amp;#39;, 0.6845391988754272),
+ (&amp;#39;欠揍&amp;#39;, 0.6771396994590759),
+ (&amp;#39;这块&amp;#39;, 0.6755802035331726),
+ (&amp;#39;他妈&amp;#39;, 0.672274112701416),
+ (&amp;#39;像不像&amp;#39;, 0.6720238924026489),
+ (&amp;#39;长帅&amp;#39;, 0.669898509979248),
+ (&amp;#39;跟个&amp;#39;, 0.6674190163612366),
+ (&amp;#39;仁波切&amp;#39;, 0.6618945002555847),
+ (&amp;#39;隔壁老王&amp;#39;, 0.6596662998199463),
+ (&amp;#39;捞&amp;#39;, 0.6594889760017395),
+ (&amp;#39;能装&amp;#39;, 0.658306896686554),
+ (&amp;#39;盗号狗&amp;#39;, 0.6573488116264343),
+ (&amp;#39;竟敢&amp;#39;, 0.654305636882782),
+ (&amp;#39;牛掰&amp;#39;, 0.6534903049468994),
+ (&amp;#39;老实&amp;#39;, 0.6533665657043457)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;色&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;不遇倾城&amp;#39;, 0.7234371304512024),
+ (&amp;#39;柔&amp;#39;, 0.6971151232719421),
+ (&amp;#39;温&amp;#39;, 0.696250855922699),
+ (&amp;#39;浮&amp;#39;, 0.6961503028869629),
+ (&amp;#39;牡丹&amp;#39;, 0.6916242241859436),
+ (&amp;#39;薄&amp;#39;, 0.6892343759536743),
+ (&amp;#39;飘逸&amp;#39;, 0.687305212020874),
+ (&amp;#39;丝&amp;#39;, 0.6816737651824951),
+ (&amp;#39;彩&amp;#39;, 0.6801170110702515),
+ (&amp;#39;骨&amp;#39;, 0.6786245703697205),
+ (&amp;#39;细&amp;#39;, 0.6709766387939453),
+ (&amp;#39;春&amp;#39;, 0.6705066561698914),
+ (&amp;#39;羽&amp;#39;, 0.6662278771400452),
+ (&amp;#39;沁&amp;#39;, 0.6659229397773743),
+ (&amp;#39;华&amp;#39;, 0.6649417281150818),
+ (&amp;#39;唇&amp;#39;, 0.6640968322753906),
+ (&amp;#39;露&amp;#39;, 0.6638047695159912),
+ (&amp;#39;墨&amp;#39;, 0.663625180721283),
+ (&amp;#39;阳&amp;#39;, 0.6616363525390625),
+ (&amp;#39;碧&amp;#39;, 0.6599227786064148)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;五获取资源&#34;&gt;五、获取资源&lt;/h2&gt;
+&lt;p&gt;内容整理不易， 本文内容分免费和付费部分。 免费部分可以直接下载数据、构建语料、使用word2vec模型。 付费部分主要是cntext，用于训练word2vec模型。 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;免费获取&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;1亿用户数据集 &lt;a href=&#34;https://www.kaggle.com/datasets/beats0/bilibili-user&#34;&gt;https://www.kaggle.com/datasets/beats0/bilibili-user&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;B站用户签名语料.100.6.bin&lt;/strong&gt;     链接: &lt;a href=&#34;https://pan.baidu.com/s/1SM6fWZ3Jt7VFaZ2dedt5CA&#34;&gt;https://pan.baidu.com/s/1SM6fWZ3Jt7VFaZ2dedt5CA&lt;/a&gt; 提取码: bzmp&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;50元   获得cntext-2.0.0-py3-none-any.whl&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<h2 id="一用户签名">一、用户签名</h2>
+<p>1亿B站用户群体十分庞大，文本中蕴含着这个群体的认知信息(如兴趣、身份、座右铭等)，如果能用签名训练word2vec词向量模型，说不定就有利用这个模型，对每个用户签名进行量化,  对用户进行分类。 本文要解决</p>
+<ul>
+<li>构建语料训练出模型</li>
+<li>简单看看模型训练效果</li>
+</ul>
+<p><br><br></p>
+<h2 id="二准备语料">二、准备语料</h2>
+<p>Kaggle网有1亿B站用户数据集，下载地址</p>
+<blockquote>
+<p><a href="https://www.kaggle.com/datasets/beats0/bilibili-user">https://www.kaggle.com/datasets/beats0/bilibili-user</a></p>
+</blockquote>
+<p>之前分享过 <a href="">数据集 | 哔哩哔哩 1 亿用户数据</a> ， 阅读此文可以熟悉pandas的一些基本操作，如数据读取、文本操作等。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#从kaggle下载B站1亿用户数据</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;User.csv&#39;</span><span class="p">)</span>
+
+<span class="c1">#签名非空的记录</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sign&#39;</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;数据集用户数量: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+<span class="n">df2</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">数据集用户数量: 100000000
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<br>
+<p>将9093092个非空签名汇总到 <em><strong>B站用户签名语料.txt</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;B站用户签名语料.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">df2</span><span class="o">.</span><span class="n">sign</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+</code></pre></div><p>代码运行后，得到 302M <em><strong>B站用户签名语料.txt</strong></em> 。</p>
+<p><br><br></p>
+<h2 id="三训练word2vec">三、训练Word2Vec</h2>
+<p>我使用的自己 <strong>未公开</strong> 的cntext 2.0.0版本， Bug频出，等调整好了再公开。</p>
+<h3 id="31-安装cntext">3.1 安装cntext</h3>
+<p>将 cntext-2.0.0-py3-none-any.whl 放置于桌面，打开 <strong>cmd</strong>  (苹果电脑打开terminal)， 输入cd desktop</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+</code></pre></div><p>之后在 <strong>cmd</strong>  (苹果电脑打开terminal) 中使用pip3 安装</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install cntext-2.0.0-py3-none-any.whl
+</code></pre></div><p>文末有cntext-2.0.0-py3-none-any.whl获取方式</p>
+<br>
+<h3 id="32-训练word2vec">3.2 训练word2vec</h3>
+<p>cntext训练时候Word2Vec模型参数</p>
+<ul>
+<li>window = 6</li>
+<li>vector_size = 100</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#cntext2.0.0未公开，获取2.0.0请阅读文末获取方式</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">W2VModel</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;B站用户签名语料.txt&#39;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">window</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span> <span class="n">vector_size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Starting Processing Corpus ...
+Start Training! This may take a while. Please be patient...
+Traning word2vec model took 1329 seconds
+Note: The Word2Vec model has been saved to output/Word2Vec
+</code></pre></div><p>耗时1329s， 模型训练完成！得到的模型文件，如下截图</p>
+<p><img loading="lazy" src="img/word2vec.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="四使用word2vec">四、使用word2vec</h2>
+<h3 id="41-读取模型">4.1 读取模型</h3>
+<p>使用gensim录入模型 “<strong>B站用户签名语料</strong>.100.6.bin” ,</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">gensim.models</span> <span class="kn">import</span> <span class="n">KeyedVectors</span>
+
+<span class="n">w2v</span> <span class="o">=</span> <span class="n">KeyedVectors</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;output/Word2Vec/B站用户签名语料.100.6.bin&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;模型词汇量: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">模型词汇量:  343650
+</code></pre></div><br>
+<h3 id="42-查询某词的词向量">4.2 查询某词的词向量</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">w2v.wv[&#39;高冷&#39;]
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([-1.1872591e+00, -1.2438694e+00, -9.4200081e-01, -4.0355644e+00,
+        3.3588424e-01, -4.2525402e-01, -4.1175735e-01,  1.8802526e+00,
+       -3.5992053e-01,  2.8361969e+00, -1.1437206e+00,  4.4662678e-01,
+        1.2098696e+00,  7.2761238e-02,  3.0633178e-01,  6.7496544e-01,
+       -3.0175522e-01, -1.1573459e+00, -7.4999934e-01,  1.6484009e+00,
+        1.3102854e+00,  1.0134944e+00,  1.0711597e+00, -1.2194906e+00,
+        2.1523576e+00, -4.4606316e-01,  1.0664939e+00,  5.3640699e-01,
+        1.1061722e+00, -2.7679250e-01,  8.6652651e-02,  1.6876321e-02,
+        6.3120401e-01, -1.6914845e-02,  9.6446878e-01,  1.7046971e+00,
+       -1.7395537e+00,  1.7914917e+00, -1.3069035e+00,  6.6770411e-01,
+       -3.4902021e-01, -1.3345592e-02, -4.3595994e-01, -5.1443088e-01,
+        1.0884547e+00, -3.3695351e-02, -5.7088321e-01,  1.4533000e+00,
+        8.0498764e-03,  9.2341286e-01, -1.6219637e-01, -2.5400406e-01,
+       -1.4215972e-01,  7.1577376e-01, -1.2812414e+00, -1.7630520e-01,
+       -1.7600318e+00, -1.4759690e+00, -2.3313001e-01, -8.8995326e-01,
+        4.5749718e-01,  2.1950055e-02,  2.5749078e-01, -7.6623499e-01,
+        3.1834408e-03,  7.2732526e-01, -2.5459883e+00, -1.5240467e+00,
+        2.4574394e+00,  7.3715413e-01,  2.2769032e+00,  1.7492032e+00,
+       -4.1084039e-01,  6.4300962e-02,  6.2454116e-01, -4.0486854e-02,
+        7.7100635e-01, -1.9729427e+00, -8.4130460e-01, -3.0110097e-01,
+       -1.0786959e+00, -1.9136167e+00, -1.7037696e-01, -7.3208618e-03,
+        4.8502678e-01, -1.0348318e+00,  3.1141058e-01,  2.9913974e-01,
+       -2.1714316e-01, -3.1645024e+00,  7.0972210e-03,  7.8701675e-01,
+       -2.2510442e-01, -9.8428482e-01,  1.0685140e+00,  2.1938827e+00,
+       -9.1963351e-01,  6.3011467e-01, -1.1531134e+00, -9.2123538e-02],
+      dtype=float32)
+</code></pre></div><br>
+<h3 id="43-查看近义词">4.3 查看近义词</h3>
+<p>通过给定词语，查看其近义词，可以了解模型训练的好坏。语义捕捉的合理，说明语料合理，模型训练的好。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#列表中可以传入任意多个词，这里大邓偷懒，都只传入了一两个词</span>
+<span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;高冷&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;腹黑&#39;, 0.8282514810562134),
+ (&#39;呆萌&#39;, 0.8148132562637329),
+ (&#39;傲娇&#39;, 0.7791209816932678),
+ (&#39;逗比&#39;, 0.7720615863800049),
+ (&#39;闷骚&#39;, 0.7617782354354858),
+ (&#39;精分&#39;, 0.7545589208602905),
+ (&#39;文静&#39;, 0.7545390725135803),
+ (&#39;慢热&#39;, 0.7387350797653198),
+ (&#39;自恋&#39;, 0.7299264669418335),
+ (&#39;淑女&#39;, 0.7261008620262146),
+ (&#39;耿直&#39;, 0.7238353490829468),
+ (&#39;帅气&#39;, 0.7233086824417114),
+ (&#39;暖男&#39;, 0.720333456993103),
+ (&#39;内向&#39;, 0.7159033417701721),
+ (&#39;蠢&#39;, 0.7157402038574219),
+ (&#39;逗逼&#39;, 0.7091616988182068),
+ (&#39;神经质&#39;, 0.7085140347480774),
+ (&#39;女汉子&#39;, 0.707956850528717),
+ (&#39;毒舌&#39;, 0.7058071494102478),
+ (&#39;逗&#39;, 0.7048983573913574)]
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;女汉子&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;女汉纸&#39;, 0.8832258582115173),
+ (&#39;汉子&#39;, 0.8506060838699341),
+ (&#39;萌妹子&#39;, 0.8475067615509033),
+ (&#39;暖男&#39;, 0.8445340394973755),
+ (&#39;女神经&#39;, 0.838117241859436),
+ (&#39;萌妹纸&#39;, 0.8303463459014893),
+ (&#39;闷骚&#39;, 0.8296418786048889),
+ (&#39;妹纸&#39;, 0.8289912343025208),
+ (&#39;软妹子&#39;, 0.8211091756820679),
+ (&#39;腹黑&#39;, 0.8019399046897888),
+ (&#39;汉纸&#39;, 0.7941007614135742),
+ (&#39;糙汉子&#39;, 0.7915611267089844),
+ (&#39;孩纸&#39;, 0.783301055431366),
+ (&#39;处女座&#39;, 0.7807960510253906),
+ (&#39;腐女&#39;, 0.779699444770813),
+ (&#39;宅女&#39;, 0.7794589400291443),
+ (&#39;软妹&#39;, 0.7725212574005127),
+ (&#39;小萝莉&#39;, 0.7603519558906555),
+ (&#39;摩羯座&#39;, 0.7602179646492004),
+ (&#39;呆萌&#39;, 0.7555979490280151)]
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;流氓&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;风骚&#39;, 0.7411526441574097),
+ (&#39;气质&#39;, 0.7314842343330383),
+ (&#39;霸道&#39;, 0.7147162556648254),
+ (&#39;伪装成&#39;, 0.7128302454948425),
+ (&#39;天生&#39;, 0.7044478058815002),
+ (&#39;十足&#39;, 0.6987764835357666),
+ (&#39;斯文&#39;, 0.6978859901428223),
+ (&#39;禽兽&#39;, 0.6960264444351196),
+ (&#39;病态&#39;, 0.6890178322792053),
+ (&#39;才华&#39;, 0.6817525029182434),
+ (&#39;正派&#39;, 0.6785053610801697),
+ (&#39;文静&#39;, 0.6763062477111816),
+ (&#39;聪慧&#39;, 0.6758238077163696),
+ (&#39;自恋&#39;, 0.6680983901023865),
+ (&#39;凡夫俗子&#39;, 0.6680223345756531),
+ (&#39;冷血&#39;, 0.6673165559768677),
+ (&#39;白痴&#39;, 0.666796863079071),
+ (&#39;清纯&#39;, 0.6666175127029419),
+ (&#39;愤青&#39;, 0.6663431525230408),
+ (&#39;颇具&#39;, 0.6648291945457458)]
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;内向&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;外向&#39;, 0.8674373030662537),
+ (&#39;腼腆&#39;, 0.8610992431640625),
+ (&#39;开朗&#39;, 0.8451307415962219),
+ (&#39;神经质&#39;, 0.8253246545791626),
+ (&#39;孤僻&#39;, 0.8227512836456299),
+ (&#39;胆小&#39;, 0.7949897050857544),
+ (&#39;慢热&#39;, 0.7939849495887756),
+ (&#39;大大咧咧&#39;, 0.7869692444801331),
+ (&#39;古怪&#39;, 0.7838969230651855),
+ (&#39;情绪化&#39;, 0.7805034518241882),
+ (&#39;幽默&#39;, 0.7713088989257812),
+ (&#39;不爱说话&#39;, 0.76982182264328),
+ (&#39;活泼&#39;, 0.7689502239227295),
+ (&#39;闷骚&#39;, 0.766051173210144),
+ (&#39;记仇&#39;, 0.7653043270111084),
+ (&#39;极度&#39;, 0.7642502784729004),
+ (&#39;敏感&#39;, 0.7624457478523254),
+ (&#39;自卑&#39;, 0.7609980702400208),
+ (&#39;很宅&#39;, 0.7600659132003784),
+ (&#39;矫情&#39;, 0.7573622465133667)]
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;牛&#39;</span><span class="p">,</span> <span class="s1">&#39;牛B&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;牛皮&#39;, 0.7266886830329895),
+ (&#39;叼&#39;, 0.7169520258903503),
+ (&#39;吊&#39;, 0.7075901627540588),
+ (&#39;流弊&#39;, 0.6949068307876587),
+ (&#39;张嘴&#39;, 0.6911835074424744),
+ (&#39;逼人&#39;, 0.6845391988754272),
+ (&#39;欠揍&#39;, 0.6771396994590759),
+ (&#39;这块&#39;, 0.6755802035331726),
+ (&#39;他妈&#39;, 0.672274112701416),
+ (&#39;像不像&#39;, 0.6720238924026489),
+ (&#39;长帅&#39;, 0.669898509979248),
+ (&#39;跟个&#39;, 0.6674190163612366),
+ (&#39;仁波切&#39;, 0.6618945002555847),
+ (&#39;隔壁老王&#39;, 0.6596662998199463),
+ (&#39;捞&#39;, 0.6594889760017395),
+ (&#39;能装&#39;, 0.658306896686554),
+ (&#39;盗号狗&#39;, 0.6573488116264343),
+ (&#39;竟敢&#39;, 0.654305636882782),
+ (&#39;牛掰&#39;, 0.6534903049468994),
+ (&#39;老实&#39;, 0.6533665657043457)]
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;色&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;不遇倾城&#39;, 0.7234371304512024),
+ (&#39;柔&#39;, 0.6971151232719421),
+ (&#39;温&#39;, 0.696250855922699),
+ (&#39;浮&#39;, 0.6961503028869629),
+ (&#39;牡丹&#39;, 0.6916242241859436),
+ (&#39;薄&#39;, 0.6892343759536743),
+ (&#39;飘逸&#39;, 0.687305212020874),
+ (&#39;丝&#39;, 0.6816737651824951),
+ (&#39;彩&#39;, 0.6801170110702515),
+ (&#39;骨&#39;, 0.6786245703697205),
+ (&#39;细&#39;, 0.6709766387939453),
+ (&#39;春&#39;, 0.6705066561698914),
+ (&#39;羽&#39;, 0.6662278771400452),
+ (&#39;沁&#39;, 0.6659229397773743),
+ (&#39;华&#39;, 0.6649417281150818),
+ (&#39;唇&#39;, 0.6640968322753906),
+ (&#39;露&#39;, 0.6638047695159912),
+ (&#39;墨&#39;, 0.663625180721283),
+ (&#39;阳&#39;, 0.6616363525390625),
+ (&#39;碧&#39;, 0.6599227786064148)]
+</code></pre></div><br>
+<br>
+<h2 id="五获取资源">五、获取资源</h2>
+<p>内容整理不易， 本文内容分免费和付费部分。 免费部分可以直接下载数据、构建语料、使用word2vec模型。 付费部分主要是cntext，用于训练word2vec模型。 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」</p>
+<ul>
+<li>
+<p>免费获取</p>
+<ul>
+<li>
+<p>1亿用户数据集 <a href="https://www.kaggle.com/datasets/beats0/bilibili-user">https://www.kaggle.com/datasets/beats0/bilibili-user</a></p>
+</li>
+<li>
+<p><strong>B站用户签名语料.100.6.bin</strong>     链接: <a href="https://pan.baidu.com/s/1SM6fWZ3Jt7VFaZ2dedt5CA">https://pan.baidu.com/s/1SM6fWZ3Jt7VFaZ2dedt5CA</a> 提取码: bzmp</p>
+</li>
+</ul>
+</li>
+<li>
+<p>50元   获得cntext-2.0.0-py3-none-any.whl</p>
+</li>
+</ul>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>预训练模型(付费) | 使用1000w专利摘要训练word2vec模型，可用于开发词典</title>
       <link>https://textdata.cn/blog/2023-11-10-training-word2vec-model-using-china-3751w-patent-application-dataset/</link>
