@@ -6,7 +6,7 @@
     <description>Recent content in 经济管理 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Tue, 07 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 14 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>2023 | 文本分析在经管研究中的应用</title>
       <link>https://textdata.cn/blog/2023-11-05-xjtu-text-mining-in-ms/</link>
@@ -329,6 +329,431 @@
 <p>结果表明，从总体上讲，模仿app对原创app需求的影响在统计上是微不足道的。<strong>我们的研究通过提供一种识别模仿app的方法</strong>，并提供模仿app对原创app需求影响的证据，为越来越多的移动应用消费文献做出了贡献。</p>
 </blockquote>
 <p><img loading="lazy" src="img/copycat.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>代码 | 使用LDA预测文本的话题类型</title>
+      <link>https://textdata.cn/blog/2023-11-14-using-lda-to-predict-topic/</link>
+      <pubDate>Tue, 14 Nov 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-14-using-lda-to-predict-topic/</guid>
+      <description>&lt;h2 id=&#34;获取代码&#34;&gt;获取代码&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;lda-code.zip&#34;&gt;&lt;strong&gt;点击下载本文数据&amp;amp;代码&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/lda-model.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;如何用LDA预测文本的话题类型，本文将覆盖以下代码技术&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;csv数据读取&lt;/li&gt;
+&lt;li&gt;文本预处理&lt;/li&gt;
+&lt;li&gt;训练(保存)lda模型&lt;/li&gt;
+&lt;li&gt;预测话题&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;一读取数据&#34;&gt;一、读取数据&lt;/h2&gt;
+&lt;p&gt;本文使用的数据集来自于 之前分享的 &lt;a href=&#34;https://textdata.cn/blog/2023-04-25-zhihu-parent-child-relationship/&#34;&gt;网络爬虫 | 知乎热门话题「全职儿女」&lt;/a&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/知乎-全职儿女.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dropna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;subset&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;inplace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;记录数: &amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;head&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;记录数:  411
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二清洗数据&#34;&gt;二、清洗数据&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;re&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;jieba&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;stoptext&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/stopwords.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;        
+&lt;span class=&#34;n&#34;&gt;stopwords&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;stoptext&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;  
+
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;clean_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;# 用正则表达式提取中文文本&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;re&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;findall&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;[&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\u4e00&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\u9fa5&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;]+&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;   
+    &lt;span class=&#34;n&#34;&gt;words&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;jieba&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;lcut&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;                               
+    &lt;span class=&#34;n&#34;&gt;words&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;words&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;not&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;stopwords&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;   
+    &lt;span class=&#34;c1&#34;&gt;#整理成用空格间隔词语的文本形式(类似西方语言)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39; &amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;words&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;test_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;首先，我认为「全职儿女」不应该被简单地归为啃老。在目前社会环境下，随着经济、教育等发展，年轻...&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;clean_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;test_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    &amp;#39;全职 儿女 简单 地归为 啃 老 社会 环境 经济 教育 发展 年轻&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;clean_content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;clean_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;head&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三训练lda模型&#34;&gt;三、训练LDA模型&lt;/h2&gt;
+&lt;h3 id=&#34;31-训练&#34;&gt;3.1 训练&lt;/h3&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-wordcloud.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;根据词云图， 假设对数据比较了解，可以直接设置话题数 n_components = 4&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;sklearn.feature_extraction.text&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;CountVectorizer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;TfidfVectorizer&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;sklearn.decomposition&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;LatentDirichletAllocation&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 构建词典，将词转为数字。将文档转为向量&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;vectorizer&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;TfidfVectorizer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;max_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mf&#34;&gt;0.5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;min_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;   
+&lt;span class=&#34;n&#34;&gt;doc_term_matrix&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;vectorizer&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fit_transform&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;clean_content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 构建LDA话题模型&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 初始化模型，设置话题数为4,随机状态码888&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;lda_model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;LatentDirichletAllocation&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;n_components&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;random_state&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;888&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;       
+&lt;span class=&#34;n&#34;&gt;lda_output&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lda_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fit_transform&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;doc_term_matrix&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;lda_model&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-保存模型&#34;&gt;3.2 保存模型&lt;/h3&gt;
+&lt;p&gt;如果训练过程非常久，保存模型，下次就可以跳过训练阶段，直接使用模型。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;joblib&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# # 保存模型&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;joblib&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dump&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;lda_model&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;output/全职儿女lda_model.pkl&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre&gt;&lt;code&gt;[&#39;output/全职儿女lda_model.pkl&#39;]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;33-导入模型&#34;&gt;3.3 导入模型&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;joblib&lt;/span&gt;
+
+&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&amp;#34;导入保存的模型&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;lda_model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;joblib&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/全职儿女lda_model.pkl&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;lda_model&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/lda888.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四使用lda模型&#34;&gt;四、使用LDA模型&lt;/h2&gt;
+&lt;h3 id=&#34;41-查看话题特征词&#34;&gt;4.1 查看话题特征词&lt;/h3&gt;
+&lt;p&gt;获得每个话题对应的的n个特征词，方便后续对每个话题命名和解读&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;numpy&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;np&lt;/span&gt;
+
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;show_topics&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;vectorizer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lda_model&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;top_n&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;30&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&amp;#34;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;    显示每个话题最重要的n个词语
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;    vectorizer: 词袋法或tfidf.基于前面代码这里使用TF-IDF法
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;    lda_model: 训练好的lda话题模型
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;    top_n: 设置最重要的n个特征词，默认30个.
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;    &amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+    
+    &lt;span class=&#34;n&#34;&gt;keywords&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;np&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;array&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;vectorizer&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;get_feature_names_out&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;topic_keywords&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topic_weights&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lda_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;components_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;top_keyword_locs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;topic_weights&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;argsort&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()[:&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;top_n&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;topic_keywords&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;keywords&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;take&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;top_keyword_locs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topic_keywords&lt;/span&gt;
+
+
+&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&amp;#34;利用show_topics函数展示全职儿女文本中的4个话题，基于每个话题最重要的20个词语为每个话题命名&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;topic_keywords&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;show_topics&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;vectorizer&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;vectorizer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;   &lt;span class=&#34;c1&#34;&gt;# 【可改动】vectorizer我们训练的词语空间&lt;/span&gt;
+                             &lt;span class=&#34;n&#34;&gt;lda_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;lda_model&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;     &lt;span class=&#34;c1&#34;&gt;# 【可改动】lda_model训练的lda模型&lt;/span&gt;
+                             &lt;span class=&#34;n&#34;&gt;top_n&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;                &lt;span class=&#34;c1&#34;&gt;# 【可改动】最重要的30个词语&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df_topic_keywords&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;DataFrame&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;topic_keywords&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df_topic_keywords&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;columns&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Word-&amp;#39;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;range&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df_topic_keywords&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;shape&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])]&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df_topic_keywords&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;index&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Topic-&amp;#39;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;range&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df_topic_keywords&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;shape&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])]&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df_topic_keywords&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;42-预测文本的话题id&#34;&gt;4.2 预测文本的话题id&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;numpy&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;np&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;predict_topic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;doc_term_matrix&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;vectorizer&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;transform&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;clean_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)])&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;topic_term_prob_matrix&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lda_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;transform&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;doc_term_matrix&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;topic_index&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;np&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;argmax&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;topic_term_prob_matrix&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topic_index&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;test_text2&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;最近，“全职儿女”话题受到舆论关注。“全职儿女”是指一种新型的脱产生活方式，年轻人脱产寄居父母生活，并通过付出一定的劳动换取经济支持，同时保持学习提升或发展副业的状态。这种生活方式既有其合理性和正当性，也有其问题和风险。我们不能一概而论，也不能一味否定或肯定。&amp;#34;&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;topic_index&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;predict_topic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;test_text2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;该文本所属Topic: &amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topic_index&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    该文本所属Topic:  0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#批量预测&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;话题ID&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;clean_content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;predict_topic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;head&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/05-predict.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;话题ID&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;value_counts&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;话题ID
+0    214
+1     88
+3     84
+2     25
+Name: count, dtype: int64
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#预测结果保存到csv、xlsx中。&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;to_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/话题预测结果.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;index&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;False&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;to_excel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/话题预测结果.xlsx&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;index&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;False&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/output.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;获取代码-1&#34;&gt;获取代码&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;lda-code.zip&#34;&gt;&lt;strong&gt;点击下载本文&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<h2 id="获取代码">获取代码</h2>
+<p><a href="lda-code.zip"><strong>点击下载本文数据&amp;代码</strong></a></p>
+<p><br><br></p>
+<p><img loading="lazy" src="img/lda-model.png" alt=""  />
+</p>
+<p>如何用LDA预测文本的话题类型，本文将覆盖以下代码技术</p>
+<ol>
+<li>csv数据读取</li>
+<li>文本预处理</li>
+<li>训练(保存)lda模型</li>
+<li>预测话题</li>
+</ol>
+<p><br><br></p>
+<h2 id="一读取数据">一、读取数据</h2>
+<p>本文使用的数据集来自于 之前分享的 <a href="https://textdata.cn/blog/2023-04-25-zhihu-parent-child-relationship/">网络爬虫 | 知乎热门话题「全职儿女」</a></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/知乎-全职儿女.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;记录数: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div><pre><code>记录数:  411
+</code></pre>
+<p><img loading="lazy" src="img/01-df.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二清洗数据">二、清洗数据</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">jieba</span>
+
+<span class="n">stoptext</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;data/stopwords.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>        
+<span class="n">stopwords</span> <span class="o">=</span> <span class="n">stoptext</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>  
+
+
+<span class="k">def</span> <span class="nf">clean_text</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="c1"># 用正则表达式提取中文文本</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;[</span><span class="se">\u4e00</span><span class="s1">-</span><span class="se">\u9fa5</span><span class="s1">]+&#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">))</span>   
+    <span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>                               
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stopwords</span><span class="p">]</span>   
+    <span class="c1">#整理成用空格间隔词语的文本形式(类似西方语言)</span>
+    <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
+
+
+<span class="n">test_text</span> <span class="o">=</span> <span class="s2">&#34;首先，我认为「全职儿女」不应该被简单地归为啃老。在目前社会环境下，随着经济、教育等发展，年轻...&#34;</span>
+<span class="n">clean_text</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">test_text</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    &#39;全职 儿女 简单 地归为 啃 老 社会 环境 经济 教育 发展 年轻&#39;
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;clean_content&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">clean_text</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/02-df.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三训练lda模型">三、训练LDA模型</h2>
+<h3 id="31-训练">3.1 训练</h3>
+<p><img loading="lazy" src="img/03-wordcloud.png" alt=""  />
+</p>
+<p>根据词云图， 假设对数据比较了解，可以直接设置话题数 n_components = 4</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="kn">import</span> <span class="n">CountVectorizer</span><span class="p">,</span><span class="n">TfidfVectorizer</span>
+<span class="kn">from</span> <span class="nn">sklearn.decomposition</span> <span class="kn">import</span> <span class="n">LatentDirichletAllocation</span>
+
+<span class="c1"># 构建词典，将词转为数字。将文档转为向量</span>
+<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">(</span><span class="n">max_df</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>   
+<span class="n">doc_term_matrix</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;clean_content&#39;</span><span class="p">])</span>
+
+<span class="c1"># 构建LDA话题模型</span>
+<span class="c1"># 初始化模型，设置话题数为4,随机状态码888</span>
+<span class="n">lda_model</span> <span class="o">=</span> <span class="n">LatentDirichletAllocation</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">888</span><span class="p">)</span>       
+<span class="n">lda_output</span> <span class="o">=</span> <span class="n">lda_model</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">doc_term_matrix</span><span class="p">)</span>
+<span class="n">lda_model</span>
+</code></pre></div><br>
+<h3 id="32-保存模型">3.2 保存模型</h3>
+<p>如果训练过程非常久，保存模型，下次就可以跳过训练阶段，直接使用模型。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">joblib</span>
+<span class="c1"># # 保存模型</span>
+<span class="n">joblib</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">lda_model</span><span class="p">,</span> <span class="s1">&#39;output/全职儿女lda_model.pkl&#39;</span><span class="p">)</span>
+</code></pre></div><pre><code>['output/全职儿女lda_model.pkl']
+</code></pre>
+<br>
+<h3 id="33-导入模型">3.3 导入模型</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">joblib</span>
+
+<span class="s2">&#34;&#34;&#34;导入保存的模型&#34;&#34;&#34;</span>
+<span class="n">lda_model</span> <span class="o">=</span> <span class="n">joblib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;output/全职儿女lda_model.pkl&#39;</span><span class="p">)</span>
+<span class="n">lda_model</span>
+</code></pre></div><p><img loading="lazy" src="img/lda888.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="四使用lda模型">四、使用LDA模型</h2>
+<h3 id="41-查看话题特征词">4.1 查看话题特征词</h3>
+<p>获得每个话题对应的的n个特征词，方便后续对每个话题命名和解读</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<span class="k">def</span> <span class="nf">show_topics</span><span class="p">(</span><span class="n">vectorizer</span><span class="p">,</span> <span class="n">lda_model</span><span class="p">,</span> <span class="n">top_n</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+    <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">    显示每个话题最重要的n个词语
+</span><span class="s2">    vectorizer: 词袋法或tfidf.基于前面代码这里使用TF-IDF法
+</span><span class="s2">    lda_model: 训练好的lda话题模型
+</span><span class="s2">    top_n: 设置最重要的n个特征词，默认30个.
+</span><span class="s2">    &#34;&#34;&#34;</span>
+    
+    <span class="n">keywords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vectorizer</span><span class="o">.</span><span class="n">get_feature_names_out</span><span class="p">())</span>
+    <span class="n">topic_keywords</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">topic_weights</span> <span class="ow">in</span> <span class="n">lda_model</span><span class="o">.</span><span class="n">components_</span><span class="p">:</span>
+        <span class="n">top_keyword_locs</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">topic_weights</span><span class="p">)</span><span class="o">.</span><span class="n">argsort</span><span class="p">()[:</span><span class="n">top_n</span><span class="p">]</span>
+        <span class="n">topic_keywords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keywords</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">top_keyword_locs</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">topic_keywords</span>
+
+
+<span class="s2">&#34;&#34;&#34;利用show_topics函数展示全职儿女文本中的4个话题，基于每个话题最重要的20个词语为每个话题命名&#34;&#34;&#34;</span>
+<span class="n">topic_keywords</span> <span class="o">=</span> <span class="n">show_topics</span><span class="p">(</span><span class="n">vectorizer</span><span class="o">=</span><span class="n">vectorizer</span><span class="p">,</span>   <span class="c1"># 【可改动】vectorizer我们训练的词语空间</span>
+                             <span class="n">lda_model</span><span class="o">=</span><span class="n">lda_model</span><span class="p">,</span>     <span class="c1"># 【可改动】lda_model训练的lda模型</span>
+                             <span class="n">top_n</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>                <span class="c1"># 【可改动】最重要的30个词语</span>
+
+<span class="n">df_topic_keywords</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">topic_keywords</span><span class="p">)</span>
+<span class="n">df_topic_keywords</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Word-&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">df_topic_keywords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+<span class="n">df_topic_keywords</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Topic-&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">df_topic_keywords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+<span class="n">df_topic_keywords</span>
+</code></pre></div><p><img loading="lazy" src="img/04-df.png" alt=""  />
+</p>
+<br>
+<h3 id="42-预测文本的话题id">4.2 预测文本的话题id</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">predict_topic</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">doc_term_matrix</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">transform</span><span class="p">([</span><span class="n">clean_text</span><span class="p">(</span><span class="n">text</span><span class="p">)])</span>
+    <span class="n">topic_term_prob_matrix</span> <span class="o">=</span> <span class="n">lda_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">doc_term_matrix</span><span class="p">)</span>
+    <span class="n">topic_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">topic_term_prob_matrix</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">topic_index</span>
+
+<span class="n">test_text2</span> <span class="o">=</span> <span class="s2">&#34;最近，“全职儿女”话题受到舆论关注。“全职儿女”是指一种新型的脱产生活方式，年轻人脱产寄居父母生活，并通过付出一定的劳动换取经济支持，同时保持学习提升或发展副业的状态。这种生活方式既有其合理性和正当性，也有其问题和风险。我们不能一概而论，也不能一味否定或肯定。&#34;</span>
+
+<span class="n">topic_index</span> <span class="o">=</span> <span class="n">predict_topic</span><span class="p">(</span><span class="n">test_text2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&#34;该文本所属Topic: &#34;</span><span class="p">,</span> <span class="n">topic_index</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    该文本所属Topic:  0
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#批量预测</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;话题ID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;clean_content&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">predict_topic</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/05-predict.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;话题ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<pre><code>话题ID
+0    214
+1     88
+3     84
+2     25
+Name: count, dtype: int64
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#预测结果保存到csv、xlsx中。</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;output/话题预测结果.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s1">&#39;output/话题预测结果.xlsx&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/output.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="获取代码-1">获取代码</h2>
+<p><a href="lda-code.zip"><strong>点击下载本文</strong></a></p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>不可不防的大模型“人肉搜索”能力</title>
+      <link>https://textdata.cn/blog/2023-11-13-violatating-privacy-via-inference-with-large-language-model/</link>
+      <pubDate>Mon, 13 Nov 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-13-violatating-privacy-via-inference-with-large-language-model/</guid>
+      <description>今年10月的一项研究显示，语言大模型的推测能力，使其在“某些方面”的准确度几乎接近人类甚至超越人类。这引发了作者对大模型可能被用来“人肉搜索”的担忧。“开盒”从未如此简单？大模型是否会侵害我们的隐私？ 大语言模型(Large language Model,  LLM)可以从文本中准确推断个人属性。</description>
+      <content:encoded><![CDATA[<iframe
+    src="//player.bilibili.com/player.html?bvid=BV1T84y1X7Jv&page=1"
+    scrolling="no"
+    height="500px"
+    width="800px"
+    frameborder="no"
+    framespacing="0"
+    allowfullscreen="true"
+>
+</iframe>
+
+<p>今年10月的一项研究显示，语言大模型的推测能力，使其在“某些方面”的准确度几乎接近人类甚至超越人类。这引发了作者对大模型可能被用来“人肉搜索”的担忧。“开盒”从未如此简单？大模型是否会侵害我们的隐私？ 大语言模型(Large language Model,  LLM)可以从文本中准确推断个人属性。</p>
+<p><br><br></p>
+<h2 id="声明">声明</h2>
+<p>本文内容全文整理自 <a href="https://llm-privacy.org/">https://llm-privacy.org/</a></p>
+<p>Staab, Robin, Mark Vero, Mislav Balunović, and Martin Vechev. &ldquo;Beyond Memorization: Violating Privacy Via Inference with Large Language Models.&rdquo; <em>arXiv preprint arXiv:2310.07298</em> (2023).</p>
+<p><br><br></p>
+<h2 id="演示案例">演示案例</h2>
+<div align="center">   <p><strong>对照当前最先进的大语言模型（LLM）， 测试您的隐私推理技能！</strong></p> </div>
+<p><img loading="lazy" src="img/01-guess.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/01-guess-answer.png" alt=""  />
+</p>
+<br>
+<p><img loading="lazy" src="img/02-guess.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/02-guess-answer.png" alt=""  />
+</p>
+<br>
+<p><img loading="lazy" src="img/03-guess.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/03-guess-answer.png" alt=""  />
+</p>
+<br>
+<br>
+<h2 id="qa">Q&amp;A</h2>
+<h3 id="q1-有什么问题吗">Q1： 有什么问题吗？</h3>
+<p><strong>LLM可以从文本中准确推断个人属性信息</strong>； 当前关于大语言模型（LLM）的隐私研究主要集中在提取记忆的训练数据的问题上。与此同时，模型的推理能力也大幅提升。这就提出了一个问题：<strong>当前的LLM是否能从给定文本推断作者个人属性信息</strong>。我们的<a href="https://llm-privacy.org/#paper">研究</a>表明，随着能力的增强，LLM能够从提供给他们的非结构化文本（例如公共论坛或社交网络帖子）中自动推断出广泛的<strong>个人作者属性</strong>（例如<strong>年龄、性别和出生地</strong>）。推理时间。特别是，我们发现当前的前沿模型（例如 GPT-4 ）在从文本推断此类属性时平均达到<strong>85%</strong> top-1 和**95.8% top-3 的准确度。**与此同时，LLM的快速发展大大降低了此类侵犯隐私推论的相关成本（&gt; 100 倍的金钱和 &gt; 240 倍的时间），使对手能够将侵犯隐私的推论规模远远超出以前通过昂贵的人力所能实现的范围。分析器。</p>
+<blockquote>
+<p>LLM的回答会有n个排序， 概率从高到低，一般我们收到(看到的)回答是top1， 其他回答是隐藏起来的。第一个回答猜对的概率达到85%，而前三个回答猜对的概率是95.8%。</p>
+</blockquote>
+<br>
+<h3 id="q2-为什么这很重要">Q2： 为什么这很重要？</h3>
+<p><strong>它可以直接影响用户隐私</strong>； 人们在互联网留下了大量文本——常常无意中泄露了他们不想透露的个人数据。欧盟的 GDPR 或加州 CCPA 等数据保护法规的制定是为了保护原始个人数据。仅当个人数据以明显的形式存在时，例如具有显式属性字段的私人配置文件，才能遵守此类法规。相比之下，**我们的工作引入了一种威胁模型，其中私人信息是从其存在不明显的上下文中推断出来的。**我们展示了恶意行为者如何通过将用户的在线帖子输入预先训练的LLM来推断出从未打算泄露的用户私人信息。众所周知，一半的美国人口可以通过位置、性别和出生日期等少量属性来唯一识别[<a href="https://dl.acm.org/doi/10.1142/S0218488502001648">Sweeney, &lsquo;02]</a>。LLM可以从互联网上发现的非结构化摘录中推断出其中一些属性，可以使用其他公开信息（例如美国的选民记录）来识别实际的人。这将允许这些行为者将从帖子中推断出的高度个人化的信息（例如，心理健康状况）与真实的人联系起来，并将其用于不良或非法活动，例如有针对性的政治运动、自动分析或跟踪。LLM的广泛可用性和快速发展带来了范式的变化，以前的 NLP 技术缺乏实现此类任务所需的自然语言理解水平。此外，我们还表明，进行侵犯隐私的推理的能力随着模型的大小而变化，预计在不久的将来会对用户隐私产生更大的影响。</p>
+<p><img loading="lazy" src="img/04-accuracy.png" alt=""  />
+</p>
+<br>
+<h3 id="q3-这在实践中是如何运作的">Q3: 这在实践中是如何运作的？</h3>
+<p><strong>它具有可扩展性并且易于执行</strong>。 我们根据来自 500 多个个人资料的真实 Reddit 评论评估了当前几个 LLM 的隐私推理能力，包括整个 Llama-2 系列、Anthropic 的 Claude 2、Google 的 PaLM 2 和 GPT-4 。我们的实验表明（除了这些LLM取得了令人印象深刻的准确性这一事实之外），这种<strong>侵犯隐私的推论非常容易大规模执行</strong>。特别是，我们发现这是两个因素的结合：</p>
+<ul>
+<li>首先，我们观察到目前模型中**几乎没有有效的保护措施，这会使侵犯隐私的推论变得更加容易。**值得注意的是，这使我们能够使用简单的提示（仅使用 COT 等基本技术），从而节省了提示工程所需的大量时间和精力。只有在极少数情况下，我们发现模型（跨大型提供商，即 OpenAI、Google、Meta、Anthropic）会阻止请求，在这种情况下，人们将不得不诉诸更复杂的提示技术。</li>
+<li>同时，这些模型广泛且易于使用，使对手能够以最小的前期成本大幅扩展。即使有 API 限制，我们的实验实现了 <strong>时间减少100 倍 、 成本减少240 倍</strong>。从那时起，我们联系了所有模型提供商，作为我们负责任的披露政策的一部分，积极讨论如何在未来防止此类推论。我们在这一领域看到了两种有前途的方法：（i）致力于在预先训练的LLM中针对侵犯隐私的推理请求提供具体的保障措施；（ii）为最终用户提供可以保护其生成的文本免受推理的工具。</li>
+</ul>
+<p><img loading="lazy" src="img/05-cost.png" alt=""  />
+</p>
+<br>
+<h3 id="q4-我们使用匿名工具可以躲过llm的隐私推断吗">Q4: 我们使用匿名工具可以躲过LLM的隐私推断吗？</h3>
+<p><strong>LLM的表现优于当前的匿名工具</strong>。 为了测试LLM在最先进的匿名化工具上的表现，我们对所有收集的数据进行了匿名化，重新运行我们的推论。事实证明，即使在应用了高度匿名化之后，文本中仍然保留了足够的相关上下文，供LLM重建部分个人信息。此外，这些工具完全无法解决更多被删除的线索，例如特定的语言特征，同时仍然为侵犯隐私的LLM推论提供了大量信息。<strong>这尤其令人担忧，因为在这些情况下，用户采取了明确的预防隐私泄露的措施，从而造成一种高隐私感的错觉</strong>。同时，使用当前的匿名工具，在匿名化和实用性之间存在显着的权衡。简单地用 <code>*</code>替换部分文本会严重影响数据本身的有用性。</p>
+<p><img loading="lazy" src="img/06-privacy-tools.png" alt=""  />
 </p>
 <p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
@@ -2459,72 +2884,6 @@ url - 企业的 URL
 <h2 id="五结论与讨论">五、结论与讨论</h2>
 <p>以弥补管理学研究传统上所存在的短板为目标，本研究采用 1999~2021 年发表在工商管理和会计财务两 大研究领域的国内外顶级期刊的学术文献，识别了学术界借助机器学习赋能管理学实证研究的核心途径；从 多个角度系统梳理了这些途径的代表性文献；详细阐述了机器学习赋能管理学研究的主要策略，并重点讨论 了中国学者运用机器学习开展中国特色管理理论研究的未来机会（主题方向、重要问题、实施策略和主要建议）。 本研究得出如表 6 所示的主要结论。 可以预见的是，在未来，变量测量、事件预测、因果推断、理论构建等 4 种核心途径的融合将日益紧密。 它们的融合为机器学习赋能管理学研究提供了更加具有深度和广度的未来机会。 例如，事件预测可以用来揭示数据中难以假设的复杂和未知关系，开发新的理论构念及其测量，或者按照预测的相对精准度比较竞争理论（克鲁帕、米努蒂-梅扎，2022），从而更好地进行理论构建。</p>
 <p><img loading="lazy" src="img/20231011-table-6.png" alt=""  />
-</p>
-<p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
-]]></content:encoded>
-    </item>
-    
-    <item>
-      <title>不可不防的大模型“人肉搜索”能力</title>
-      <link>https://textdata.cn/blog/2023-11-13-violatating-privacy-via-inference-with-large-language-model/</link>
-      <pubDate>Tue, 10 Oct 2023 00:00:00 +0000</pubDate>
-      
-      <guid>/blog/2023-11-13-violatating-privacy-via-inference-with-large-language-model/</guid>
-      <description>今年10月的一项研究显示，语言大模型的推测能力，使其在“某些方面”的准确度几乎接近人类甚至超越人类。这引发了作者对大模型可能被用来“人肉搜索”的担忧。“开盒”从未如此简单？大模型是否会侵害我们的隐私？ 大语言模型(Large language Model,  LLM)可以从文本中准确推断个人属性。</description>
-      <content:encoded><![CDATA[<p>今年10月的一项研究显示，语言大模型的推测能力，使其在“某些方面”的准确度几乎接近人类甚至超越人类。这引发了作者对大模型可能被用来“人肉搜索”的担忧。“开盒”从未如此简单？大模型是否会侵害我们的隐私？ 大语言模型(Large language Model,  LLM)可以从文本中准确推断个人属性。</p>
-<p><br><br></p>
-<h2 id="声明">声明</h2>
-<p>本文内容全文整理自 <a href="https://llm-privacy.org/">https://llm-privacy.org/</a></p>
-<p>Staab, Robin, Mark Vero, Mislav Balunović, and Martin Vechev. &ldquo;Beyond Memorization: Violating Privacy Via Inference with Large Language Models.&rdquo; <em>arXiv preprint arXiv:2310.07298</em> (2023).</p>
-<p><br><br></p>
-<h2 id="演示案例">演示案例</h2>
-<div align="center">   <p><strong>对照当前最先进的大语言模型（LLM）， 测试您的隐私推理技能！</strong></p> </div>
-<p><img loading="lazy" src="img/01-guess.png" alt=""  />
-</p>
-<p><img loading="lazy" src="img/01-guess-answer.png" alt=""  />
-</p>
-<br>
-<p><img loading="lazy" src="img/02-guess.png" alt=""  />
-</p>
-<p><img loading="lazy" src="img/02-guess-answer.png" alt=""  />
-</p>
-<br>
-<p><img loading="lazy" src="img/03-guess.png" alt=""  />
-</p>
-<p><img loading="lazy" src="img/03-guess-answer.png" alt=""  />
-</p>
-<br>
-<br>
-<h2 id="qa">Q&amp;A</h2>
-<h3 id="q1-有什么问题吗">Q1： 有什么问题吗？</h3>
-<p><strong>LLM可以从文本中准确推断个人属性信息</strong>； 当前关于大语言模型（LLM）的隐私研究主要集中在提取记忆的训练数据的问题上。与此同时，模型的推理能力也大幅提升。这就提出了一个问题：<strong>当前的LLM是否能从给定文本推断作者个人属性信息</strong>。我们的<a href="https://llm-privacy.org/#paper">研究</a>表明，随着能力的增强，LLM能够从提供给他们的非结构化文本（例如公共论坛或社交网络帖子）中自动推断出广泛的<strong>个人作者属性</strong>（例如<strong>年龄、性别和出生地</strong>）。推理时间。特别是，我们发现当前的前沿模型（例如 GPT-4 ）在从文本推断此类属性时平均达到<strong>85%</strong> top-1 和**95.8% top-3 的准确度。**与此同时，LLM的快速发展大大降低了此类侵犯隐私推论的相关成本（&gt; 100 倍的金钱和 &gt; 240 倍的时间），使对手能够将侵犯隐私的推论规模远远超出以前通过昂贵的人力所能实现的范围。分析器。</p>
-<blockquote>
-<p>LLM的回答会有n个排序， 概率从高到低，一般我们收到(看到的)回答是top1， 其他回答是隐藏起来的。第一个回答猜对的概率达到85%，而前三个回答猜对的概率是95.8%。</p>
-</blockquote>
-<br>
-<h3 id="q2-为什么这很重要">Q2： 为什么这很重要？</h3>
-<p><strong>它可以直接影响用户隐私</strong>； 人们在互联网留下了大量文本——常常无意中泄露了他们不想透露的个人数据。欧盟的 GDPR 或加州 CCPA 等数据保护法规的制定是为了保护原始个人数据。仅当个人数据以明显的形式存在时，例如具有显式属性字段的私人配置文件，才能遵守此类法规。相比之下，**我们的工作引入了一种威胁模型，其中私人信息是从其存在不明显的上下文中推断出来的。**我们展示了恶意行为者如何通过将用户的在线帖子输入预先训练的LLM来推断出从未打算泄露的用户私人信息。众所周知，一半的美国人口可以通过位置、性别和出生日期等少量属性来唯一识别[<a href="https://dl.acm.org/doi/10.1142/S0218488502001648">Sweeney, &lsquo;02]</a>。LLM可以从互联网上发现的非结构化摘录中推断出其中一些属性，可以使用其他公开信息（例如美国的选民记录）来识别实际的人。这将允许这些行为者将从帖子中推断出的高度个人化的信息（例如，心理健康状况）与真实的人联系起来，并将其用于不良或非法活动，例如有针对性的政治运动、自动分析或跟踪。LLM的广泛可用性和快速发展带来了范式的变化，以前的 NLP 技术缺乏实现此类任务所需的自然语言理解水平。此外，我们还表明，进行侵犯隐私的推理的能力随着模型的大小而变化，预计在不久的将来会对用户隐私产生更大的影响。</p>
-<p><img loading="lazy" src="img/04-accuracy.png" alt=""  />
-</p>
-<br>
-<h3 id="q3-这在实践中是如何运作的">Q3: 这在实践中是如何运作的？</h3>
-<p><strong>它具有可扩展性并且易于执行</strong>。 我们根据来自 500 多个个人资料的真实 Reddit 评论评估了当前几个 LLM 的隐私推理能力，包括整个 Llama-2 系列、Anthropic 的 Claude 2、Google 的 PaLM 2 和 GPT-4 。我们的实验表明（除了这些LLM取得了令人印象深刻的准确性这一事实之外），这种<strong>侵犯隐私的推论非常容易大规模执行</strong>。特别是，我们发现这是两个因素的结合：</p>
-<ul>
-<li>首先，我们观察到目前模型中**几乎没有有效的保护措施，这会使侵犯隐私的推论变得更加容易。**值得注意的是，这使我们能够使用简单的提示（仅使用 COT 等基本技术），从而节省了提示工程所需的大量时间和精力。只有在极少数情况下，我们发现模型（跨大型提供商，即 OpenAI、Google、Meta、Anthropic）会阻止请求，在这种情况下，人们将不得不诉诸更复杂的提示技术。</li>
-<li>同时，这些模型广泛且易于使用，使对手能够以最小的前期成本大幅扩展。即使有 API 限制，我们的实验实现了 <strong>时间减少100 倍 、 成本减少240 倍</strong>。从那时起，我们联系了所有模型提供商，作为我们负责任的披露政策的一部分，积极讨论如何在未来防止此类推论。我们在这一领域看到了两种有前途的方法：（i）致力于在预先训练的LLM中针对侵犯隐私的推理请求提供具体的保障措施；（ii）为最终用户提供可以保护其生成的文本免受推理的工具。</li>
-</ul>
-<p><img loading="lazy" src="img/05-cost.png" alt=""  />
-</p>
-<br>
-<h3 id="q4-我们使用匿名工具可以躲过llm的隐私推断吗">Q4: 我们使用匿名工具可以躲过LLM的隐私推断吗？</h3>
-<p><strong>LLM的表现优于当前的匿名工具</strong>。 为了测试LLM在最先进的匿名化工具上的表现，我们对所有收集的数据进行了匿名化，重新运行我们的推论。事实证明，即使在应用了高度匿名化之后，文本中仍然保留了足够的相关上下文，供LLM重建部分个人信息。此外，这些工具完全无法解决更多被删除的线索，例如特定的语言特征，同时仍然为侵犯隐私的LLM推论提供了大量信息。<strong>这尤其令人担忧，因为在这些情况下，用户采取了明确的预防隐私泄露的措施，从而造成一种高隐私感的错觉</strong>。同时，使用当前的匿名工具，在匿名化和实用性之间存在显着的权衡。简单地用 <code>*</code>替换部分文本会严重影响数据本身的有用性。</p>
-<p><img loading="lazy" src="img/06-privacy-tools.png" alt=""  />
 </p>
 <p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
