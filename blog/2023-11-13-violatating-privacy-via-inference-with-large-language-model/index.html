@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>不可不防的大模型“人肉搜索”能力 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="LDA, 政策扩散速度, 文本分析" />
+<meta name="description" content="今年10月的一项研究显示，语言大模型的推测能力，使其在“某些方面”的准确度几乎接近人类甚至超越人类。这引发了作者对大模型可能被用来“人肉搜索”的担忧。“开盒”从未如此简单？大模型是否会侵害我们的隐私？ 大语言模型(Large language Model,  LLM)可以从文本中准确推断个人属性。">
+<meta name="author" content="Robin Staab, Mark Vero, Mislav Balunović, and Martin Vechev">
+<link rel="canonical" href="/blog/2023-11-13-violatating-privacy-via-inference-with-large-language-model/" />
+<meta name="baidu-site-verification" content="codeva-q71uASYfGi" />
+<meta name="360-site-verification" content="6b9b733ec558a1bb12cee8aa82f2529e" />
+<meta name="sogou-site-verification" content="dZHPIorOhK" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="不可不防的大模型“人肉搜索”能力" />
+<meta property="og:description" content="今年10月的一项研究显示，语言大模型的推测能力，使其在“某些方面”的准确度几乎接近人类甚至超越人类。这引发了作者对大模型可能被用来“人肉搜索”的担忧。“开盒”从未如此简单？大模型是否会侵害我们的隐私？ 大语言模型(Large language Model,  LLM)可以从文本中准确推断个人属性。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/2023-11-13-violatating-privacy-via-inference-with-large-language-model/" />
+<meta property="og:image" content="/images/blog/violatating-privacy-via-inference-with-large-language-model.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2023-10-10T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2023-10-10T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/violatating-privacy-via-inference-with-large-language-model.png" />
+<meta name="twitter:title" content="不可不防的大模型“人肉搜索”能力"/>
+<meta name="twitter:description" content="今年10月的一项研究显示，语言大模型的推测能力，使其在“某些方面”的准确度几乎接近人类甚至超越人类。这引发了作者对大模型可能被用来“人肉搜索”的担忧。“开盒”从未如此简单？大模型是否会侵害我们的隐私？ 大语言模型(Large language Model,  LLM)可以从文本中准确推断个人属性。"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "不可不防的大模型“人肉搜索”能力",
+      "item": "/blog/2023-11-13-violatating-privacy-via-inference-with-large-language-model/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "不可不防的大模型“人肉搜索”能力",
+  "name": "不可不防的大模型“人肉搜索”能力",
+  "description": "今年10月的一项研究显示，语言大模型的推测能力，使其在“某些方面”的准确度几乎接近人类甚至超越人类。这引发了作者对大模型可能被用来“人肉搜索”的担忧。“开盒”从未如此简单？大模型是否会侵害我们的隐私？ 大语言模型(Large language Model,  LLM)可以从文本中准确推断个人属性。",
+  "keywords": [
+    "LDA", "政策扩散速度", "文本分析"
+  ],
+  "articleBody": "今年10月的一项研究显示，语言大模型的推测能力，使其在“某些方面”的准确度几乎接近人类甚至超越人类。这引发了作者对大模型可能被用来“人肉搜索”的担忧。“开盒”从未如此简单？大模型是否会侵害我们的隐私？ 大语言模型(Large language Model, LLM)可以从文本中准确推断个人属性。\n\n声明 本文内容全文整理自 https://llm-privacy.org/\nStaab, Robin, Mark Vero, Mislav Balunović, and Martin Vechev. “Beyond Memorization: Violating Privacy Via Inference with Large Language Models.” arXiv preprint arXiv:2310.07298 (2023).\n\n演示案例 对照当前最先进的大语言模型（LLM）， 测试您的隐私推理技能！\n Q\u0026A Q1： 有什么问题吗？ LLM可以从文本中准确推断个人属性信息； 当前关于大语言模型（LLM）的隐私研究主要集中在提取记忆的训练数据的问题上。与此同时，模型的推理能力也大幅提升。这就提出了一个问题：当前的LLM是否能从给定文本推断作者个人属性信息。我们的研究表明，随着能力的增强，LLM能够从提供给他们的非结构化文本（例如公共论坛或社交网络帖子）中自动推断出广泛的个人作者属性（例如年龄、性别和出生地）。推理时间。特别是，我们发现当前的前沿模型（例如 GPT-4 ）在从文本推断此类属性时平均达到85% top-1 和**95.8% top-3 的准确度。**与此同时，LLM的快速发展大大降低了此类侵犯隐私推论的相关成本（ 100 倍的金钱和  240 倍的时间），使对手能够将侵犯隐私的推论规模远远超出以前通过昂贵的人力所能实现的范围。分析器。\n LLM的回答会有n个排序， 概率从高到低，一般我们收到(看到的)回答是top1， 其他回答是隐藏起来的。第一个回答猜对的概率达到85%，而前三个回答猜对的概率是95.8%。\n Q2： 为什么这很重要？ 它可以直接影响用户隐私； 人们在互联网留下了大量文本——常常无意中泄露了他们不想透露的个人数据。欧盟的 GDPR 或加州 CCPA 等数据保护法规的制定是为了保护原始个人数据。仅当个人数据以明显的形式存在时，例如具有显式属性字段的私人配置文件，才能遵守此类法规。相比之下，**我们的工作引入了一种威胁模型，其中私人信息是从其存在不明显的上下文中推断出来的。**我们展示了恶意行为者如何通过将用户的在线帖子输入预先训练的LLM来推断出从未打算泄露的用户私人信息。众所周知，一半的美国人口可以通过位置、性别和出生日期等少量属性来唯一识别[Sweeney, ‘02]。LLM可以从互联网上发现的非结构化摘录中推断出其中一些属性，可以使用其他公开信息（例如美国的选民记录）来识别实际的人。这将允许这些行为者将从帖子中推断出的高度个人化的信息（例如，心理健康状况）与真实的人联系起来，并将其用于不良或非法活动，例如有针对性的政治运动、自动分析或跟踪。LLM的广泛可用性和快速发展带来了范式的变化，以前的 NLP 技术缺乏实现此类任务所需的自然语言理解水平。此外，我们还表明，进行侵犯隐私的推理的能力随着模型的大小而变化，预计在不久的将来会对用户隐私产生更大的影响。\nQ3: 这在实践中是如何运作的？ 它具有可扩展性并且易于执行。 我们根据来自 500 多个个人资料的真实 Reddit 评论评估了当前几个 LLM 的隐私推理能力，包括整个 Llama-2 系列、Anthropic 的 Claude 2、Google 的 PaLM 2 和 GPT-4 。我们的实验表明（除了这些LLM取得了令人印象深刻的准确性这一事实之外），这种侵犯隐私的推论非常容易大规模执行。特别是，我们发现这是两个因素的结合：\n 首先，我们观察到目前模型中**几乎没有有效的保护措施，这会使侵犯隐私的推论变得更加容易。**值得注意的是，这使我们能够使用简单的提示（仅使用 COT 等基本技术），从而节省了提示工程所需的大量时间和精力。只有在极少数情况下，我们发现模型（跨大型提供商，即 OpenAI、Google、Meta、Anthropic）会阻止请求，在这种情况下，人们将不得不诉诸更复杂的提示技术。 同时，这些模型广泛且易于使用，使对手能够以最小的前期成本大幅扩展。即使有 API 限制，我们的实验实现了 时间减少100 倍 、 成本减少240 倍。从那时起，我们联系了所有模型提供商，作为我们负责任的披露政策的一部分，积极讨论如何在未来防止此类推论。我们在这一领域看到了两种有前途的方法：（i）致力于在预先训练的LLM中针对侵犯隐私的推理请求提供具体的保障措施；（ii）为最终用户提供可以保护其生成的文本免受推理的工具。  Q4: 我们使用匿名工具可以躲过LLM的隐私推断吗？ LLM的表现优于当前的匿名工具。 为了测试LLM在最先进的匿名化工具上的表现，我们对所有收集的数据进行了匿名化，重新运行我们的推论。事实证明，即使在应用了高度匿名化之后，文本中仍然保留了足够的相关上下文，供LLM重建部分个人信息。此外，这些工具完全无法解决更多被删除的线索，例如特定的语言特征，同时仍然为侵犯隐私的LLM推论提供了大量信息。这尤其令人担忧，因为在这些情况下，用户采取了明确的预防隐私泄露的措施，从而造成一种高隐私感的错觉。同时，使用当前的匿名工具，在匿名化和实用性之间存在显着的权衡。简单地用 *替换部分文本会严重影响数据本身的有用性。\n\n广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
+  "wordCount" : "108",
+  "inLanguage": "en",
+  "image":"/images/blog/violatating-privacy-via-inference-with-large-language-model.png","datePublished": "2023-10-10T00:00:00Z",
+  "dateModified": "2023-10-10T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "Robin Staab, Mark Vero, Mislav Balunović, and Martin Vechev"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/2023-11-13-violatating-privacy-via-inference-with-large-language-model/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif" rel="stylesheet">
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/management_python_course/" title="课程" target="_blank">
+                    <span>课程</span>
+                </a>
+            </li>
+            <li>
+                <a href="/index.xml" title="RSS" target="_blank">
+                    <span>RSS</span>
+                </a>
+            </li>
+            <li>
+                <a href="/support/" title="支持一下" target="_blank">
+                    <span>支持一下</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      不可不防的大模型“人肉搜索”能力
+    </h1>
+    <div class="post-meta"><span title='2023-10-10 00:00:00 +0000 UTC'>2023-10-10</span>&nbsp;·&nbsp;1 min&nbsp;·&nbsp;Robin Staab, Mark Vero, Mislav Balunović, and Martin Vechev
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/violatating-privacy-via-inference-with-large-language-model.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/violatating-privacy-via-inference-with-large-language-model.png" alt=""></a>
+        
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b&amp;url=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f&amp;hashtags=%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e7%bb%8f%e6%b5%8e%e7%ae%a1%e7%90%86">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f&amp;title=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b&amp;summary=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b&amp;source=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f&title=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b%20-%20%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on telegram"
+        href="https://telegram.me/share/url?text=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b&amp;url=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e5%a3%b0%e6%98%8e" aria-label="声明">声明</a></li>
+                    <li>
+                        <a href="#%e6%bc%94%e7%a4%ba%e6%a1%88%e4%be%8b" aria-label="演示案例">演示案例</a></li>
+                    <li>
+                        <a href="#qa" aria-label="Q&amp;amp;A">Q&amp;A</a><ul>
+                            
+                    <li>
+                        <a href="#q1-%e6%9c%89%e4%bb%80%e4%b9%88%e9%97%ae%e9%a2%98%e5%90%97" aria-label="Q1： 有什么问题吗？">Q1： 有什么问题吗？</a></li>
+                    <li>
+                        <a href="#q2-%e4%b8%ba%e4%bb%80%e4%b9%88%e8%bf%99%e5%be%88%e9%87%8d%e8%a6%81" aria-label="Q2： 为什么这很重要？">Q2： 为什么这很重要？</a></li>
+                    <li>
+                        <a href="#q3-%e8%bf%99%e5%9c%a8%e5%ae%9e%e8%b7%b5%e4%b8%ad%e6%98%af%e5%a6%82%e4%bd%95%e8%bf%90%e4%bd%9c%e7%9a%84" aria-label="Q3: 这在实践中是如何运作的？">Q3: 这在实践中是如何运作的？</a></li>
+                    <li>
+                        <a href="#q4-%e6%88%91%e4%bb%ac%e4%bd%bf%e7%94%a8%e5%8c%bf%e5%90%8d%e5%b7%a5%e5%85%b7%e5%8f%af%e4%bb%a5%e8%ba%b2%e8%bf%87llm%e7%9a%84%e9%9a%90%e7%a7%81%e6%8e%a8%e6%96%ad%e5%90%97" aria-label="Q4: 我们使用匿名工具可以躲过LLM的隐私推断吗？">Q4: 我们使用匿名工具可以躲过LLM的隐私推断吗？</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e5%b9%bf%e8%80%8c%e5%91%8a%e4%b9%8b" aria-label="广而告之">广而告之</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><p>今年10月的一项研究显示，语言大模型的推测能力，使其在“某些方面”的准确度几乎接近人类甚至超越人类。这引发了作者对大模型可能被用来“人肉搜索”的担忧。“开盒”从未如此简单？大模型是否会侵害我们的隐私？ 大语言模型(Large language Model,  LLM)可以从文本中准确推断个人属性。</p>
+<p><br><br></p>
+<h2 id="声明">声明<a hidden class="anchor" aria-hidden="true" href="#声明">#</a></h2>
+<p>本文内容全文整理自 <a href="https://llm-privacy.org/">https://llm-privacy.org/</a></p>
+<p>Staab, Robin, Mark Vero, Mislav Balunović, and Martin Vechev. &ldquo;Beyond Memorization: Violating Privacy Via Inference with Large Language Models.&rdquo; <em>arXiv preprint arXiv:2310.07298</em> (2023).</p>
+<p><br><br></p>
+<h2 id="演示案例">演示案例<a hidden class="anchor" aria-hidden="true" href="#演示案例">#</a></h2>
+<div align="center">   <p><strong>对照当前最先进的大语言模型（LLM）， 测试您的隐私推理技能！</strong></p> </div>
+<p><img loading="lazy" src="img/01-guess.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/01-guess-answer.png" alt=""  />
+</p>
+<br>
+<p><img loading="lazy" src="img/02-guess.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/02-guess-answer.png" alt=""  />
+</p>
+<br>
+<p><img loading="lazy" src="img/03-guess.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/03-guess-answer.png" alt=""  />
+</p>
+<br>
+<br>
+<h2 id="qa">Q&amp;A<a hidden class="anchor" aria-hidden="true" href="#qa">#</a></h2>
+<h3 id="q1-有什么问题吗">Q1： 有什么问题吗？<a hidden class="anchor" aria-hidden="true" href="#q1-有什么问题吗">#</a></h3>
+<p><strong>LLM可以从文本中准确推断个人属性信息</strong>； 当前关于大语言模型（LLM）的隐私研究主要集中在提取记忆的训练数据的问题上。与此同时，模型的推理能力也大幅提升。这就提出了一个问题：<strong>当前的LLM是否能从给定文本推断作者个人属性信息</strong>。我们的<a href="https://llm-privacy.org/#paper">研究</a>表明，随着能力的增强，LLM能够从提供给他们的非结构化文本（例如公共论坛或社交网络帖子）中自动推断出广泛的<strong>个人作者属性</strong>（例如<strong>年龄、性别和出生地</strong>）。推理时间。特别是，我们发现当前的前沿模型（例如 GPT-4 ）在从文本推断此类属性时平均达到<strong>85%</strong> top-1 和**95.8% top-3 的准确度。**与此同时，LLM的快速发展大大降低了此类侵犯隐私推论的相关成本（&gt; 100 倍的金钱和 &gt; 240 倍的时间），使对手能够将侵犯隐私的推论规模远远超出以前通过昂贵的人力所能实现的范围。分析器。</p>
+<blockquote>
+<p>LLM的回答会有n个排序， 概率从高到低，一般我们收到(看到的)回答是top1， 其他回答是隐藏起来的。第一个回答猜对的概率达到85%，而前三个回答猜对的概率是95.8%。</p>
+</blockquote>
+<br>
+<h3 id="q2-为什么这很重要">Q2： 为什么这很重要？<a hidden class="anchor" aria-hidden="true" href="#q2-为什么这很重要">#</a></h3>
+<p><strong>它可以直接影响用户隐私</strong>； 人们在互联网留下了大量文本——常常无意中泄露了他们不想透露的个人数据。欧盟的 GDPR 或加州 CCPA 等数据保护法规的制定是为了保护原始个人数据。仅当个人数据以明显的形式存在时，例如具有显式属性字段的私人配置文件，才能遵守此类法规。相比之下，**我们的工作引入了一种威胁模型，其中私人信息是从其存在不明显的上下文中推断出来的。**我们展示了恶意行为者如何通过将用户的在线帖子输入预先训练的LLM来推断出从未打算泄露的用户私人信息。众所周知，一半的美国人口可以通过位置、性别和出生日期等少量属性来唯一识别[<a href="https://dl.acm.org/doi/10.1142/S0218488502001648">Sweeney, &lsquo;02]</a>。LLM可以从互联网上发现的非结构化摘录中推断出其中一些属性，可以使用其他公开信息（例如美国的选民记录）来识别实际的人。这将允许这些行为者将从帖子中推断出的高度个人化的信息（例如，心理健康状况）与真实的人联系起来，并将其用于不良或非法活动，例如有针对性的政治运动、自动分析或跟踪。LLM的广泛可用性和快速发展带来了范式的变化，以前的 NLP 技术缺乏实现此类任务所需的自然语言理解水平。此外，我们还表明，进行侵犯隐私的推理的能力随着模型的大小而变化，预计在不久的将来会对用户隐私产生更大的影响。</p>
+<p><img loading="lazy" src="img/04-accuracy.png" alt=""  />
+</p>
+<br>
+<h3 id="q3-这在实践中是如何运作的">Q3: 这在实践中是如何运作的？<a hidden class="anchor" aria-hidden="true" href="#q3-这在实践中是如何运作的">#</a></h3>
+<p><strong>它具有可扩展性并且易于执行</strong>。 我们根据来自 500 多个个人资料的真实 Reddit 评论评估了当前几个 LLM 的隐私推理能力，包括整个 Llama-2 系列、Anthropic 的 Claude 2、Google 的 PaLM 2 和 GPT-4 。我们的实验表明（除了这些LLM取得了令人印象深刻的准确性这一事实之外），这种<strong>侵犯隐私的推论非常容易大规模执行</strong>。特别是，我们发现这是两个因素的结合：</p>
+<ul>
+<li>首先，我们观察到目前模型中**几乎没有有效的保护措施，这会使侵犯隐私的推论变得更加容易。**值得注意的是，这使我们能够使用简单的提示（仅使用 COT 等基本技术），从而节省了提示工程所需的大量时间和精力。只有在极少数情况下，我们发现模型（跨大型提供商，即 OpenAI、Google、Meta、Anthropic）会阻止请求，在这种情况下，人们将不得不诉诸更复杂的提示技术。</li>
+<li>同时，这些模型广泛且易于使用，使对手能够以最小的前期成本大幅扩展。即使有 API 限制，我们的实验实现了 <strong>时间减少100 倍 、 成本减少240 倍</strong>。从那时起，我们联系了所有模型提供商，作为我们负责任的披露政策的一部分，积极讨论如何在未来防止此类推论。我们在这一领域看到了两种有前途的方法：（i）致力于在预先训练的LLM中针对侵犯隐私的推理请求提供具体的保障措施；（ii）为最终用户提供可以保护其生成的文本免受推理的工具。</li>
+</ul>
+<p><img loading="lazy" src="img/05-cost.png" alt=""  />
+</p>
+<br>
+<h3 id="q4-我们使用匿名工具可以躲过llm的隐私推断吗">Q4: 我们使用匿名工具可以躲过LLM的隐私推断吗？<a hidden class="anchor" aria-hidden="true" href="#q4-我们使用匿名工具可以躲过llm的隐私推断吗">#</a></h3>
+<p><strong>LLM的表现优于当前的匿名工具</strong>。 为了测试LLM在最先进的匿名化工具上的表现，我们对所有收集的数据进行了匿名化，重新运行我们的推论。事实证明，即使在应用了高度匿名化之后，文本中仍然保留了足够的相关上下文，供LLM重建部分个人信息。此外，这些工具完全无法解决更多被删除的线索，例如特定的语言特征，同时仍然为侵犯隐私的LLM推论提供了大量信息。<strong>这尤其令人担忧，因为在这些情况下，用户采取了明确的预防隐私泄露的措施，从而造成一种高隐私感的错觉</strong>。同时，使用当前的匿名工具，在匿名化和实用性之间存在显着的权衡。简单地用 <code>*</code>替换部分文本会严重影响数据本身的有用性。</p>
+<p><img loading="lazy" src="img/06-privacy-tools.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之<a hidden class="anchor" aria-hidden="true" href="#广而告之">#</a></h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/" target='_blank'>文本分析</a></li>
+        <li><a href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/" target='_blank'>经济管理</a></li>
+      </ul>
+
+
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b&amp;url=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f&amp;hashtags=%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e7%bb%8f%e6%b5%8e%e7%ae%a1%e7%90%86">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f&amp;title=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b&amp;summary=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b&amp;source=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f&title=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b%20-%20%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 不可不防的大模型“人肉搜索”能力 on telegram"
+        href="https://telegram.me/share/url?text=%e4%b8%8d%e5%8f%af%e4%b8%8d%e9%98%b2%e7%9a%84%e5%a4%a7%e6%a8%a1%e5%9e%8b%e2%80%9c%e4%ba%ba%e8%82%89%e6%90%9c%e7%b4%a2%e2%80%9d%e8%83%bd%e5%8a%9b&amp;url=%2fblog%2f2023-11-13-violatating-privacy-via-inference-with-large-language-model%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'Copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+
+
+    
+    
+</body>
+
+</html>
