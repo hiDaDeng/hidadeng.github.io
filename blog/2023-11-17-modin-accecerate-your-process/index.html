@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Modin，只需一行代码加速你的Pandas | 大邓和他的PYTHON</title>
+<meta name="keywords" content="Python, modin, pandas" />
+<meta name="description" content="modin库是python的第三方库，只需一行代码，就能用pandas语法来加速数据处理过程。
+一、modin有啥用？ pandas库以其简洁易用的api，受到数据分析师喜爱，能做python、sql、excel三者都能做的数据分析。现在的电脑CPU一般都是多核，但pandas只能单核，导致数据处理能力有限。
+而今天，我们要分享的modin，可以利用电脑cpu所有的内核， 加速数据处理。假设你的电脑cpu有4个内核， pandas相当于雇佣了一个工人干活，而modin同时雇佣四个人干活，所以同样的任务，理论上modin比pandas要快4倍。
+
+二、modin特点  支持pandas.DataFrame数据类型 与pandas兼容，语法相似，几乎不需要额外学习； 能处理1MB到1TB&#43;的数据； 使用者不需要知道系统有多少内核，也不需要指定如何分配数据；  
+三、实验 3.1 环境准备 在命令行cmd (苹果电脑在terminal)中执行
+pip3 install &#34;modin[all]&#34; pip3 install humanize 
+3.2 使用方法 只需要一行代码，即可实现pandas功能。 下面的两行代码， mpd几乎等同于我们熟悉的pd。
+import modin.pandas as mpd import pandas as pd 
+3.3 准备数据 这里用 数据集(付费) | 3571万条专利申请数据集(1985-2022年) 为例，
+from humanize import naturalsize import os csvfsizes = [(f, os.path.getsize(f)) for f in os.listdir(&#39;.&#39;) if &#39;.csv&#39; in f] #排序，文件体积从大到小 csvfsizes = sorted(csvfsizes, key=lambda k:k[1], reverse=True) for csvf, size in csvfsizes: humansize = naturalsize(size) print(csvf, &#39; &#39;, humansize) Run">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/2023-11-17-modin-accecerate-your-process/" />
+<meta name="baidu-site-verification" content="codeva-q71uASYfGi" />
+<meta name="360-site-verification" content="6b9b733ec558a1bb12cee8aa82f2529e" />
+<meta name="sogou-site-verification" content="dZHPIorOhK" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Modin，只需一行代码加速你的Pandas" />
+<meta property="og:description" content="modin库是python的第三方库，只需一行代码，就能用pandas语法来加速数据处理过程。
+一、modin有啥用？ pandas库以其简洁易用的api，受到数据分析师喜爱，能做python、sql、excel三者都能做的数据分析。现在的电脑CPU一般都是多核，但pandas只能单核，导致数据处理能力有限。
+而今天，我们要分享的modin，可以利用电脑cpu所有的内核， 加速数据处理。假设你的电脑cpu有4个内核， pandas相当于雇佣了一个工人干活，而modin同时雇佣四个人干活，所以同样的任务，理论上modin比pandas要快4倍。
+
+二、modin特点  支持pandas.DataFrame数据类型 与pandas兼容，语法相似，几乎不需要额外学习； 能处理1MB到1TB&#43;的数据； 使用者不需要知道系统有多少内核，也不需要指定如何分配数据；  
+三、实验 3.1 环境准备 在命令行cmd (苹果电脑在terminal)中执行
+pip3 install &#34;modin[all]&#34; pip3 install humanize 
+3.2 使用方法 只需要一行代码，即可实现pandas功能。 下面的两行代码， mpd几乎等同于我们熟悉的pd。
+import modin.pandas as mpd import pandas as pd 
+3.3 准备数据 这里用 数据集(付费) | 3571万条专利申请数据集(1985-2022年) 为例，
+from humanize import naturalsize import os csvfsizes = [(f, os.path.getsize(f)) for f in os.listdir(&#39;.&#39;) if &#39;.csv&#39; in f] #排序，文件体积从大到小 csvfsizes = sorted(csvfsizes, key=lambda k:k[1], reverse=True) for csvf, size in csvfsizes: humansize = naturalsize(size) print(csvf, &#39; &#39;, humansize) Run" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/2023-11-17-modin-accecerate-your-process/" />
+<meta property="og:image" content="/images/blog/modin.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2023-11-17T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2023-11-17T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/modin.png" />
+<meta name="twitter:title" content="Modin，只需一行代码加速你的Pandas"/>
+<meta name="twitter:description" content="modin库是python的第三方库，只需一行代码，就能用pandas语法来加速数据处理过程。
+一、modin有啥用？ pandas库以其简洁易用的api，受到数据分析师喜爱，能做python、sql、excel三者都能做的数据分析。现在的电脑CPU一般都是多核，但pandas只能单核，导致数据处理能力有限。
+而今天，我们要分享的modin，可以利用电脑cpu所有的内核， 加速数据处理。假设你的电脑cpu有4个内核， pandas相当于雇佣了一个工人干活，而modin同时雇佣四个人干活，所以同样的任务，理论上modin比pandas要快4倍。
+
+二、modin特点  支持pandas.DataFrame数据类型 与pandas兼容，语法相似，几乎不需要额外学习； 能处理1MB到1TB&#43;的数据； 使用者不需要知道系统有多少内核，也不需要指定如何分配数据；  
+三、实验 3.1 环境准备 在命令行cmd (苹果电脑在terminal)中执行
+pip3 install &#34;modin[all]&#34; pip3 install humanize 
+3.2 使用方法 只需要一行代码，即可实现pandas功能。 下面的两行代码， mpd几乎等同于我们熟悉的pd。
+import modin.pandas as mpd import pandas as pd 
+3.3 准备数据 这里用 数据集(付费) | 3571万条专利申请数据集(1985-2022年) 为例，
+from humanize import naturalsize import os csvfsizes = [(f, os.path.getsize(f)) for f in os.listdir(&#39;.&#39;) if &#39;.csv&#39; in f] #排序，文件体积从大到小 csvfsizes = sorted(csvfsizes, key=lambda k:k[1], reverse=True) for csvf, size in csvfsizes: humansize = naturalsize(size) print(csvf, &#39; &#39;, humansize) Run"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Modin，只需一行代码加速你的Pandas",
+      "item": "/blog/2023-11-17-modin-accecerate-your-process/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Modin，只需一行代码加速你的Pandas",
+  "name": "Modin，只需一行代码加速你的Pandas",
+  "description": "modin库是python的第三方库，只需一行代码，就能用pandas语法来加速数据处理过程。\n一、modin有啥用？ pandas库以其简洁易用的api，受到数据分析师喜爱，能做python、sql、excel三者都能做的数据分析。现在的电脑CPU一般都是多核，但pandas只能单核，导致数据处理能力有限。\n而今天，我们要分享的modin，可以利用电脑cpu所有的内核， 加速数据处理。假设你的电脑cpu有4个内核， pandas相当于雇佣了一个工人干活，而modin同时雇佣四个人干活，所以同样的任务，理论上modin比pandas要快4倍。\n\n二、modin特点  支持pandas.DataFrame数据类型 与pandas兼容，语法相似，几乎不需要额外学习； 能处理1MB到1TB+的数据； 使用者不需要知道系统有多少内核，也不需要指定如何分配数据；  \n三、实验 3.1 环境准备 在命令行cmd (苹果电脑在terminal)中执行\npip3 install \u0026#34;modin[all]\u0026#34; pip3 install humanize \n3.2 使用方法 只需要一行代码，即可实现pandas功能。 下面的两行代码， mpd几乎等同于我们熟悉的pd。\nimport modin.pandas as mpd import pandas as pd \n3.3 准备数据 这里用 数据集(付费) | 3571万条专利申请数据集(1985-2022年) 为例，\nfrom humanize import naturalsize import os csvfsizes = [(f, os.path.getsize(f)) for f in os.listdir(\u0026#39;.\u0026#39;) if \u0026#39;.csv\u0026#39; in f] #排序，文件体积从大到小 csvfsizes = sorted(csvfsizes, key=lambda k:k[1], reverse=True) for csvf, size in csvfsizes: humansize = naturalsize(size) print(csvf, \u0026#39; \u0026#39;, humansize) Run",
+  "keywords": [
+    "Python", "modin", "pandas"
+  ],
+  "articleBody": "modin库是python的第三方库，只需一行代码，就能用pandas语法来加速数据处理过程。\n一、modin有啥用？ pandas库以其简洁易用的api，受到数据分析师喜爱，能做python、sql、excel三者都能做的数据分析。现在的电脑CPU一般都是多核，但pandas只能单核，导致数据处理能力有限。\n而今天，我们要分享的modin，可以利用电脑cpu所有的内核， 加速数据处理。假设你的电脑cpu有4个内核， pandas相当于雇佣了一个工人干活，而modin同时雇佣四个人干活，所以同样的任务，理论上modin比pandas要快4倍。\n\n二、modin特点  支持pandas.DataFrame数据类型 与pandas兼容，语法相似，几乎不需要额外学习； 能处理1MB到1TB+的数据； 使用者不需要知道系统有多少内核，也不需要指定如何分配数据；  \n三、实验 3.1 环境准备 在命令行cmd (苹果电脑在terminal)中执行\npip3 install \"modin[all]\" pip3 install humanize \n3.2 使用方法 只需要一行代码，即可实现pandas功能。 下面的两行代码， mpd几乎等同于我们熟悉的pd。\nimport modin.pandas as mpd import pandas as pd \n3.3 准备数据 这里用 数据集(付费) | 3571万条专利申请数据集(1985-2022年) 为例，\nfrom humanize import naturalsize import os csvfsizes = [(f, os.path.getsize(f)) for f in os.listdir('.') if '.csv' in f] #排序，文件体积从大到小 csvfsizes = sorted(csvfsizes, key=lambda k:k[1], reverse=True) for csvf, size in csvfsizes: humansize = naturalsize(size) print(csvf, ' ', humansize) Run\n广东省.csv 10.4 GB 江苏省.csv 9.6 GB 浙江省.csv 7.1 GB 其他国家.csv 6.2 GB 北京市.csv 4.6 GB 山东省.csv 4.3 GB 上海市.csv 3.1 GB 安徽省.csv 3.0 GB 四川省.csv 2.3 GB 湖北省.csv 2.1 GB 福建省.csv 2.1 GB 河南省.csv 2.0 GB 天津市.csv 1.6 GB 湖南省.csv 1.5 GB 陕西省.csv 1.5 GB 辽宁省.csv 1.4 GB 河北省.csv 1.3 GB 重庆市.csv 1.2 GB 江西省.csv 1.0 GB 广西壮族自治区.csv 809.9 MB 台湾省.csv 792.9 MB 黑龙江省.csv 784.5 MB 贵州省.csv 542.4 MB 云南省.csv 538.9 MB 吉林省.csv 524.9 MB ... 香港特别行政区.csv 90.2 MB 青海省.csv 74.9 MB 西藏自治区.csv 19.5 MB 澳门特别行政区.csv 3.5 MB \n3.4 读取速度 我们分别选择\n 吉林省.csv 524.9 MB 江西省.csv 1.0 GB 北京市.csv 4.6 GB 广东省.csv 10.4 GB  来测试读取数据的速度\nimport modin.pandas as mpd import pandas as pd #Pandas 524.9 MB %time df = pd.read_csv('吉林省.csv') Run\nCPU times: total: 10.6 s Wall time: 11.2 s \n#Modin 524.9 MB %time df = mpd.read_csv('吉林省.csv') Run\nCPU times: total: 1.38 s Wall time: 2.68 s 其他几个文件语法类似， 都有显著的速度提升。以下是实验表现\n   文件 体积 pandas（Wall time） modin（Wall time）     吉林省.csv 524.9 MB 11.2 s 2.68 s   江西省.csv 1.0 GB 22.9 s 5.17 s   北京.csv 4.6 GB 100s 24.7 s   广东省.csv 10.4 GB 213s 55.9 s          \n3.5 运算速度 import modin.pandas as mpd df1 = mpd.read_csv('广东省.csv') #计算文本长度 %time df1['专利摘要'].str.len() Run\nCPU times: total: 15.6 ms Wall time: 26.5 ms \nimport pandas as pd df2 = pd.read_csv('广东省.csv') %time df2['专利摘要'].str.len() Run\nCPU times: total: 3.02 s Wall time: 3.33 s modin在计算方面快了125倍。\n\n注意 但是由于时间限制，实验比较简单， 个中情况不能一一覆盖。 也有人反映，使用modin，反而比pandas更慢了。\n\n广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
+  "wordCount" : "312",
+  "inLanguage": "en",
+  "image":"/images/blog/modin.png","datePublished": "2023-11-17T00:00:00Z",
+  "dateModified": "2023-11-17T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/2023-11-17-modin-accecerate-your-process/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif" rel="stylesheet">
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/management_python_course/" title="课程" target="_blank">
+                    <span>课程</span>
+                </a>
+            </li>
+            <li>
+                <a href="/index.xml" title="RSS" target="_blank">
+                    <span>RSS</span>
+                </a>
+            </li>
+            <li>
+                <a href="/support/" title="支持一下" target="_blank">
+                    <span>支持一下</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      Modin，只需一行代码加速你的Pandas
+    </h1>
+    <div class="post-meta"><span title='2023-11-17 00:00:00 +0000 UTC'>2023-11-17</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/modin.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/modin.png" alt=""></a>
+        
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on twitter"
+        href="https://twitter.com/intent/tweet/?text=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas&amp;url=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f&amp;hashtags=pandas%2c%e6%95%b0%e6%8d%ae%e5%88%86%e6%9e%90">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f&amp;title=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas&amp;summary=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas&amp;source=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f&title=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on whatsapp"
+        href="https://api.whatsapp.com/send?text=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas%20-%20%2fblog%2f2023-11-17-modin-accecerate-your-process%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on telegram"
+        href="https://telegram.me/share/url?text=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas&amp;url=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e4%b8%80modin%e6%9c%89%e5%95%a5%e7%94%a8" aria-label="一、modin有啥用？">一、modin有啥用？</a></li>
+                    <li>
+                        <a href="#%e4%ba%8cmodin%e7%89%b9%e7%82%b9" aria-label="二、modin特点">二、modin特点</a></li>
+                    <li>
+                        <a href="#%e4%b8%89%e5%ae%9e%e9%aa%8c" aria-label="三、实验">三、实验</a><ul>
+                            
+                    <li>
+                        <a href="#31-%e7%8e%af%e5%a2%83%e5%87%86%e5%a4%87" aria-label="3.1 环境准备">3.1 环境准备</a></li>
+                    <li>
+                        <a href="#32-%e4%bd%bf%e7%94%a8%e6%96%b9%e6%b3%95" aria-label="3.2 使用方法">3.2 使用方法</a></li>
+                    <li>
+                        <a href="#33-%e5%87%86%e5%a4%87%e6%95%b0%e6%8d%ae" aria-label="3.3 准备数据">3.3 准备数据</a></li>
+                    <li>
+                        <a href="#34-%e8%af%bb%e5%8f%96%e9%80%9f%e5%ba%a6" aria-label="3.4 读取速度">3.4 读取速度</a></li>
+                    <li>
+                        <a href="#35-%e8%bf%90%e7%ae%97%e9%80%9f%e5%ba%a6" aria-label="3.5 运算速度">3.5 运算速度</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e6%b3%a8%e6%84%8f" aria-label="注意">注意</a></li>
+                    <li>
+                        <a href="#%e5%b9%bf%e8%80%8c%e5%91%8a%e4%b9%8b" aria-label="广而告之">广而告之</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><p>modin库是python的第三方库，只需一行代码，就能用pandas语法来加速数据处理过程。</p>
+<br>
+<h2 id="一modin有啥用">一、modin有啥用？<a hidden class="anchor" aria-hidden="true" href="#一modin有啥用">#</a></h2>
+<p>pandas库以其简洁易用的api，受到数据分析师喜爱，能做python、sql、excel三者都能做的数据分析。现在的电脑CPU一般都是多核，但pandas只能单核，导致数据处理能力有限。</p>
+<p>而今天，我们要分享的modin，可以利用电脑cpu所有的内核， 加速数据处理。假设你的电脑cpu有4个内核， pandas相当于雇佣了一个工人干活，而modin同时雇佣四个人干活，所以同样的任务，理论上modin比pandas要快4倍。</p>
+<p><br><br></p>
+<h2 id="二modin特点">二、modin特点<a hidden class="anchor" aria-hidden="true" href="#二modin特点">#</a></h2>
+<ol>
+<li>支持pandas.DataFrame数据类型</li>
+<li>与pandas兼容，语法相似，几乎不需要额外学习；</li>
+<li>能处理1MB到1TB+的数据；</li>
+<li>使用者不需要知道系统有多少内核，也不需要指定如何分配数据；</li>
+</ol>
+<p><br><br></p>
+<h2 id="三实验">三、实验<a hidden class="anchor" aria-hidden="true" href="#三实验">#</a></h2>
+<h3 id="31-环境准备">3.1 环境准备<a hidden class="anchor" aria-hidden="true" href="#31-环境准备">#</a></h3>
+<p>在命令行cmd (苹果电脑在terminal)中执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install &#34;modin[all]&#34;
+pip3 install humanize
+</code></pre></div><br>
+<h3 id="32-使用方法">3.2 使用方法<a hidden class="anchor" aria-hidden="true" href="#32-使用方法">#</a></h3>
+<p>只需要一行代码，即可实现pandas功能。 下面的两行代码， mpd几乎等同于我们熟悉的pd。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import modin.pandas as mpd
+import pandas as pd
+</code></pre></div><br>
+<h3 id="33-准备数据">3.3 准备数据<a hidden class="anchor" aria-hidden="true" href="#33-准备数据">#</a></h3>
+<p>这里用  <a href="https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/"><strong>数据集(付费) | 3571万条专利申请数据集(1985-2022年)</strong></a> 为例，</p>
+<p><img loading="lazy" src="img/data-screen.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">humanize</span> <span class="kn">import</span> <span class="n">naturalsize</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">csvfsizes</span> <span class="o">=</span> <span class="p">[(</span><span class="n">f</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">f</span><span class="p">))</span> <span class="k">for</span> 
+             <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span> 
+             <span class="k">if</span> <span class="s1">&#39;.csv&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
+
+<span class="c1">#排序，文件体积从大到小</span>
+<span class="n">csvfsizes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">csvfsizes</span><span class="p">,</span> 
+                   <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> 
+                   <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">csvf</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">csvfsizes</span><span class="p">:</span>
+    <span class="n">humansize</span> <span class="o">=</span> <span class="n">naturalsize</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">humansize</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">广东省.csv   10.4 GB
+江苏省.csv   9.6 GB
+浙江省.csv   7.1 GB
+其他国家.csv   6.2 GB
+北京市.csv   4.6 GB
+山东省.csv   4.3 GB
+上海市.csv   3.1 GB
+安徽省.csv   3.0 GB
+四川省.csv   2.3 GB
+湖北省.csv   2.1 GB
+福建省.csv   2.1 GB
+河南省.csv   2.0 GB
+天津市.csv   1.6 GB
+湖南省.csv   1.5 GB
+陕西省.csv   1.5 GB
+辽宁省.csv   1.4 GB
+河北省.csv   1.3 GB
+重庆市.csv   1.2 GB
+江西省.csv   1.0 GB
+广西壮族自治区.csv   809.9 MB
+台湾省.csv   792.9 MB
+黑龙江省.csv   784.5 MB
+贵州省.csv   542.4 MB
+云南省.csv   538.9 MB
+吉林省.csv   524.9 MB
+...
+香港特别行政区.csv   90.2 MB
+青海省.csv   74.9 MB
+西藏自治区.csv   19.5 MB
+澳门特别行政区.csv   3.5 MB
+</code></pre></div><br>
+<h3 id="34-读取速度">3.4 读取速度<a hidden class="anchor" aria-hidden="true" href="#34-读取速度">#</a></h3>
+<p>我们分别选择</p>
+<ul>
+<li>吉林省.csv 524.9 MB</li>
+<li>江西省.csv 1.0 GB</li>
+<li>北京市.csv 4.6 GB</li>
+<li>广东省.csv 10.4 GB</li>
+</ul>
+<p>来测试读取数据的速度</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">modin.pandas</span> <span class="k">as</span> <span class="nn">mpd</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#Pandas 524.9 MB</span>
+<span class="o">%</span><span class="n">time</span> <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;吉林省.csv&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: total: 10.6 s
+Wall time: 11.2 s
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#Modin 524.9 MB</span>
+<span class="o">%</span><span class="n">time</span> <span class="n">df</span> <span class="o">=</span> <span class="n">mpd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;吉林省.csv&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: total: 1.38 s
+Wall time: 2.68 s
+</code></pre></div><p>其他几个文件语法类似， 都有显著的速度提升。以下是实验表现</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>体积</th>
+<th>pandas（Wall time）</th>
+<th>modin（Wall time）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>吉林省.csv</td>
+<td>524.9 MB</td>
+<td>11.2 s</td>
+<td>2.68 s</td>
+</tr>
+<tr>
+<td>江西省.csv</td>
+<td>1.0 GB</td>
+<td>22.9 s</td>
+<td>5.17 s</td>
+</tr>
+<tr>
+<td>北京.csv</td>
+<td>4.6 GB</td>
+<td>100s</td>
+<td>24.7 s</td>
+</tr>
+<tr>
+<td>广东省.csv</td>
+<td>10.4 GB</td>
+<td>213s</td>
+<td>55.9 s</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><br><br></p>
+<h3 id="35-运算速度">3.5 运算速度<a hidden class="anchor" aria-hidden="true" href="#35-运算速度">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">modin.pandas</span> <span class="k">as</span> <span class="nn">mpd</span>
+
+<span class="n">df1</span> <span class="o">=</span> <span class="n">mpd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;广东省.csv&#39;</span><span class="p">)</span>
+<span class="c1">#计算文本长度</span>
+<span class="o">%</span><span class="n">time</span> <span class="n">df1</span><span class="p">[</span><span class="s1">&#39;专利摘要&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: total: 15.6 ms
+Wall time: 26.5 ms
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;广东省.csv&#39;</span><span class="p">)</span>
+<span class="o">%</span><span class="n">time</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;专利摘要&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: total: 3.02 s
+Wall time: 3.33 s
+</code></pre></div><p>modin在计算方面快了125倍。</p>
+<p><br><br></p>
+<h2 id="注意">注意<a hidden class="anchor" aria-hidden="true" href="#注意">#</a></h2>
+<p>但是由于时间限制，实验比较简单， 个中情况不能一一覆盖。 也有人反映，使用modin，反而比pandas更慢了。</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之<a hidden class="anchor" aria-hidden="true" href="#广而告之">#</a></h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/pandas/" target='_blank'>pandas</a></li>
+        <li><a href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/" target='_blank'>数据分析</a></li>
+      </ul>
+
+
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on twitter"
+        href="https://twitter.com/intent/tweet/?text=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas&amp;url=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f&amp;hashtags=pandas%2c%e6%95%b0%e6%8d%ae%e5%88%86%e6%9e%90">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f&amp;title=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas&amp;summary=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas&amp;source=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f&title=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on whatsapp"
+        href="https://api.whatsapp.com/send?text=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas%20-%20%2fblog%2f2023-11-17-modin-accecerate-your-process%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share Modin，只需一行代码加速你的Pandas on telegram"
+        href="https://telegram.me/share/url?text=Modin%ef%bc%8c%e5%8f%aa%e9%9c%80%e4%b8%80%e8%a1%8c%e4%bb%a3%e7%a0%81%e5%8a%a0%e9%80%9f%e4%bd%a0%e7%9a%84Pandas&amp;url=%2fblog%2f2023-11-17-modin-accecerate-your-process%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'Copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+
+
+    
+    
+</body>
+
+</html>

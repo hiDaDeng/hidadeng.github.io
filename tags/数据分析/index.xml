@@ -6,7 +6,359 @@
     <description>Recent content in 数据分析 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 31 May 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 17 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Modin，只需一行代码加速你的Pandas</title>
+      <link>https://textdata.cn/blog/2023-11-17-modin-accecerate-your-process/</link>
+      <pubDate>Fri, 17 Nov 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-17-modin-accecerate-your-process/</guid>
+      <description>&lt;p&gt;modin库是python的第三方库，只需一行代码，就能用pandas语法来加速数据处理过程。&lt;/p&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;一modin有啥用&#34;&gt;一、modin有啥用？&lt;/h2&gt;
+&lt;p&gt;pandas库以其简洁易用的api，受到数据分析师喜爱，能做python、sql、excel三者都能做的数据分析。现在的电脑CPU一般都是多核，但pandas只能单核，导致数据处理能力有限。&lt;/p&gt;
+&lt;p&gt;而今天，我们要分享的modin，可以利用电脑cpu所有的内核， 加速数据处理。假设你的电脑cpu有4个内核， pandas相当于雇佣了一个工人干活，而modin同时雇佣四个人干活，所以同样的任务，理论上modin比pandas要快4倍。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二modin特点&#34;&gt;二、modin特点&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;支持pandas.DataFrame数据类型&lt;/li&gt;
+&lt;li&gt;与pandas兼容，语法相似，几乎不需要额外学习；&lt;/li&gt;
+&lt;li&gt;能处理1MB到1TB+的数据；&lt;/li&gt;
+&lt;li&gt;使用者不需要知道系统有多少内核，也不需要指定如何分配数据；&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三实验&#34;&gt;三、实验&lt;/h2&gt;
+&lt;h3 id=&#34;31-环境准备&#34;&gt;3.1 环境准备&lt;/h3&gt;
+&lt;p&gt;在命令行cmd (苹果电脑在terminal)中执行&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install &amp;#34;modin[all]&amp;#34;
+pip3 install humanize
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-使用方法&#34;&gt;3.2 使用方法&lt;/h3&gt;
+&lt;p&gt;只需要一行代码，即可实现pandas功能。 下面的两行代码， mpd几乎等同于我们熟悉的pd。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;import modin.pandas as mpd
+import pandas as pd
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;33-准备数据&#34;&gt;3.3 准备数据&lt;/h3&gt;
+&lt;p&gt;这里用  &lt;a href=&#34;https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/&#34;&gt;&lt;strong&gt;数据集(付费) | 3571万条专利申请数据集(1985-2022年)&lt;/strong&gt;&lt;/a&gt; 为例，&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/data-screen.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;humanize&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;naturalsize&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;os&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;csvfsizes&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;getsize&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; 
+             &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;listdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;.&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; 
+             &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;.csv&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#排序，文件体积从大到小&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;csvfsizes&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;sorted&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;csvfsizes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                   &lt;span class=&#34;n&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;lambda&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;k&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;k&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; 
+                   &lt;span class=&#34;n&#34;&gt;reverse&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;size&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvfsizes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;humansize&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;naturalsize&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;size&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39; &amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;humansize&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;广东省.csv   10.4 GB
+江苏省.csv   9.6 GB
+浙江省.csv   7.1 GB
+其他国家.csv   6.2 GB
+北京市.csv   4.6 GB
+山东省.csv   4.3 GB
+上海市.csv   3.1 GB
+安徽省.csv   3.0 GB
+四川省.csv   2.3 GB
+湖北省.csv   2.1 GB
+福建省.csv   2.1 GB
+河南省.csv   2.0 GB
+天津市.csv   1.6 GB
+湖南省.csv   1.5 GB
+陕西省.csv   1.5 GB
+辽宁省.csv   1.4 GB
+河北省.csv   1.3 GB
+重庆市.csv   1.2 GB
+江西省.csv   1.0 GB
+广西壮族自治区.csv   809.9 MB
+台湾省.csv   792.9 MB
+黑龙江省.csv   784.5 MB
+贵州省.csv   542.4 MB
+云南省.csv   538.9 MB
+吉林省.csv   524.9 MB
+...
+香港特别行政区.csv   90.2 MB
+青海省.csv   74.9 MB
+西藏自治区.csv   19.5 MB
+澳门特别行政区.csv   3.5 MB
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;34-读取速度&#34;&gt;3.4 读取速度&lt;/h3&gt;
+&lt;p&gt;我们分别选择&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;吉林省.csv 524.9 MB&lt;/li&gt;
+&lt;li&gt;江西省.csv 1.0 GB&lt;/li&gt;
+&lt;li&gt;北京市.csv 4.6 GB&lt;/li&gt;
+&lt;li&gt;广东省.csv 10.4 GB&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;来测试读取数据的速度&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;modin.pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;mpd&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#Pandas 524.9 MB&lt;/span&gt;
+&lt;span class=&#34;o&#34;&gt;%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;吉林省.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: total: 10.6 s
+Wall time: 11.2 s
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#Modin 524.9 MB&lt;/span&gt;
+&lt;span class=&#34;o&#34;&gt;%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;mpd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;吉林省.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: total: 1.38 s
+Wall time: 2.68 s
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;其他几个文件语法类似， 都有显著的速度提升。以下是实验表现&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;文件&lt;/th&gt;
+&lt;th&gt;体积&lt;/th&gt;
+&lt;th&gt;pandas（Wall time）&lt;/th&gt;
+&lt;th&gt;modin（Wall time）&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;吉林省.csv&lt;/td&gt;
+&lt;td&gt;524.9 MB&lt;/td&gt;
+&lt;td&gt;11.2 s&lt;/td&gt;
+&lt;td&gt;2.68 s&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;江西省.csv&lt;/td&gt;
+&lt;td&gt;1.0 GB&lt;/td&gt;
+&lt;td&gt;22.9 s&lt;/td&gt;
+&lt;td&gt;5.17 s&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;北京.csv&lt;/td&gt;
+&lt;td&gt;4.6 GB&lt;/td&gt;
+&lt;td&gt;100s&lt;/td&gt;
+&lt;td&gt;24.7 s&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;广东省.csv&lt;/td&gt;
+&lt;td&gt;10.4 GB&lt;/td&gt;
+&lt;td&gt;213s&lt;/td&gt;
+&lt;td&gt;55.9 s&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h3 id=&#34;35-运算速度&#34;&gt;3.5 运算速度&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;modin.pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;mpd&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;mpd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;广东省.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#计算文本长度&lt;/span&gt;
+&lt;span class=&#34;o&#34;&gt;%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;专利摘要&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: total: 15.6 ms
+Wall time: 26.5 ms
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df2&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;广东省.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;o&#34;&gt;%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;专利摘要&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: total: 3.02 s
+Wall time: 3.33 s
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;modin在计算方面快了125倍。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;注意&#34;&gt;注意&lt;/h2&gt;
+&lt;p&gt;但是由于时间限制，实验比较简单， 个中情况不能一一覆盖。 也有人反映，使用modin，反而比pandas更慢了。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<p>modin库是python的第三方库，只需一行代码，就能用pandas语法来加速数据处理过程。</p>
+<br>
+<h2 id="一modin有啥用">一、modin有啥用？</h2>
+<p>pandas库以其简洁易用的api，受到数据分析师喜爱，能做python、sql、excel三者都能做的数据分析。现在的电脑CPU一般都是多核，但pandas只能单核，导致数据处理能力有限。</p>
+<p>而今天，我们要分享的modin，可以利用电脑cpu所有的内核， 加速数据处理。假设你的电脑cpu有4个内核， pandas相当于雇佣了一个工人干活，而modin同时雇佣四个人干活，所以同样的任务，理论上modin比pandas要快4倍。</p>
+<p><br><br></p>
+<h2 id="二modin特点">二、modin特点</h2>
+<ol>
+<li>支持pandas.DataFrame数据类型</li>
+<li>与pandas兼容，语法相似，几乎不需要额外学习；</li>
+<li>能处理1MB到1TB+的数据；</li>
+<li>使用者不需要知道系统有多少内核，也不需要指定如何分配数据；</li>
+</ol>
+<p><br><br></p>
+<h2 id="三实验">三、实验</h2>
+<h3 id="31-环境准备">3.1 环境准备</h3>
+<p>在命令行cmd (苹果电脑在terminal)中执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install &#34;modin[all]&#34;
+pip3 install humanize
+</code></pre></div><br>
+<h3 id="32-使用方法">3.2 使用方法</h3>
+<p>只需要一行代码，即可实现pandas功能。 下面的两行代码， mpd几乎等同于我们熟悉的pd。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import modin.pandas as mpd
+import pandas as pd
+</code></pre></div><br>
+<h3 id="33-准备数据">3.3 准备数据</h3>
+<p>这里用  <a href="https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/"><strong>数据集(付费) | 3571万条专利申请数据集(1985-2022年)</strong></a> 为例，</p>
+<p><img loading="lazy" src="img/data-screen.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">humanize</span> <span class="kn">import</span> <span class="n">naturalsize</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">csvfsizes</span> <span class="o">=</span> <span class="p">[(</span><span class="n">f</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">f</span><span class="p">))</span> <span class="k">for</span> 
+             <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span> 
+             <span class="k">if</span> <span class="s1">&#39;.csv&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
+
+<span class="c1">#排序，文件体积从大到小</span>
+<span class="n">csvfsizes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">csvfsizes</span><span class="p">,</span> 
+                   <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> 
+                   <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">csvf</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">csvfsizes</span><span class="p">:</span>
+    <span class="n">humansize</span> <span class="o">=</span> <span class="n">naturalsize</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">humansize</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">广东省.csv   10.4 GB
+江苏省.csv   9.6 GB
+浙江省.csv   7.1 GB
+其他国家.csv   6.2 GB
+北京市.csv   4.6 GB
+山东省.csv   4.3 GB
+上海市.csv   3.1 GB
+安徽省.csv   3.0 GB
+四川省.csv   2.3 GB
+湖北省.csv   2.1 GB
+福建省.csv   2.1 GB
+河南省.csv   2.0 GB
+天津市.csv   1.6 GB
+湖南省.csv   1.5 GB
+陕西省.csv   1.5 GB
+辽宁省.csv   1.4 GB
+河北省.csv   1.3 GB
+重庆市.csv   1.2 GB
+江西省.csv   1.0 GB
+广西壮族自治区.csv   809.9 MB
+台湾省.csv   792.9 MB
+黑龙江省.csv   784.5 MB
+贵州省.csv   542.4 MB
+云南省.csv   538.9 MB
+吉林省.csv   524.9 MB
+...
+香港特别行政区.csv   90.2 MB
+青海省.csv   74.9 MB
+西藏自治区.csv   19.5 MB
+澳门特别行政区.csv   3.5 MB
+</code></pre></div><br>
+<h3 id="34-读取速度">3.4 读取速度</h3>
+<p>我们分别选择</p>
+<ul>
+<li>吉林省.csv 524.9 MB</li>
+<li>江西省.csv 1.0 GB</li>
+<li>北京市.csv 4.6 GB</li>
+<li>广东省.csv 10.4 GB</li>
+</ul>
+<p>来测试读取数据的速度</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">modin.pandas</span> <span class="k">as</span> <span class="nn">mpd</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#Pandas 524.9 MB</span>
+<span class="o">%</span><span class="n">time</span> <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;吉林省.csv&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: total: 10.6 s
+Wall time: 11.2 s
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#Modin 524.9 MB</span>
+<span class="o">%</span><span class="n">time</span> <span class="n">df</span> <span class="o">=</span> <span class="n">mpd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;吉林省.csv&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: total: 1.38 s
+Wall time: 2.68 s
+</code></pre></div><p>其他几个文件语法类似， 都有显著的速度提升。以下是实验表现</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>体积</th>
+<th>pandas（Wall time）</th>
+<th>modin（Wall time）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>吉林省.csv</td>
+<td>524.9 MB</td>
+<td>11.2 s</td>
+<td>2.68 s</td>
+</tr>
+<tr>
+<td>江西省.csv</td>
+<td>1.0 GB</td>
+<td>22.9 s</td>
+<td>5.17 s</td>
+</tr>
+<tr>
+<td>北京.csv</td>
+<td>4.6 GB</td>
+<td>100s</td>
+<td>24.7 s</td>
+</tr>
+<tr>
+<td>广东省.csv</td>
+<td>10.4 GB</td>
+<td>213s</td>
+<td>55.9 s</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><br><br></p>
+<h3 id="35-运算速度">3.5 运算速度</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">modin.pandas</span> <span class="k">as</span> <span class="nn">mpd</span>
+
+<span class="n">df1</span> <span class="o">=</span> <span class="n">mpd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;广东省.csv&#39;</span><span class="p">)</span>
+<span class="c1">#计算文本长度</span>
+<span class="o">%</span><span class="n">time</span> <span class="n">df1</span><span class="p">[</span><span class="s1">&#39;专利摘要&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: total: 15.6 ms
+Wall time: 26.5 ms
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;广东省.csv&#39;</span><span class="p">)</span>
+<span class="o">%</span><span class="n">time</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;专利摘要&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: total: 3.02 s
+Wall time: 3.33 s
+</code></pre></div><p>modin在计算方面快了125倍。</p>
+<p><br><br></p>
+<h2 id="注意">注意</h2>
+<p>但是由于时间限制，实验比较简单， 个中情况不能一一覆盖。 也有人反映，使用modin，反而比pandas更慢了。</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>可视化 | 使用groupby或resample按月份分组绘制高管违规量趋势图</title>
       <link>https://textdata.cn/blog/2023-05-31-resample-groupby-in-pandas/</link>
