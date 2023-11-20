@@ -6,13 +6,653 @@
     <description>Recent content in Python on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 18 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 20 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>失败案例 |  使用裁判文书数据集逐年训练年份词向量</title>
-      <link>https://textdata.cn/blog/2023-11-18-show-word-meaning-shift-using-word2vec/</link>
+      <title>以聚类为例 | 使用大语言模型LLM做文本分析</title>
+      <link>https://textdata.cn/blog/2023-11-20-how-to-use-llms-tobuild-better-clustering-models/</link>
+      <pubDate>Mon, 20 Nov 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-20-how-to-use-llms-tobuild-better-clustering-models/</guid>
+      <description>&lt;p&gt;本文主要分享&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;传统聚类算法&lt;/li&gt;
+&lt;li&gt;LLM与嵌入算法&lt;/li&gt;
+&lt;li&gt;嵌入算法聚类&lt;/li&gt;
+&lt;li&gt;启发； LLM的其他用法&lt;/li&gt;
+&lt;/ol&gt;
+&lt;br&gt;
+&lt;p&gt;聚类是一种无监督机器学习技术，旨在根据相似的数据点的特征将其分组在一起。使用聚类成簇，有助于解决各种问题，例如客户细分、异常检测和文本分类等。尽管传统的聚类技术被广泛使用，但它仍然面临着挑战。 今天代码很少，也没有实验数据， 主要是偏思路分享。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;一编码挑战&#34;&gt;一、编码挑战&lt;/h2&gt;
+&lt;h3 id=&#34;11--字段单位不统一&#34;&gt;1.1  字段单位不统一&lt;/h3&gt;
+&lt;p&gt;我想在本文中解决的主要挑战是选择如何编码或转换输入特征。一般来说，您需要将每个特征转换为相同的比例，否则，聚类模型将在特征之间分配不成比例的权重。例如， 假设数据中有重量 &lt;strong&gt;weight1&lt;/strong&gt; 、 &lt;strong&gt;weight2&lt;/strong&gt;  两个字段，weight1单位是市斤，而weight2单位是公斤。如果不首先对这些测量进行标准化，即使实际重量相同，我们的模型也会推断出以市斤为单位（对于类似重量的物体）测量的重量差异大于以公斤为单位的差异。&lt;/p&gt;
+&lt;p&gt;现实中，数据集中不会出现对一个信息使用两种单位进行度量。使用这个例子， 只为说明数据中不同字段分布不同，训练模型时不同字段承载的权重也不一样。为了减轻这个问题，一般是训练之前先将字段标准化。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;12-字段之间存在相关性&#34;&gt;1.2 字段之间存在相关性&lt;/h3&gt;
+&lt;p&gt;让我们使用颜色组成的特征作为另一个示例。通常，许多人会选择将此特征 one-hot 编码到 n-1 个附加列中，其中 n 是唯一颜色的数量。虽然这有效，但它忽略了颜色之间的任何潜在关系。&lt;/p&gt;
+&lt;p&gt;为什么是这样？让我们考虑数据集中的一个特征具有以下颜色：红色、栗色、深红色、猩红色和绿色。如果我们要对该列进行 one-hot 编码，我们将得到一个如下所示的数据帧：&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-color.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;在 &lt;strong&gt;欧几里德距离空间&lt;/strong&gt; 中，任意两个记录(行)之间的距离是相同的。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;import numpy as np
+
+def euclidean_distance(vec1, vec2):
+    if len(vec1) != len(vec2):
+        raise ValueError(&amp;#34;vecs must have the same length.&amp;#34;)
+        
+    squared_differences = [(a - b) ** 2 for a, b in zip(vec1, vec2)]
+    distance = np.sqrt(sum(squared_differences))
+    return distance
+    
+red = np.array([0, 0, 0, 1, 0])
+maroon = np.array([0, 0, 1, 0, 0])
+green = np.array([0, 1, 0, 0, 0])
+
+print(euclidean_distance(red, maroon))
+print(euclidean_distance(red, green))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;1.4142135623730951
+1.4142135623730951
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h2 id=&#34;二有更好的办法吗&#34;&gt;二、有更好的办法吗？&lt;/h2&gt;
+&lt;p&gt;当然， &lt;strong&gt;红色&lt;/strong&gt; 和 &lt;strong&gt;栗色&lt;/strong&gt; 是两种不同的颜色，但为了我们的聚类算法，我们其实不希望euclidean_distance(red, maroon) 与 euclidean_distance(red, green) 是相等的。&lt;/p&gt;
+&lt;p&gt;那么该如何解决这个缺点呢？&lt;/p&gt;
+&lt;p&gt;如果您阅读这篇文章的标题，我相信您可能已经get到本文的ieda……我们将结合 &lt;strong&gt;大语言模型&lt;/strong&gt; (Large language model, LLM)， 将每条记录字段和数值整理成一个字符串， 并通过LLM获得每条记录对应的嵌入表示。&lt;/p&gt;
+&lt;p&gt;对于此示例，我将使用 Huggingface 中的句子转换器库以及我围绕工作申请综合创建的数据集。&lt;/p&gt;
+&lt;p&gt;让我们从句子转换器开始。该 LLM 的工作原理与 BERT 类似，只不过它经过专门训练以在句子级别而不是单词或标记级别输出嵌入。这些句子级嵌入可以更好地捕获含义，并且计算速度更快。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;sentence_transformers&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;SentenceTransformer&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;sentence_transformers.util&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;cos_sim&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#使用hugginface，需要科学上网&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;SentenceTransformer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;sentence-transformers/paraphrase-MiniLM-L6-v2&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;prompt_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;#每条记录整合为一个字符串&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;p_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+        &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Age: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Age&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; Gender: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Gender&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;lower&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; Role: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; &amp;#34;&lt;/span&gt;
+        &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Hiring Department: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;HiringDepartment&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; &amp;#34;&lt;/span&gt;
+        &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Travel Preference: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;TravelPreference&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; Extracurriculars: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;ExtraCurriculars&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; &amp;#34;&lt;/span&gt;
+        &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Distance From Home: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;DistanceFromHome&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; &amp;#34;&lt;/span&gt;
+        &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Internships: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Internships&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; Education Level: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;EducationLevel&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; Education Field: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;EducationField&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; &amp;#34;&lt;/span&gt;
+        &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Summary: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Summary&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; 
+    &lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;p_text&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;output_embedding&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;#返回的嵌入表示的尺寸(记录数, 384)&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;#sentence-transformers/paraphrase-MiniLM-L6-v2 模型的词向量维度是384&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;embd&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;encode&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;DataFrame&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;embd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;reshape&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;384&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;preprocess_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;embd&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;output_embedding&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;embd&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;combined_text&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;lambda&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;preprocess_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;axis&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;我们的数据集包括有关求职者的信息，例如招聘部门、职位、年龄和教育水平等特征。这是一个数据截图：&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;我们的目标是将所有求职者分为不同的簇(可以理解为群体)。&lt;/p&gt;
+&lt;p&gt;让我们看看如何将句子嵌入应用于每个求职者。第一步是通过将所有功能连接到一个字符串中来创建单个文本prompt。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Age: 28.
+Gender: male.
+Role: Research Scientist.
+Hiring Department: Research &amp;amp; Development.
+Travel Preference: Travel_Frequently.
+Extracurriculars: nan.
+Distance From Home: 4.
+Internships: 9.
+Education Level: 3.
+Education Field: Engineering.
+Summary: As you can see, I am very dedicated and I am ready to start at your firm immediately.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;将原记录(行)转为如上图所示的文本，之后调用 SBERT LLM 检索文本对应的嵌入向量。为方便展示，这里使用 dataframe.style 功能来突出显示低值和大值，以使表格更容易扫描：&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-df-style.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;三用嵌入编码有什么益处&#34;&gt;三、用嵌入编码有什么益处？&lt;/h2&gt;
+&lt;p&gt;之前讲了传统聚类算法使用one-hot编码方式的不足，但没有解释用嵌入表示的益处。 先不讲理论， 就像探索颜色编码，我们看一个例子。 我想测量 &lt;strong&gt;Role&lt;/strong&gt; (岗位角色) 的相似程度， 我更倾向于用余弦相似度，而不是欧几里德距离， 请问这其中的差异是？&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;欧几里得距离&lt;/strong&gt; 是两点之间几何距离的度量，而 &lt;strong&gt;余弦相似度&lt;/strong&gt; 度量向量的方向。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;欧几里得距离对向量的大小敏感&lt;/strong&gt;，而余弦相似度则不然。&lt;/li&gt;
+&lt;li&gt;欧氏距离的值范围从 0（相同向量）到无穷大，而 &lt;strong&gt;余弦相似度的范围从 -1（完全不相似）到 1（完全相似）&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;让我们选择两个岗位角色：&lt;strong&gt;销售代表&lt;/strong&gt;（sales representative）和&lt;strong&gt;销售主管&lt;/strong&gt;(sales executive)。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;使用 one-hot 编码的 销售代表 和 销售主管 的余弦相似度为 0.5，这意味着他们&lt;strong&gt;有些相关&lt;/strong&gt;。这是有道理的，因为他们都是销售角色。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;使用嵌入编码的余弦相似度为 0.82。&lt;strong&gt;它们的相关性要高得多&lt;/strong&gt;。这更有意义，因为销售代表和销售主管在实践中是极其相似的角色。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;31--传统的聚类&#34;&gt;3.1  传统的聚类&lt;/h3&gt;
+&lt;p&gt;传统聚类算法大致流程如下图所示，&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/06-traditional-process.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;原文作者实验使用K=3的聚类算法，但k如何设置不是最关键的点。 我们的聚类模型中最重要的字段是求职者的&lt;strong&gt;个人总结&lt;/strong&gt;（Summary），其次是 &lt;strong&gt;招聘部门&lt;/strong&gt;（HiringDepartment）、&lt;strong&gt;是否喜欢旅行&lt;/strong&gt;(TravelPreference)。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-weight.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;为了更好的理解3个簇， 我们输出了数据汇总，每个数值字段平均值 及 非数值字段的高频项。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/05-stats.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;按道理聚类算法的结果应该不同簇之间的差异尽可能的大。糟糕的是不同簇之间的， 年龄(Age)、实习次数(Internships) 差异很小，而更糟糕的是招聘部门(HiringDepartment) 和 岗位角色(Role) 完全相同。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;32-嵌入的聚类&#34;&gt;3.2 嵌入的聚类&lt;/h3&gt;
+&lt;p&gt;使用嵌入编码的聚类算法流程如下图所示。与传统 聚类方法相比，使用嵌入的流程只需处理数字特征， 因为由求职者提示信息(代码里的prompt_text)转化来的嵌入是严格数字化的。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/07-emb-process.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;在这里，我们不能像上次那样直接计算字段重要性。我们有数百个难以理解的特征，它们的重要性各不相同，我们无法理解。那么我们该怎么办？让我们训练另一个模型（这次是有监督的三类分类模型），使用原始特征集来预测嵌入模型生成的类标签。这样就可以以同类的方式重现字段重要性。结果如下&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/08-weight.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;我们找到一种新的嵌入表示来编码求职者信息， 并运算出了聚类结果。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/09-statas.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;从统计信息(上图)中可以看出，不同簇之间的差异变的更加清晰。 使用嵌入编码， 让更多申请销售岗位的的销售主管划分到cluster2， 让更多申请研发岗位的的科学家划分到cluster1 和 cluster3.&lt;/p&gt;
+&lt;br&gt;
+&lt;blockquote&gt;
+&lt;p&gt;前文内容翻译整理自&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://medium.com/@swansburg.justin/how-to-use-llms-to-build-better-clustering-models-9b17a5491bb4&#34;&gt;https://medium.com/@swansburg.justin/how-to-use-llms-to-build-better-clustering-models-9b17a5491bb4&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四启发&#34;&gt;四、启发&lt;/h2&gt;
+&lt;p&gt;读完以上内容，大邓想到一个问题， 假设 没有简历系统，没有大数据，求职者与面试官坐在现场，  数据就是面试过程中的交流， 而交流必然通过话语这一媒介。 例如求职者的个人信息&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;“大家好，我叫张三， 今年24岁，哈尔滨人。本科毕业于哈尔滨工业大学，市场营销专业。 我是一个很外向的人，对销售很感兴趣，在大学期间摆了很多地摊。很希望获得贵公司的机会，让我在营销岗位上大发异彩。”
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;面试期间，记录人员将该哈尔滨张三的个人信息被整理为&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;name: 张三
+age: 24
+city: 哈尔滨
+edu: 哈尔滨工业大学
+major: 市场营销
+experience: 摆摊
+summary: 我是外向的人，对销售很感兴趣。
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;求职者的信息汇总成xlsx， 每个人的信息都或多或少的被压缩了。 这种表示方式， 在小规模时， 求职者的总结summary还是有很大信息量的，能够让面试者回忆起当时的场景和情景。但是当求职者的规模上升到几千上万， 备注note信息这种很重要的信息反而无法利用。&lt;/p&gt;
+&lt;p&gt;使用大语言模型LLM，将文本提示转化为嵌入表示。我们可以将LLM看成是一个察言观色，见微知著，明察秋毫的智者。  这个智者可以&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;分类&lt;/li&gt;
+&lt;li&gt;提取信息&lt;/li&gt;
+&lt;li&gt;补全&lt;/li&gt;
+&lt;li&gt;相似性&lt;/li&gt;
+&lt;li&gt;&amp;hellip;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;以往缺失数据， 用插值或者其他技巧， 现在我们可以借助LLM， 只有有其他字段残存的微弱线索， LLM就能帮我们补全缺失值。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;41-分类&#34;&gt;4.1 分类&lt;/h3&gt;
+&lt;p&gt;如图所示， 对于很多短文本， 我们可以推断话题，也可以推断情绪。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;https://huggingface.co/morit/chinese_xlm_xnli
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/10-classification.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/11-classification.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;42-提取信息&#34;&gt;4.2 提取信息&lt;/h3&gt;
+&lt;p&gt;假设有一些信息存储在文本中， 可以用正则表达式提取， 下面的例子用正则会很难设计， 但用LLM很简单。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;https://huggingface.co/luhua/chinese_pretrain_mrc_roberta_wwm_ext_large
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/12-extract.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;43-补全&#34;&gt;4.3 补全&lt;/h3&gt;
+&lt;p&gt;填充缺失值信息&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/13-mask.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;44-相似性&#34;&gt;4.4 相似性&lt;/h3&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/14-sim.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;当然LLM功能还有很多，大家可以自己探索探索&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/15-func.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<p>本文主要分享</p>
+<ol>
+<li>传统聚类算法</li>
+<li>LLM与嵌入算法</li>
+<li>嵌入算法聚类</li>
+<li>启发； LLM的其他用法</li>
+</ol>
+<br>
+<p>聚类是一种无监督机器学习技术，旨在根据相似的数据点的特征将其分组在一起。使用聚类成簇，有助于解决各种问题，例如客户细分、异常检测和文本分类等。尽管传统的聚类技术被广泛使用，但它仍然面临着挑战。 今天代码很少，也没有实验数据， 主要是偏思路分享。</p>
+<p><br><br></p>
+<h2 id="一编码挑战">一、编码挑战</h2>
+<h3 id="11--字段单位不统一">1.1  字段单位不统一</h3>
+<p>我想在本文中解决的主要挑战是选择如何编码或转换输入特征。一般来说，您需要将每个特征转换为相同的比例，否则，聚类模型将在特征之间分配不成比例的权重。例如， 假设数据中有重量 <strong>weight1</strong> 、 <strong>weight2</strong>  两个字段，weight1单位是市斤，而weight2单位是公斤。如果不首先对这些测量进行标准化，即使实际重量相同，我们的模型也会推断出以市斤为单位（对于类似重量的物体）测量的重量差异大于以公斤为单位的差异。</p>
+<p>现实中，数据集中不会出现对一个信息使用两种单位进行度量。使用这个例子， 只为说明数据中不同字段分布不同，训练模型时不同字段承载的权重也不一样。为了减轻这个问题，一般是训练之前先将字段标准化。</p>
+<br>
+<h3 id="12-字段之间存在相关性">1.2 字段之间存在相关性</h3>
+<p>让我们使用颜色组成的特征作为另一个示例。通常，许多人会选择将此特征 one-hot 编码到 n-1 个附加列中，其中 n 是唯一颜色的数量。虽然这有效，但它忽略了颜色之间的任何潜在关系。</p>
+<p>为什么是这样？让我们考虑数据集中的一个特征具有以下颜色：红色、栗色、深红色、猩红色和绿色。如果我们要对该列进行 one-hot 编码，我们将得到一个如下所示的数据帧：</p>
+<p><img loading="lazy" src="img/01-color.png" alt=""  />
+</p>
+<p>在 <strong>欧几里德距离空间</strong> 中，任意两个记录(行)之间的距离是相同的。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import numpy as np
+
+def euclidean_distance(vec1, vec2):
+    if len(vec1) != len(vec2):
+        raise ValueError(&#34;vecs must have the same length.&#34;)
+        
+    squared_differences = [(a - b) ** 2 for a, b in zip(vec1, vec2)]
+    distance = np.sqrt(sum(squared_differences))
+    return distance
+    
+red = np.array([0, 0, 0, 1, 0])
+maroon = np.array([0, 0, 1, 0, 0])
+green = np.array([0, 1, 0, 0, 0])
+
+print(euclidean_distance(red, maroon))
+print(euclidean_distance(red, green))
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1.4142135623730951
+1.4142135623730951
+</code></pre></div><br>
+<h2 id="二有更好的办法吗">二、有更好的办法吗？</h2>
+<p>当然， <strong>红色</strong> 和 <strong>栗色</strong> 是两种不同的颜色，但为了我们的聚类算法，我们其实不希望euclidean_distance(red, maroon) 与 euclidean_distance(red, green) 是相等的。</p>
+<p>那么该如何解决这个缺点呢？</p>
+<p>如果您阅读这篇文章的标题，我相信您可能已经get到本文的ieda……我们将结合 <strong>大语言模型</strong> (Large language model, LLM)， 将每条记录字段和数值整理成一个字符串， 并通过LLM获得每条记录对应的嵌入表示。</p>
+<p>对于此示例，我将使用 Huggingface 中的句子转换器库以及我围绕工作申请综合创建的数据集。</p>
+<p>让我们从句子转换器开始。该 LLM 的工作原理与 BERT 类似，只不过它经过专门训练以在句子级别而不是单词或标记级别输出嵌入。这些句子级嵌入可以更好地捕获含义，并且计算速度更快。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">sentence_transformers</span> <span class="kn">import</span> <span class="n">SentenceTransformer</span>
+<span class="kn">from</span> <span class="nn">sentence_transformers.util</span> <span class="kn">import</span> <span class="n">cos_sim</span>
+
+<span class="c1">#使用hugginface，需要科学上网</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">SentenceTransformer</span><span class="p">(</span><span class="sa">r</span><span class="s2">&#34;sentence-transformers/paraphrase-MiniLM-L6-v2&#34;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">prompt_text</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="c1">#每条记录整合为一个字符串</span>
+    <span class="n">p_text</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&#34;Age: </span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> Gender: </span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;Gender&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2"> Role: </span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;Role&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> &#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;Hiring Department: </span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;HiringDepartment&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> &#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;Travel Preference: </span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;TravelPreference&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> Extracurriculars: </span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;ExtraCurriculars&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> &#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;Distance From Home: </span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;DistanceFromHome&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> &#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;Internships: </span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;Internships&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> Education Level: </span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;EducationLevel&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> Education Field: </span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;EducationField&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> &#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;Summary: </span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;Summary&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#34;</span> 
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">p_text</span>
+
+<span class="k">def</span> <span class="nf">output_embedding</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="c1">#返回的嵌入表示的尺寸(记录数, 384)</span>
+    <span class="c1">#sentence-transformers/paraphrase-MiniLM-L6-v2 模型的词向量维度是384</span>
+    <span class="n">embd</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">embd</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">384</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">preprocess_text</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">prompt_text</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">embd</span> <span class="o">=</span> <span class="n">output_embedding</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">embd</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;combined_text&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">preprocess_text</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div><p>我们的数据集包括有关求职者的信息，例如招聘部门、职位、年龄和教育水平等特征。这是一个数据截图：</p>
+<p><img loading="lazy" src="img/02-df.png" alt=""  />
+</p>
+<br>
+<p>我们的目标是将所有求职者分为不同的簇(可以理解为群体)。</p>
+<p>让我们看看如何将句子嵌入应用于每个求职者。第一步是通过将所有功能连接到一个字符串中来创建单个文本prompt。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Age: 28.
+Gender: male.
+Role: Research Scientist.
+Hiring Department: Research &amp; Development.
+Travel Preference: Travel_Frequently.
+Extracurriculars: nan.
+Distance From Home: 4.
+Internships: 9.
+Education Level: 3.
+Education Field: Engineering.
+Summary: As you can see, I am very dedicated and I am ready to start at your firm immediately.
+</code></pre></div><p>将原记录(行)转为如上图所示的文本，之后调用 SBERT LLM 检索文本对应的嵌入向量。为方便展示，这里使用 dataframe.style 功能来突出显示低值和大值，以使表格更容易扫描：</p>
+<p><img loading="lazy" src="img/03-df-style.png" alt=""  />
+</p>
+<br>
+<h2 id="三用嵌入编码有什么益处">三、用嵌入编码有什么益处？</h2>
+<p>之前讲了传统聚类算法使用one-hot编码方式的不足，但没有解释用嵌入表示的益处。 先不讲理论， 就像探索颜色编码，我们看一个例子。 我想测量 <strong>Role</strong> (岗位角色) 的相似程度， 我更倾向于用余弦相似度，而不是欧几里德距离， 请问这其中的差异是？</p>
+<ul>
+<li><strong>欧几里得距离</strong> 是两点之间几何距离的度量，而 <strong>余弦相似度</strong> 度量向量的方向。</li>
+<li><strong>欧几里得距离对向量的大小敏感</strong>，而余弦相似度则不然。</li>
+<li>欧氏距离的值范围从 0（相同向量）到无穷大，而 <strong>余弦相似度的范围从 -1（完全不相似）到 1（完全相似）</strong></li>
+</ul>
+<p>让我们选择两个岗位角色：<strong>销售代表</strong>（sales representative）和<strong>销售主管</strong>(sales executive)。</p>
+<ul>
+<li>
+<p>使用 one-hot 编码的 销售代表 和 销售主管 的余弦相似度为 0.5，这意味着他们<strong>有些相关</strong>。这是有道理的，因为他们都是销售角色。</p>
+</li>
+<li>
+<p>使用嵌入编码的余弦相似度为 0.82。<strong>它们的相关性要高得多</strong>。这更有意义，因为销售代表和销售主管在实践中是极其相似的角色。</p>
+</li>
+</ul>
+<h3 id="31--传统的聚类">3.1  传统的聚类</h3>
+<p>传统聚类算法大致流程如下图所示，</p>
+<p><img loading="lazy" src="img/06-traditional-process.png" alt=""  />
+</p>
+<p>原文作者实验使用K=3的聚类算法，但k如何设置不是最关键的点。 我们的聚类模型中最重要的字段是求职者的<strong>个人总结</strong>（Summary），其次是 <strong>招聘部门</strong>（HiringDepartment）、<strong>是否喜欢旅行</strong>(TravelPreference)。</p>
+<p><img loading="lazy" src="img/04-weight.png" alt=""  />
+</p>
+<br>
+<p>为了更好的理解3个簇， 我们输出了数据汇总，每个数值字段平均值 及 非数值字段的高频项。</p>
+<p><img loading="lazy" src="img/05-stats.png" alt=""  />
+</p>
+<p>按道理聚类算法的结果应该不同簇之间的差异尽可能的大。糟糕的是不同簇之间的， 年龄(Age)、实习次数(Internships) 差异很小，而更糟糕的是招聘部门(HiringDepartment) 和 岗位角色(Role) 完全相同。</p>
+<br>
+<h3 id="32-嵌入的聚类">3.2 嵌入的聚类</h3>
+<p>使用嵌入编码的聚类算法流程如下图所示。与传统 聚类方法相比，使用嵌入的流程只需处理数字特征， 因为由求职者提示信息(代码里的prompt_text)转化来的嵌入是严格数字化的。</p>
+<p><img loading="lazy" src="img/07-emb-process.png" alt=""  />
+</p>
+<p>在这里，我们不能像上次那样直接计算字段重要性。我们有数百个难以理解的特征，它们的重要性各不相同，我们无法理解。那么我们该怎么办？让我们训练另一个模型（这次是有监督的三类分类模型），使用原始特征集来预测嵌入模型生成的类标签。这样就可以以同类的方式重现字段重要性。结果如下</p>
+<p><img loading="lazy" src="img/08-weight.png" alt=""  />
+</p>
+<p>我们找到一种新的嵌入表示来编码求职者信息， 并运算出了聚类结果。</p>
+<p><img loading="lazy" src="img/09-statas.png" alt=""  />
+</p>
+<p>从统计信息(上图)中可以看出，不同簇之间的差异变的更加清晰。 使用嵌入编码， 让更多申请销售岗位的的销售主管划分到cluster2， 让更多申请研发岗位的的科学家划分到cluster1 和 cluster3.</p>
+<br>
+<blockquote>
+<p>前文内容翻译整理自</p>
+<p><a href="https://medium.com/@swansburg.justin/how-to-use-llms-to-build-better-clustering-models-9b17a5491bb4">https://medium.com/@swansburg.justin/how-to-use-llms-to-build-better-clustering-models-9b17a5491bb4</a></p>
+</blockquote>
+<p><br><br></p>
+<h2 id="四启发">四、启发</h2>
+<p>读完以上内容，大邓想到一个问题， 假设 没有简历系统，没有大数据，求职者与面试官坐在现场，  数据就是面试过程中的交流， 而交流必然通过话语这一媒介。 例如求职者的个人信息</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">“大家好，我叫张三， 今年24岁，哈尔滨人。本科毕业于哈尔滨工业大学，市场营销专业。 我是一个很外向的人，对销售很感兴趣，在大学期间摆了很多地摊。很希望获得贵公司的机会，让我在营销岗位上大发异彩。”
+</code></pre></div><p>面试期间，记录人员将该哈尔滨张三的个人信息被整理为</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">name: 张三
+age: 24
+city: 哈尔滨
+edu: 哈尔滨工业大学
+major: 市场营销
+experience: 摆摊
+summary: 我是外向的人，对销售很感兴趣。
+</code></pre></div><p>求职者的信息汇总成xlsx， 每个人的信息都或多或少的被压缩了。 这种表示方式， 在小规模时， 求职者的总结summary还是有很大信息量的，能够让面试者回忆起当时的场景和情景。但是当求职者的规模上升到几千上万， 备注note信息这种很重要的信息反而无法利用。</p>
+<p>使用大语言模型LLM，将文本提示转化为嵌入表示。我们可以将LLM看成是一个察言观色，见微知著，明察秋毫的智者。  这个智者可以</p>
+<ul>
+<li>分类</li>
+<li>提取信息</li>
+<li>补全</li>
+<li>相似性</li>
+<li>&hellip;</li>
+</ul>
+<p>以往缺失数据， 用插值或者其他技巧， 现在我们可以借助LLM， 只有有其他字段残存的微弱线索， LLM就能帮我们补全缺失值。</p>
+<br>
+<h3 id="41-分类">4.1 分类</h3>
+<p>如图所示， 对于很多短文本， 我们可以推断话题，也可以推断情绪。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">https://huggingface.co/morit/chinese_xlm_xnli
+</code></pre></div><p><img loading="lazy" src="img/10-classification.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/11-classification.png" alt=""  />
+</p>
+<h3 id="42-提取信息">4.2 提取信息</h3>
+<p>假设有一些信息存储在文本中， 可以用正则表达式提取， 下面的例子用正则会很难设计， 但用LLM很简单。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">https://huggingface.co/luhua/chinese_pretrain_mrc_roberta_wwm_ext_large
+</code></pre></div><p><img loading="lazy" src="img/12-extract.png" alt=""  />
+</p>
+<br>
+<h3 id="43-补全">4.3 补全</h3>
+<p>填充缺失值信息</p>
+<p><img loading="lazy" src="img/13-mask.png" alt=""  />
+</p>
+<br>
+<h3 id="44-相似性">4.4 相似性</h3>
+<p><img loading="lazy" src="img/14-sim.png" alt=""  />
+</p>
+<p>当然LLM功能还有很多，大家可以自己探索探索</p>
+<p><img loading="lazy" src="img/15-func.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>pandarallel库 | 多核运行提升pandas速度</title>
+      <link>https://textdata.cn/blog/2023-11-19-pandarallel-speed-up-pandas/</link>
       <pubDate>Sat, 18 Nov 2023 00:00:00 +0000</pubDate>
       
-      <guid>/blog/2023-11-18-show-word-meaning-shift-using-word2vec/</guid>
+      <guid>/blog/2023-11-19-pandarallel-speed-up-pandas/</guid>
+      <description>&lt;h2 id=&#34;heading&#34;&gt;&lt;/h2&gt;
+&lt;p&gt;只需更改一行代码， &lt;strong&gt;pandarallel库&lt;/strong&gt; 就可以充分利用CPU性能，并行化所有 Pandas 操作，加速你的数据处理。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;pandarallel&lt;/strong&gt; 还提供漂亮的进度条（在笔记本和终端上可用）以 大致了解要完成的剩余计算量。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;没有并行化&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/progress_apply.gif&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;并行化&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/progress_parallel_apply.gif&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;可以看到，使用并行化后，处理速度快了很多。&lt;/p&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;一性能对比&#34;&gt;一、性能对比&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;cpu有n个核，大概并行化会提升大概n倍&lt;/strong&gt;。以下是使用和不使用 Pandaral·lel 的比较基准。实验环境：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;**操作系统：**Linux Ubuntu 16.04&lt;/li&gt;
+&lt;li&gt;**硬件：**Intel Core i7 @ 3.40 GHz - 4 核&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/standard_vs_parallel_4_cores.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;并行操作的运行速度大约是标准操作的 4 倍（除了标准操作的运行速度仅快 3.2 倍）。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二特性&#34;&gt;二、特性&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;pandarallel&lt;/strong&gt; 目前实现以下 API：&lt;strong&gt;pandas&lt;/strong&gt;&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;&lt;strong&gt;没有并行化&lt;/strong&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;&lt;strong&gt;并行化&lt;/strong&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;df.apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;df.parallel_apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;df.applymap(func)&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;df.parallel_applymap(func)&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;df.groupby(args).apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;df.groupby(args).parallel_apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;df.groupby(args1).col_name.rolling(args2).apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;df.groupby(args1).col_name.rolling(args2).parallel_apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;df.groupby(args1).col_name.expanding(args2).apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;df.groupby(args1).col_name.expanding(args2).parallel_apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;series.map(func)&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;series.parallel_map(func)&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;series.apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;series.parallel_apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;series.rolling(args).apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;series.rolling(args).parallel_apply(func)&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三使用&#34;&gt;三、使用&lt;/h2&gt;
+&lt;p&gt;Mac和linux，没有什么特殊的用法， 但在 &lt;strong&gt;Windows&lt;/strong&gt; 上， 您掉用的函数必须是&lt;strong&gt;自包含&lt;/strong&gt;的，并且不应依赖于外部资源。为了降低大家的记忆压力， 咱们假设所有系统，都要满足自包含且不依赖外部资源。&lt;/p&gt;
+&lt;h3 id=&#34;31-安装&#34;&gt;3.1 安装&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip install pandarallel
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;31-正确用法&#34;&gt;3.1 正确用法&lt;/h3&gt;
+&lt;p&gt;定义好计算函数func， 标准的pandas的计算是在pd.Series基础上掉用apply方法，即 pd.Series.apply(func)。&lt;/p&gt;
+&lt;p&gt;而pandarallel稍微修改了方法名， pd.Series.parallel_apply(func)。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandarallel&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pandarallel&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;pandarallel&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;initialize&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;func&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;math&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;# 在函数体func内导入math，掉用math， okay!&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;math&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sin&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;a&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;**&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;math&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sin&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;b&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;**&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+  
+  
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;实验的csv文件路径&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;result&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;某个数值字段&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;parallel_apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;func&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-错误用法&#34;&gt;3.2 错误用法&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandarallel&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pandarallel&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;pandarallel&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;initialize&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+
+
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;math&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;func&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;# func不能依赖外部资源， math定义在函数体func之外， 会出问题的！&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;math&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sin&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;a&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;**&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;math&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sin&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;b&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;**&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+  
+  
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;实验的csv文件路径&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;result&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;某个数值字段&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;parallel_apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;func&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;33-使用场景&#34;&gt;3.3 使用场景&lt;/h3&gt;
+&lt;p&gt;并行化是有代价的（实例化新进程、通过共享内存发送数据、 &amp;hellip;），因此，并行化只有在并行化的计算量大时才有效足够高。对于非常少量的数据，并不总是使用并行化值得。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;pandarallel&lt;/strong&gt; 通过使用计算机cpu所有内核来绕过此限制。 但代价是，需要两倍于标准操作的内存占用。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<h2 id="heading"></h2>
+<p>只需更改一行代码， <strong>pandarallel库</strong> 就可以充分利用CPU性能，并行化所有 Pandas 操作，加速你的数据处理。</p>
+<p><strong>pandarallel</strong> 还提供漂亮的进度条（在笔记本和终端上可用）以 大致了解要完成的剩余计算量。</p>
+<p><strong>没有并行化</strong></p>
+<p><img loading="lazy" src="img/progress_apply.gif" alt=""  />
+</p>
+<p><strong>并行化</strong></p>
+<p><img loading="lazy" src="img/progress_parallel_apply.gif" alt=""  />
+</p>
+<p>可以看到，使用并行化后，处理速度快了很多。</p>
+<br>
+<h2 id="一性能对比">一、性能对比</h2>
+<p><strong>cpu有n个核，大概并行化会提升大概n倍</strong>。以下是使用和不使用 Pandaral·lel 的比较基准。实验环境：</p>
+<ul>
+<li>**操作系统：**Linux Ubuntu 16.04</li>
+<li>**硬件：**Intel Core i7 @ 3.40 GHz - 4 核</li>
+</ul>
+<p><img loading="lazy" src="img/standard_vs_parallel_4_cores.png" alt=""  />
+</p>
+<p>并行操作的运行速度大约是标准操作的 4 倍（除了标准操作的运行速度仅快 3.2 倍）。</p>
+<p><br><br></p>
+<h2 id="二特性">二、特性</h2>
+<p><strong>pandarallel</strong> 目前实现以下 API：<strong>pandas</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left"><strong>没有并行化</strong></th>
+<th style="text-align:left"><strong>并行化</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>df.apply(func)</code></td>
+<td style="text-align:left"><code>df.parallel_apply(func)</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>df.applymap(func)</code></td>
+<td style="text-align:left"><code>df.parallel_applymap(func)</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>df.groupby(args).apply(func)</code></td>
+<td style="text-align:left"><code>df.groupby(args).parallel_apply(func)</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>df.groupby(args1).col_name.rolling(args2).apply(func)</code></td>
+<td style="text-align:left"><code>df.groupby(args1).col_name.rolling(args2).parallel_apply(func)</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>df.groupby(args1).col_name.expanding(args2).apply(func)</code></td>
+<td style="text-align:left"><code>df.groupby(args1).col_name.expanding(args2).parallel_apply(func)</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>series.map(func)</code></td>
+<td style="text-align:left"><code>series.parallel_map(func)</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>series.apply(func)</code></td>
+<td style="text-align:left"><code>series.parallel_apply(func)</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>series.rolling(args).apply(func)</code></td>
+<td style="text-align:left"><code>series.rolling(args).parallel_apply(func)</code></td>
+</tr>
+</tbody>
+</table>
+<p><br><br></p>
+<h2 id="三使用">三、使用</h2>
+<p>Mac和linux，没有什么特殊的用法， 但在 <strong>Windows</strong> 上， 您掉用的函数必须是<strong>自包含</strong>的，并且不应依赖于外部资源。为了降低大家的记忆压力， 咱们假设所有系统，都要满足自包含且不依赖外部资源。</p>
+<h3 id="31-安装">3.1 安装</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip install pandarallel
+</code></pre></div><br>
+<h3 id="31-正确用法">3.1 正确用法</h3>
+<p>定义好计算函数func， 标准的pandas的计算是在pd.Series基础上掉用apply方法，即 pd.Series.apply(func)。</p>
+<p>而pandarallel稍微修改了方法名， pd.Series.parallel_apply(func)。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">pandarallel</span> <span class="kn">import</span> <span class="n">pandarallel</span>
+<span class="n">pandarallel</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">math</span>
+    <span class="c1"># 在函数体func内导入math，掉用math， okay!</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">a</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">b</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+  
+  
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;实验的csv文件路径&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;result&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;某个数值字段&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parallel_apply</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+</code></pre></div><br>
+<h3 id="32-错误用法">3.2 错误用法</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">pandarallel</span> <span class="kn">import</span> <span class="n">pandarallel</span>
+<span class="n">pandarallel</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="c1"># func不能依赖外部资源， math定义在函数体func之外， 会出问题的！</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">a</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">b</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+  
+  
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;实验的csv文件路径&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;result&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;某个数值字段&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parallel_apply</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+</code></pre></div><br>
+<h3 id="33-使用场景">3.3 使用场景</h3>
+<p>并行化是有代价的（实例化新进程、通过共享内存发送数据、 &hellip;），因此，并行化只有在并行化的计算量大时才有效足够高。对于非常少量的数据，并不总是使用并行化值得。</p>
+<p><strong>pandarallel</strong> 通过使用计算机cpu所有内核来绕过此限制。 但代价是，需要两倍于标准操作的内存占用。</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>失败案例 |  使用裁判文书数据集逐年训练年份词向量</title>
+      <link>https://textdata.cn/blog/2023-11-18-failure-example-show-word-meaning-shift-using-word2vec/</link>
+      <pubDate>Sat, 18 Nov 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-18-failure-example-show-word-meaning-shift-using-word2vec/</guid>
       <description>&lt;p&gt;想用裁判文书数据集，逐年训练词向量的同学，可以好好看本文，能节省你几十个小时时间。&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;一检查数据&#34;&gt;一、检查数据&lt;/h2&gt;
