@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>使用3751w专利申请数据集按年份(按省份)训练词向量 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="Python, word2vec" />
+<meta name="description" content="想用 3571w中国专利申请数据集，按年份(或按省份)训练词向量的同学，可以好好看本文，能节省你几十个小时时间。 一、检查数据 这个数据集很大， 如图所示，文件动辄几G 之前分享过  , 面对巨大csv文件，我们要了解内部有哪些字段、字段的含义， 只读取需要的字段，减轻电脑内存压力， 让你能轻松应对几倍于内存的巨大csv文件。
+import pandas as pd #以山东省.csv 为例， 只读第一行(前1行) df = pd.read_csv(&#39;山东省.csv&#39;, nrows=1) df 字段展示的不全，完整的字段应该有
+df.columns Run
+Index([&#39;专利公开号&#39;, &#39;专利名称&#39;, &#39;专利类型&#39;, &#39;专利摘要&#39;, &#39;申请人&#39;, &#39;专利申请号&#39;, &#39;申请日&#39;, &#39;申请公布日&#39;, &#39;授权公布号&#39;, &#39;授权公布日&#39;, &#39;申请地址&#39;, &#39;主权项&#39;, &#39;发明人&#39;, &#39;分类号&#39;, &#39;主分类号&#39;, &#39;代理机构&#39;, &#39;分案原申请号&#39;, &#39;优先权&#39;, &#39;国际申请&#39;, &#39;国际公布&#39;, &#39;代理人&#39;, &#39;省份或国家代码&#39;, &#39;法律状态&#39;, &#39;专利领域&#39;, &#39;专利学科&#39;, &#39;多次公布&#39;], dtype=&#39;object&#39;) 
+训练词向量主要用文本数据， 在本案例中， 需要的字段 [专利摘要] 。
+
+二、构造语料 在 [3751万专利申请全量数据1985-2022] 文件夹中，
+ 新建 [province_corpus] 和 [year_corpus] 两个文件夹 新建 [code.">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/2023-11-20-word2vec-by-year-by-province/" />
+<meta name="baidu-site-verification" content="codeva-q71uASYfGi" />
+<meta name="360-site-verification" content="6b9b733ec558a1bb12cee8aa82f2529e" />
+<meta name="sogou-site-verification" content="dZHPIorOhK" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="使用3751w专利申请数据集按年份(按省份)训练词向量" />
+<meta property="og:description" content="想用 3571w中国专利申请数据集，按年份(或按省份)训练词向量的同学，可以好好看本文，能节省你几十个小时时间。 一、检查数据 这个数据集很大， 如图所示，文件动辄几G 之前分享过  , 面对巨大csv文件，我们要了解内部有哪些字段、字段的含义， 只读取需要的字段，减轻电脑内存压力， 让你能轻松应对几倍于内存的巨大csv文件。
+import pandas as pd #以山东省.csv 为例， 只读第一行(前1行) df = pd.read_csv(&#39;山东省.csv&#39;, nrows=1) df 字段展示的不全，完整的字段应该有
+df.columns Run
+Index([&#39;专利公开号&#39;, &#39;专利名称&#39;, &#39;专利类型&#39;, &#39;专利摘要&#39;, &#39;申请人&#39;, &#39;专利申请号&#39;, &#39;申请日&#39;, &#39;申请公布日&#39;, &#39;授权公布号&#39;, &#39;授权公布日&#39;, &#39;申请地址&#39;, &#39;主权项&#39;, &#39;发明人&#39;, &#39;分类号&#39;, &#39;主分类号&#39;, &#39;代理机构&#39;, &#39;分案原申请号&#39;, &#39;优先权&#39;, &#39;国际申请&#39;, &#39;国际公布&#39;, &#39;代理人&#39;, &#39;省份或国家代码&#39;, &#39;法律状态&#39;, &#39;专利领域&#39;, &#39;专利学科&#39;, &#39;多次公布&#39;], dtype=&#39;object&#39;) 
+训练词向量主要用文本数据， 在本案例中， 需要的字段 [专利摘要] 。
+
+二、构造语料 在 [3751万专利申请全量数据1985-2022] 文件夹中，
+ 新建 [province_corpus] 和 [year_corpus] 两个文件夹 新建 [code." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/2023-11-20-word2vec-by-year-by-province/" />
+<meta property="og:image" content="/images/blog/word2vec.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2023-11-20T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2023-11-20T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/word2vec.png" />
+<meta name="twitter:title" content="使用3751w专利申请数据集按年份(按省份)训练词向量"/>
+<meta name="twitter:description" content="想用 3571w中国专利申请数据集，按年份(或按省份)训练词向量的同学，可以好好看本文，能节省你几十个小时时间。 一、检查数据 这个数据集很大， 如图所示，文件动辄几G 之前分享过  , 面对巨大csv文件，我们要了解内部有哪些字段、字段的含义， 只读取需要的字段，减轻电脑内存压力， 让你能轻松应对几倍于内存的巨大csv文件。
+import pandas as pd #以山东省.csv 为例， 只读第一行(前1行) df = pd.read_csv(&#39;山东省.csv&#39;, nrows=1) df 字段展示的不全，完整的字段应该有
+df.columns Run
+Index([&#39;专利公开号&#39;, &#39;专利名称&#39;, &#39;专利类型&#39;, &#39;专利摘要&#39;, &#39;申请人&#39;, &#39;专利申请号&#39;, &#39;申请日&#39;, &#39;申请公布日&#39;, &#39;授权公布号&#39;, &#39;授权公布日&#39;, &#39;申请地址&#39;, &#39;主权项&#39;, &#39;发明人&#39;, &#39;分类号&#39;, &#39;主分类号&#39;, &#39;代理机构&#39;, &#39;分案原申请号&#39;, &#39;优先权&#39;, &#39;国际申请&#39;, &#39;国际公布&#39;, &#39;代理人&#39;, &#39;省份或国家代码&#39;, &#39;法律状态&#39;, &#39;专利领域&#39;, &#39;专利学科&#39;, &#39;多次公布&#39;], dtype=&#39;object&#39;) 
+训练词向量主要用文本数据， 在本案例中， 需要的字段 [专利摘要] 。
+
+二、构造语料 在 [3751万专利申请全量数据1985-2022] 文件夹中，
+ 新建 [province_corpus] 和 [year_corpus] 两个文件夹 新建 [code."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "使用3751w专利申请数据集按年份(按省份)训练词向量",
+      "item": "/blog/2023-11-20-word2vec-by-year-by-province/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "使用3751w专利申请数据集按年份(按省份)训练词向量",
+  "name": "使用3751w专利申请数据集按年份(按省份)训练词向量",
+  "description": "想用 3571w中国专利申请数据集，按年份(或按省份)训练词向量的同学，可以好好看本文，能节省你几十个小时时间。 一、检查数据 这个数据集很大， 如图所示，文件动辄几G 之前分享过  , 面对巨大csv文件，我们要了解内部有哪些字段、字段的含义， 只读取需要的字段，减轻电脑内存压力， 让你能轻松应对几倍于内存的巨大csv文件。\nimport pandas as pd #以山东省.csv 为例， 只读第一行(前1行) df = pd.read_csv(\u0026#39;山东省.csv\u0026#39;, nrows=1) df 字段展示的不全，完整的字段应该有\ndf.columns Run\nIndex([\u0026#39;专利公开号\u0026#39;, \u0026#39;专利名称\u0026#39;, \u0026#39;专利类型\u0026#39;, \u0026#39;专利摘要\u0026#39;, \u0026#39;申请人\u0026#39;, \u0026#39;专利申请号\u0026#39;, \u0026#39;申请日\u0026#39;, \u0026#39;申请公布日\u0026#39;, \u0026#39;授权公布号\u0026#39;, \u0026#39;授权公布日\u0026#39;, \u0026#39;申请地址\u0026#39;, \u0026#39;主权项\u0026#39;, \u0026#39;发明人\u0026#39;, \u0026#39;分类号\u0026#39;, \u0026#39;主分类号\u0026#39;, \u0026#39;代理机构\u0026#39;, \u0026#39;分案原申请号\u0026#39;, \u0026#39;优先权\u0026#39;, \u0026#39;国际申请\u0026#39;, \u0026#39;国际公布\u0026#39;, \u0026#39;代理人\u0026#39;, \u0026#39;省份或国家代码\u0026#39;, \u0026#39;法律状态\u0026#39;, \u0026#39;专利领域\u0026#39;, \u0026#39;专利学科\u0026#39;, \u0026#39;多次公布\u0026#39;], dtype=\u0026#39;object\u0026#39;) \n训练词向量主要用文本数据， 在本案例中， 需要的字段 [专利摘要] 。\n\n二、构造语料 在 [3751万专利申请全量数据1985-2022] 文件夹中，\n 新建 [province_corpus] 和 [year_corpus] 两个文件夹 新建 [code.",
+  "keywords": [
+    "Python", "word2vec"
+  ],
+  "articleBody": "想用 3571w中国专利申请数据集，按年份(或按省份)训练词向量的同学，可以好好看本文，能节省你几十个小时时间。 一、检查数据 这个数据集很大， 如图所示，文件动辄几G 之前分享过  , 面对巨大csv文件，我们要了解内部有哪些字段、字段的含义， 只读取需要的字段，减轻电脑内存压力， 让你能轻松应对几倍于内存的巨大csv文件。\nimport pandas as pd #以山东省.csv 为例， 只读第一行(前1行) df = pd.read_csv('山东省.csv', nrows=1) df 字段展示的不全，完整的字段应该有\ndf.columns Run\nIndex(['专利公开号', '专利名称', '专利类型', '专利摘要', '申请人', '专利申请号', '申请日', '申请公布日', '授权公布号', '授权公布日', '申请地址', '主权项', '发明人', '分类号', '主分类号', '代理机构', '分案原申请号', '优先权', '国际申请', '国际公布', '代理人', '省份或国家代码', '法律状态', '专利领域', '专利学科', '多次公布'], dtype='object') \n训练词向量主要用文本数据， 在本案例中， 需要的字段 [专利摘要] 。\n\n二、构造语料 在 [3751万专利申请全量数据1985-2022] 文件夹中，\n 新建 [province_corpus] 和 [year_corpus] 两个文件夹 新建 [code.ipynb]  构造语料对电脑的性能要求不高， 不论你的电脑是什么配置，基本都能运行， 而且耗时在能接受的范围。\n2.1 文件树结构 3751万专利申请全量数据1985-2022 |---安徽省.csv |---浙江省.csv |---江苏省.csv |---... |---code.ipynb |---province_corpus |---安徽省.txt |---浙江省.txt |---... |---year_corpus |---2022.txt |---2021.txt |---... |---output |---provin_w2vs |---安徽省.100.6.bin |---安徽省.100.6.bin.syn1neg.npy |---安徽省.100.6.bin.wv.vectors.npy |---... |---year_w2vs |---2022.100.6.bin |---2022.100.6.bin.syn1neg.npy |---2022.100.6.bin.wv.vectors.npy |---... \n2.2 按省份构造语料 # 在jupyter内可以得到Cell的运行时间 %%time import pandas as pd import os # 获取 code.ipynb 所在文件夹内的所有csv文件路径列表 csvfs = [f for f in os.listdir('.') if '.csv' in f] # 构造省份 txt 语料数据 for csvf in csvfs: print(csvf) province = csvf.replace('.csv', '') with open(f'province_corpus/{province}.txt', 'w', encoding='utf-8') as prov_f: df = pd.read_csv(csvf, usecols=['专利摘要']) df.dropna(subset=['专利摘要'], inplace=True) text = ''.join(df['专利摘要'].values) prov_f.write(text) Run\n上海市.csv 云南省.csv ... 安徽省.csv CPU times: total: 1500 s Wall time: 1520 s 构造省份语料用了半个小时。 2.3 按年份构造语料 %%time import pandas as pd import os # 获取 code.ipynb 所在文件夹内的所有csv文件路径列表 csvfs = [f for f in os.listdir('.') if '.csv' in f] # 构造年份 txt 语料数据 for csvf in csvfs: df = pd.read_csv(csvf, usecols=['申请日', '专利摘要']) df.dropna(subset=['申请日', '专利摘要'], inplace=True) df['申请日'] = pd.to_datetime(df['申请日'], errors ='ignore') for year in df['申请日'].dt.year.value_counts().index: print(csvf, year) with open(f'year_corpus/{year}.txt', 'a+', encoding='utf-8') as year_f: year_df = df[df['申请日'].dt.year==year] text = ''.join(year_df['专利摘要'].values) year_f.write(text) Run\n上海市.csv 2022 上海市.csv 2021 上海市.csv 2020 ... ... 安徽省.csv 2022 安徽省.csv 2021 ... ... CPU times: total: 1600 s Wall time: 1650 s 构造年份语料大概用了半个小时。 \n三、训练word2vec 需要注意， 训练word2vec需要耗费很大的计算能力， 训练时间需要一两三。 本文使用的cntext2.0.0版本，需要付费获取cntext-2.0.0-py3-none-any.whl。\n3.1 安装cntext 将 cntext-2.0.0-py3-none-any.whl 放置于电脑桌面， 打开 命令行cmd (Mac打开terminal)， 输入\ncd desktop pip install cntext-2.0.0-py3-none-any.whl 有部分使用win的同学，如果按照操作没有安装成功，再试试\ncd Desktop pip install cntext-2.0.0-py3-none-any.whl \n3.2 按省份训练 %%time import cntext as ct # 获取 province_corpus 内的语料 txt 文件列表 provin_fs = [f'province_corpus/{f}' for f in os.listdir('data') if '.txt' in f] for provin_f in provin_fs: print(provin_f) w2v_model = ct.W2VModel(corpus_file=provin_f, lang='chinese') w2v_model.train(vector_size=100, window_size=6, save_dir='provin_w2vs') print() Run\nprovince_corpus/上海市.txt Start Preprocessing Corpus... Loading model cost 0.632 seconds. Prefix dict has been built successfully. Start Training! This may take a while. Please be patient... Training word2vec model took 3284 seconds Note: The Word2Vec model has been saved to output\\provin_w2vs province_corpus/云南省.txt Start Preprocessing Corpus... Loading model cost 0.632 seconds. Prefix dict has been built successfully. Start Training! This may take a while. Please be patient... Training word2vec model took 564 seconds Note: The Word2Vec model has been saved to output\\provin_w2vs ... ... CPU times: total: 21354 s Wall time: 21758 s 训练省份词向量大概用了 6 小时，模型文件保存在 output/provin_w2vs 3.3 按年份训练 %%time import cntext as ct # 获取 province_corpus 内的语料 txt 文件列表 year_fs = [f'year_corpus/{f}' for f in os.listdir('data') if '.txt' in f] for year_f in year_fs: print(year_f) w2v_model = ct.W2VModel(corpus_file=year_f, lang='chinese') w2v_model.train(vector_size=100, window_size=6, save_dir='year_w2vs') print() Run\nyear_corpus/1980.txt Start Preprocessing Corpus... Start Training! This may take a while. Please be patient... Training word2vec model took 0 seconds Note: The Word2Vec model has been saved to output\\year_w2vs year_corpus/1984.txt Start Preprocessing Corpus... Start Training! This may take a while. Please be patient... Training word2vec model took 0 seconds Note: The Word2Vec model has been saved to output\\year_w2vs ... ... CPU times: total: 19354 s Wall time: 20000 s 训练省份词向量大概用了 5.5 小时，模型文件保存在 output/year_w2vs \n三、使用word2vec 3.1 导入模型 output/provin_w2vs 和 output/year_w2vs 内有多个模型， 单个的模型文件大约几十M ~ 几百M， 但不建议一次性导入进来。大邓的电脑内存96G，为了省事，就一次性全导入了。\nimport cntext as ct from gensim.models import KeyedVectors provin_w2vs_ = [] provin_w2v_fs = [f'output/provin_w2vs/{f}' for f in os.listdir('output/provin_w2vs') if '.npy' not in f] for provin_w2v_f in provin_w2v_fs: provin_w2v = ct.load_w2v(provin_w2v_f) #如果没有cntext就用注释掉的代码，使用gensim导入 #provin_w2v = KeyedVectors.load(provin_w2v_f) provin_w2vs_.append(provin_w2v) \nimport cntext as ct from gensim.models import KeyedVectors year_w2vs_ = [] year_w2v_fs = [f'output/year_w2vs/{f}' for f in sorted(os.listdir('output/year_w2vs'), reverse=True) if '.npy' not in f] for year_w2v_f in year_w2v_fs: year_w2v = ct.load_w2v(year_w2v_f) #如果没有cntext就用注释掉的代码，使用gensim导入 #year_w2v = KeyedVectors.load(year_w2v_f) year_w2vs_.append(year_w2v) \n3.2 查看词汇量 import re print('省份Word2vec词汇量') for provin_w2v_f, provin_w2v in zip(provin_w2v_fs, provin_w2vs_): province = re.findall('[\\u4e00-\\u9fa5]+', provin_w2v_f)[0] print(f'{province}词汇量: {len(provin_w2v.wv)}') Run\n省份Word2vec词汇量 北京市: 679126 安徽省: 471459 江西省: 216389 重庆市: 269875 澳门特别行政区: 4235 湖北省: 416464 吉林省: 169665 香港特别行政区: 37948 天津市: 323214 湖南省: 341033 辽宁省: 331955 广东省: 935412 黑龙江省: 223448 其他国家: 460 河北省: 281543 内蒙古自治区: 103331 河南省: 381151 福建省: 367768 贵州省: 163641 陕西省: 332231 云南省: 174191 浙江省: 751976 甘肃省: 125789 台湾省: 175827 宁夏回族自治区: 65428 山西省: 163094 山东省: 633187 江苏省: 928838 海南省: 59742 西藏自治区: 14884 青海省: 40403 广西壮族自治区: 237805 四川省: 437751 新疆维吾尔自治区: 100079 上海市: 537777 \nimport re print('年份word2vec词汇量') for year_w2v_f, year_w2v in zip(year_w2v_fs, year_w2vs_): year = re.findall('\\d{4}', year_w2v_f)[0] print(f'{year}: {len(year_w2v.wv)}') Run\n年份word2vec词汇量 2022: 191145 2021: 605364 2020: 903230 2019: 901583 2018: 911762 2017: 881858 2016: 810445 2015: 621050 2014: 388647 2013: 517991 2012: 484417 2011: 281045 2010: 264882 2009: 245851 2008: 218349 2007: 191569 2006: 177269 2005: 153533 2004: 130384 2003: 120306 2002: 102266 2001: 78116 2000: 63233 1999: 53341 1998: 47007 1997: 44221 1996: 42709 1995: 40084 1994: 40987 1993: 42781 1992: 40149 1991: 33159 1990: 28480 1989: 23548 1988: 23502 1987: 19851 1986: 14330 1985: 11535 1984: 2 1980: 2 1900: 1 1899: 4 \n3.3 语义检查-省份 先检查省份， 查看与[‘创新’, ‘新颖’]最相似的5个词，通过语义捕捉准确与否，粗略判断Word2vec训练效果的好坏。\nimport re for provin_w2v_f, provin_w2v in zip(provin_w2v_fs, provin_w2vs_): try: province = re.findall('[\\u4e00-\\u9fa5]+', provin_w2v_f)[0] wordweigths = provin_w2v.wv.most_similar(['创新', '新颖'], topn=5) words = [w for w,p in wordweigths] print(f'{province}: {\" \".join(words)}') except: print(f'{province}: ') Run\n北京市: 独特 全新 创造性 独创 先进 安徽省: 简洁 独特 精巧 精简 原理简单 江西省: 巧妙 简单实用 简单可靠 简单成本低 精巧 重庆市: 先进 独特 现代 科学 易用 澳门特别行政区: 湖北省: 巧妙 精巧 科学 精良 简洁 吉林省: 先进 科学 推广 独特 可行 香港特别行政区: 工业化生产 公知 相对现有 克服现有 石头纸 天津市: 独特 先进 精巧 科学 构思 湖南省: 科学 简洁 先进 简明 独特 辽宁省: 科学 理念 构思 先进 独特 广东省: 独特 创新性 巧妙 科学 简单巧妙 黑龙江省: 科学 独特 精巧 先进 小巧 其他国家: 河北省: 科学合理 新颖独特 简单实用 科学 精巧 内蒙古自治区: 经济实用 广泛使用 资源丰富 应用广泛 应用范围广 河南省: 简单实用 独特 较为新颖 精巧 简明 福建省: 原理简单 简单实用 巧妙 灵巧 独特 贵州省: 取材方便 价格便宜 安全经济 生产成本低廉 原料易得 陕西省: 独特 简单实用 结构新颖 小巧 简约 云南省: 科学 构思新颖 独特 价廉 简便易行, 浙江省: 独特 科学 全新 巧妙 较为合理 甘肃省: 先进 切实可行 性能优良 独特 一种较为理想 台湾省: 独特 多元 特有 经济 特色 宁夏回族自治区: 重量轻 体积小 性能可靠 具有使用方便 功能丰富 山西省: 独特 科学 先进 简洁 广泛 山东省: 新颖独特 巧妙 精巧 独特 先进 江苏省: 独特 全新 构思 精巧 简单巧妙 海南省: 多样 传统工艺 改变传统 制作过程 精华素 西藏自治区: 青海省: 投饵 具有重量轻 具有成本低 极为 隔热保温 广西壮族自治区: 先进 独特 现代 广泛 明 四川省: 独特 先进 科学合理 人性化 科学 新疆维吾尔自治区: 现代 方 携带方便 广泛 原料来源 上海市: 独特 设计理念 巧妙 科学 构思 从上面的运行结果看， 绝大多数的省份Word2vec都很准确的捕捉到了专利摘要的语义信息。\n3.4 语义检查-年份 查看与[‘创新’, ‘新颖’]最相似的5个词，通过语义捕捉准确与否，粗略判断Word2vec训练效果的好坏。\nimport re for year_w2v_f, year_w2v in zip(year_w2v_fs, year_w2vs_): try: year = re.findall('\\d{4}', year_w2v_f)[0] wordweigths = year_w2v.wv.most_similar(['创新', '新颖'], topn=5) words = [w for w,p in wordweigths] print(f'{year}: {\" \".join(words)}') except: print(f'{year}: ') Run\n2022: 出错率 同井 Git 铝合金膜 传动件传动 2021: 铁前驱 甲基氢 单向阀进液 储存罐 Seq2Seq 2020: 减温层 洗浴间 球形活性炭 OASQ 目标语言句子 2019: 面膜布 自承式 网状加强 铲衣 温头 2018: 简单易行 工艺流程 成本高 克服现有 操作简便 2017: 问题 容易 良好 性能 实用 2016: 相互绝缘 不需 未知 窄边框 耐腐层 2015: 人体温度 压盖 后座 漏电检测 截骨刀 2014: 循环热泵 特细 多处 尾轴 名称内裤 2013: 精制 重复性 强 优势 少 2012: 提升 解决 多种 能够实现 避免 2011: 光亮 具有高 分层 木 品 2010: 转换 具有 强度 整个 时间 2009: 科学 先进 独特 创造性 全新 2008: 独特 先进 全新 思路 创造性 2007: 独特 全新 先进 现代 科学 2006: 先进 独特 全新 新颖性 创造性 2005: 科学 独特 简洁 简捷 独特, 2004: 独特 简单易行 科学 优越性 经济 2003: 独特 科学 多样, 实用 经济实用 2002: 研制 ,采取 多方面 效果差 直接应用 2001: 人造 管材 废弃 有机结合 缺点 2000: 防滑 光亮 着色 系列产品 清晰 1999: ,适于 病人 价廉 ,目前 害虫 1998: 优化 城市 设施 磁化 节水 1997: 病症 手工 透气 不足, 不足 1996: 制造 ,属于 应用 实现 传递文字 1995: 显著疗效 味美 极佳 活血 明目 1994: 样式 坚固耐用, 便利, 巧妙 使用方便安全 1993: 先进 完善 知识性 成本高 功能单一 1992: 经济实用 现行 ,实为 住房 结构设计 1991: 易损坏 保留 庞大 普遍 物两用 1990: 笔算 不足之处, 功能单一 ,需用 结构复杂 1989: 缺点 力小 设施 临时 不便 1988: 设施, 改造 美发 油田 机械装置 1987: 各种类型 用途单一 之用 水上 室内外 1986: 飞行 化油器 具 显微镜 雨水 1985: 很大 浪费 器件 地区 具有结构 1984: 1980: 1900: 1899: 也试了其他的词语，好像只有 2002-2009 之间的语义是准确的。 原因未知，也训练了裁判文书的Word2vec, 年份的是一点准头都没有。专利数据训练的好在还有点准头。\n四、跨模型比较语义 假设语义都很准的话， 是可以研究 语义变迁 或者 语义差异 的。 但需要注意， 不能直接使用两个年份或者两个省份的中word1和word2的距离来体现语义的变迁或者语义的差异。 如果想做省份间差异或者某省份随时间的变化， 需要用到 对齐算法， 使得同省份不同年份或者通年份不同省份的word2vec都有相同的语义空间。\nProcrustes 矩阵对齐和 动态词嵌入模型（Dynamic Word Embeddings）是两种不同的技术。\n4.1 正交Procrustes矩阵对齐 正交Procrustes矩阵对齐是一种将两个预训练语言模型的词向量矩阵对齐的方法，使得它们在相同的语义空间中表示。具体来说，它通过计算一个正交矩阵，将两个词向量矩阵进行线性变换，使得它们的Frobenius范数之和最小，从而实现对齐。 gensim库有该算法，大邓后续有时间会分享如何用Procrustes对齐语言模型。\n4.2 动态词嵌入模型 而动态词嵌入模型是一种基于神经网络的方法，用于学习随时间变化的词向量表示。它考虑到了词汇的上下文信息和时间信息，通过对上下文信息和时间信息进行建模，动态地更新词向量表示。相比于静态词向量模型，动态词嵌入模型能够更好地捕捉词汇在不同时间和语境下的含义和语义变化。 目前大邓还没找到可实现的公开代码。\n\n五、获取资源 5.1 免费  年份词向量 链接: https://pan.baidu.com/s/1-EngiWU9IAkqfk2Qf2W5lA 提取码: d925 省份词向量 链接: https://pan.baidu.com/s/1TnZf5YkRZMWf4liN04XO_g 提取码: cjs8  5.2 付费 内容整理不易， 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」\n 100元 cntext-2.0.0-py3-none-any.whl 100元 3751w专利申请数据集 150元 3751w专利申请数据集 + cntext-2.0.0-py3-none-any.whl  \n广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
+  "wordCount" : "1364",
+  "inLanguage": "en",
+  "image":"/images/blog/word2vec.png","datePublished": "2023-11-20T00:00:00Z",
+  "dateModified": "2023-11-20T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/2023-11-20-word2vec-by-year-by-province/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif" rel="stylesheet">
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/management_python_course/" title="课程" target="_blank">
+                    <span>课程</span>
+                </a>
+            </li>
+            <li>
+                <a href="/index.xml" title="RSS" target="_blank">
+                    <span>RSS</span>
+                </a>
+            </li>
+            <li>
+                <a href="/support/" title="支持一下" target="_blank">
+                    <span>支持一下</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      使用3751w专利申请数据集按年份(按省份)训练词向量
+    </h1>
+    <div class="post-meta"><span title='2023-11-20 00:00:00 +0000 UTC'>2023-11-20</span>&nbsp;·&nbsp;7 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/word2vec.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/word2vec.png" alt=""></a>
+        
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f&amp;url=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f&amp;hashtags=Python%2c%e8%af%8d%e5%90%91%e9%87%8f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f&amp;title=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f&amp;summary=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f&amp;source=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f&title=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f%20-%20%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on telegram"
+        href="https://telegram.me/share/url?text=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f&amp;url=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e4%b8%80%e6%a3%80%e6%9f%a5%e6%95%b0%e6%8d%ae" aria-label="一、检查数据">一、检查数据</a></li>
+                    <li>
+                        <a href="#%e4%ba%8c%e6%9e%84%e9%80%a0%e8%af%ad%e6%96%99" aria-label="二、构造语料">二、构造语料</a><ul>
+                            
+                    <li>
+                        <a href="#21-%e6%96%87%e4%bb%b6%e6%a0%91%e7%bb%93%e6%9e%84" aria-label="2.1 文件树结构">2.1 文件树结构</a></li>
+                    <li>
+                        <a href="#22-%e6%8c%89%e7%9c%81%e4%bb%bd%e6%9e%84%e9%80%a0%e8%af%ad%e6%96%99" aria-label="2.2 按省份构造语料">2.2 按省份构造语料</a></li>
+                    <li>
+                        <a href="#23-%e6%8c%89%e5%b9%b4%e4%bb%bd%e6%9e%84%e9%80%a0%e8%af%ad%e6%96%99" aria-label="2.3 按年份构造语料">2.3 按年份构造语料</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e4%b8%89%e8%ae%ad%e7%bb%83word2vec" aria-label="三、训练word2vec">三、训练word2vec</a><ul>
+                            
+                    <li>
+                        <a href="#31-%e5%ae%89%e8%a3%85cntext" aria-label="3.1 安装cntext">3.1 安装cntext</a></li>
+                    <li>
+                        <a href="#32-%e6%8c%89%e7%9c%81%e4%bb%bd%e8%ae%ad%e7%bb%83" aria-label="3.2 按省份训练">3.2 按省份训练</a></li>
+                    <li>
+                        <a href="#33-%e6%8c%89%e5%b9%b4%e4%bb%bd%e8%ae%ad%e7%bb%83" aria-label="3.3 按年份训练">3.3 按年份训练</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e4%b8%89%e4%bd%bf%e7%94%a8word2vec" aria-label="三、使用word2vec">三、使用word2vec</a><ul>
+                            
+                    <li>
+                        <a href="#31-%e5%af%bc%e5%85%a5%e6%a8%a1%e5%9e%8b" aria-label="3.1 导入模型">3.1 导入模型</a></li>
+                    <li>
+                        <a href="#32-%e6%9f%a5%e7%9c%8b%e8%af%8d%e6%b1%87%e9%87%8f" aria-label="3.2 查看词汇量">3.2 查看词汇量</a></li>
+                    <li>
+                        <a href="#33-%e8%af%ad%e4%b9%89%e6%a3%80%e6%9f%a5-%e7%9c%81%e4%bb%bd" aria-label="3.3 语义检查-省份">3.3 语义检查-省份</a></li>
+                    <li>
+                        <a href="#34-%e8%af%ad%e4%b9%89%e6%a3%80%e6%9f%a5-%e5%b9%b4%e4%bb%bd" aria-label="3.4 语义检查-年份">3.4 语义检查-年份</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e5%9b%9b%e8%b7%a8%e6%a8%a1%e5%9e%8b%e6%af%94%e8%be%83%e8%af%ad%e4%b9%89" aria-label="四、跨模型比较语义">四、跨模型比较语义</a><ul>
+                            
+                    <li>
+                        <a href="#41-%e6%ad%a3%e4%ba%a4procrustes%e7%9f%a9%e9%98%b5%e5%af%b9%e9%bd%90" aria-label="4.1 正交Procrustes矩阵对齐">4.1 正交Procrustes矩阵对齐</a></li>
+                    <li>
+                        <a href="#42--%e5%8a%a8%e6%80%81%e8%af%8d%e5%b5%8c%e5%85%a5%e6%a8%a1%e5%9e%8b" aria-label="4.2  动态词嵌入模型">4.2  动态词嵌入模型</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e4%ba%94%e8%8e%b7%e5%8f%96%e8%b5%84%e6%ba%90" aria-label="五、获取资源">五、获取资源</a><ul>
+                            
+                    <li>
+                        <a href="#51-%e5%85%8d%e8%b4%b9" aria-label="5.1 免费">5.1 免费</a></li>
+                    <li>
+                        <a href="#52-%e4%bb%98%e8%b4%b9" aria-label="5.2 付费">5.2 付费</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e5%b9%bf%e8%80%8c%e5%91%8a%e4%b9%8b" aria-label="广而告之">广而告之</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><p>想用 <a href="https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/">3571w中国专利申请数据集</a>，按年份(或按省份)训练词向量的同学，可以好好看本文，能节省你几十个小时时间。
+<br><br></p>
+<h2 id="一检查数据">一、检查数据<a hidden class="anchor" aria-hidden="true" href="#一检查数据">#</a></h2>
+<p>这个数据集很大， 如图所示，文件动辄几G
+<img loading="lazy" src="img/01-data-screen.png" alt=""  />
+</p>
+<p>之前分享过 <a href=""></a> , 面对巨大csv文件，我们要了解内部有哪些字段、字段的含义， 只读取需要的字段，减轻电脑内存压力， 让你能轻松应对几倍于内存的巨大csv文件。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#以山东省.csv 为例， 只读第一行(前1行)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;山东省.csv&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/02-shandong_df.png" alt=""  />
+</p>
+<br>
+<p>字段展示的不全，完整的字段应该有</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Index([&#39;专利公开号&#39;, &#39;专利名称&#39;, &#39;专利类型&#39;, &#39;专利摘要&#39;, &#39;申请人&#39;, &#39;专利申请号&#39;, &#39;申请日&#39;, &#39;申请公布日&#39;,
+       &#39;授权公布号&#39;, &#39;授权公布日&#39;, &#39;申请地址&#39;, &#39;主权项&#39;, &#39;发明人&#39;, &#39;分类号&#39;, &#39;主分类号&#39;, &#39;代理机构&#39;, &#39;分案原申请号&#39;,
+       &#39;优先权&#39;, &#39;国际申请&#39;, &#39;国际公布&#39;, &#39;代理人&#39;, &#39;省份或国家代码&#39;, &#39;法律状态&#39;, &#39;专利领域&#39;, &#39;专利学科&#39;,
+       &#39;多次公布&#39;],
+      dtype=&#39;object&#39;)
+</code></pre></div><br>
+<p>训练词向量主要用文本数据， 在本案例中， 需要的字段 [<strong>专利摘要</strong>] 。</p>
+<p><br><br></p>
+<h2 id="二构造语料">二、构造语料<a hidden class="anchor" aria-hidden="true" href="#二构造语料">#</a></h2>
+<p>在 [3751万专利申请全量数据1985-2022] 文件夹中，</p>
+<ol>
+<li>新建 [province_corpus] 和 [year_corpus] 两个文件夹</li>
+<li>新建 [code.ipynb]</li>
+</ol>
+<p>构造语料对电脑的性能要求不高， 不论你的电脑是什么配置，基本都能运行， 而且耗时在能接受的范围。</p>
+<br>
+<h3 id="21-文件树结构">2.1 文件树结构<a hidden class="anchor" aria-hidden="true" href="#21-文件树结构">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">3751万专利申请全量数据1985-2022
+  |---安徽省.csv
+  |---浙江省.csv
+  |---江苏省.csv
+  |---...
+  |---code.ipynb
+  |---province_corpus
+     |---安徽省.txt
+     |---浙江省.txt
+     |---...
+  |---year_corpus
+     |---2022.txt
+     |---2021.txt
+     |---...
+  |---output
+     |---provin_w2vs
+        |---安徽省.100.6.bin
+        |---安徽省.100.6.bin.syn1neg.npy
+        |---安徽省.100.6.bin.wv.vectors.npy
+        |---...
+     |---year_w2vs
+        |---2022.100.6.bin
+        |---2022.100.6.bin.syn1neg.npy
+        |---2022.100.6.bin.wv.vectors.npy
+        |---...
+</code></pre></div><br>
+<h3 id="22-按省份构造语料">2.2 按省份构造语料<a hidden class="anchor" aria-hidden="true" href="#22-按省份构造语料">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 在jupyter内可以得到Cell的运行时间</span>
+<span class="o">%%</span><span class="n">time</span> 
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1"># 获取 code.ipynb 所在文件夹内的所有csv文件路径列表</span>
+<span class="n">csvfs</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.csv&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
+
+<span class="c1"># 构造省份 txt 语料数据</span>
+<span class="k">for</span> <span class="n">csvf</span> <span class="ow">in</span> <span class="n">csvfs</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">csvf</span><span class="p">)</span>
+    <span class="n">province</span> <span class="o">=</span> <span class="n">csvf</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;province_corpus/</span><span class="si">{</span><span class="n">province</span><span class="si">}</span><span class="s1">.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">prov_f</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;专利摘要&#39;</span><span class="p">])</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;专利摘要&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利摘要&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">prov_f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">上海市.csv
+云南省.csv
+...
+安徽省.csv
+
+CPU times: total: 1500 s
+Wall time: 1520 s
+</code></pre></div><p>构造省份语料用了半个小时。
+<img loading="lazy" src="img/03-province-corpus.png" alt=""  />
+</p>
+<br>
+<h3 id="23-按年份构造语料">2.3 按年份构造语料<a hidden class="anchor" aria-hidden="true" href="#23-按年份构造语料">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span> 
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<span class="c1"># 获取 code.ipynb 所在文件夹内的所有csv文件路径列表</span>
+<span class="n">csvfs</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.csv&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
+
+<span class="c1"># 构造年份 txt 语料数据</span>
+<span class="k">for</span> <span class="n">csvf</span> <span class="ow">in</span> <span class="n">csvfs</span><span class="p">:</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">,</span> <span class="s1">&#39;专利摘要&#39;</span><span class="p">])</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">,</span> <span class="s1">&#39;专利摘要&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">],</span> <span class="n">errors</span> <span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;year_corpus/</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">year_f</span><span class="p">:</span>
+            <span class="n">year_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span><span class="o">==</span><span class="n">year</span><span class="p">]</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">year_df</span><span class="p">[</span><span class="s1">&#39;专利摘要&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="n">year_f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">上海市.csv 2022
+上海市.csv 2021
+上海市.csv 2020
+...
+...
+安徽省.csv 2022
+安徽省.csv 2021
+...
+...
+
+CPU times: total: 1600 s
+Wall time: 1650 s
+</code></pre></div><p>构造年份语料大概用了半个小时。
+<img loading="lazy" src="img/03-year-corpus.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三训练word2vec">三、训练word2vec<a hidden class="anchor" aria-hidden="true" href="#三训练word2vec">#</a></h2>
+<p>需要注意， 训练word2vec需要耗费很大的计算能力， 训练时间需要一两三。 本文使用的cntext2.0.0版本，需要付费获取cntext-2.0.0-py3-none-any.whl。</p>
+<h3 id="31-安装cntext">3.1 安装cntext<a hidden class="anchor" aria-hidden="true" href="#31-安装cntext">#</a></h3>
+<p>将 cntext-2.0.0-py3-none-any.whl 放置于电脑桌面， 打开 <strong>命令行cmd</strong> (Mac打开<strong>terminal</strong>)， 输入</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+pip install cntext-2.0.0-py3-none-any.whl
+</code></pre></div><p>有部分使用win的同学，如果按照操作没有安装成功，再试试</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd Desktop
+pip install cntext-2.0.0-py3-none-any.whl
+</code></pre></div><br>
+<h3 id="32-按省份训练">3.2 按省份训练<a hidden class="anchor" aria-hidden="true" href="#32-按省份训练">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="c1"># 获取 province_corpus 内的语料 txt 文件列表</span>
+<span class="n">provin_fs</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;province_corpus/</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.txt&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">provin_f</span> <span class="ow">in</span> <span class="n">provin_fs</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">provin_f</span><span class="p">)</span>
+    <span class="n">w2v_model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">W2VModel</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="n">provin_f</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+    <span class="n">w2v_model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">vector_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="s1">&#39;provin_w2vs&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">province_corpus/上海市.txt
+Start Preprocessing Corpus...
+Loading model cost 0.632 seconds.
+Prefix dict has been built successfully.
+Start Training! This may take a while. Please be patient...
+Training word2vec model took 3284 seconds
+Note: The Word2Vec model has been saved to output\provin_w2vs
+
+province_corpus/云南省.txt
+Start Preprocessing Corpus...
+Loading model cost 0.632 seconds.
+Prefix dict has been built successfully.
+Start Training! This may take a while. Please be patient...
+Training word2vec model took 564 seconds
+Note: The Word2Vec model has been saved to output\provin_w2vs
+...
+...
+
+CPU times: total: 21354 s
+Wall time: 21758 s
+</code></pre></div><p>训练省份词向量大概用了 6 小时，模型文件保存在 output/provin_w2vs
+<img loading="lazy" src="img/05-province-w2vs.png" alt=""  />
+
+<br></p>
+<h3 id="33-按年份训练">3.3 按年份训练<a hidden class="anchor" aria-hidden="true" href="#33-按年份训练">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="c1"># 获取 province_corpus 内的语料 txt 文件列表</span>
+<span class="n">year_fs</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;year_corpus/</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.txt&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">year_f</span> <span class="ow">in</span> <span class="n">year_fs</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">year_f</span><span class="p">)</span>
+    <span class="n">w2v_model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">W2VModel</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="n">year_f</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+    <span class="n">w2v_model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">vector_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="s1">&#39;year_w2vs&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">year_corpus/1980.txt
+Start Preprocessing Corpus...
+Start Training! This may take a while. Please be patient...
+Training word2vec model took 0 seconds
+Note: The Word2Vec model has been saved to output\year_w2vs
+
+year_corpus/1984.txt
+Start Preprocessing Corpus...
+Start Training! This may take a while. Please be patient...
+Training word2vec model took 0 seconds
+Note: The Word2Vec model has been saved to output\year_w2vs
+
+...
+...
+
+CPU times: total: 19354 s
+Wall time: 20000 s
+</code></pre></div><p>训练省份词向量大概用了 5.5 小时，模型文件保存在 output/year_w2vs
+<img loading="lazy" src="img/06-years-w2vs.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三使用word2vec">三、使用word2vec<a hidden class="anchor" aria-hidden="true" href="#三使用word2vec">#</a></h2>
+<h3 id="31-导入模型">3.1 导入模型<a hidden class="anchor" aria-hidden="true" href="#31-导入模型">#</a></h3>
+<p><code>output/provin_w2vs</code> 和 <code>output/year_w2vs</code> 内有多个模型， 单个的模型文件大约几十M ~ 几百M， <strong>但不建议一次性导入进来</strong>。大邓的电脑内存96G，为了省事，就一次性全导入了。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">from</span> <span class="nn">gensim.models</span> <span class="kn">import</span> <span class="n">KeyedVectors</span>
+
+
+<span class="n">provin_w2vs_</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">provin_w2v_fs</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;output/provin_w2vs/</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;output/provin_w2vs&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.npy&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">provin_w2v_f</span> <span class="ow">in</span> <span class="n">provin_w2v_fs</span><span class="p">:</span>
+    <span class="n">provin_w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">provin_w2v_f</span><span class="p">)</span>
+    <span class="c1">#如果没有cntext就用注释掉的代码，使用gensim导入</span>
+    <span class="c1">#provin_w2v = KeyedVectors.load(provin_w2v_f)</span>
+    <span class="n">provin_w2vs_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">provin_w2v</span><span class="p">)</span>
+    
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">from</span> <span class="nn">gensim.models</span> <span class="kn">import</span> <span class="n">KeyedVectors</span>
+
+<span class="n">year_w2vs_</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">year_w2v_fs</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;output/year_w2vs/</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s1">&#39;</span> 
+               <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;output/year_w2vs&#39;</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> 
+               <span class="k">if</span> <span class="s1">&#39;.npy&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">year_w2v_f</span> <span class="ow">in</span> <span class="n">year_w2v_fs</span><span class="p">:</span>
+    <span class="n">year_w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">year_w2v_f</span><span class="p">)</span>
+    <span class="c1">#如果没有cntext就用注释掉的代码，使用gensim导入</span>
+    <span class="c1">#year_w2v = KeyedVectors.load(year_w2v_f)</span>
+    <span class="n">year_w2vs_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">year_w2v</span><span class="p">)</span>
+</code></pre></div><br>
+<h3 id="32-查看词汇量">3.2 查看词汇量<a hidden class="anchor" aria-hidden="true" href="#32-查看词汇量">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;省份Word2vec词汇量&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">provin_w2v_f</span><span class="p">,</span> <span class="n">provin_w2v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">provin_w2v_fs</span><span class="p">,</span> <span class="n">provin_w2vs_</span><span class="p">):</span>
+    <span class="n">province</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;[</span><span class="se">\u4e00</span><span class="s1">-</span><span class="se">\u9fa5</span><span class="s1">]+&#39;</span><span class="p">,</span> <span class="n">provin_w2v_f</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">province</span><span class="si">}</span><span class="s1"> 词汇量: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">provin_w2v</span><span class="o">.</span><span class="n">wv</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">省份Word2vec词汇量</span>
+<span class="n">北京市</span><span class="p">:</span> <span class="mi">679126</span>
+<span class="n">安徽省</span><span class="p">:</span> <span class="mi">471459</span>
+<span class="n">江西省</span><span class="p">:</span> <span class="mi">216389</span>
+<span class="n">重庆市</span><span class="p">:</span> <span class="mi">269875</span>
+<span class="n">澳门特别行政区</span><span class="p">:</span> <span class="mi">4235</span>
+<span class="n">湖北省</span><span class="p">:</span> <span class="mi">416464</span>
+<span class="n">吉林省</span><span class="p">:</span> <span class="mi">169665</span>
+<span class="n">香港特别行政区</span><span class="p">:</span> <span class="mi">37948</span>
+<span class="n">天津市</span><span class="p">:</span> <span class="mi">323214</span>
+<span class="n">湖南省</span><span class="p">:</span> <span class="mi">341033</span>
+<span class="n">辽宁省</span><span class="p">:</span> <span class="mi">331955</span>
+<span class="n">广东省</span><span class="p">:</span> <span class="mi">935412</span>
+<span class="n">黑龙江省</span><span class="p">:</span> <span class="mi">223448</span>
+<span class="n">其他国家</span><span class="p">:</span> <span class="mi">460</span>
+<span class="n">河北省</span><span class="p">:</span> <span class="mi">281543</span>
+<span class="n">内蒙古自治区</span><span class="p">:</span> <span class="mi">103331</span>
+<span class="n">河南省</span><span class="p">:</span> <span class="mi">381151</span>
+<span class="n">福建省</span><span class="p">:</span> <span class="mi">367768</span>
+<span class="n">贵州省</span><span class="p">:</span> <span class="mi">163641</span>
+<span class="n">陕西省</span><span class="p">:</span> <span class="mi">332231</span>
+<span class="n">云南省</span><span class="p">:</span> <span class="mi">174191</span>
+<span class="n">浙江省</span><span class="p">:</span> <span class="mi">751976</span>
+<span class="n">甘肃省</span><span class="p">:</span> <span class="mi">125789</span>
+<span class="n">台湾省</span><span class="p">:</span> <span class="mi">175827</span>
+<span class="n">宁夏回族自治区</span><span class="p">:</span> <span class="mi">65428</span>
+<span class="n">山西省</span><span class="p">:</span> <span class="mi">163094</span>
+<span class="n">山东省</span><span class="p">:</span> <span class="mi">633187</span>
+<span class="n">江苏省</span><span class="p">:</span> <span class="mi">928838</span>
+<span class="n">海南省</span><span class="p">:</span> <span class="mi">59742</span>
+<span class="n">西藏自治区</span><span class="p">:</span> <span class="mi">14884</span>
+<span class="n">青海省</span><span class="p">:</span> <span class="mi">40403</span>
+<span class="n">广西壮族自治区</span><span class="p">:</span> <span class="mi">237805</span>
+<span class="n">四川省</span><span class="p">:</span> <span class="mi">437751</span>
+<span class="n">新疆维吾尔自治区</span><span class="p">:</span> <span class="mi">100079</span>
+<span class="n">上海市</span><span class="p">:</span> <span class="mi">537777</span>
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;年份word2vec词汇量&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">year_w2v_f</span><span class="p">,</span> <span class="n">year_w2v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">year_w2v_fs</span><span class="p">,</span> <span class="n">year_w2vs_</span><span class="p">):</span>
+    <span class="n">year</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">year_w2v_f</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">year_w2v</span><span class="o">.</span><span class="n">wv</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">年份word2vec词汇量
+2022: 191145
+2021: 605364
+2020: 903230
+2019: 901583
+2018: 911762
+2017: 881858
+2016: 810445
+2015: 621050
+2014: 388647
+2013: 517991
+2012: 484417
+2011: 281045
+2010: 264882
+2009: 245851
+2008: 218349
+2007: 191569
+2006: 177269
+2005: 153533
+2004: 130384
+2003: 120306
+2002: 102266
+2001: 78116
+2000: 63233
+1999: 53341
+1998: 47007
+1997: 44221
+1996: 42709
+1995: 40084
+1994: 40987
+1993: 42781
+1992: 40149
+1991: 33159
+1990: 28480
+1989: 23548
+1988: 23502
+1987: 19851
+1986: 14330
+1985: 11535
+1984: 2
+1980: 2
+1900: 1
+1899: 4
+</code></pre></div><br>
+<h3 id="33-语义检查-省份">3.3 语义检查-省份<a hidden class="anchor" aria-hidden="true" href="#33-语义检查-省份">#</a></h3>
+<p>先检查省份， 查看与[&lsquo;创新&rsquo;, &lsquo;新颖&rsquo;]最相似的5个词，通过语义捕捉准确与否，粗略判断Word2vec训练效果的好坏。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+
+<span class="k">for</span> <span class="n">provin_w2v_f</span><span class="p">,</span> <span class="n">provin_w2v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">provin_w2v_fs</span><span class="p">,</span> <span class="n">provin_w2vs_</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">province</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;[</span><span class="se">\u4e00</span><span class="s1">-</span><span class="se">\u9fa5</span><span class="s1">]+&#39;</span><span class="p">,</span> <span class="n">provin_w2v_f</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">wordweigths</span> <span class="o">=</span> <span class="n">provin_w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;新颖&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span><span class="n">p</span> <span class="ow">in</span> <span class="n">wordweigths</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">province</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="s2">&#34; &#34;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">province</span><span class="si">}</span><span class="s1">: &#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">北京市: 独特 全新 创造性 独创 先进
+安徽省: 简洁 独特 精巧 精简 原理简单
+江西省: 巧妙 简单实用 简单可靠 简单成本低 精巧
+重庆市: 先进 独特 现代 科学 易用
+澳门特别行政区: 
+湖北省: 巧妙 精巧 科学 精良 简洁
+吉林省: 先进 科学 推广 独特 可行
+香港特别行政区: 工业化生产 公知 相对现有 克服现有 石头纸
+天津市: 独特 先进 精巧 科学 构思
+湖南省: 科学 简洁 先进 简明 独特
+辽宁省: 科学 理念 构思 先进 独特
+广东省: 独特 创新性 巧妙 科学 简单巧妙
+黑龙江省: 科学 独特 精巧 先进 小巧
+其他国家: 
+河北省: 科学合理 新颖独特 简单实用 科学 精巧
+内蒙古自治区: 经济实用 广泛使用 资源丰富 应用广泛 应用范围广
+河南省: 简单实用 独特 较为新颖 精巧 简明
+福建省: 原理简单 简单实用 巧妙 灵巧 独特
+贵州省: 取材方便 价格便宜 安全经济 生产成本低廉 原料易得
+陕西省: 独特 简单实用 结构新颖 小巧 简约
+云南省: 科学 构思新颖 独特 价廉 简便易行,
+浙江省: 独特 科学 全新 巧妙 较为合理
+甘肃省: 先进 切实可行 性能优良 独特 一种较为理想
+台湾省: 独特 多元 特有 经济 特色
+宁夏回族自治区: 重量轻 体积小 性能可靠 具有使用方便 功能丰富
+山西省: 独特 科学 先进 简洁 广泛
+山东省: 新颖独特 巧妙 精巧 独特 先进
+江苏省: 独特 全新 构思 精巧 简单巧妙
+海南省: 多样 传统工艺 改变传统 制作过程 精华素
+西藏自治区: 
+青海省: 投饵 具有重量轻 具有成本低 极为 隔热保温
+广西壮族自治区: 先进 独特 现代 广泛 明
+四川省: 独特 先进 科学合理 人性化 科学
+新疆维吾尔自治区: 现代 方
+ 携带方便 广泛 原料来源
+上海市: 独特 设计理念 巧妙 科学 构思
+</code></pre></div><p>从上面的运行结果看， 绝大多数的省份Word2vec都很准确的捕捉到了专利摘要的语义信息。</p>
+<br>
+<h3 id="34-语义检查-年份">3.4 语义检查-年份<a hidden class="anchor" aria-hidden="true" href="#34-语义检查-年份">#</a></h3>
+<p>查看与[&lsquo;创新&rsquo;, &lsquo;新颖&rsquo;]最相似的5个词，通过语义捕捉准确与否，粗略判断Word2vec训练效果的好坏。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+
+<span class="k">for</span> <span class="n">year_w2v_f</span><span class="p">,</span> <span class="n">year_w2v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">year_w2v_fs</span><span class="p">,</span> <span class="n">year_w2vs_</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">year</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">year_w2v_f</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">wordweigths</span> <span class="o">=</span> <span class="n">year_w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;新颖&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span><span class="n">p</span> <span class="ow">in</span> <span class="n">wordweigths</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="s2">&#34; &#34;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">: &#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2022: 出错率 同井 Git 铝合金膜 传动件传动
+2021: 铁前驱 甲基氢 单向阀进液 储存罐 Seq2Seq
+2020: 减温层 洗浴间 球形活性炭 OASQ 目标语言句子
+2019: 面膜布 自承式 网状加强 铲衣 温头
+2018: 简单易行 工艺流程 成本高 克服现有 操作简便
+2017: 问题 容易 良好 性能 实用
+2016: 相互绝缘 不需 未知 窄边框 耐腐层
+2015: 人体温度 压盖 后座 漏电检测 截骨刀
+2014: 循环热泵 特细 多处 尾轴 名称内裤
+2013: 精制 重复性 强 优势 少
+2012: 提升 解决 多种 能够实现 避免
+2011: 光亮 具有高 分层 木 品
+2010: 转换 具有 强度 整个 时间
+
+2009: 科学 先进 独特 创造性 全新
+2008: 独特 先进 全新 思路 创造性
+2007: 独特 全新 先进 现代 科学
+2006: 先进 独特 全新 新颖性 创造性
+2005: 科学 独特 简洁 简捷 独特,
+2004: 独特 简单易行 科学 优越性 经济
+2003: 独特 科学 多样, 实用 经济实用
+2002: 研制 ,采取 多方面 效果差 直接应用
+
+2001: 人造 管材 废弃 有机结合 缺点
+2000: 防滑 光亮 着色 系列产品 清晰
+1999: ,适于 病人 价廉 ,目前 害虫
+1998: 优化 城市 设施 磁化 节水
+1997: 病症 手工 透气 不足, 不足
+1996: 制造 ,属于 应用 实现 传递文字
+1995: 显著疗效 味美 极佳 活血 明目
+1994: 样式 坚固耐用, 便利, 巧妙 使用方便安全
+1993: 先进 完善 知识性 成本高 功能单一
+1992: 经济实用 现行 ,实为 住房 结构设计
+1991: 易损坏 保留 庞大 普遍 物两用
+1990: 笔算 不足之处, 功能单一 ,需用 结构复杂
+1989: 缺点 力小 设施 临时 不便
+1988: 设施, 改造 美发 油田 机械装置
+1987: 各种类型 用途单一 之用 水上 室内外
+1986: 飞行 化油器 具 显微镜 雨水
+1985: 很大 浪费 器件 地区 具有结构
+1984: 
+1980: 
+1900: 
+1899: 
+</code></pre></div><p>也试了其他的词语，好像只有 2002-2009 之间的语义是准确的。 <strong>原因未知，也训练了<a href="https://textdata.cn/blog/2023-11-18-failure-example-show-word-meaning-shift-using-word2vec/">裁判文书的Word2vec</a>,  年份的是一点准头都没有。专利数据训练的好在还有点准头</strong>。</p>
+<br>
+<h2 id="四跨模型比较语义">四、跨模型比较语义<a hidden class="anchor" aria-hidden="true" href="#四跨模型比较语义">#</a></h2>
+<p>假设语义都很准的话， 是可以研究 <strong>语义变迁</strong> 或者 <strong>语义差异</strong> 的。 但需要注意， 不能直接使用两个年份或者两个省份的中word1和word2的距离来体现语义的变迁或者语义的差异。 如果想做省份间差异或者某省份随时间的变化， 需要用到 <strong>对齐算法</strong>， 使得同省份不同年份或者通年份不同省份的word2vec都有相同的语义空间。</p>
+<p>Procrustes 矩阵对齐和 动态词嵌入模型（Dynamic Word Embeddings）是两种不同的技术。</p>
+<h3 id="41-正交procrustes矩阵对齐">4.1 正交Procrustes矩阵对齐<a hidden class="anchor" aria-hidden="true" href="#41-正交procrustes矩阵对齐">#</a></h3>
+<p>正交Procrustes矩阵对齐是一种将两个预训练语言模型的词向量矩阵对齐的方法，使得它们在相同的语义空间中表示。具体来说，它通过计算一个正交矩阵，将两个词向量矩阵进行线性变换，使得它们的Frobenius范数之和最小，从而实现对齐。 gensim库有该算法，大邓后续有时间会分享如何用Procrustes对齐语言模型。</p>
+<br>
+<h3 id="42--动态词嵌入模型">4.2  动态词嵌入模型<a hidden class="anchor" aria-hidden="true" href="#42--动态词嵌入模型">#</a></h3>
+<p>而动态词嵌入模型是一种基于神经网络的方法，用于学习随时间变化的词向量表示。它考虑到了词汇的上下文信息和时间信息，通过对上下文信息和时间信息进行建模，动态地更新词向量表示。相比于静态词向量模型，动态词嵌入模型能够更好地捕捉词汇在不同时间和语境下的含义和语义变化。 目前大邓还没找到可实现的公开代码。</p>
+<p><br><br></p>
+<h2 id="五获取资源">五、获取资源<a hidden class="anchor" aria-hidden="true" href="#五获取资源">#</a></h2>
+<h3 id="51-免费">5.1 免费<a hidden class="anchor" aria-hidden="true" href="#51-免费">#</a></h3>
+<ul>
+<li>年份词向量 链接: <a href="https://pan.baidu.com/s/1-EngiWU9IAkqfk2Qf2W5lA">https://pan.baidu.com/s/1-EngiWU9IAkqfk2Qf2W5lA</a> 提取码: d925</li>
+<li>省份词向量  链接: <a href="https://pan.baidu.com/s/1TnZf5YkRZMWf4liN04XO_g">https://pan.baidu.com/s/1TnZf5YkRZMWf4liN04XO_g</a> 提取码: cjs8</li>
+</ul>
+<br>
+<h3 id="52-付费">5.2 付费<a hidden class="anchor" aria-hidden="true" href="#52-付费">#</a></h3>
+<p>内容整理不易， 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」</p>
+<ul>
+<li>100元  cntext-2.0.0-py3-none-any.whl</li>
+<li>100元 3751w专利申请数据集</li>
+<li>150元 3751w专利申请数据集 + cntext-2.0.0-py3-none-any.whl</li>
+</ul>
+<p><br><br></p>
+<h2 id="广而告之">广而告之<a hidden class="anchor" aria-hidden="true" href="#广而告之">#</a></h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/python/" target='_blank'>Python</a></li>
+        <li><a href="/tags/%E8%AF%8D%E5%90%91%E9%87%8F/" target='_blank'>词向量</a></li>
+      </ul>
+
+
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f&amp;url=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f&amp;hashtags=Python%2c%e8%af%8d%e5%90%91%e9%87%8f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f&amp;title=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f&amp;summary=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f&amp;source=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f&title=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f%20-%20%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 使用3751w专利申请数据集按年份(按省份)训练词向量 on telegram"
+        href="https://telegram.me/share/url?text=%e4%bd%bf%e7%94%a83751w%e4%b8%93%e5%88%a9%e7%94%b3%e8%af%b7%e6%95%b0%e6%8d%ae%e9%9b%86%e6%8c%89%e5%b9%b4%e4%bb%bd%28%e6%8c%89%e7%9c%81%e4%bb%bd%29%e8%ae%ad%e7%bb%83%e8%af%8d%e5%90%91%e9%87%8f&amp;url=%2fblog%2f2023-11-20-word2vec-by-year-by-province%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'Copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+
+
+    
+    
+</body>
+
+</html>
