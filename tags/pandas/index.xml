@@ -6,7 +6,419 @@
     <description>Recent content in pandas on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 18 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pandas/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 22 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pandas/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>2T数据集 | 使用GH Archive获取Github社区用户数据</title>
+      <link>https://textdata.cn/blog/2023-11-22-open-dataset-gharchive-org/</link>
+      <pubDate>Wed, 22 Nov 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-22-open-dataset-gharchive-org/</guid>
+      <description>&lt;h2 id=&#34;一github&#34;&gt;一、Github&lt;/h2&gt;
+&lt;p&gt;GitHub 是一个具有代表性的开发者社区，帮助了软件的在线开发，吸引了全球超过 3100 万开发者。 GitHub 将每个用户活动视为一个事件，例如新存储库或创建的分支的创建事件。 GitHub 总共支持 42 种事件类型。 典型的用户活动包括创建新存储库、克隆现有存储库、从 GitHub 提取存储库的最新更改以及提交本地所做的更改并将其推送到共享存储库。&lt;/p&gt;
+&lt;p&gt;通过 GitHub，开发人员可以相互交流，通过在存储库下发布问题来分配和领取编程任务。 此外，还支持常规的“关注”功能，允许用户接收该平台上任何用户的状态更新通知。 在这些在线社区中，开发者之间的互动主要集中在协作开发和代码共享上，形成了一种特殊的社交网络。&lt;strong&gt;这些特点使得github数据可用于广泛的研究领域，包括但不限于科技创新、组织管理、社交媒体等&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二gh-archive&#34;&gt;二、GH Archive&lt;/h2&gt;
+&lt;p&gt;获取github数据，我们最容易想到是利用网站提供的api。 github提供了免费的api接口， 每小时的请求数量是有限制的（匿名用户60次，授权用户5000次）。 这对于想做大数据分析的我们而言， 限制太多， 短时间内难以获得大规模的数据。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;GHArchive活动档案自 2011 年 2 月 12 日起提供。&lt;/li&gt;
+&lt;li&gt;2011 年 2 月 12 日至 2014 年 12 月 31 日之间的活动档案是通过（现已弃用）时间线 API 记录的。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;从 2015 年 1 月 1 日开始的活动档案是通过事件 API 记录的&lt;/strong&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;可供下载GH Archive数据集体积远超 2T， 按年度&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;4.6G    2011
+13G     2012
+26G     2013
+57G     2014
+75G     2015
+112G    2016
+145G    2017
+177G    2018
+254G    2019
+420G    2020
+503G    2021
+657G    2022
+很大     2023
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;21--资源网址规律&#34;&gt;2.1  资源网址规律&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;GH Archive&lt;/strong&gt; 是一个开源的一个项目，用于记录公共GitHub时间轴，对其进行存档，并使其易于访问以进行进一步分析。GitHub Archive获取所有的GitHub events信息存储在一组JSON文件中，以便根据需要下载并脱机处理。&lt;strong&gt;GH Archive&lt;/strong&gt;数据是以小时为粒度，&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;数据获取任务&lt;/th&gt;
+&lt;th&gt;命令行下载命令&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;获取2021.11.21下午4点(世界标准时间)的数据&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;&lt;code&gt;wget https://data.gharchive.org/2021-11-21-16.json.gz&lt;/code&gt;&lt;/strong&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;获取2021.11.21的数据&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;&lt;code&gt;wget https://data.gharchive.org/2021-11-21-{0..23}.json.gz&lt;/code&gt;&lt;/strong&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;获取2021.11月的数据&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;&lt;code&gt;wget https://data.gharchive.org/2021-11-{0..30}-{0..23}.json.gz&lt;/code&gt;&lt;/strong&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;每个下载下来的数据都是&lt;code&gt;.gz&lt;/code&gt;的压缩文件，解压后会得到 &lt;code&gt;.json&lt;/code&gt;文件。 &lt;strong&gt;需要注意， 一个小时的数据大概百兆级别， 如果是整天、正月，json的文件会非常大。 建议按小时为粒度进行数据采集&lt;/strong&gt;。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;22-构造urls&#34;&gt;2.2 构造urls&lt;/h3&gt;
+&lt;p&gt;假设我要批量自动下载数据， 可以用python生成有规律的url列表， 然后用requests方式存储对应的.&lt;code&gt;gz&lt;/code&gt;文件数据。 &lt;strong&gt;假设我们需要采集 2021年11月21日全天的数据， 使用小时粒度存储数据集&lt;/strong&gt;。 &lt;strong&gt;需要注意， 本文教程默认是在jupyter notebook中撰写运行&lt;/strong&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;requests&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;date&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;2021-11-21&amp;#39;&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;urls&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;hour&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;range&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;24&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;url&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;https://data.gharchive.org/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;date&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;hour&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;.json.gz&amp;#39;&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;urls&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;url&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    
+&lt;span class=&#34;n&#34;&gt;urls&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;
+https://data.gharchive.org/2021-11-21-0.json.gz
+https://data.gharchive.org/2021-11-21-1.json.gz
+https://data.gharchive.org/2021-11-21-2.json.gz
+
+...
+...
+https://data.gharchive.org/2021-11-21-20.json.gz
+https://data.gharchive.org/2021-11-21-21.json.gz
+https://data.gharchive.org/2021-11-21-22.json.gz
+https://data.gharchive.org/2021-11-21-23.json.gz
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;23--python下载&#34;&gt;2.3  python下载&lt;/h3&gt;
+&lt;p&gt;使用requests库下载一个数据集&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;requests&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;download&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;url&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;file&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;url&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;/&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;wb&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;gf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;resp&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;requests&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;get&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;url&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;gf&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;resp&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+     
+&lt;span class=&#34;c1&#34;&gt;#尝试下载&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;url&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;https://data.gharchive.org/2021-11-21-0.json.gz&amp;#39;&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;download&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;url&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;批量下载2021年11月21日全天的数据， 使用小时粒度存储数据集。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;url&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;urls&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;download&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;url&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三读取操作&#34;&gt;三、读取操作&lt;/h2&gt;
+&lt;h3 id=&#34;31-数据解压&#34;&gt;3.1 数据解压&lt;/h3&gt;
+&lt;p&gt;得到的 &lt;code&gt;.gz&lt;/code&gt;数据可以使用以下代码进行解压，解压后会得到 &lt;code&gt;.json&lt;/code&gt; 数据文件。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;import os
+import gzip
+
+gz_fs = [f for f in os.listdir(&amp;#39;.&amp;#39;) if &amp;#39;.gz&amp;#39; in f]
+for gz_f in gz_fs:
+    file = gz_f.replace(&amp;#39;.gz&amp;#39;, &amp;#39;&amp;#39;)
+    content = gzip.GzipFile(gz_f).read()
+    with open(file, &amp;#39;wb&amp;#39;) as jsonf:
+        jsonf.write(content)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-读取json&#34;&gt;3.2 读取json&lt;/h3&gt;
+&lt;p&gt;因为数据文件都很大，一次性读取会很消耗时间， 推荐阅读 &lt;a href=&#34;https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/&#34;&gt;&lt;strong&gt;如何处理远超电脑内存的csv文件&lt;/strong&gt;&lt;/a&gt; 。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;pd.read_json(jsonf, nrows, lines, chunksize)&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;jsonf: 文件路径&lt;/li&gt;
+&lt;li&gt;nrows: 读取前nrows行&lt;/li&gt;
+&lt;li&gt;lines: 以行的方式读取，默认False&lt;/li&gt;
+&lt;li&gt;chunksize: 分批次读取，每批次的规模是chunksize行&lt;/li&gt;
+&lt;/ul&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;321-读取前n行&#34;&gt;3.2.1 读取前n行&lt;/h3&gt;
+&lt;p&gt;使用pandas读取 &lt;code&gt;2021-11-21-0.json&lt;/code&gt;  &lt;strong&gt;前5条数据， 了解下数据集的字段&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_json&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2021-11-21-0.json&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lines&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;nrows&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;322-查看折叠的字段&#34;&gt;3.2.2 查看折叠的字段&lt;/h3&gt;
+&lt;p&gt;乍一看好像没啥数据，其实都折叠在字段之中。以actor为例，我们看看内部会折叠哪些字段&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;actor&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;values&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;array([
+{&amp;#39;id&amp;#39;: 5355937, 
+&amp;#39;login&amp;#39;: &amp;#39;austinkregel&amp;#39;, 
+&amp;#39;display_login&amp;#39;: &amp;#39;austinkregel&amp;#39;, 
+&amp;#39;gravatar_id&amp;#39;: &amp;#39;&amp;#39;, 
+&amp;#39;url&amp;#39;: &amp;#39;https://api.github.com/users/austinkregel&amp;#39;, 
+&amp;#39;avatar_url&amp;#39;: &amp;#39;https://avatars.githubusercontent.com/u/5355937?&amp;#39;},
+
+{&amp;#39;id&amp;#39;: 89859977, 
+&amp;#39;login&amp;#39;: &amp;#39;Nicoperez19&amp;#39;, 
+&amp;#39;display_login&amp;#39;: &amp;#39;Nicoperez19&amp;#39;, 
+&amp;#39;gravatar_id&amp;#39;: &amp;#39;&amp;#39;, 
+&amp;#39;url&amp;#39;: &amp;#39;https://api.github.com/users/Nicoperez19&amp;#39;, 
+&amp;#39;avatar_url&amp;#39;: &amp;#39;https://avatars.githubusercontent.com/u/89859977?&amp;#39;},
+
+{&amp;#39;id&amp;#39;: 46858494, 
+&amp;#39;login&amp;#39;: &amp;#39;kapone3047&amp;#39;, 
+&amp;#39;display_login&amp;#39;: &amp;#39;kapone3047&amp;#39;, 
+&amp;#39;gravatar_id&amp;#39;: &amp;#39;&amp;#39;, 
+&amp;#39;url&amp;#39;: &amp;#39;https://api.github.com/users/kapone3047&amp;#39;, 
+&amp;#39;avatar_url&amp;#39;: &amp;#39;https://avatars.githubusercontent.com/u/46858494?&amp;#39;},
+
+       
+ {&amp;#39;id&amp;#39;: 1843851, 
+ &amp;#39;login&amp;#39;: &amp;#39;DerekEdwards&amp;#39;, 
+ &amp;#39;display_login&amp;#39;: &amp;#39;DerekEdwards&amp;#39;, 
+ &amp;#39;gravatar_id&amp;#39;: &amp;#39;&amp;#39;, 
+ &amp;#39;url&amp;#39;: &amp;#39;https://api.github.com/users/DerekEdwards&amp;#39;, 
+ &amp;#39;avatar_url&amp;#39;: &amp;#39;https://avatars.githubusercontent.com/u/1843851?&amp;#39;},
+ 
+{&amp;#39;id&amp;#39;: 94767098, 
+&amp;#39;login&amp;#39;: &amp;#39;hectorapweb&amp;#39;, 
+&amp;#39;display_login&amp;#39;: &amp;#39;hectorapweb&amp;#39;, 
+&amp;#39;gravatar_id&amp;#39;: &amp;#39;&amp;#39;, 
+&amp;#39;url&amp;#39;: &amp;#39;https://api.github.com/users/hectorapweb&amp;#39;, 
+&amp;#39;avatar_url&amp;#39;: &amp;#39;https://avatars.githubusercontent.com/u/94767098?&amp;#39;}
+
+],dtype=object)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;323-恢复一个折叠的信息&#34;&gt;3.2.3 恢复一个折叠的信息&lt;/h3&gt;
+&lt;p&gt;以actor为例&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;df[&amp;#39;actor&amp;#39;].apply(lambda x: pd.Series(x))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df2.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;324-合并结果&#34;&gt;3.2.4 合并结果&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;_ = df[&amp;#39;actor&amp;#39;].apply(lambda x: pd.Series(x))
+df = pd.concat([df, _], axis=0)
+df
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df3.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;更新后的df含有的字段有&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;df.columns
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Index([&amp;#39;id&amp;#39;, &amp;#39;type&amp;#39;, &amp;#39;actor&amp;#39;, &amp;#39;repo&amp;#39;, &amp;#39;payload&amp;#39;, &amp;#39;public&amp;#39;, &amp;#39;created_at&amp;#39;, &amp;#39;org&amp;#39;,
+       &amp;#39;id&amp;#39;, &amp;#39;login&amp;#39;, &amp;#39;display_login&amp;#39;, &amp;#39;gravatar_id&amp;#39;, &amp;#39;url&amp;#39;, &amp;#39;avatar_url&amp;#39;],
+      dtype=&amp;#39;object&amp;#39;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四相关数据集&#34;&gt;四、相关数据集&lt;/h2&gt;
+&lt;h3 id=&#34;github-1000万用户&#34;&gt;Github 1000万用户&lt;/h3&gt;
+&lt;p&gt;Gong, Q., Zhang, J., Chen, Y., Li, Q., &lt;a href=&#34;https://research.aalto.fi/en/persons/yu-xiao&#34;&gt;Xiao, Y.&lt;/a&gt;, Wang, X. &amp;amp; Hui, P., Nov 2019, &lt;em&gt;CIKM &amp;lsquo;19:Proceedings of the 28th ACM International Conference on Information and Knowledge Management.&lt;/em&gt; &lt;a href=&#34;https://research.aalto.fi/en/datasets/a-representative-user-centric-dataset-of-10-million-github-develo#&#34;&gt;ACM&lt;/a&gt;, p. 1251-1260 (ACM International Conference on Information &amp;amp; Knowledge Management).&lt;/p&gt;
+&lt;p&gt;使用 GitHub API，我们构建了超过 1000 万 GitHub 用户的无偏见数据集。该数据收集于2018年7月20日至8月27日期间，涵盖10,649,574名用户、118,602,740次提交和20,999,258个存储库。每个数据条目都以 JSON 格式存储，代表一个 GitHub 用户，并包含用户个人资料页面中的描述信息、她的提交活动以及创建/分叉的公共存储库的信息。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;数据集下载地址&lt;/strong&gt; &lt;a href=&#34;https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/T6ZRJT&#34;&gt;https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/T6ZRJT&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<h2 id="一github">一、Github</h2>
+<p>GitHub 是一个具有代表性的开发者社区，帮助了软件的在线开发，吸引了全球超过 3100 万开发者。 GitHub 将每个用户活动视为一个事件，例如新存储库或创建的分支的创建事件。 GitHub 总共支持 42 种事件类型。 典型的用户活动包括创建新存储库、克隆现有存储库、从 GitHub 提取存储库的最新更改以及提交本地所做的更改并将其推送到共享存储库。</p>
+<p>通过 GitHub，开发人员可以相互交流，通过在存储库下发布问题来分配和领取编程任务。 此外，还支持常规的“关注”功能，允许用户接收该平台上任何用户的状态更新通知。 在这些在线社区中，开发者之间的互动主要集中在协作开发和代码共享上，形成了一种特殊的社交网络。<strong>这些特点使得github数据可用于广泛的研究领域，包括但不限于科技创新、组织管理、社交媒体等</strong>。</p>
+<p><br><br></p>
+<h2 id="二gh-archive">二、GH Archive</h2>
+<p>获取github数据，我们最容易想到是利用网站提供的api。 github提供了免费的api接口， 每小时的请求数量是有限制的（匿名用户60次，授权用户5000次）。 这对于想做大数据分析的我们而言， 限制太多， 短时间内难以获得大规模的数据。</p>
+<ul>
+<li>GHArchive活动档案自 2011 年 2 月 12 日起提供。</li>
+<li>2011 年 2 月 12 日至 2014 年 12 月 31 日之间的活动档案是通过（现已弃用）时间线 API 记录的。</li>
+<li><strong>从 2015 年 1 月 1 日开始的活动档案是通过事件 API 记录的</strong>。</li>
+</ul>
+<p>可供下载GH Archive数据集体积远超 2T， 按年度</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">4.6G    2011
+13G     2012
+26G     2013
+57G     2014
+75G     2015
+112G    2016
+145G    2017
+177G    2018
+254G    2019
+420G    2020
+503G    2021
+657G    2022
+很大     2023
+</code></pre></div><br>
+<h3 id="21--资源网址规律">2.1  资源网址规律</h3>
+<p><strong>GH Archive</strong> 是一个开源的一个项目，用于记录公共GitHub时间轴，对其进行存档，并使其易于访问以进行进一步分析。GitHub Archive获取所有的GitHub events信息存储在一组JSON文件中，以便根据需要下载并脱机处理。<strong>GH Archive</strong>数据是以小时为粒度，</p>
+<table>
+<thead>
+<tr>
+<th>数据获取任务</th>
+<th>命令行下载命令</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>获取2021.11.21下午4点(世界标准时间)的数据</td>
+<td><strong><code>wget https://data.gharchive.org/2021-11-21-16.json.gz</code></strong></td>
+</tr>
+<tr>
+<td>获取2021.11.21的数据</td>
+<td><strong><code>wget https://data.gharchive.org/2021-11-21-{0..23}.json.gz</code></strong></td>
+</tr>
+<tr>
+<td>获取2021.11月的数据</td>
+<td><strong><code>wget https://data.gharchive.org/2021-11-{0..30}-{0..23}.json.gz</code></strong></td>
+</tr>
+</tbody>
+</table>
+<p>每个下载下来的数据都是<code>.gz</code>的压缩文件，解压后会得到 <code>.json</code>文件。 <strong>需要注意， 一个小时的数据大概百兆级别， 如果是整天、正月，json的文件会非常大。 建议按小时为粒度进行数据采集</strong>。</p>
+<br>
+<h3 id="22-构造urls">2.2 构造urls</h3>
+<p>假设我要批量自动下载数据， 可以用python生成有规律的url列表， 然后用requests方式存储对应的.<code>gz</code>文件数据。 <strong>假设我们需要采集 2021年11月21日全天的数据， 使用小时粒度存储数据集</strong>。 <strong>需要注意， 本文教程默认是在jupyter notebook中撰写运行</strong>。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="n">date</span> <span class="o">=</span> <span class="s1">&#39;2021-11-21&#39;</span>
+<span class="n">urls</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">hour</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">24</span><span class="p">):</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;https://data.gharchive.org/</span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s1">-</span><span class="si">{</span><span class="n">hour</span><span class="si">}</span><span class="s1">.json.gz&#39;</span>
+    <span class="n">urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    
+<span class="n">urls</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">
+https://data.gharchive.org/2021-11-21-0.json.gz
+https://data.gharchive.org/2021-11-21-1.json.gz
+https://data.gharchive.org/2021-11-21-2.json.gz
+
+...
+...
+https://data.gharchive.org/2021-11-21-20.json.gz
+https://data.gharchive.org/2021-11-21-21.json.gz
+https://data.gharchive.org/2021-11-21-22.json.gz
+https://data.gharchive.org/2021-11-21-23.json.gz
+</code></pre></div><br>
+<h3 id="23--python下载">2.3  python下载</h3>
+<p>使用requests库下载一个数据集</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">gf</span><span class="p">:</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">gf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+     
+<span class="c1">#尝试下载</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://data.gharchive.org/2021-11-21-0.json.gz&#39;</span>
+<span class="n">download</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</code></pre></div><br>
+<p>批量下载2021年11月21日全天的数据， 使用小时粒度存储数据集。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">urls</span><span class="p">:</span>
+    <span class="n">download</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</code></pre></div><p><br><br></p>
+<h2 id="三读取操作">三、读取操作</h2>
+<h3 id="31-数据解压">3.1 数据解压</h3>
+<p>得到的 <code>.gz</code>数据可以使用以下代码进行解压，解压后会得到 <code>.json</code> 数据文件。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import os
+import gzip
+
+gz_fs = [f for f in os.listdir(&#39;.&#39;) if &#39;.gz&#39; in f]
+for gz_f in gz_fs:
+    file = gz_f.replace(&#39;.gz&#39;, &#39;&#39;)
+    content = gzip.GzipFile(gz_f).read()
+    with open(file, &#39;wb&#39;) as jsonf:
+        jsonf.write(content)
+</code></pre></div><br>
+<h3 id="32-读取json">3.2 读取json</h3>
+<p>因为数据文件都很大，一次性读取会很消耗时间， 推荐阅读 <a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/"><strong>如何处理远超电脑内存的csv文件</strong></a> 。</p>
+<p><strong>pd.read_json(jsonf, nrows, lines, chunksize)</strong></p>
+<ul>
+<li>jsonf: 文件路径</li>
+<li>nrows: 读取前nrows行</li>
+<li>lines: 以行的方式读取，默认False</li>
+<li>chunksize: 分批次读取，每批次的规模是chunksize行</li>
+</ul>
+<br>
+<h3 id="321-读取前n行">3.2.1 读取前n行</h3>
+<p>使用pandas读取 <code>2021-11-21-0.json</code>  <strong>前5条数据， 了解下数据集的字段</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_json</span><span class="p">(</span><span class="s1">&#39;2021-11-21-0.json&#39;</span><span class="p">,</span> <span class="n">lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/df.png" alt=""  />
+</p>
+<br>
+<h3 id="322-查看折叠的字段">3.2.2 查看折叠的字段</h3>
+<p>乍一看好像没啥数据，其实都折叠在字段之中。以actor为例，我们看看内部会折叠哪些字段</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;actor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([
+{&#39;id&#39;: 5355937, 
+&#39;login&#39;: &#39;austinkregel&#39;, 
+&#39;display_login&#39;: &#39;austinkregel&#39;, 
+&#39;gravatar_id&#39;: &#39;&#39;, 
+&#39;url&#39;: &#39;https://api.github.com/users/austinkregel&#39;, 
+&#39;avatar_url&#39;: &#39;https://avatars.githubusercontent.com/u/5355937?&#39;},
+
+{&#39;id&#39;: 89859977, 
+&#39;login&#39;: &#39;Nicoperez19&#39;, 
+&#39;display_login&#39;: &#39;Nicoperez19&#39;, 
+&#39;gravatar_id&#39;: &#39;&#39;, 
+&#39;url&#39;: &#39;https://api.github.com/users/Nicoperez19&#39;, 
+&#39;avatar_url&#39;: &#39;https://avatars.githubusercontent.com/u/89859977?&#39;},
+
+{&#39;id&#39;: 46858494, 
+&#39;login&#39;: &#39;kapone3047&#39;, 
+&#39;display_login&#39;: &#39;kapone3047&#39;, 
+&#39;gravatar_id&#39;: &#39;&#39;, 
+&#39;url&#39;: &#39;https://api.github.com/users/kapone3047&#39;, 
+&#39;avatar_url&#39;: &#39;https://avatars.githubusercontent.com/u/46858494?&#39;},
+
+       
+ {&#39;id&#39;: 1843851, 
+ &#39;login&#39;: &#39;DerekEdwards&#39;, 
+ &#39;display_login&#39;: &#39;DerekEdwards&#39;, 
+ &#39;gravatar_id&#39;: &#39;&#39;, 
+ &#39;url&#39;: &#39;https://api.github.com/users/DerekEdwards&#39;, 
+ &#39;avatar_url&#39;: &#39;https://avatars.githubusercontent.com/u/1843851?&#39;},
+ 
+{&#39;id&#39;: 94767098, 
+&#39;login&#39;: &#39;hectorapweb&#39;, 
+&#39;display_login&#39;: &#39;hectorapweb&#39;, 
+&#39;gravatar_id&#39;: &#39;&#39;, 
+&#39;url&#39;: &#39;https://api.github.com/users/hectorapweb&#39;, 
+&#39;avatar_url&#39;: &#39;https://avatars.githubusercontent.com/u/94767098?&#39;}
+
+],dtype=object)
+</code></pre></div><br>
+<h3 id="323-恢复一个折叠的信息">3.2.3 恢复一个折叠的信息</h3>
+<p>以actor为例</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df[&#39;actor&#39;].apply(lambda x: pd.Series(x))
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<br>
+<h3 id="324-合并结果">3.2.4 合并结果</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">_ = df[&#39;actor&#39;].apply(lambda x: pd.Series(x))
+df = pd.concat([df, _], axis=0)
+df
+</code></pre></div><p><img loading="lazy" src="img/df3.png" alt=""  />
+</p>
+<br>
+<p>更新后的df含有的字段有</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df.columns
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Index([&#39;id&#39;, &#39;type&#39;, &#39;actor&#39;, &#39;repo&#39;, &#39;payload&#39;, &#39;public&#39;, &#39;created_at&#39;, &#39;org&#39;,
+       &#39;id&#39;, &#39;login&#39;, &#39;display_login&#39;, &#39;gravatar_id&#39;, &#39;url&#39;, &#39;avatar_url&#39;],
+      dtype=&#39;object&#39;)
+</code></pre></div><p><br><br></p>
+<h2 id="四相关数据集">四、相关数据集</h2>
+<h3 id="github-1000万用户">Github 1000万用户</h3>
+<p>Gong, Q., Zhang, J., Chen, Y., Li, Q., <a href="https://research.aalto.fi/en/persons/yu-xiao">Xiao, Y.</a>, Wang, X. &amp; Hui, P., Nov 2019, <em>CIKM &lsquo;19:Proceedings of the 28th ACM International Conference on Information and Knowledge Management.</em> <a href="https://research.aalto.fi/en/datasets/a-representative-user-centric-dataset-of-10-million-github-develo#">ACM</a>, p. 1251-1260 (ACM International Conference on Information &amp; Knowledge Management).</p>
+<p>使用 GitHub API，我们构建了超过 1000 万 GitHub 用户的无偏见数据集。该数据收集于2018年7月20日至8月27日期间，涵盖10,649,574名用户、118,602,740次提交和20,999,258个存储库。每个数据条目都以 JSON 格式存储，代表一个 GitHub 用户，并包含用户个人资料页面中的描述信息、她的提交活动以及创建/分叉的公共存储库的信息。</p>
+<p><strong>数据集下载地址</strong> <a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/T6ZRJT">https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/T6ZRJT</a></p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>pandarallel库 | 多核运行提升pandas速度</title>
       <link>https://textdata.cn/blog/2023-11-19-pandarallel-speed-up-pandas/</link>
