@@ -9,10 +9,10 @@
     <lastBuildDate>Tue, 25 Apr 2023 11:43:10 +0600</lastBuildDate><atom:link href="/categories/%E7%BC%96%E7%A8%8B/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>tomotopy | 速度最快的LDA主题模型</title>
-      <link>https://textdata.cn/blog/tomotopy_is_the_fastest_topic_model/</link>
+      <link>https://textdata.cn/blog/2023-04-25-tomotopy_is_the_fastest_topic_model/</link>
       <pubDate>Tue, 25 Apr 2023 11:43:10 +0600</pubDate>
       
-      <guid>/blog/tomotopy_is_the_fastest_topic_model/</guid>
+      <guid>/blog/2023-04-25-tomotopy_is_the_fastest_topic_model/</guid>
       <description>接近C的速度，比市面的sklearn、gensim快十几倍</description>
       <content:encoded><![CDATA[<h2 id="代码下载tomotopy_codezip"><a href="tomotopy_code.zip">代码下载</a></h2>
 <br>
@@ -62,15 +62,15 @@
 </p>
 <br>
 <h2 id="2-整理数据">2. 整理数据</h2>
-<p>分词、去除停用词</p>
+<p>分词、去除停用词,</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">jieba</span>
-<span class="kn">from</span> <span class="nn">cntext</span> <span class="kn">import</span> <span class="n">STOPWORDS_zh</span>
 
+<span class="n">stopwords</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;stopwords.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">segment</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
     <span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STOPWORDS_zh</span><span class="p">]</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stopwords</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">words</span>
 
 <span class="n">test</span> <span class="o">=</span> <span class="s2">&#34;云南永善县级地震已致人伤间民房受损中新网月日电据云南昭通市防震减灾局官方网站消息截至日时云南昭通永善县级地震已造成人受伤其中重伤人轻伤人已全部送医院救治民房受损户间倒塌户间个乡镇所学校不同程度受损目前被损毁电力交通通讯设施已全部抢通修复当地已调拨帐篷顶紧急转移万人月日时分云南昭通永善县发生里氏级地震震源深度公里当地震感强烈此外成都等四川多地也有明显震感&#34;</span>
@@ -83,16 +83,24 @@
 </p>
 <br>
 <h2 id="3-找到最佳k">3. 找到最佳K</h2>
-<p>正常的步骤应该认真对待这步，在一定区间范围内，根据模型得分找到合理的K。这里使用tomotopy提供的主题一致性coherence得分假装找一下。</p>
-<p>我们期望的图应该的topic coherence随着 number of topics增加而增加，然后到某个topic值趋于平稳。</p>
-<p>tomotopy每次运行得到的图形状不一样，为了保证运行结果具有可比性，设置了随机种子seed为555，你也可以根据需要改为自己需要的随机状态。(这里有点像炼丹)</p>
+<p>绘制Coherence曲线是一种常见的方法，用于选择主题数（k）的最佳值。这可以帮助您确定在哪个主题数下主题模型的性能最佳。以下是一般步骤以及如何解释Coherence曲线来找出最佳的k：</p>
+<ol>
+<li>创建主题模型：首先，您需要使用不同的k值来创建一系列主题模型，每个模型都有不同数量的主题（k）。这可以通过循环遍历k值并训练主题模型来完成。</li>
+<li>计算Coherence：对于每个k值，使用tomotopy.coherence.Coherence类计算主题模型的一致性度量（比如C_V、UMass等）。这将为每个k值生成一个一致性得分。</li>
+<li>绘制Coherence曲线：将k值（主题数）作为x轴，一致性得分作为y轴，绘制Coherence曲线。得到一个k和一致性得分之间的关系图。</li>
+<li>寻找拐点：观察Coherence曲线，通常会看到一条曲线在某个k值附近达到峰值，然后开始下降。这个峰值对应的k值通常被认为是最佳的主题数。这是因为在这个k值下，主题模型的主题在文本中的一致性较高。</li>
+<li>选择最佳k：根据Coherence曲线上的峰值，选择最佳的k值作为主题模型的最终主题数。</li>
+<li>模型评估：一旦选择了最佳k值，您可以使用该值来训练最终的主题模型，并在任务中进行评估。</li>
+</ol>
+<p>Coherence曲线上的峰值通常对应于最佳的主题数，因为在这个点上主题之间的关联度较高。然而，需要谨慎选择，因为有时候峰值可能不明显，或者可能有多个相似的峰值。您可以使用这个方法来帮助确定最佳的主题数，但最终的决策可能还需要结合领域知识和任务需求来做出。</p>
+<p>tomotopy每次运行得到的图形状不一样，为了保证运行结果具有可比性，设置了随机种子seed为1，你也可以根据需要改为自己需要的随机状态(这里有点像炼丹)。经过运行发现k=5比较合适（跑出了我的预判）。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">find_k</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="n">min_k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_k</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
     <span class="c1">#min_df 词语最少出现在2个文档中</span>
     <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
     <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_k</span><span class="p">,</span> <span class="n">max_k</span><span class="p">):</span>
         <span class="c1">#seed随机种子，保证在大邓这里运行结果与你运行的结果一样</span>
-        <span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">min_df</span><span class="o">=</span><span class="n">min_df</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">555</span><span class="p">)</span>
+        <span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">min_df</span><span class="o">=</span><span class="n">min_df</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">words</span><span class="p">:</span>
                 <span class="n">mdl</span><span class="o">.</span><span class="n">add_doc</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
@@ -247,11 +255,11 @@
 <h2 id="6-预测">6. 预测</h2>
 <p>预测某文档的话题</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
-<span class="kn">from</span> <span class="nn">cntext</span> <span class="kn">import</span> <span class="n">STOPWORDS_zh</span>
+<span class="n">stopwords</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;stopwords.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
 
 <span class="c1">#预测</span>
 <span class="n">doc</span> <span class="o">=</span> <span class="s1">&#39;云南永善县级地震已致伤间民房受损中新网日电云南昭通市防震减灾局官方网站消息日时云南昭通永善县级地震造成受伤重伤轻伤送医院救治民房受损户间倒塌户间乡镇学校不同程度受损目前损毁电力交通通讯设施抢通修复调拨帐篷顶紧急转移万人时分云南昭通永善县发生里氏级地震震源深度公里震感强烈成都四川多地明显震感&#39;</span>
-<span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STOPWORDS_zh</span><span class="p">]</span>
+<span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stopwords</span><span class="p">]</span>
 
 <span class="c1">#构造tomotopy需要的数据</span>
 <span class="n">doc_inst</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">make_doc</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">)</span>
@@ -1624,7 +1632,7 @@ neg=0.0 neu=0.461 pos=0.539 compound=0.6892 span=It is awesome!!
 </blockquote>
 <br>
 <h2 id="摘要">摘要:</h2>
-<p>这项工作介绍了一个免费易用的在线文本分析工具<strong>Wordify</strong>，用于了解”<strong>在不同上下文中，消费者的单词使用如何变化</strong>“。Wordify 使用随机逻辑回归 (RLR) 来识别最能区分来自不同预分类文本的用词差异，例如男性与女性撰写的帖子用词差异，或好评与差评的用词差异。我们提供了说明性示例，以展示该工具如何用于多种用途，例如 (1) 揭示消费者在智能手机和 PC 上撰写评论时使用的独特词汇，(2) 发现推文中使用的词语在假定的支持者和反对有争议的广告，以及 (3) 扩展基于字典的情绪测量工具的字典。我们凭经验表明，Wordify 的 RLR 算法在区分词汇方面比支持向量机和卡方选择器表现更好，同时在计算时间上具有显着优势。还讨论了 Wordify 与其他文本分析工具的结合使用，例如概率主题建模和情感分析，以更深入地了解语言在消费者行为中的作用。</p>
+<p>这项工作介绍了一个免费易用的在线文本分析工具<strong>Wordify</strong>，用于了解 <strong>“在不同上下文中，消费者的单词使用如何变化”</strong>。Wordify 使用  <strong>随机逻辑回归</strong>  (RLR) 来识别最能区分来自不同预分类文本的用词差异，例如男性与女性撰写的帖子用词差异，或好评与差评的用词差异。我们提供了说明性示例，以展示该工具如何用于多种用途，例如 (1) 揭示消费者在智能手机和 PC 上撰写评论时使用的独特词汇，(2) 发现推文中使用的词语在假定的支持者和反对有争议的广告，以及 (3) 扩展基于字典的情绪测量工具的字典。我们凭经验表明，Wordify 的 RLR 算法在区分词汇方面比支持向量机和卡方选择器表现更好，同时在计算时间上具有显着优势。还讨论了 Wordify 与其他文本分析工具的结合使用，例如概率主题建模和情感分析，以更深入地了解语言在消费者行为中的作用。</p>
 <p><strong>关键词</strong>：文本分析，自然语言处理，语言，情感分析</p>
 <br>
 <h2 id="本地wordify配置">本地wordify配置</h2>

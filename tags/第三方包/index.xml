@@ -9,10 +9,10 @@
     <lastBuildDate>Tue, 25 Apr 2023 11:43:10 +0600</lastBuildDate><atom:link href="/tags/%E7%AC%AC%E4%B8%89%E6%96%B9%E5%8C%85/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>tomotopy | 速度最快的LDA主题模型</title>
-      <link>https://textdata.cn/blog/tomotopy_is_the_fastest_topic_model/</link>
+      <link>https://textdata.cn/blog/2023-04-25-tomotopy_is_the_fastest_topic_model/</link>
       <pubDate>Tue, 25 Apr 2023 11:43:10 +0600</pubDate>
       
-      <guid>/blog/tomotopy_is_the_fastest_topic_model/</guid>
+      <guid>/blog/2023-04-25-tomotopy_is_the_fastest_topic_model/</guid>
       <description>接近C的速度，比市面的sklearn、gensim快十几倍</description>
       <content:encoded><![CDATA[<h2 id="代码下载tomotopy_codezip"><a href="tomotopy_code.zip">代码下载</a></h2>
 <br>
@@ -62,15 +62,15 @@
 </p>
 <br>
 <h2 id="2-整理数据">2. 整理数据</h2>
-<p>分词、去除停用词</p>
+<p>分词、去除停用词,</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">jieba</span>
-<span class="kn">from</span> <span class="nn">cntext</span> <span class="kn">import</span> <span class="n">STOPWORDS_zh</span>
 
+<span class="n">stopwords</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;stopwords.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">segment</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
     <span class="n">words</span> <span class="o">=</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STOPWORDS_zh</span><span class="p">]</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stopwords</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">words</span>
 
 <span class="n">test</span> <span class="o">=</span> <span class="s2">&#34;云南永善县级地震已致人伤间民房受损中新网月日电据云南昭通市防震减灾局官方网站消息截至日时云南昭通永善县级地震已造成人受伤其中重伤人轻伤人已全部送医院救治民房受损户间倒塌户间个乡镇所学校不同程度受损目前被损毁电力交通通讯设施已全部抢通修复当地已调拨帐篷顶紧急转移万人月日时分云南昭通永善县发生里氏级地震震源深度公里当地震感强烈此外成都等四川多地也有明显震感&#34;</span>
@@ -83,16 +83,24 @@
 </p>
 <br>
 <h2 id="3-找到最佳k">3. 找到最佳K</h2>
-<p>正常的步骤应该认真对待这步，在一定区间范围内，根据模型得分找到合理的K。这里使用tomotopy提供的主题一致性coherence得分假装找一下。</p>
-<p>我们期望的图应该的topic coherence随着 number of topics增加而增加，然后到某个topic值趋于平稳。</p>
-<p>tomotopy每次运行得到的图形状不一样，为了保证运行结果具有可比性，设置了随机种子seed为555，你也可以根据需要改为自己需要的随机状态。(这里有点像炼丹)</p>
+<p>绘制Coherence曲线是一种常见的方法，用于选择主题数（k）的最佳值。这可以帮助您确定在哪个主题数下主题模型的性能最佳。以下是一般步骤以及如何解释Coherence曲线来找出最佳的k：</p>
+<ol>
+<li>创建主题模型：首先，您需要使用不同的k值来创建一系列主题模型，每个模型都有不同数量的主题（k）。这可以通过循环遍历k值并训练主题模型来完成。</li>
+<li>计算Coherence：对于每个k值，使用tomotopy.coherence.Coherence类计算主题模型的一致性度量（比如C_V、UMass等）。这将为每个k值生成一个一致性得分。</li>
+<li>绘制Coherence曲线：将k值（主题数）作为x轴，一致性得分作为y轴，绘制Coherence曲线。得到一个k和一致性得分之间的关系图。</li>
+<li>寻找拐点：观察Coherence曲线，通常会看到一条曲线在某个k值附近达到峰值，然后开始下降。这个峰值对应的k值通常被认为是最佳的主题数。这是因为在这个k值下，主题模型的主题在文本中的一致性较高。</li>
+<li>选择最佳k：根据Coherence曲线上的峰值，选择最佳的k值作为主题模型的最终主题数。</li>
+<li>模型评估：一旦选择了最佳k值，您可以使用该值来训练最终的主题模型，并在任务中进行评估。</li>
+</ol>
+<p>Coherence曲线上的峰值通常对应于最佳的主题数，因为在这个点上主题之间的关联度较高。然而，需要谨慎选择，因为有时候峰值可能不明显，或者可能有多个相似的峰值。您可以使用这个方法来帮助确定最佳的主题数，但最终的决策可能还需要结合领域知识和任务需求来做出。</p>
+<p>tomotopy每次运行得到的图形状不一样，为了保证运行结果具有可比性，设置了随机种子seed为1，你也可以根据需要改为自己需要的随机状态(这里有点像炼丹)。经过运行发现k=5比较合适（跑出了我的预判）。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">find_k</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="n">min_k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_k</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
     <span class="c1">#min_df 词语最少出现在2个文档中</span>
     <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
     <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_k</span><span class="p">,</span> <span class="n">max_k</span><span class="p">):</span>
         <span class="c1">#seed随机种子，保证在大邓这里运行结果与你运行的结果一样</span>
-        <span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">min_df</span><span class="o">=</span><span class="n">min_df</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">555</span><span class="p">)</span>
+        <span class="n">mdl</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">LDAModel</span><span class="p">(</span><span class="n">min_df</span><span class="o">=</span><span class="n">min_df</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">words</span><span class="p">:</span>
                 <span class="n">mdl</span><span class="o">.</span><span class="n">add_doc</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
@@ -247,11 +255,11 @@
 <h2 id="6-预测">6. 预测</h2>
 <p>预测某文档的话题</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
-<span class="kn">from</span> <span class="nn">cntext</span> <span class="kn">import</span> <span class="n">STOPWORDS_zh</span>
+<span class="n">stopwords</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;stopwords.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
 
 <span class="c1">#预测</span>
 <span class="n">doc</span> <span class="o">=</span> <span class="s1">&#39;云南永善县级地震已致伤间民房受损中新网日电云南昭通市防震减灾局官方网站消息日时云南昭通永善县级地震造成受伤重伤轻伤送医院救治民房受损户间倒塌户间乡镇学校不同程度受损目前损毁电力交通通讯设施抢通修复调拨帐篷顶紧急转移万人时分云南昭通永善县发生里氏级地震震源深度公里震感强烈成都四川多地明显震感&#39;</span>
-<span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STOPWORDS_zh</span><span class="p">]</span>
+<span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stopwords</span><span class="p">]</span>
 
 <span class="c1">#构造tomotopy需要的数据</span>
 <span class="n">doc_inst</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">make_doc</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">)</span>
@@ -3744,20 +3752,20 @@ head(pre_trained_emb)</code></pre>
     
     <item>
       <title>R语言 | 让统计更easy的easystats集合包</title>
-      <link>https://textdata.cn/blog/2022-09-21-r-easystats/</link>
+      <link>https://textdata.cn/blog/2022-09-21-r-easystats-report/</link>
       <pubDate>Wed, 21 Sep 2022 00:00:00 +0000</pubDate>
       
-      <guid>/blog/2022-09-21-r-easystats/</guid>
+      <guid>/blog/2022-09-21-r-easystats-report/</guid>
       <description>模板统计报告用</description>
       <content:encoded><![CDATA[<p><a href="https://easystats.github.io/easystats/index.html">easystats</a> 是 R 包集合，可提供统一且easy的代码进行 统计分析。</p>
 <br>
-<h2 id="与-tidyverse-有何不同">与 tidyverse 有何不同？</h2>
+<h2 id="一与-tidyverse-有何不同">一、与 tidyverse 有何不同？</h2>
 <p>tidyverse包集合，是 R语言 中非常流行的软件包集合（ggplot、dplyr、tidyr&hellip;&hellip;），它也使 R 的使用更加容易。那么，您应该选择 tidyverse 还是 easystats？</p>
 <p><strong>两个都选！</strong></p>
 <p>事实上，这两个生态系统的设计考虑了非常不同的目标。 tidyverse 包主要用于 <code>数据操作和探索</code>。而 easystats 更关注分析的最后阶段：<code>理解和解释您的结果，并在手稿或报告中报告它们</code>。您绝对可以在 tidyverse 工作流程中使用 easystats 功能！</p>
 <p>easystats + tidyverse = ❤️</p>
 <br>
-<h2 id="easystats生态圈">easystats生态圈</h2>
+<h2 id="二easystats生态圈">二、easystats生态圈</h2>
 <p>每个 easystats 包都有不同的范围和用途。这意味着您最好的开始方式是探索并选择您认为可能对您有用的那些。但是，由于它们的构建考虑了&quot;更大的图景&quot;，您会意识到使用更多它们会创建一个流畅的工作流程，因为这些包旨在协同工作。理想情况下，这些软件包可以协同工作，涵盖统计分析和数据可视化的所有方面。</p>
 <ul>
 <li><a href="https://easystats.github.io/report/">report</a>：📜 🎉 生成自动统计报告</li>
@@ -3809,21 +3817,114 @@ head(pre_trained_emb)</code></pre>
 <p><img loading="lazy" src="easystats-trend.png" alt=""  />
 </p>
 <br>
-<h2 id="安装">安装</h2>
+<br>
+<h2 id="三实验">三、实验</h2>
+<h3 id="31-report简介">3.1 report简介</h3>
+<p>easystats到底如何好用，今天只实验report包，该包号称 “从 R 到你的手稿”</p>
+<p>该<code>report</code>包以两步方式工作。首先，使用该函数创建一个<code>report</code>对象<code>report()</code>。然后，该报表对象可以使用文本方式（默认输出）或以表格形式显示<code>as.data.frame()</code>。<code>summary()</code>此外，您还可以使用报表对象访问更摘要和紧凑的报表版本。</p>
+<p><img loading="lazy" src="report-workflow.png" alt=""  />
+</p>
+<br>
+<p>report包的主要目标是弥合 R 的输出与手稿中包含的格式化结果之间的差距。 它根据最佳实践指南（例如 APA 期刊风格）自动生成模型和数据框架的报告，确保结果报告的标准化和质量。安装report</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">install.packages(&#34;easystats&#34;)
 </code></pre></div><br>
-<h2 id="炫一下">炫一下</h2>
-<p>easystats到底如何好用，今天只实验report包，该包号称 “从 R 到你的手稿”</p>
-<p>报告的主要目标是弥合 R 的输出与手稿中包含的格式化结果之间的差距。 它根据最佳实践指南（例如 APA 期刊风格）自动生成模型和数据框架的报告，确保结果报告的标准化和质量。</p>
+<h3 id="32-数据">3.2 数据</h3>
 <p>生成iris数据集描述性统计信息的英文报告</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">report(iris)
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="nf">report</span><span class="p">(</span><span class="n">iris</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"># The data contains 150 observations of the following 5 variables:
+# 
+#   - Sepal.Length: n = 150, Mean = 5.84, SD = 0.83, Median = 5.80, MAD = 1.04,
+# range: [4.30, 7.90], Skewness = 0.31, Kurtosis = -0.55, 0% missing
+#   - Sepal.Width: n = 150, Mean = 3.06, SD = 0.44, Median = 3.00, MAD = 0.44,
+# range: [2, 4.40], Skewness = 0.32, Kurtosis = 0.23, 0% missing
+#   - Petal.Length: n = 150, Mean = 3.76, SD = 1.77, Median = 4.35, MAD = 1.85,
+# range: [1, 6.90], Skewness = -0.27, Kurtosis = -1.40, 0% missing
+#   - Petal.Width: n = 150, Mean = 1.20, SD = 0.76, Median = 1.30, MAD = 1.04,
+# range: [0.10, 2.50], Skewness = -0.10, Kurtosis = -1.34, 0% missing
+#   - Species: 3 levels, namely setosa (n = 50, 33.33%), versicolor (n = 50,
+# 33.33%) and virginica (n = 50, 33.33%)
 </code></pre></div><br>
-<p>生成线性回归模型的报告</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">library(report)
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="n">iris</span> <span class="o">%&gt;%</span>
+  <span class="nf">select</span><span class="p">(</span><span class="o">-</span><span class="nf">starts_with</span><span class="p">(</span><span class="s">&#34;Sepal&#34;</span><span class="p">))</span> <span class="o">%&gt;%</span>
+  <span class="nf">group_by</span><span class="p">(</span><span class="n">Species</span><span class="p">)</span> <span class="o">%&gt;%</span>
+  <span class="nf">report</span><span class="p">()</span> <span class="o">%&gt;%</span>
+  <span class="nf">summary</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"># The data contains 150 observations, grouped by Species, of the following 3
+# variables:
+# 
+# - setosa (n = 50):
+#   - Petal.Length: Mean = 1.46, SD = 0.17, range: [1, 1.90]
+#   - Petal.Width: Mean = 0.25, SD = 0.11, range: [0.10, 0.60]
+# 
+# - versicolor (n = 50):
+#   - Petal.Length: Mean = 4.26, SD = 0.47, range: [3, 5.10]
+#   - Petal.Width: Mean = 1.33, SD = 0.20, range: [1, 1.80]
+# 
+# - virginica (n = 50):
+#   - Petal.Length: Mean = 5.55, SD = 0.55, range: [4.50, 6.90]
+#   - Petal.Width: Mean = 2.03, SD = 0.27, range: [1.40, 2.50]
+</code></pre></div><br>
+<h3 id="33-t检验和相关性">3.3 t检验和相关性</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="nf">report</span><span class="p">(</span><span class="nf">t.test</span><span class="p">(</span><span class="n">mtcars</span><span class="o">$</span><span class="n">mpg</span> <span class="o">~</span> <span class="n">mtcars</span><span class="o">$</span><span class="n">am</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"># Effect sizes were labelled following Cohen&#39;s (1988) recommendations.
+# 
+# The Welch Two Sample t-test testing the difference of mtcars$mpg by mtcars$am
+# (mean in group 0 = 17.15, mean in group 1 = 24.39) suggests that the effect is
+# negative, statistically significant, and large (difference = -7.24, 95% CI
+# [-11.28, -3.21], t(18.33) = -3.77, p = 0.001; Cohen&#39;s d = -1.41, 95% CI [-2.26,
+# -0.53])
+</code></pre></div><br>
+<p>您还可以使用<code>as.data.frame()</code>函数创建表，例如使用此相关性测试：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="nf">cor.test</span><span class="p">(</span><span class="n">iris</span><span class="o">$</span><span class="n">Sepal.Length</span><span class="p">,</span> <span class="n">iris</span><span class="o">$</span><span class="n">Sepal.Width</span><span class="p">)</span> <span class="o">%&gt;%</span>
+  <span class="nf">report</span><span class="p">()</span> <span class="o">%&gt;%</span>
+  <span class="nf">as.data.frame</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"># Pearson&#39;s product-moment correlation
+# 
+# Parameter1        |       Parameter2 |     r |        95% CI | t(148) |     p
+# -----------------------------------------------------------------------------
+# iris$Sepal.Length | iris$Sepal.Width | -0.12 | [-0.27, 0.04] |  -1.44 | 0.152
+# 
+# Alternative hypothesis: two.sided
+</code></pre></div><br>
+<h3 id="34-方差分析">3.4 方差分析</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="nf">aov</span><span class="p">(</span><span class="n">Sepal.Length</span> <span class="o">~</span> <span class="n">Species</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">iris</span><span class="p">)</span> <span class="o">%&gt;%</span>
+  <span class="nf">report</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"># The ANOVA (formula: Sepal.Length ~ Species) suggests that:
+# 
+#   - The main effect of Species is statistically significant and large (F(2, 147)
+# = 119.26, p &lt; .001; Eta2 = 0.62, 95% CI [0.54, 1.00])
+# 
+# Effect sizes were labelled following Field&#39;s (2013) recommendations.
+</code></pre></div><br>
+<h3 id="35-广义线性模型">3.5 广义线性模型</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="n">model</span> <span class="o">&lt;-</span> <span class="nf">glm</span><span class="p">(</span><span class="n">vs</span> <span class="o">~</span> <span class="n">mpg</span> <span class="o">*</span> <span class="n">drat</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">mtcars</span><span class="p">,</span> <span class="n">family</span> <span class="o">=</span> <span class="s">&#34;binomial&#34;</span><span class="p">)</span>
 
-model &lt;- lm(Sepal.Length ~ Species, data = iris)
-report(model)
-</code></pre></div><p>更多内容请阅读 <a href="https://easystats.github.io/report/">report包</a> 的文档。</p>
+<span class="nf">report</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"># We fitted a logistic model (estimated using ML) to predict vs with mpg and drat
+# (formula: vs ~ mpg * drat). The model&#39;s explanatory power is substantial
+# (Tjur&#39;s R2 = 0.51). The model&#39;s intercept, corresponding to mpg = 0 and drat =
+# 0, is at -33.43 (95% CI [-77.90, 3.25], p = 0.083). Within this model:
+# 
+#   - The effect of mpg is statistically non-significant and positive (beta = 1.79,
+# 95% CI [-0.10, 4.05], p = 0.066; Std. beta = 3.63, 95% CI [1.36, 7.50])
+#   - The effect of drat is statistically non-significant and positive (beta =
+# 5.96, 95% CI [-3.75, 16.26], p = 0.205; Std. beta = -0.36, 95% CI [-1.96,
+# 0.98])
+#   - The effect of mpg × drat is statistically non-significant and negative (beta
+# = -0.33, 95% CI [-0.83, 0.15], p = 0.141; Std. beta = -1.07, 95% CI [-2.66,
+# 0.48])
+# 
+# Standardized parameters were obtained by fitting the model on a standardized
+# version of the dataset. 95% Confidence Intervals (CIs) and p-values were
+# computed using a Wald z-distribution approximation.
+</code></pre></div><br>
+<p>更多内容请阅读 <a href="https://easystats.github.io/report/">report包</a> 的文档。</p>
 <br>
 <h2 id="广而告之">广而告之</h2>
 <ul>
@@ -4533,7 +4634,7 @@ neg=0.0 neu=0.461 pos=0.539 compound=0.6892 span=It is awesome!!
 </blockquote>
 <br>
 <h2 id="摘要">摘要:</h2>
-<p>这项工作介绍了一个免费易用的在线文本分析工具<strong>Wordify</strong>，用于了解”<strong>在不同上下文中，消费者的单词使用如何变化</strong>“。Wordify 使用随机逻辑回归 (RLR) 来识别最能区分来自不同预分类文本的用词差异，例如男性与女性撰写的帖子用词差异，或好评与差评的用词差异。我们提供了说明性示例，以展示该工具如何用于多种用途，例如 (1) 揭示消费者在智能手机和 PC 上撰写评论时使用的独特词汇，(2) 发现推文中使用的词语在假定的支持者和反对有争议的广告，以及 (3) 扩展基于字典的情绪测量工具的字典。我们凭经验表明，Wordify 的 RLR 算法在区分词汇方面比支持向量机和卡方选择器表现更好，同时在计算时间上具有显着优势。还讨论了 Wordify 与其他文本分析工具的结合使用，例如概率主题建模和情感分析，以更深入地了解语言在消费者行为中的作用。</p>
+<p>这项工作介绍了一个免费易用的在线文本分析工具<strong>Wordify</strong>，用于了解 <strong>“在不同上下文中，消费者的单词使用如何变化”</strong>。Wordify 使用  <strong>随机逻辑回归</strong>  (RLR) 来识别最能区分来自不同预分类文本的用词差异，例如男性与女性撰写的帖子用词差异，或好评与差评的用词差异。我们提供了说明性示例，以展示该工具如何用于多种用途，例如 (1) 揭示消费者在智能手机和 PC 上撰写评论时使用的独特词汇，(2) 发现推文中使用的词语在假定的支持者和反对有争议的广告，以及 (3) 扩展基于字典的情绪测量工具的字典。我们凭经验表明，Wordify 的 RLR 算法在区分词汇方面比支持向量机和卡方选择器表现更好，同时在计算时间上具有显着优势。还讨论了 Wordify 与其他文本分析工具的结合使用，例如概率主题建模和情感分析，以更深入地了解语言在消费者行为中的作用。</p>
 <p><strong>关键词</strong>：文本分析，自然语言处理，语言，情感分析</p>
 <br>
 <h2 id="本地wordify配置">本地wordify配置</h2>

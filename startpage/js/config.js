@@ -336,14 +336,19 @@ class Config {
 				url: 'http://ivpn.hit.edu.cn',
 				category: 'Academic Search Engine'
 			}, 
-
+			
 			{
 				site: '开源arXiv',
 				icon: 'arxiv',
 				url: 'https://arxiv.org/search/?query=',
 				category: 'Academic Search Engine'
 			},
-
+			{
+				site: '国外学位论文',
+				icon: 'pqdtcn',
+				url: 'hhttps://www.pqdtcn.com/',
+				category: 'Academic Search Engine'
+			},
 			{
 				site: 'AnnualReviews',
 				icon: 'annualreviews',

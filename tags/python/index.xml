@@ -6,7 +6,713 @@
     <description>Recent content in Python on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 22 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 26 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>使用 Ruptures 识别时间序列数据中的变化点</title>
+      <link>https://textdata.cn/blog/2023-11-26-using-ruptures-to-detect-change-point/</link>
+      <pubDate>Sun, 26 Nov 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-26-using-ruptures-to-detect-change-point/</guid>
+      <description>&lt;p&gt;&lt;strong&gt;时间序列数据&lt;/strong&gt; 在各个领域中都占据着重要地位，从金融市场到生产制造，都需要对时间序列数据进行分析和监测。其中一个关键任务是识别时间序列数据中的变化点，这些变化点可能代表了重要的事件或趋势转折点。例如之前分享过 &lt;a href=&#34;https://textdata.cn/blog/2023-01-10-similarity_of_cental_bank_monetary_policy/&#34;&gt;金融研究 | 央行货币政策文本相似度计算与可视化&lt;/a&gt;, 仅仅构造了相似度时序数据， 但是如果要做让程序自动识别政策变化时间点， 还需要今日分享的内容。&lt;/p&gt;
+&lt;p&gt;为了解决这一问题，&lt;strong&gt;Ruptures 库是一个非常强大的工具，它提供了多种算法，可用于检测时间序列数据的变化点&lt;/strong&gt;。本文将介绍如何使用 Ruptures 库来解决时间序列数据分析中的变化点检测问题。 &lt;a href=&#34;code.ipynb&#34;&gt;&lt;strong&gt;点击下载本文代码&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;一问题场景&#34;&gt;一、问题场景&lt;/h2&gt;
+&lt;p&gt;在各种应用场景中，需要识别时间序列数据中的变化点，例如：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;金融市场&lt;/strong&gt;：检测股票价格中的趋势转折点，以指导投资决策。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;生产制造&lt;/strong&gt;：监测生产线上的设备状态变化，及时发现问题并采取措施维护。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;气象数据&lt;/strong&gt;：发现天气数据中的异常变化，如风暴的到来或气温剧烈波动。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;网络流量&lt;/strong&gt;：检测网络流量中的异常行为，可能是网络攻击的迹象。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;在这些场景下，Ruptures 库可以帮助我们识别变化点，从而更好地理解时间序列数据的特点。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二ruptures-库介绍&#34;&gt;二、Ruptures 库介绍&lt;/h2&gt;
+&lt;p&gt;Ruptures 库是一个用于信号分割和变化点检测的 Python 库，它提供了多种算法和工具，可用于处理不同类型的时间序列数据。&lt;/p&gt;
+&lt;p&gt;以下是 Ruptures 库的一些关键特点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;多种算法支持&lt;/strong&gt;：Ruptures 提供了多种变化点检测算法，包括 Pelt、Binary Segmentation、Window-based Methods 等，适用于不同类型的时间序列数据和问题。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;简单易用&lt;/strong&gt;：库的 API 设计简洁，容易上手，用户可以轻松地进行变化点检测任务。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;高性能&lt;/strong&gt;：Ruptures 经过优化，能够处理大规模的时间序列数据集，同时具有较低的计算复杂度。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三常用算法&#34;&gt;三、常用算法&lt;/h2&gt;
+&lt;p&gt;下面是 Ruptures 库中常用的一些变化点检测算法：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Pelt (Pruned Exact Linear Time)&lt;/strong&gt;：Pelt算法是一种基于动态规划的算法，适用于多个变化点的检测任务。它的优点在于其精确性和高效性，通常能够找到全局最优的变化点位置。Pelt算法通过将时间序列数据划分为多个分段，使得每个分段内的变化点数目最小化，从而找到最优的分段方式。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Binary Segmentation (BS)&lt;/strong&gt;：Binary Segmentation算法是一种简单而有效的分割方法，通过迭代地将时间序列数据分为两个部分来检测变化点。该算法的计算复杂度较低，适用于中等规模的数据集。主要缺点是可能会导致分段的粒度过粗。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Window-based Methods&lt;/strong&gt;：这些方法使用滑动窗口的方式来检测时间序列数据中的变化点。窗口会在时间序列上滑动，对窗口内的数据进行分析，然后根据某种准则来确定窗口内是否存在变化点。优点是简单易懂，但需要调整窗口大小和准则参数。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Bottom-Up Methods&lt;/strong&gt;：Bottom-Up方法从小的分段开始，逐渐合并以检测变化点。它从最小的分段（每个数据点都是一个分段）开始，然后合并相邻的分段，直到满足某种准则为止。优点在于能够处理多个变化点，但计算复杂度较高。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四实验&#34;&gt;四、实验&lt;/h2&gt;
+&lt;h3 id=&#34;41-导入包&#34;&gt;4.1 导入包&lt;/h3&gt;
+&lt;p&gt;导入本文需要的包， 使得matplotlib支持中文，绘制高清图；&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;import matplotlib.pyplot as plt
+import ruptures as rpt
+import matplotlib
+
+#绘制高清图
+import matplotlib_inline
+matplotlib_inline.backend_inline.set_matplotlib_formats(&amp;#39;png&amp;#39;, &amp;#39;svg&amp;#39;)
+
+#支持中文
+import platform
+system = platform.system()  # 获取操作系统类型
+if system == &amp;#39;Windows&amp;#39;:
+    font = {&amp;#39;family&amp;#39;: &amp;#39;SimHei&amp;#39;}
+elif system == &amp;#39;Darwin&amp;#39;:
+    font = {&amp;#39;family&amp;#39;: &amp;#39;Arial Unicode MS&amp;#39;}
+else:
+    font = {&amp;#39;family&amp;#39;: &amp;#39;sans-serif&amp;#39;}
+matplotlib.rc(&amp;#39;font&amp;#39;, **font)  # 设置全局字体
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;42-生成实验数据&#34;&gt;4.2 生成实验数据&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;# 生成示例时间序列数据
+n_samples, dim, sigma = 1000, 1, 1
+n_bkps = 4  # 假设有4个变化点
+signal, bkps = rpt.pw_constant(n_samples, dim, n_bkps, noise_std=sigma)
+print(signal.shape)
+print(bkps)
+signal
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(1000, 1)
+[198, 415, 608, 807, 1000]
+
+array([[-10.36078315],
+       [-10.20386008],
+       [ -9.97983878],
+       [-10.53406566],
+       ...
+       [-11.43256337],
+       [-10.61377906],
+       [-10.56300421],
+       [-10.83854557],
+       [-10.21754732]])
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;ruptures为我们生成的实验数据signal是一个长度为1000的array型数据。生成的变化点bkps的位置序列 [198, 415, 608, 807, 1000]。 数据不够直观，我们可视化一下&lt;/p&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 创建时间序列图&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;figure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;figsize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;12&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;plot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;signal&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lw&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;label&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;时间序列数据&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;legend&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#保存&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;savefig&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;ts-data.png&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;dpi&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 显示&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;show&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/ts-data.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;从上图可以清楚的看到，ruptures为我们生成了1000个点，大致有4个变化点，将数据分成了五部分。现在我们使用ruptures为我们识别变化点&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;43-识别变化点&#34;&gt;4.3 识别变化点&lt;/h3&gt;
+&lt;p&gt;Pelt算法是Ruptures库中的一种高效而准确的变化点检测算法，它的全称是Pruned Exact Linear Time（修剪的线性时间精确算法）。它的性能取决于成本函数的选择和 &lt;em&gt;&lt;strong&gt;pen&lt;/strong&gt;&lt;/em&gt;参数的调整，&lt;em&gt;&lt;strong&gt;pen&lt;/strong&gt;&lt;/em&gt; 参数的全称是 &lt;em&gt;&lt;strong&gt;Penalty&lt;/strong&gt;&lt;/em&gt;，它代表了在检测到变化点时的成本或惩罚值。这里将 pen 设置为 10&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 使用 Ruptures 库进行变化点检测&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;algo&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;rpt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;Pelt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;rbf&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fit&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;signal&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;algo&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;predict&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;pen&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[200, 415, 610, 805, 1000]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;431-matplotlib可视化&#34;&gt;4.3.1 matplotlib可视化&lt;/h3&gt;
+&lt;p&gt;我们现在比较原数据变化点bkps 和 预测出来的变化点result，为了直观一些，进行可视化&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;matplotlib.pyplot&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;plt&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ruptures&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;rpt&lt;/span&gt;
+
+
+&lt;span class=&#34;c1&#34;&gt;# 创建时间序列图&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;figure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;figsize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;12&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 绘制时间序列数据&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;plot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;signal&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lw&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;label&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;时间序列数据&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;color&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;blue&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 绘制实际变化点位置&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bkp&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bkps&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;axvline&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;bkp&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;color&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;red&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;linestyle&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;--&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;label&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;实际变化点&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 绘制检测到的变化点位置&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bkp&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;axvline&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;bkp&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;color&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;green&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;linestyle&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;--&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;label&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;检测到的变化点&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;title&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;变化点检测示例&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;xlabel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;时间步长&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ylabel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;数值&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 显示单独的图例&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;handles&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;labels&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;gca&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;get_legend_handles_labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;unique_labels&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;list&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;set&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;# 去除重复的标签&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;unique_handles&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;handles&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;index&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;label&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)]&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;label&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;unique_labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;# 获取对应的图例项&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;legend&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;unique_handles&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;unique_labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#保存图&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;savefig&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;change-point2.png&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;dpi&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;show&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/change-point2.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h4 id=&#34;432-ruptures自带可视化&#34;&gt;4.3.2 ruptures自带可视化&lt;/h4&gt;
+&lt;p&gt;matplotlib代码复杂， 使用ruptures更简洁一些。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 绘制结果&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 时间序列数据、 实际变化点、 预测的变化点&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;rpt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;display&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;signal&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bkps&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;title&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;变化点检测示例&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#保存图&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;savefig&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;change-point.png&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;dpi&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#显示&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;show&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/change-point.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;44-关于pen&#34;&gt;4.4 关于pen&lt;/h3&gt;
+&lt;p&gt;更具体地说，&lt;em&gt;&lt;strong&gt;pen&lt;/strong&gt;&lt;/em&gt; 参数的值越大，算法就会倾向于检测更少的变化点，而值越小，算法就会倾向于检测更多的变化点。&lt;/p&gt;
+&lt;p&gt;通常情况下，您可以根据自己的数据和问题来调整&lt;em&gt;&lt;strong&gt;pen&lt;/strong&gt;&lt;/em&gt;参数的值。以下是一些常见的情况和建议：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;如果您希望检测到较少的变化点，以捕捉主要的趋势转折点，可以选择较大的&lt;em&gt;&lt;strong&gt;pen&lt;/strong&gt;&lt;/em&gt;值。&lt;/li&gt;
+&lt;li&gt;如果您希望检测到更多的变化点，以捕捉数据中的细微变化，可以选择较小的&lt;em&gt;&lt;strong&gt;pen&lt;/strong&gt;&lt;/em&gt;值。&lt;/li&gt;
+&lt;li&gt;如果您不确定要选择哪个&lt;em&gt;&lt;strong&gt;pen&lt;/strong&gt;&lt;/em&gt;值，可以尝试多个不同的值，然后根据结果的质量和实际需求来选择最合适的&lt;em&gt;&lt;strong&gt;pen&lt;/strong&gt;&lt;/em&gt;值。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;在实践中，调整&lt;em&gt;&lt;strong&gt;pen&lt;/strong&gt;&lt;/em&gt;参数通常需要一些试验和经验，因为最佳的&lt;em&gt;&lt;strong&gt;pen&lt;/strong&gt;&lt;/em&gt;值取决于您的数据和分析目标。您可以尝试不同的&lt;em&gt;&lt;strong&gt;pen&lt;/strong&gt;&lt;/em&gt;值，然后根据检测结果和领域知识来选择最适合的参数值。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<p><strong>时间序列数据</strong> 在各个领域中都占据着重要地位，从金融市场到生产制造，都需要对时间序列数据进行分析和监测。其中一个关键任务是识别时间序列数据中的变化点，这些变化点可能代表了重要的事件或趋势转折点。例如之前分享过 <a href="https://textdata.cn/blog/2023-01-10-similarity_of_cental_bank_monetary_policy/">金融研究 | 央行货币政策文本相似度计算与可视化</a>, 仅仅构造了相似度时序数据， 但是如果要做让程序自动识别政策变化时间点， 还需要今日分享的内容。</p>
+<p>为了解决这一问题，<strong>Ruptures 库是一个非常强大的工具，它提供了多种算法，可用于检测时间序列数据的变化点</strong>。本文将介绍如何使用 Ruptures 库来解决时间序列数据分析中的变化点检测问题。 <a href="code.ipynb"><strong>点击下载本文代码</strong></a></p>
+<p><br><br></p>
+<h2 id="一问题场景">一、问题场景</h2>
+<p>在各种应用场景中，需要识别时间序列数据中的变化点，例如：</p>
+<ol>
+<li><strong>金融市场</strong>：检测股票价格中的趋势转折点，以指导投资决策。</li>
+<li><strong>生产制造</strong>：监测生产线上的设备状态变化，及时发现问题并采取措施维护。</li>
+<li><strong>气象数据</strong>：发现天气数据中的异常变化，如风暴的到来或气温剧烈波动。</li>
+<li><strong>网络流量</strong>：检测网络流量中的异常行为，可能是网络攻击的迹象。</li>
+</ol>
+<p>在这些场景下，Ruptures 库可以帮助我们识别变化点，从而更好地理解时间序列数据的特点。</p>
+<p><br><br></p>
+<h2 id="二ruptures-库介绍">二、Ruptures 库介绍</h2>
+<p>Ruptures 库是一个用于信号分割和变化点检测的 Python 库，它提供了多种算法和工具，可用于处理不同类型的时间序列数据。</p>
+<p>以下是 Ruptures 库的一些关键特点：</p>
+<ul>
+<li><strong>多种算法支持</strong>：Ruptures 提供了多种变化点检测算法，包括 Pelt、Binary Segmentation、Window-based Methods 等，适用于不同类型的时间序列数据和问题。</li>
+<li><strong>简单易用</strong>：库的 API 设计简洁，容易上手，用户可以轻松地进行变化点检测任务。</li>
+<li><strong>高性能</strong>：Ruptures 经过优化，能够处理大规模的时间序列数据集，同时具有较低的计算复杂度。</li>
+</ul>
+<p><br><br></p>
+<h2 id="三常用算法">三、常用算法</h2>
+<p>下面是 Ruptures 库中常用的一些变化点检测算法：</p>
+<ol>
+<li><strong>Pelt (Pruned Exact Linear Time)</strong>：Pelt算法是一种基于动态规划的算法，适用于多个变化点的检测任务。它的优点在于其精确性和高效性，通常能够找到全局最优的变化点位置。Pelt算法通过将时间序列数据划分为多个分段，使得每个分段内的变化点数目最小化，从而找到最优的分段方式。</li>
+<li><strong>Binary Segmentation (BS)</strong>：Binary Segmentation算法是一种简单而有效的分割方法，通过迭代地将时间序列数据分为两个部分来检测变化点。该算法的计算复杂度较低，适用于中等规模的数据集。主要缺点是可能会导致分段的粒度过粗。</li>
+<li><strong>Window-based Methods</strong>：这些方法使用滑动窗口的方式来检测时间序列数据中的变化点。窗口会在时间序列上滑动，对窗口内的数据进行分析，然后根据某种准则来确定窗口内是否存在变化点。优点是简单易懂，但需要调整窗口大小和准则参数。</li>
+<li><strong>Bottom-Up Methods</strong>：Bottom-Up方法从小的分段开始，逐渐合并以检测变化点。它从最小的分段（每个数据点都是一个分段）开始，然后合并相邻的分段，直到满足某种准则为止。优点在于能够处理多个变化点，但计算复杂度较高。</li>
+</ol>
+<p><br><br></p>
+<h2 id="四实验">四、实验</h2>
+<h3 id="41-导入包">4.1 导入包</h3>
+<p>导入本文需要的包， 使得matplotlib支持中文，绘制高清图；</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import matplotlib.pyplot as plt
+import ruptures as rpt
+import matplotlib
+
+#绘制高清图
+import matplotlib_inline
+matplotlib_inline.backend_inline.set_matplotlib_formats(&#39;png&#39;, &#39;svg&#39;)
+
+#支持中文
+import platform
+system = platform.system()  # 获取操作系统类型
+if system == &#39;Windows&#39;:
+    font = {&#39;family&#39;: &#39;SimHei&#39;}
+elif system == &#39;Darwin&#39;:
+    font = {&#39;family&#39;: &#39;Arial Unicode MS&#39;}
+else:
+    font = {&#39;family&#39;: &#39;sans-serif&#39;}
+matplotlib.rc(&#39;font&#39;, **font)  # 设置全局字体
+</code></pre></div><br>
+<h3 id="42-生成实验数据">4.2 生成实验数据</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"># 生成示例时间序列数据
+n_samples, dim, sigma = 1000, 1, 1
+n_bkps = 4  # 假设有4个变化点
+signal, bkps = rpt.pw_constant(n_samples, dim, n_bkps, noise_std=sigma)
+print(signal.shape)
+print(bkps)
+signal
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(1000, 1)
+[198, 415, 608, 807, 1000]
+
+array([[-10.36078315],
+       [-10.20386008],
+       [ -9.97983878],
+       [-10.53406566],
+       ...
+       [-11.43256337],
+       [-10.61377906],
+       [-10.56300421],
+       [-10.83854557],
+       [-10.21754732]])
+</code></pre></div><p>ruptures为我们生成的实验数据signal是一个长度为1000的array型数据。生成的变化点bkps的位置序列 [198, 415, 608, 807, 1000]。 数据不够直观，我们可视化一下</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 创建时间序列图</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;时间序列数据&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="c1">#保存</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;ts-data.png&#39;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="c1"># 显示</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/ts-data.png" alt=""  />
+</p>
+<p>从上图可以清楚的看到，ruptures为我们生成了1000个点，大致有4个变化点，将数据分成了五部分。现在我们使用ruptures为我们识别变化点</p>
+<br>
+<h3 id="43-识别变化点">4.3 识别变化点</h3>
+<p>Pelt算法是Ruptures库中的一种高效而准确的变化点检测算法，它的全称是Pruned Exact Linear Time（修剪的线性时间精确算法）。它的性能取决于成本函数的选择和 <em><strong>pen</strong></em>参数的调整，<em><strong>pen</strong></em> 参数的全称是 <em><strong>Penalty</strong></em>，它代表了在检测到变化点时的成本或惩罚值。这里将 pen 设置为 10</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 使用 Ruptures 库进行变化点检测</span>
+<span class="n">algo</span> <span class="o">=</span> <span class="n">rpt</span><span class="o">.</span><span class="n">Pelt</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&#34;rbf&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">algo</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">pen</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[200, 415, 610, 805, 1000]
+</code></pre></div><br>
+<h3 id="431-matplotlib可视化">4.3.1 matplotlib可视化</h3>
+<p>我们现在比较原数据变化点bkps 和 预测出来的变化点result，为了直观一些，进行可视化</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">ruptures</span> <span class="k">as</span> <span class="nn">rpt</span>
+
+
+<span class="c1"># 创建时间序列图</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="c1"># 绘制时间序列数据</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;时间序列数据&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+
+<span class="c1"># 绘制实际变化点位置</span>
+<span class="k">for</span> <span class="n">bkp</span> <span class="ow">in</span> <span class="n">bkps</span><span class="p">:</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">bkp</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;实际变化点&#39;</span><span class="p">)</span>
+
+<span class="c1"># 绘制检测到的变化点位置</span>
+<span class="k">for</span> <span class="n">bkp</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">bkp</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;检测到的变化点&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&#34;变化点检测示例&#34;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&#34;时间步长&#34;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&#34;数值&#34;</span><span class="p">)</span>
+
+<span class="c1"># 显示单独的图例</span>
+<span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
+<span class="n">unique_labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">labels</span><span class="p">))</span>  <span class="c1"># 去除重复的标签</span>
+<span class="n">unique_handles</span> <span class="o">=</span> <span class="p">[</span><span class="n">handles</span><span class="p">[</span><span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">unique_labels</span><span class="p">]</span>  <span class="c1"># 获取对应的图例项</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">unique_handles</span><span class="p">,</span> <span class="n">unique_labels</span><span class="p">)</span>
+
+<span class="c1">#保存图</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;change-point2.png&#39;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+</code></pre></div><p><img loading="lazy" src="img/change-point2.png" alt=""  />
+</p>
+<br>
+<h4 id="432-ruptures自带可视化">4.3.2 ruptures自带可视化</h4>
+<p>matplotlib代码复杂， 使用ruptures更简洁一些。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 绘制结果</span>
+<span class="c1"># 时间序列数据、 实际变化点、 预测的变化点</span>
+<span class="n">rpt</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">bkps</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&#34;变化点检测示例&#34;</span><span class="p">)</span>
+
+<span class="c1">#保存图</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;change-point.png&#39;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="c1">#显示</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+</code></pre></div><p><img loading="lazy" src="img/change-point.png" alt=""  />
+</p>
+<br>
+<h3 id="44-关于pen">4.4 关于pen</h3>
+<p>更具体地说，<em><strong>pen</strong></em> 参数的值越大，算法就会倾向于检测更少的变化点，而值越小，算法就会倾向于检测更多的变化点。</p>
+<p>通常情况下，您可以根据自己的数据和问题来调整<em><strong>pen</strong></em>参数的值。以下是一些常见的情况和建议：</p>
+<ol>
+<li>如果您希望检测到较少的变化点，以捕捉主要的趋势转折点，可以选择较大的<em><strong>pen</strong></em>值。</li>
+<li>如果您希望检测到更多的变化点，以捕捉数据中的细微变化，可以选择较小的<em><strong>pen</strong></em>值。</li>
+<li>如果您不确定要选择哪个<em><strong>pen</strong></em>值，可以尝试多个不同的值，然后根据结果的质量和实际需求来选择最合适的<em><strong>pen</strong></em>值。</li>
+</ol>
+<p>在实践中，调整<em><strong>pen</strong></em>参数通常需要一些试验和经验，因为最佳的<em><strong>pen</strong></em>值取决于您的数据和分析目标。您可以尝试不同的<em><strong>pen</strong></em>值，然后根据检测结果和领域知识来选择最适合的参数值。</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>使用patchwork包进行多图排版</title>
+      <link>https://textdata.cn/blog/2023-11-25-r-patchwork/</link>
+      <pubDate>Sat, 25 Nov 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-25-r-patchwork/</guid>
+      <description>&lt;h2 id=&#34;一问题&#34;&gt;一、问题&lt;/h2&gt;
+&lt;p&gt;如果想把多个图合并放在一个图里，如图，该如何实现&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/1.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;好在R语言 和 Python 都有对应的解决方案， 分别是patchwork包和patchworklib库。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二r语言&#34;&gt;二、R语言&lt;/h2&gt;
+&lt;p&gt;安装&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;# install.packages(&amp;#34;devtools&amp;#34;)
+devtools::install_github(&amp;#34;thomasp85/patchwork&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;两个图并排在一行，只需要导入patchwork， 然后相加即可&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-R&#34; data-lang=&#34;R&#34;&gt;&lt;span class=&#34;nf&#34;&gt;library&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ggplot2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nf&#34;&gt;library&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;patchwork&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;p1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;ggplot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mtcars&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;geom_point&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;aes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mpg&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;disp&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;p2&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;ggplot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mtcars&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;geom_boxplot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;aes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;gear&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;disp&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;group&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;gear&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;p1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;p2&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/1.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;两行，第一行三个图，第二行一个图&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-R&#34; data-lang=&#34;R&#34;&gt;&lt;span class=&#34;n&#34;&gt;p3&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;ggplot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mtcars&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;geom_smooth&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;aes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;disp&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;qsec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;p4&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;ggplot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mtcars&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;geom_bar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;aes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;carb&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+
+&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;p1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;|&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;p2&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;|&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;p3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;/&lt;/span&gt;
+      &lt;span class=&#34;n&#34;&gt;p4&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/2.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三python&#34;&gt;三、Python&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/ponnhide/patchworklib&#34;&gt;Patchworklib &lt;/a&gt;是与 matplotlib 相关的绘图（简单 matplotlib 绘图、Seaborn 绘图（轴级和图形级）和plotnine 绘图）的通用编辑器。这个库的灵感来自于 ggplot2 的&lt;a href=&#34;https://patchwork.data-imaginist.com/&#34;&gt;patchwork&lt;/a&gt;。因此，作为原始拼凑，用户可以轻松地仅使用 &lt;code&gt;/&lt;/code&gt;和 &lt;code&gt;|&lt;/code&gt; 对齐 matplotlib 图。&lt;/p&gt;
+&lt;p&gt;Patchworklib 提供了该问题的解决方案。通过使用 patchworklib，任何类型的seaborn 和plotnine 图都可以作为matplotlib 子图进行处理。安装&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install patchworklib
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;patchworklib&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pw&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;seaborn&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;sns&lt;/span&gt; 
+
+&lt;span class=&#34;n&#34;&gt;fmri&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sns&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_dataset&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;fmri&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ax1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pw&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;Brick&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;figsize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;sns&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;lineplot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;timepoint&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;y&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;signal&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;hue&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;region&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;style&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;event&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;data&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fmri&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ax&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ax1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ax1&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;legend&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;bbox_to_anchor&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mf&#34;&gt;1.05&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;1.0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;loc&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;upper left&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ax1&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;set_title&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;ax1&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+ 
+&lt;span class=&#34;n&#34;&gt;titanic&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sns&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_dataset&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;titanic&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ax2&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pw&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;Brick&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;figsize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;sns&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;barplot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;sex&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;y&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;survived&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;hue&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;class&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;data&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;titanic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ax&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ax2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ax2&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;move_legend&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;new_loc&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;upper left&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bbox_to_anchor&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mf&#34;&gt;1.05&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;1.0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ax2&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;set_title&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;ax2&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;ax12&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ax1&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ax2&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ax12&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;savefig&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;ax12.png&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/ax12.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#省略 ax1、ax2、ax4绘制过程&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;ax124&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ax1&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ax2&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ax4&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ax124&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;savefig&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;../img/ax124.png&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/ax124.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#省略 ax124、ax3、ax5绘制过程&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ax12435&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ax124&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;/&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ax3&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ax5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ax12435&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;savefig&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;../img/ax12435.png&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/ax12435.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<h2 id="一问题">一、问题</h2>
+<p>如果想把多个图合并放在一个图里，如图，该如何实现</p>
+<p><img loading="lazy" src="img/1.png" alt=""  />
+</p>
+<p>好在R语言 和 Python 都有对应的解决方案， 分别是patchwork包和patchworklib库。</p>
+<p><br><br></p>
+<h2 id="二r语言">二、R语言</h2>
+<p>安装</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"># install.packages(&#34;devtools&#34;)
+devtools::install_github(&#34;thomasp85/patchwork&#34;)
+</code></pre></div><br>
+<p>两个图并排在一行，只需要导入patchwork， 然后相加即可</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="nf">library</span><span class="p">(</span><span class="n">ggplot2</span><span class="p">)</span>
+<span class="nf">library</span><span class="p">(</span><span class="n">patchwork</span><span class="p">)</span>
+
+<span class="n">p1</span> <span class="o">&lt;-</span> <span class="nf">ggplot</span><span class="p">(</span><span class="n">mtcars</span><span class="p">)</span> <span class="o">+</span> <span class="nf">geom_point</span><span class="p">(</span><span class="nf">aes</span><span class="p">(</span><span class="n">mpg</span><span class="p">,</span> <span class="n">disp</span><span class="p">))</span>
+<span class="n">p2</span> <span class="o">&lt;-</span> <span class="nf">ggplot</span><span class="p">(</span><span class="n">mtcars</span><span class="p">)</span> <span class="o">+</span> <span class="nf">geom_boxplot</span><span class="p">(</span><span class="nf">aes</span><span class="p">(</span><span class="n">gear</span><span class="p">,</span> <span class="n">disp</span><span class="p">,</span> <span class="n">group</span> <span class="o">=</span> <span class="n">gear</span><span class="p">))</span>
+
+<span class="n">p1</span> <span class="o">+</span> <span class="n">p2</span>
+</code></pre></div><p><img loading="lazy" src="img/1.png" alt=""  />
+</p>
+<br>
+<p>两行，第一行三个图，第二行一个图</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="n">p3</span> <span class="o">&lt;-</span> <span class="nf">ggplot</span><span class="p">(</span><span class="n">mtcars</span><span class="p">)</span> <span class="o">+</span> <span class="nf">geom_smooth</span><span class="p">(</span><span class="nf">aes</span><span class="p">(</span><span class="n">disp</span><span class="p">,</span> <span class="n">qsec</span><span class="p">))</span>
+<span class="n">p4</span> <span class="o">&lt;-</span> <span class="nf">ggplot</span><span class="p">(</span><span class="n">mtcars</span><span class="p">)</span> <span class="o">+</span> <span class="nf">geom_bar</span><span class="p">(</span><span class="nf">aes</span><span class="p">(</span><span class="n">carb</span><span class="p">))</span>
+
+<span class="p">(</span><span class="n">p1</span> <span class="o">|</span> <span class="n">p2</span> <span class="o">|</span> <span class="n">p3</span><span class="p">)</span> <span class="o">/</span>
+      <span class="n">p4</span>
+</code></pre></div><p><img loading="lazy" src="img/2.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三python">三、Python</h2>
+<p><a href="https://github.com/ponnhide/patchworklib">Patchworklib </a>是与 matplotlib 相关的绘图（简单 matplotlib 绘图、Seaborn 绘图（轴级和图形级）和plotnine 绘图）的通用编辑器。这个库的灵感来自于 ggplot2 的<a href="https://patchwork.data-imaginist.com/">patchwork</a>。因此，作为原始拼凑，用户可以轻松地仅使用 <code>/</code>和 <code>|</code> 对齐 matplotlib 图。</p>
+<p>Patchworklib 提供了该问题的解决方案。通过使用 patchworklib，任何类型的seaborn 和plotnine 图都可以作为matplotlib 子图进行处理。安装</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install patchworklib
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">patchworklib</span> <span class="k">as</span> <span class="nn">pw</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span> 
+
+<span class="n">fmri</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">load_dataset</span><span class="p">(</span><span class="s2">&#34;fmri&#34;</span><span class="p">)</span>
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&#34;timepoint&#34;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&#34;signal&#34;</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s2">&#34;region&#34;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&#34;event&#34;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fmri</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.05</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper left&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&#34;ax1&#34;</span><span class="p">)</span>
+ 
+<span class="n">titanic</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">load_dataset</span><span class="p">(</span><span class="s2">&#34;titanic&#34;</span><span class="p">)</span>
+<span class="n">ax2</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&#34;sex&#34;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&#34;survived&#34;</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s2">&#34;class&#34;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">titanic</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">move_legend</span><span class="p">(</span><span class="n">new_loc</span><span class="o">=</span><span class="s1">&#39;upper left&#39;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.05</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&#34;ax2&#34;</span><span class="p">)</span>
+
+<span class="n">ax12</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">|</span><span class="n">ax2</span>
+<span class="n">ax12</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&#34;ax12.png&#34;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/ax12.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#省略 ax1、ax2、ax4绘制过程</span>
+
+<span class="n">ax124</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">|</span><span class="n">ax2</span><span class="o">|</span><span class="n">ax4</span>
+<span class="n">ax124</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&#34;../img/ax124.png&#34;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/ax124.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#省略 ax124、ax3、ax5绘制过程</span>
+<span class="n">ax12435</span> <span class="o">=</span> <span class="n">ax124</span><span class="o">/</span><span class="p">(</span><span class="n">ax3</span><span class="o">|</span><span class="n">ax5</span><span class="p">)</span>
+<span class="n">ax12435</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&#34;../img/ax12435.png&#34;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/ax12435.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>相关性分析 | 从模型预测出发挖掘更多特征之间的关系</title>
+      <link>https://textdata.cn/blog/2023-11-25-ppsr-predictive-power-sccore/</link>
+      <pubDate>Sat, 25 Nov 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-25-ppsr-predictive-power-sccore/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;作者： Spectator&lt;/p&gt;
+&lt;p&gt;链接: &lt;a href=&#34;https://zhuanlan.zhihu.com/p/557403755&#34;&gt;https://zhuanlan.zhihu.com/p/557403755&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;一pps&#34;&gt;一、PPS&lt;/h2&gt;
+&lt;p&gt;**Predictive Power Score(PPS)**是一种不对称、与数据类型无关的评分，可以检测两个变量之间的线性或非线性关系。分数范围从 0（无预测能力）到 1（完美预测能力）。 与Pearson相关性不同，它可以处理非线性关系、分类数据和不对称关系，例如变量 A 对变量 B 的影响大于变量 B 对变量 A 的影响。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二问题&#34;&gt;二、问题&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;相关性分析&lt;/strong&gt; 是对具有相关性的两个或多个变量元素进行研究，以衡量它们之间的相关性程度。当我们不清楚数据集特征的含义时，通常可以直接进行相关性分析，以检查特征之间的相关系数。&lt;/p&gt;
+&lt;p&gt;在统计学中，常用的方法是使用 &lt;strong&gt;皮尔逊积矩相关系数&lt;/strong&gt;（Pearson product-moment correlation coefficient）来度量两组数据变量X和Y之间的线性相关性。这个系数是协方差除以它们的标准差的乘积，因此它实际上是协方差的标准化度量，其结果始终在 -1 和 1 之间。系数为1表示X和Y之间有很强的线性关系，所有数据点都近似位于一条直线上，Y随着X的增加而增加。系数为-1表示所有数据点都位于一条直线上，但Y随着X的增加而减少。系数为0表示两个变量之间没有线性关系。两个变量之间的皮尔逊相关系数定义为两个变量的协方差除以它们标准差的乘积：&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/person-formular.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;由于皮尔逊相关系数是度量变量之间的线性关系的，那么就无法检测到数据之间的非线性关系，如下图的示例。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/pps_01.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;由皮尔逊相关系数定义的公式可知，皮尔逊相关系数是对称的，即P(A,B) = P(B,A)， 但是在真实世界中，特征之间的关系往往是不对称的，例如：我可以根据你的手机号推断你是哪个城市的，但是不能根据你的城市推断出你的手机号。  同时我们也会发现，当特征是非数值向量时，例如是Onehot向量时，皮尔逊相关系数是没有办法对齐进行处理的。&lt;/p&gt;
+&lt;p&gt;综上所述，常用的皮尔逊相关系数存在以下问题：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;只能度量线性关系；&lt;/li&gt;
+&lt;li&gt;度量的关系是对称的；&lt;/li&gt;
+&lt;li&gt;不能处理非数值向量之间的关系。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;计算“x 预测 y”的PPS得分&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;分数始终介于 0 到 1 之间，并且与数据类型无关。&lt;/li&gt;
+&lt;li&gt;得分 0 意味着 x 列无法比朴素基线模型更好地预测 y 列。&lt;/li&gt;
+&lt;li&gt;得分 1 意味着 x 列可以在给定模型的情况下完美预测 y 列。&lt;/li&gt;
+&lt;li&gt;0 到 1 之间的分数表示模型与基线模型相比所实现的潜在预测能力的比率。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在 Python 和 R 中均有pps的库， 分别是 &lt;a href=&#34;https://github.com/8080labs/ppscore&#34;&gt;ppscore库&lt;/a&gt; 和 &lt;a href=&#34;https://github.com/paulvanderlaken/ppsr&#34;&gt;ppsr 包&lt;/a&gt;， 今天以 ppsr为例分享。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三ppsr用法&#34;&gt;三、ppsr用法&lt;/h2&gt;
+&lt;p&gt;该&lt;code&gt;ppsr&lt;/code&gt;软件包有四个主要函数来计算 PPS：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ppsr::score()&lt;/code&gt;计算 xy PPS&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ppsr::score_matrix()&lt;/code&gt;计算所有 XY PPS，并将它们显示在矩阵中&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ppsr::visualize_pps&lt;/code&gt;   pps得分矩阵&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ppsr::visualize_correlations&lt;/code&gt;  相关矩阵&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;其中&lt;code&gt;x&lt;/code&gt;和&lt;code&gt;y&lt;/code&gt;代表单个预测变量/目标，并且&lt;code&gt;X&lt;/code&gt;和 &lt;code&gt;Y&lt;/code&gt;代表给定数据集中的所有预测变量/目标。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;31-安装&#34;&gt;3.1 安装&lt;/h3&gt;
+&lt;p&gt;在R中安装ppsr，打开命令行， 执行&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;install.packages(&amp;#39;ppsr&amp;#39;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-score&#34;&gt;3.2 score()&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;score()&lt;/code&gt;计算单个目标和预测变量的 PPS&lt;/p&gt;
+&lt;p&gt;例如，使用决策树回归模型计算 x预测y 的PPS……&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-R&#34; data-lang=&#34;R&#34;&gt;&lt;span class=&#34;n&#34;&gt;ppsr&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;::&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;score&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;iris&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;x&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#39;Sepal.Length&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;y&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#39;Petal.Length&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;algorithm&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#39;tree&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;[[&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#39;pps&amp;#39;&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;]]&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#&amp;gt; [1] 0.6160836&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;使用广义线性回归模型计算 x预测y 的PPS……&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-R&#34; data-lang=&#34;R&#34;&gt;&lt;span class=&#34;n&#34;&gt;ppsr&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;::&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;score&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;iris&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;x&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#39;Sepal.Length&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;y&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#39;Petal.Length&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;algorithm&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#39;glm&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;[[&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#39;pps&amp;#39;&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;]]&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#&amp;gt; [1] 0.5441131&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;33-score_matrix&#34;&gt;3.3 score_matrix()&lt;/h3&gt;
+&lt;p&gt;类似于Pearson相关矩阵&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-R&#34; data-lang=&#34;R&#34;&gt;&lt;span class=&#34;n&#34;&gt;ppsr&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;::&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;score_matrix&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;iris&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#&amp;gt;              Sepal.Length Sepal.Width Petal.Length Petal.Width   Species&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#&amp;gt; Sepal.Length   1.00000000  0.04632352    0.5491398   0.4127668 0.4075487&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#&amp;gt; Sepal.Width    0.06790301  1.00000000    0.2376991   0.2174659 0.2012876&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#&amp;gt; Petal.Length   0.61608360  0.24263851    1.0000000   0.7917512 0.7904907&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#&amp;gt; Petal.Width    0.48735314  0.20124105    0.7437845   1.0000000 0.7561113&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#&amp;gt; Species        0.55918638  0.31344008    0.9167580   0.9398532 1.0000000&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;34-可视化&#34;&gt;3.4 可视化&lt;/h3&gt;
+&lt;p&gt;pps得分矩阵&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-R&#34; data-lang=&#34;R&#34;&gt;&lt;span class=&#34;n&#34;&gt;ppsr&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;::&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;visualize_pps&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;iris&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/pps-matrix-heat.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;相关矩阵&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-R&#34; data-lang=&#34;R&#34;&gt;&lt;span class=&#34;n&#34;&gt;ppsr&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;::&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;visualize_correlations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;iris&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/correlation-heatmap.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;并排生成 PPS 和相关矩阵，以便于比较。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-R&#34; data-lang=&#34;R&#34;&gt;&lt;span class=&#34;n&#34;&gt;ppsr&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;::&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;visualize_both&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;iris&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/pps-correlation-heat.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四pps应用&#34;&gt;四、PPS应用&lt;/h2&gt;
+&lt;p&gt;PPS的应用，了解了 PPS 的优点之后，我们来看看在现实生活中我们可以在哪些地方使用 PPS：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;查找数据中的模式： PPS 查找相关性发现的每一个关系，甚至更多。因此，您可以使用 PPS 矩阵替代相关矩阵来检测和理解数据中的线性或非线性模式。使用始终在 0 到 1 之间的单个分数跨数据类型是可能的。&lt;/li&gt;
+&lt;li&gt;特征选择：除了您通常的特征选择机制外，您还可以使用预测能力得分来为您的目标列找到好的预测变量。此外，您可以消除仅添加随机噪声的功能。这些特征有时在特征重要性指标上仍然得分很高。此外，您可以消除其他特征可以预测的特征，因为它们不会添加新信息。此外，您可以识别 PPS 矩阵中的相互预测特征对——这包括强相关特征，但也将检测非线性关系。&lt;/li&gt;
+&lt;li&gt;检测信息泄露：使用 PPS 矩阵检测变量之间的信息泄露——即使信息泄露是通过其他变量介导的。&lt;/li&gt;
+&lt;li&gt;数据规范化：通过将 PPS 矩阵解释为有向图来查找数据中的实体结构。当数据包含以前未知的潜在结构时，这可能会令人惊讶。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<blockquote>
+<p>作者： Spectator</p>
+<p>链接: <a href="https://zhuanlan.zhihu.com/p/557403755">https://zhuanlan.zhihu.com/p/557403755</a></p>
+</blockquote>
+<h2 id="一pps">一、PPS</h2>
+<p>**Predictive Power Score(PPS)**是一种不对称、与数据类型无关的评分，可以检测两个变量之间的线性或非线性关系。分数范围从 0（无预测能力）到 1（完美预测能力）。 与Pearson相关性不同，它可以处理非线性关系、分类数据和不对称关系，例如变量 A 对变量 B 的影响大于变量 B 对变量 A 的影响。</p>
+<p><br><br></p>
+<h2 id="二问题">二、问题</h2>
+<p><strong>相关性分析</strong> 是对具有相关性的两个或多个变量元素进行研究，以衡量它们之间的相关性程度。当我们不清楚数据集特征的含义时，通常可以直接进行相关性分析，以检查特征之间的相关系数。</p>
+<p>在统计学中，常用的方法是使用 <strong>皮尔逊积矩相关系数</strong>（Pearson product-moment correlation coefficient）来度量两组数据变量X和Y之间的线性相关性。这个系数是协方差除以它们的标准差的乘积，因此它实际上是协方差的标准化度量，其结果始终在 -1 和 1 之间。系数为1表示X和Y之间有很强的线性关系，所有数据点都近似位于一条直线上，Y随着X的增加而增加。系数为-1表示所有数据点都位于一条直线上，但Y随着X的增加而减少。系数为0表示两个变量之间没有线性关系。两个变量之间的皮尔逊相关系数定义为两个变量的协方差除以它们标准差的乘积：</p>
+<p><img loading="lazy" src="img/person-formular.png" alt=""  />
+</p>
+<p>由于皮尔逊相关系数是度量变量之间的线性关系的，那么就无法检测到数据之间的非线性关系，如下图的示例。</p>
+<p><img loading="lazy" src="img/pps_01.png" alt=""  />
+</p>
+<p>由皮尔逊相关系数定义的公式可知，皮尔逊相关系数是对称的，即P(A,B) = P(B,A)， 但是在真实世界中，特征之间的关系往往是不对称的，例如：我可以根据你的手机号推断你是哪个城市的，但是不能根据你的城市推断出你的手机号。  同时我们也会发现，当特征是非数值向量时，例如是Onehot向量时，皮尔逊相关系数是没有办法对齐进行处理的。</p>
+<p>综上所述，常用的皮尔逊相关系数存在以下问题：</p>
+<ol>
+<li>只能度量线性关系；</li>
+<li>度量的关系是对称的；</li>
+<li>不能处理非数值向量之间的关系。</li>
+</ol>
+<p>计算“x 预测 y”的PPS得分</p>
+<ul>
+<li>分数始终介于 0 到 1 之间，并且与数据类型无关。</li>
+<li>得分 0 意味着 x 列无法比朴素基线模型更好地预测 y 列。</li>
+<li>得分 1 意味着 x 列可以在给定模型的情况下完美预测 y 列。</li>
+<li>0 到 1 之间的分数表示模型与基线模型相比所实现的潜在预测能力的比率。</li>
+</ul>
+<p>在 Python 和 R 中均有pps的库， 分别是 <a href="https://github.com/8080labs/ppscore">ppscore库</a> 和 <a href="https://github.com/paulvanderlaken/ppsr">ppsr 包</a>， 今天以 ppsr为例分享。</p>
+<p><br><br></p>
+<h2 id="三ppsr用法">三、ppsr用法</h2>
+<p>该<code>ppsr</code>软件包有四个主要函数来计算 PPS：</p>
+<ul>
+<li><code>ppsr::score()</code>计算 xy PPS</li>
+<li><code>ppsr::score_matrix()</code>计算所有 XY PPS，并将它们显示在矩阵中</li>
+<li><code>ppsr::visualize_pps</code>   pps得分矩阵</li>
+<li><code>ppsr::visualize_correlations</code>  相关矩阵</li>
+</ul>
+<p>其中<code>x</code>和<code>y</code>代表单个预测变量/目标，并且<code>X</code>和 <code>Y</code>代表给定数据集中的所有预测变量/目标。</p>
+<br>
+<h3 id="31-安装">3.1 安装</h3>
+<p>在R中安装ppsr，打开命令行， 执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">install.packages(&#39;ppsr&#39;)
+</code></pre></div><br>
+<h3 id="32-score">3.2 score()</h3>
+<p><code>score()</code>计算单个目标和预测变量的 PPS</p>
+<p>例如，使用决策树回归模型计算 x预测y 的PPS……</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="n">ppsr</span><span class="o">::</span><span class="nf">score</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="s">&#39;Sepal.Length&#39;</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="s">&#39;Petal.Length&#39;</span><span class="p">,</span> <span class="n">algorithm</span> <span class="o">=</span> <span class="s">&#39;tree&#39;</span><span class="p">)</span><span class="n">[[</span><span class="s">&#39;pps&#39;</span><span class="n">]]</span>
+<span class="c1">#&gt; [1] 0.6160836</span>
+</code></pre></div><br>
+<p>使用广义线性回归模型计算 x预测y 的PPS……</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="n">ppsr</span><span class="o">::</span><span class="nf">score</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="s">&#39;Sepal.Length&#39;</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="s">&#39;Petal.Length&#39;</span><span class="p">,</span> <span class="n">algorithm</span> <span class="o">=</span> <span class="s">&#39;glm&#39;</span><span class="p">)</span><span class="n">[[</span><span class="s">&#39;pps&#39;</span><span class="n">]]</span>
+<span class="c1">#&gt; [1] 0.5441131</span>
+</code></pre></div><br>
+<h3 id="33-score_matrix">3.3 score_matrix()</h3>
+<p>类似于Pearson相关矩阵</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="n">ppsr</span><span class="o">::</span><span class="nf">score_matrix</span><span class="p">(</span><span class="n">df</span> <span class="o">=</span> <span class="n">iris</span><span class="p">)</span>
+<span class="c1">#&gt;              Sepal.Length Sepal.Width Petal.Length Petal.Width   Species</span>
+<span class="c1">#&gt; Sepal.Length   1.00000000  0.04632352    0.5491398   0.4127668 0.4075487</span>
+<span class="c1">#&gt; Sepal.Width    0.06790301  1.00000000    0.2376991   0.2174659 0.2012876</span>
+<span class="c1">#&gt; Petal.Length   0.61608360  0.24263851    1.0000000   0.7917512 0.7904907</span>
+<span class="c1">#&gt; Petal.Width    0.48735314  0.20124105    0.7437845   1.0000000 0.7561113</span>
+<span class="c1">#&gt; Species        0.55918638  0.31344008    0.9167580   0.9398532 1.0000000</span>
+</code></pre></div><br>
+<h3 id="34-可视化">3.4 可视化</h3>
+<p>pps得分矩阵</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="n">ppsr</span><span class="o">::</span><span class="nf">visualize_pps</span><span class="p">(</span><span class="n">df</span> <span class="o">=</span> <span class="n">iris</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/pps-matrix-heat.png" alt=""  />
+</p>
+<br>
+<p>相关矩阵</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="n">ppsr</span><span class="o">::</span><span class="nf">visualize_correlations</span><span class="p">(</span><span class="n">df</span> <span class="o">=</span> <span class="n">iris</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/correlation-heatmap.png" alt=""  />
+</p>
+<p>并排生成 PPS 和相关矩阵，以便于比较。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-R" data-lang="R"><span class="n">ppsr</span><span class="o">::</span><span class="nf">visualize_both</span><span class="p">(</span><span class="n">df</span> <span class="o">=</span> <span class="n">iris</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/pps-correlation-heat.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="四pps应用">四、PPS应用</h2>
+<p>PPS的应用，了解了 PPS 的优点之后，我们来看看在现实生活中我们可以在哪些地方使用 PPS：</p>
+<ul>
+<li>查找数据中的模式： PPS 查找相关性发现的每一个关系，甚至更多。因此，您可以使用 PPS 矩阵替代相关矩阵来检测和理解数据中的线性或非线性模式。使用始终在 0 到 1 之间的单个分数跨数据类型是可能的。</li>
+<li>特征选择：除了您通常的特征选择机制外，您还可以使用预测能力得分来为您的目标列找到好的预测变量。此外，您可以消除仅添加随机噪声的功能。这些特征有时在特征重要性指标上仍然得分很高。此外，您可以消除其他特征可以预测的特征，因为它们不会添加新信息。此外，您可以识别 PPS 矩阵中的相互预测特征对——这包括强相关特征，但也将检测非线性关系。</li>
+<li>检测信息泄露：使用 PPS 矩阵检测变量之间的信息泄露——即使信息泄露是通过其他变量介导的。</li>
+<li>数据规范化：通过将 PPS 矩阵解释为有向图来查找数据中的实体结构。当数据包含以前未知的潜在结构时，这可能会令人惊讶。</li>
+</ul>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>2T数据集 | 使用GH Archive获取Github社区用户数据</title>
       <link>https://textdata.cn/blog/2023-11-22-open-dataset-gharchive-org/</link>
@@ -1436,14 +2142,25 @@ Wall time: 20000 s
 1899: 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;也试了其他的词语，好像只有 2002-2009 之间的语义是准确的。 &lt;strong&gt;原因未知，也训练了&lt;a href=&#34;https://textdata.cn/blog/2023-11-18-failure-example-show-word-meaning-shift-using-word2vec/&#34;&gt;裁判文书的Word2vec&lt;/a&gt;,  年份的是一点准头都没有。专利数据训练的好在还有点准头&lt;/strong&gt;。&lt;/p&gt;
 &lt;br&gt;
-&lt;h2 id=&#34;四跨模型比较语义&#34;&gt;四、跨模型比较语义&lt;/h2&gt;
-&lt;p&gt;假设语义都很准的话， 是可以研究 &lt;strong&gt;语义变迁&lt;/strong&gt; 或者 &lt;strong&gt;语义差异&lt;/strong&gt; 的。 但需要注意， 不能直接使用两个年份或者两个省份的中word1和word2的距离来体现语义的变迁或者语义的差异。 如果想做省份间差异或者某省份随时间的变化， 需要用到 &lt;strong&gt;对齐算法&lt;/strong&gt;， 使得同省份不同年份或者通年份不同省份的word2vec都有相同的语义空间。&lt;/p&gt;
-&lt;p&gt;Procrustes 矩阵对齐和 动态词嵌入模型（Dynamic Word Embeddings）是两种不同的技术。&lt;/p&gt;
-&lt;h3 id=&#34;41-正交procrustes矩阵对齐&#34;&gt;4.1 正交Procrustes矩阵对齐&lt;/h3&gt;
+&lt;h2 id=&#34;四研究潜力-语义变迁研究方法介绍&#34;&gt;四、研究潜力: 语义变迁研究方法介绍&lt;/h2&gt;
+&lt;p&gt;假设语义都很准的话， 是可以研究 &lt;strong&gt;语义变迁&lt;/strong&gt; 或者 &lt;strong&gt;语义差异&lt;/strong&gt; 的。 但需要注意， 不能直接使用两个年份或者两个省份的中word1和word2的距离来体现语义的变迁或者语义的差异。 如果想做省份间差异或者某省份随时间的变化， 需要用到 &lt;strong&gt;对齐算法&lt;/strong&gt;， 常用的算法是 &lt;strong&gt;正交Procrustes矩阵对齐&lt;/strong&gt;， 使得同省份不同年份或者通年份不同省份的word2vec都有相同的语义空间。&lt;/p&gt;
+&lt;h3 id=&#34;41-正交procrustes算法&#34;&gt;4.1 正交Procrustes算法&lt;/h3&gt;
 &lt;p&gt;正交Procrustes矩阵对齐是一种将两个预训练语言模型的词向量矩阵对齐的方法，使得它们在相同的语义空间中表示。具体来说，它通过计算一个正交矩阵，将两个词向量矩阵进行线性变换，使得它们的Frobenius范数之和最小，从而实现对齐。 gensim库有该算法，大邓后续有时间会分享如何用Procrustes对齐语言模型。&lt;/p&gt;
 &lt;br&gt;
-&lt;h3 id=&#34;42--动态词嵌入模型&#34;&gt;4.2  动态词嵌入模型&lt;/h3&gt;
-&lt;p&gt;而动态词嵌入模型是一种基于神经网络的方法，用于学习随时间变化的词向量表示。它考虑到了词汇的上下文信息和时间信息，通过对上下文信息和时间信息进行建模，动态地更新词向量表示。相比于静态词向量模型，动态词嵌入模型能够更好地捕捉词汇在不同时间和语境下的含义和语义变化。 目前大邓还没找到可实现的公开代码。&lt;/p&gt;
+&lt;h3 id=&#34;42-语义变迁流程图&#34;&gt;4.2 语义变迁流程图&lt;/h3&gt;
+&lt;p&gt;语义变迁类研究的流程图可参考 &lt;a href=&#34;https://github.com/Living-with-machines/DiachronicEmb-BigHistData&#34;&gt;DiachronicEmb-BigHistData&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/w2v-time-shifting-flowchart.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;43-识别语义变化时间点&#34;&gt;4.3 识别语义变化时间点&lt;/h3&gt;
+&lt;p&gt;该项目研究了1800-1910期间， 每10年为一个单位训练词向量， 探究词语变化。以 &lt;em&gt;&lt;strong&gt;railway&lt;/strong&gt;&lt;/em&gt; 和  &lt;em&gt;&lt;strong&gt;traffic&lt;/strong&gt;&lt;/em&gt; 为例, 先用 余弦相似度(cosine-similarity)算法识别词语语义变化的时间点，如下图&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/consine-sim-cpdetection.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;44-绘制语义变化轨迹&#34;&gt;4.4 绘制语义变化轨迹&lt;/h3&gt;
+&lt;p&gt;语义变化轨迹&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/railway-time-shifting.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;五获取资源&#34;&gt;五、获取资源&lt;/h2&gt;
 &lt;h3 id=&#34;51-免费&#34;&gt;5.1 免费&lt;/h3&gt;
@@ -1910,14 +2627,25 @@ Wall time: 20000 s
 1899: 
 </code></pre></div><p>也试了其他的词语，好像只有 2002-2009 之间的语义是准确的。 <strong>原因未知，也训练了<a href="https://textdata.cn/blog/2023-11-18-failure-example-show-word-meaning-shift-using-word2vec/">裁判文书的Word2vec</a>,  年份的是一点准头都没有。专利数据训练的好在还有点准头</strong>。</p>
 <br>
-<h2 id="四跨模型比较语义">四、跨模型比较语义</h2>
-<p>假设语义都很准的话， 是可以研究 <strong>语义变迁</strong> 或者 <strong>语义差异</strong> 的。 但需要注意， 不能直接使用两个年份或者两个省份的中word1和word2的距离来体现语义的变迁或者语义的差异。 如果想做省份间差异或者某省份随时间的变化， 需要用到 <strong>对齐算法</strong>， 使得同省份不同年份或者通年份不同省份的word2vec都有相同的语义空间。</p>
-<p>Procrustes 矩阵对齐和 动态词嵌入模型（Dynamic Word Embeddings）是两种不同的技术。</p>
-<h3 id="41-正交procrustes矩阵对齐">4.1 正交Procrustes矩阵对齐</h3>
+<h2 id="四研究潜力-语义变迁研究方法介绍">四、研究潜力: 语义变迁研究方法介绍</h2>
+<p>假设语义都很准的话， 是可以研究 <strong>语义变迁</strong> 或者 <strong>语义差异</strong> 的。 但需要注意， 不能直接使用两个年份或者两个省份的中word1和word2的距离来体现语义的变迁或者语义的差异。 如果想做省份间差异或者某省份随时间的变化， 需要用到 <strong>对齐算法</strong>， 常用的算法是 <strong>正交Procrustes矩阵对齐</strong>， 使得同省份不同年份或者通年份不同省份的word2vec都有相同的语义空间。</p>
+<h3 id="41-正交procrustes算法">4.1 正交Procrustes算法</h3>
 <p>正交Procrustes矩阵对齐是一种将两个预训练语言模型的词向量矩阵对齐的方法，使得它们在相同的语义空间中表示。具体来说，它通过计算一个正交矩阵，将两个词向量矩阵进行线性变换，使得它们的Frobenius范数之和最小，从而实现对齐。 gensim库有该算法，大邓后续有时间会分享如何用Procrustes对齐语言模型。</p>
 <br>
-<h3 id="42--动态词嵌入模型">4.2  动态词嵌入模型</h3>
-<p>而动态词嵌入模型是一种基于神经网络的方法，用于学习随时间变化的词向量表示。它考虑到了词汇的上下文信息和时间信息，通过对上下文信息和时间信息进行建模，动态地更新词向量表示。相比于静态词向量模型，动态词嵌入模型能够更好地捕捉词汇在不同时间和语境下的含义和语义变化。 目前大邓还没找到可实现的公开代码。</p>
+<h3 id="42-语义变迁流程图">4.2 语义变迁流程图</h3>
+<p>语义变迁类研究的流程图可参考 <a href="https://github.com/Living-with-machines/DiachronicEmb-BigHistData">DiachronicEmb-BigHistData</a></p>
+<p><img loading="lazy" src="img/w2v-time-shifting-flowchart.png" alt=""  />
+</p>
+<br>
+<h3 id="43-识别语义变化时间点">4.3 识别语义变化时间点</h3>
+<p>该项目研究了1800-1910期间， 每10年为一个单位训练词向量， 探究词语变化。以 <em><strong>railway</strong></em> 和  <em><strong>traffic</strong></em> 为例, 先用 余弦相似度(cosine-similarity)算法识别词语语义变化的时间点，如下图</p>
+<p><img loading="lazy" src="img/consine-sim-cpdetection.png" alt=""  />
+</p>
+<br>
+<h3 id="44-绘制语义变化轨迹">4.4 绘制语义变化轨迹</h3>
+<p>语义变化轨迹</p>
+<p><img loading="lazy" src="img/railway-time-shifting.png" alt=""  />
+</p>
 <p><br><br></p>
 <h2 id="五获取资源">五、获取资源</h2>
 <h3 id="51-免费">5.1 免费</h3>
