@@ -264,7 +264,7 @@ class Config {
 			{
 				site: 'Science',
 				icon: 'science',
-				url: 'https://www.science.org/',
+				url: 'https://www.science.org/journal/science',
 				category: 'cNews'
 			},
 			{
