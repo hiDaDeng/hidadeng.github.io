@@ -224,8 +224,9 @@ Name: 国际申请, Length: 357881, dtype: object
       <description>3571万专利申请全量数据(1985-2022年)数据</description>
       <content:encoded><![CDATA[<h2 id="相关推文">相关推文</h2>
 <p><a href="https://textdata.cn/blog/2023-04-26-matching-listed-corporate-with-patent-dataset/">从3571w条专利数据集「匹配」上市公司的专利信息</a></p>
+<p><a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/">推荐 | 如何处理远超电脑内存的csv文件</a></p>
 <p><br><br></p>
-<p>3571万专利申请全量数据(<strong>1985.01 ~ 2022.5</strong>)数据，解压后整个文件夹70多G。</p>
+<p>3571万专利申请全量数据(<strong>1985.01 ~ 2022.5</strong>)数据，解压后整个文件夹大概 20 G。</p>
 <p><img loading="lazy" src="img/screen-datasets.png" alt=""  />
 </p>
 <br>
@@ -307,27 +308,33 @@ Name: 国际申请, Length: 357881, dtype: object
  -  专利学科
  -  多次公布
 </code></pre></div><p><br><br></p>
-<h2 id="二读取数据">二、读取数据</h2>
-<p>数据集中的个别csv文件较大，例如广东省.csv体积10G。建议分析的时候， 电脑内存大于等于16G的， 每次分析时不要开其他软件。</p>
+<h2 id="二实验代码">二、实验代码</h2>
+<h3 id="21-读取数据">2.1 读取数据</h3>
+<p>数据集中的个别csv文件较大，例如 <strong>广东省.csv.gzip</strong>体积2.66G , 解压得到的 <strong>广东省.csv</strong> 10G。 建议直接读取.csv.gzip，这样会节省内存消耗。需要注意每次分析时不要开其他软件，如Word/PPT/Excel/WPS。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;河北省.csv&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;河北省.csv.gzip&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1">#df = pd.read_csv(&#39;河北省.csv&#39;, encoding=&#39;utf-8&#39;, low_memory=False)</span>
+
 <span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">])</span>
 <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </code></pre></div><p>Run
 <img loading="lazy" src="img/df.png" alt=""  />
 </p>
 <br>
+<h3 id="22-记录数">2.2 记录数</h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;河北省: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">河北省: 645420
 </code></pre></div><br>
+<h3 id="2-3-覆盖日期">2. 3 覆盖日期</h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1985-01-28 00:00:00
 2022-05-24 00:00:00
 </code></pre></div><br>
+<h3 id="24-字段">2.4 字段</h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Index([&#39;专利公开号&#39;, &#39;专利名称&#39;, &#39;专利类型&#39;, &#39;专利摘要&#39;, 
@@ -344,8 +351,7 @@ dtype=&#39;object&#39;)
 发明公开 155084
 外观设计 107905
 发明授权 20599
-</code></pre></div><br>
-<p><br><br></p>
+</code></pre></div><p><br><br></p>
 <h2 id="三可视化">三、可视化</h2>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
@@ -353,12 +359,12 @@ dtype=&#39;object&#39;)
 <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">,</span> <span class="s1">&#39;授权公布日&#39;</span><span class="p">]</span>
 
 <span class="c1">#读取数据</span>
-<span class="n">guangdong_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;广东省.csv&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">jiangsu_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;江苏省.csv&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">shandong_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;山东省.csv&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">zhejiang_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;浙江省.csv&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">beijing_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;北京市.csv&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">shanghai_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;上海市.csv&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">guangdong_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;广东省.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">jiangsu_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;江苏省.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">shandong_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;山东省.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">zhejiang_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;浙江省.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">beijing_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;北京市.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">shanghai_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;上海市.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <span class="c1">#显示前5行</span>
 <span class="n">shanghai_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
@@ -415,10 +421,10 @@ dtype=&#39;object&#39;)
 </li>
 </ul>
 <p><br><br></p>
-<h2 id="数据集获取">数据集获取</h2>
+<h2 id="四获取数据">四、获取数据</h2>
 <p>内容为付费数据集，100元， 加微信 372335839， 备注「姓名-学校-专业」。</p>
 <p><br><br></p>
-<h2 id="相关文献">相关文献</h2>
+<h2 id="五相关文献">五、相关文献</h2>
 <p>使用专利数据做研究的文献</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[1]Bellstam, Gustaf, Sanjai Bhagat, and J. Anthony Cookson. &#34;A text-based analysis of corporate innovation.&#34; _Management Science_ 67, no. 7 (2021): 4004-4031.
 [2]Arts, Sam, Bruno Cassiman, and Jianan Hou. &#34;Position and Differentiation of Firms in Technology Space.&#34; Management Science (2023).
