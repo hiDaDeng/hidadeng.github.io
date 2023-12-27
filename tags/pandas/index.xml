@@ -6,7 +6,895 @@
     <description>Recent content in pandas on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 03 Dec 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pandas/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 27 Dec 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pandas/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Polars库 | 最强 Pandas 平替来了</title>
+      <link>https://textdata.cn/blog/2023-12-27-polars-tutorial-an-altertaive-of-pandas/</link>
+      <pubDate>Wed, 27 Dec 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-12-27-polars-tutorial-an-altertaive-of-pandas/</guid>
+      <description>&lt;h2 id=&#34;一介绍&#34;&gt;一、介绍&lt;/h2&gt;
+&lt;p&gt;Polars 是一个用于操作结构化数据的高性能 DataFrame 库，由于 Polars 是从0开始用Rust编写，紧密与机器结合。其矢量化和列式处理可在现代处理器上实现缓存一致性算法和高性能。如果您经常使用 pandas，那么用起 Polars 会感觉很轻松，可以说是平替 Pandas 最有潜质的包。&lt;/p&gt;
+&lt;p&gt;Polars 在独立的 TPCH 基准测试中与其他几个解决方案进行了基准测试。该基准测试旨在复制实践中使用的数据整理操作。由于其并行执行引擎、高效算法以及 SIMD（单指令、多数据）矢量化的使用，Polars 轻松胜过其他解决方案。&lt;strong&gt;与pandas相比，它可以实现30倍以上的性能提升&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;Polars 的目标是提供一个闪电般快速的&lt;code&gt;DataFrame&lt;/code&gt;库：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;利用机器上所有可用的内核。&lt;/li&gt;
+&lt;li&gt;优化查询以减少不必要的工作/内存分配。&lt;/li&gt;
+&lt;li&gt;处理比可用 RAM 大得多的数据集。&lt;/li&gt;
+&lt;li&gt;拥有一致且可预测的 API。&lt;/li&gt;
+&lt;li&gt;具有严格的架构（在运行查询之前应该知道数据类型）。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;br&gt;
+&lt;p&gt;&lt;a href=&#34;https://pola-rs.github.io/polars/user-guide/&#34;&gt;User guide: https://pola-rs.github.io/polars/user-guide/&lt;/a&gt;
+&lt;a href=&#34;https://pola-rs.github.io/polars/py-polars/html/reference/io.html&#34;&gt;API reference: https://pola-rs.github.io/polars/py-polars/html/reference/io.html&lt;/a&gt;&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;打开命令行， 执行  polars 安装命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install &amp;#39;polars[all]&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h2 id=&#34;二数据读写&#34;&gt;二、数据读写&lt;/h2&gt;
+&lt;p&gt;Polars 读写数据支持&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;常见的数据文件，如 csv、xlsx、json、parquet ；&lt;/li&gt;
+&lt;li&gt;云存储，如 S3、Azure Blob, BigQuery；&lt;/li&gt;
+&lt;li&gt;数据库，如postgres、mysql&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;咱们主要分享常见的代码操作&lt;/p&gt;
+&lt;h3 id=&#34;21-dataframe&#34;&gt;2.1 DataFrame&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;polars&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pl&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;polars.selectors&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cs&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;datetime&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;datetime&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;DataFrame&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;s2&#34;&gt;&amp;#34;idx&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;
+        &lt;span class=&#34;s2&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;张三&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;李四&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;王五&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;赵六&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;
+        &lt;span class=&#34;s2&#34;&gt;&amp;#34;birthday&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;datetime&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2009&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;datetime&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2005&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;datetime&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;12&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;31&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;datetime&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1995&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
+        &lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;
+        &lt;span class=&#34;s2&#34;&gt;&amp;#34;gender&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;男&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;男&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;男&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;女&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;
+        &lt;span class=&#34;s2&#34;&gt;&amp;#34;bio&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;好好学习，天天向上&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                &lt;span class=&#34;s2&#34;&gt;&amp;#34;泰难了&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                &lt;span class=&#34;s2&#34;&gt;&amp;#34;学习有毛用&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                &lt;span class=&#34;s2&#34;&gt;&amp;#34;躺平ing&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#存入csv、excel、json、parquet&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;data.csv&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write_excel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;data.xlsx&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write_json&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;data.json&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write_parquet&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;data.parquet&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆    birthday	       | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&amp;#34;张三&amp;#34; ┆ 2009-05-01 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;好好学习，天天向上&amp;#34;|
+│ 2 ┆&amp;#34;李四&amp;#34; ┆ 2005-10-15 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;泰难了&amp;#34;          |
+│ 3 ┆&amp;#34;王五&amp;#34; ┆ 2000-12-31 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;学习有毛用&amp;#34;       |
+│ 4 ┆&amp;#34;赵六&amp;#34; ┆ 1995-06-15 00:00:00 ┆ &amp;#34;女&amp;#34;  │&amp;#34;躺平ing&amp;#34;         |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;22-csvexcel&#34;&gt;2.2 csv、excel&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;df.write_csv 存入csv&lt;/li&gt;
+&lt;li&gt;pl.read_csv  读取csv&lt;/li&gt;
+&lt;li&gt;df.write_excel 存入xlsx文件&lt;/li&gt;
+&lt;li&gt;pl.read_excel   读取xlsx&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;df_csv = pl.read_csv(&amp;#39;data.csv&amp;#39;)
+df_xlsx = pl.read_excel(&amp;#39;data.xlsx&amp;#39;)
+
+df_csv
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆       birthday	     | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆        str          ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&amp;#34;张三&amp;#34; ┆  &amp;#34;2009-05-01T00:…   ┆ &amp;#34;男&amp;#34;  │&amp;#34;好好学习，天天向上&amp;#34;|
+│ 2 ┆&amp;#34;李四&amp;#34; ┆  &amp;#34;2005-10-15T00:…	  ┆ &amp;#34;男&amp;#34;  │&amp;#34;泰难了&amp;#34;          |
+│ 3 ┆&amp;#34;王五&amp;#34; ┆  &amp;#34;2000-12-31T00:…   ┆ &amp;#34;男&amp;#34;  │&amp;#34;学习有毛用&amp;#34;       |
+│ 4 ┆&amp;#34;赵六&amp;#34; ┆  &amp;#34;1995-06-15T00:…	  ┆ &amp;#34;女&amp;#34;  │&amp;#34;躺平ing&amp;#34;         |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;注意哦， 此时的 date 字段数据类型是 str&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;23-jsonparquet&#34;&gt;2.3 json/parquet&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;df.write_json&lt;/li&gt;
+&lt;li&gt;pl.read_json&lt;/li&gt;
+&lt;li&gt;df.write_parquet&lt;/li&gt;
+&lt;li&gt;pl.read_parquet&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df_json&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_json&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;data.json&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df_parquet&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_parquet&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;data.parquet&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df_json&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆    birthday	       | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&amp;#34;张三&amp;#34; ┆ 2009-05-01 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;好好学习，天天向上&amp;#34;|
+│ 2 ┆&amp;#34;李四&amp;#34; ┆ 2005-10-15 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;泰难了&amp;#34;          |
+│ 3 ┆&amp;#34;王五&amp;#34; ┆ 2000-12-31 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;学习有毛用&amp;#34;       |
+│ 4 ┆&amp;#34;赵六&amp;#34; ┆ 1995-06-15 00:00:00 ┆ &amp;#34;女&amp;#34;  │&amp;#34;躺平ing&amp;#34;         |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;注意， 使用 df.write_json 或 df.write_parquet 将数据存入 json、parquet， 都可以保留 date 字段的 datetime 类型。而 csv、xlsx 只会将date字段存储为 str 类型。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三常用表达式&#34;&gt;三、常用表达式&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;Expressions&lt;/code&gt;是Polars的核心功能， &lt;code&gt;expressions&lt;/code&gt; 既可以解决简单的查询，又可以轻松扩展到复杂的查询。下面是 polars 的基本表达式&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;pl.col&lt;/strong&gt; 列选择器&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;df.select&lt;/strong&gt;  结合pl.col， 返回dataframe&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;selector&lt;/strong&gt;  selector选择器&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;df.filter&lt;/strong&gt; 结合pl.col， 返回dataframe&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;df.with_columns&lt;/strong&gt; 结合pl.col， 返回dataframe&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;df.grouby&lt;/strong&gt;  结合pl.col， 返回dataframe&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;31-plcol&#34;&gt;3.1 pl.col&lt;/h3&gt;
+&lt;p&gt;选择某一(多)个字段(列)&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;birthday&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;col(&amp;#34;birthday&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;name&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;birthday&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;col([&amp;#34;name&amp;#34;, &amp;#34;birthday&amp;#34;])
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32--dfselect&#34;&gt;3.2  df.select&lt;/h3&gt;
+&lt;p&gt;选择 &lt;em&gt;&lt;strong&gt;name&lt;/strong&gt;&lt;/em&gt; 和 &lt;em&gt;&lt;strong&gt;birthday&lt;/strong&gt;&lt;/em&gt; 两个字段， 实现该功能有多种写法&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#df[[&amp;#39;name&amp;#39;, &amp;#39;birthday&amp;#39;]]&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#df.select(&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#    pl.col(&amp;#34;name&amp;#34;), &lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#    pl.col(&amp;#34;birthday&amp;#34;), &lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#)&lt;/span&gt;
+
+
+&lt;span class=&#34;c1&#34;&gt;#df.select([&amp;#34;name&amp;#34;, &amp;#34;birthday&amp;#34;])&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;select&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;birthday&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 2)
+┌──────┬─────────────────────┬
+│ name ┆    birthday	       | 
+│------┆ ------------------  ┆ 
+│  str ┆    datetime[μs]     ┆ 
+╞══════╪═════════════════════╪
+│&amp;#34;张三&amp;#34; ┆ 2009-05-01 00:00:00 ┆
+│&amp;#34;李四&amp;#34; ┆ 2005-10-15 00:00:00 ┆
+│&amp;#34;王五&amp;#34; ┆ 2000-12-31 00:00:00 ┆
+│&amp;#34;赵六&amp;#34; ┆ 1995-06-15 00:00:00 ┆
+└─────────────────────────────
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;polars 即使选择一个字段， 返回的也是dataframe&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#df[[&amp;#39;name&amp;#39;]]&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#df.select([&amp;#34;name&amp;#34;])&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;select&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 1)
+┌──────┬
+│ 姓名  ┆
+│------┆ 
+│  str ┆ 
+╞══════╪
+│&amp;#34;张三&amp;#34; ┆
+│&amp;#34;李四&amp;#34; ┆
+│&amp;#34;王五&amp;#34; ┆
+│&amp;#34;赵六&amp;#34; ┆
+└───────
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;33-dfwith_columns&#34;&gt;3.3 df.with_columns&lt;/h3&gt;
+&lt;p&gt;与 df.select 功能类似，但是df.with_columns可以在选择字段的同时，保留之前的字段&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;with_columns&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;name&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆       birthday	     | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆        str          ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&amp;#34;张三&amp;#34; ┆  &amp;#34;2009-05-01T00:…   ┆ &amp;#34;男&amp;#34;  │&amp;#34;好好学习，天天向上&amp;#34;|
+│ 2 ┆&amp;#34;李四&amp;#34; ┆  &amp;#34;2005-10-15T00:…	  ┆ &amp;#34;男&amp;#34;  │&amp;#34;泰难了&amp;#34;          |
+│ 3 ┆&amp;#34;王五&amp;#34; ┆  &amp;#34;2000-12-31T00:…   ┆ &amp;#34;男&amp;#34;  │&amp;#34;学习有毛用&amp;#34;       |
+│ 4 ┆&amp;#34;赵六&amp;#34; ┆  &amp;#34;1995-06-15T00:…	  ┆ &amp;#34;女&amp;#34;  │&amp;#34;躺平ing&amp;#34;         |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;with_columns&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;name&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;alias&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;姓名&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 6)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐───────┬
+│idx| name ┆    birthday	       | gender┆	    bio        ┆  姓名  ┆ 
+│---┆------┆-------------------- ┆  ---  ┆ --------------  │-------┆
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆  str  ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡═══════╡
+│ 1 ┆&amp;#34;张三&amp;#34; ┆ 2009-05-01 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;好好学习，天天向上&amp;#34;|&amp;#34;张三&amp;#34;  ┆
+│ 2 ┆&amp;#34;李四&amp;#34; ┆ 2005-10-15 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;泰难了&amp;#34;          |&amp;#34;李四&amp;#34;  ┆
+│ 3 ┆&amp;#34;王五&amp;#34; ┆ 2000-12-31 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;学习有毛用&amp;#34;       |&amp;#34;王五&amp;#34;  ┆
+│ 4 ┆&amp;#34;赵六&amp;#34; ┆ 1995-06-15 00:00:00 ┆ &amp;#34;女&amp;#34;  │&amp;#34;躺平ing&amp;#34;         |&amp;#34;赵六&amp;#34;  ┆ 
+└──────────┴─────────────────────┴───────┘─────────────────┴───────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;34--dffilter&#34;&gt;3.4  df.filter&lt;/h3&gt;
+&lt;p&gt;筛选出生日是 00 后的记录&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;filter&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+  &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;birthday&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;datetime&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆    birthday	       | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&amp;#34;张三&amp;#34; ┆ 2009-05-01 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;好好学习，天天向上&amp;#34;|
+│ 2 ┆&amp;#34;李四&amp;#34; ┆ 2005-10-15 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;泰难了&amp;#34;          |
+│ 3 ┆&amp;#34;王五&amp;#34; ┆ 2000-12-31 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;学习有毛用&amp;#34;       |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;35-dfgroupby&#34;&gt;3.5 df.groupby&lt;/h3&gt;
+&lt;p&gt;按 &lt;em&gt;&lt;strong&gt;性别gender&lt;/strong&gt;&lt;/em&gt; 进行分组功能&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#for gender, gender_df in df.groupby(&amp;#39;gender&amp;#39;):&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;gender&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;gender_df&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;groupby&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gender&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)):&lt;/span&gt;
+    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;gender&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;gender_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;type&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;gender_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;男 3 &amp;lt;class &amp;#39;polars.dataframe.frame.DataFrame&amp;#39;&amp;gt;
+女 1 &amp;lt;class &amp;#39;polars.dataframe.frame.DataFrame&amp;#39;&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;分别计算男女学生的bio的文本长度的均值&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;gender&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;gender_df&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;groupby&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gender&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)):&lt;/span&gt;
+    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;gender&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;  &lt;span class=&#34;n&#34;&gt;gender_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;bio&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;lambda&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mean&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;男 5.666666666666667
+女 5.0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;groupby&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gender&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;agg&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(),&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;bio&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;len_chars&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mean&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;alias&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;mean_len&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (2, 3)
+┌──────┬───────┬───────────┬
+│gender| count ┆ mean_len	 |
+│------┆ ----- ┆-----------┆
+│  str ┆  u32	 ┆   f64     ┆
+╞══════╪═══════╪═══════════╡
+│ &amp;#34;女&amp;#34; ┆  1    ┆    5.0    ┆
+│ &amp;#34;男&amp;#34; ┆  3    ┆  5.666667 ┆
+└──────┴───────┴───────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四选择器&#34;&gt;四、选择器&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;cs.integer、cs.string、cs.numeric 、cs.datetime()、cs.temporal() 按照数据格式筛选字段&lt;/li&gt;
+&lt;li&gt;cs.contains 、cs.matches 使用正则表达式筛选字段&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;41-按数据格式筛选&#34;&gt;4.1 按数据格式筛选&lt;/h3&gt;
+&lt;p&gt;筛选出字段数据类型为字符和数字的字段，返回dataframe&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;polars.selectors&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cs&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;select&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;cs&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;integer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(),&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;cs&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 4)
+┌───┬──────┬───────┬─────────────────┐
+│idx| name ┆ gender┆	    bio        ┆
+│---┆ ---  ┆  ---  ┆ --------------  │
+│i64┆ str  ┆  str  ┆      str        ┆
+╞═══╪══════╪═══════╡═════════════════╡
+│ 1 ┆&amp;#34;张三&amp;#34; ┆ &amp;#34;男&amp;#34;  │&amp;#34;好好学习，天天向上&amp;#34;|
+│ 2 ┆&amp;#34;李四&amp;#34; ┆ &amp;#34;男&amp;#34;  │&amp;#34;泰难了&amp;#34;          |
+│ 3 ┆&amp;#34;王五&amp;#34; ┆ &amp;#34;男&amp;#34;  │&amp;#34;学习有毛用&amp;#34;       |
+│ 4 ┆&amp;#34;赵六&amp;#34; ┆ &amp;#34;女&amp;#34;  │&amp;#34;躺平ing&amp;#34;         |
+└──────────┴───────┘─────────────────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;筛选出 datetime 格式的字段，返回 dataframe&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#df.select(cs.temporal())&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;select&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;cs&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;datetime&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 1)
+┌───────────────────┬
+│ birthday	        |
+│-------------------┆
+│ datetime[μs]      ┆
+╞═══════════════════╪
+│2009-05-01 00:00:00┆
+│2005-10-15 00:00:00┆
+│2000-12-31 00:00:00┆
+│1995-06-15 00:00:00┆
+└───────────────────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;42-cscontains-csmatches&#34;&gt;4.2 cs.contains/ cs.matches&lt;/h3&gt;
+&lt;p&gt;筛选出含 r 字段，返回dataframe&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#筛选出字段名含 r 的字段&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;select&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;cs&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;contains&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;r&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 2)
+┌───────────────────┬───────┬
+│ birthday	        | gender┆
+│-------------------┆  ---  ┆
+│ datetime[μs]      ┆  str  ┆
+╞═══════════════════╪═══════╡
+│2009-05-01 00:00:00┆ &amp;#34;男&amp;#34;  │
+│2005-10-15 00:00:00┆ &amp;#34;男&amp;#34;  │
+│2000-12-31 00:00:00┆ &amp;#34;男&amp;#34;  │
+│1995-06-15 00:00:00┆ &amp;#34;女&amp;#34;  │
+└───────────────────┴───────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;筛选出含 &lt;em&gt;&lt;strong&gt;na&lt;/strong&gt;&lt;/em&gt; 或 &lt;em&gt;&lt;strong&gt;io&lt;/strong&gt;&lt;/em&gt; 的字段，返回dataframe&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;select&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;cs&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;matches&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;na|io&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 2)
+┌─────┬───────────────────┐
+│name ┆       bio         ┆
+│ --- ┆ ---------------   ┆
+│ str ┆  str              ┆
+╞═════╪═══════════════════╡
+│&amp;#34;张三&amp;#34;┆ &amp;#34;好好学习，天天向上&amp;#34; |
+│&amp;#34;李四&amp;#34;┆ &amp;#34;泰难了&amp;#34;           |
+│&amp;#34;王五&amp;#34;┆ &amp;#34;学习有毛用&amp;#34;        |
+│&amp;#34;赵六&amp;#34;┆ &amp;#34;躺平ing&amp;#34;          |
+└─────┴───────────────────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;五逻辑条件&#34;&gt;五、逻辑条件&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;pl.when(condition).then(result1).otherwise(result2)&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;当满足condition时， 值为result1； 反之，则result2&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;df.with_columns(
+    pl.when(pl.col(&amp;#39;birthday&amp;#39;)&amp;gt;datetime(2000, 1, 1))
+    .then(True)
+    .otherwise(False)
+    .alias(&amp;#39;00后&amp;#39;)
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐───────┬
+│idx| name ┆    birthday	       | gender┆	    bio        ┆ 00后  ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │  ---- ┆
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆  str  ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡═══════╡
+│ 1 ┆&amp;#34;张三&amp;#34; ┆ 2009-05-01 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;好好学习，天天向上&amp;#34;| true  |
+│ 2 ┆&amp;#34;李四&amp;#34; ┆ 2005-10-15 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;泰难了&amp;#34;          | true  |
+│ 3 ┆&amp;#34;王五&amp;#34; ┆ 2000-12-31 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;学习有毛用&amp;#34;       | true  |
+│ 4 ┆&amp;#34;赵六&amp;#34; ┆ 1995-06-15 00:00:00 ┆ &amp;#34;女&amp;#34;  │&amp;#34;躺平ing&amp;#34;         | false |
+└──────────┴─────────────────────┴───────┘─────────────────┴───────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;六字符串操作&#34;&gt;六、字符串操作&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;pl.col().str.len_chars()&lt;/strong&gt; 字符长度&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;pl.col().str.contains(pat)&lt;/strong&gt; 是否含某字符(符合pat模式)&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;pl.col().str.extract(pat)&lt;/strong&gt; 提取出符合模式的文本&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;pl.col().str.replace(old_pat, new_pat)&lt;/strong&gt;  把old_pat替换为new_pat&lt;/li&gt;
+&lt;li&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;61-strlen_chars&#34;&gt;6.1 str.len_chars()&lt;/h3&gt;
+&lt;p&gt;计算 bio 的文字长度，计算结果存储到 lenth 字段中&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;select&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;bio&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;bio&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;len_chars&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;alias&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;lenth&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 2)
+┌─────────────────┐───────┬
+│	      bio       ┆ lenth ┆
+│ --------------  │  ---- ┆
+│      str        ┆  u32  ┆
+╞═════════════════╡═══════╡
+│ &amp;#34;好好学习，天天向上&amp;#34;|   9  |
+│ &amp;#34;泰难了&amp;#34;          |   3  |
+│ &amp;#34;学习有毛用&amp;#34;       |   5  |
+│ &amp;#34;躺平ing&amp;#34;         |   5  |
+└──────────────────┴───────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;62-strcontains&#34;&gt;6.2 str.contains()&lt;/h3&gt;
+&lt;p&gt;从 bio 中筛选出含 &lt;strong&gt;学习&lt;/strong&gt; 字眼的记录&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;filter&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+  &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;bio&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;contains&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;学习&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆    birthday	       | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&amp;#34;张三&amp;#34; ┆ 2009-05-01 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;好好学习，天天向上&amp;#34;|
+│ 3 ┆&amp;#34;王五&amp;#34; ┆ 2000-12-31 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;学习有毛用&amp;#34;       |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;63-strextract&#34;&gt;6.3 str.extract()&lt;/h3&gt;
+&lt;p&gt;根据负面词典 &lt;code&gt;&#39;躺平|难|毛&#39;&lt;/code&gt; 选出负面词, 结果存储到字段 neg&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;with_columns&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;pl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;col&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;bio&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;extract_all&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;躺平|难|毛&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;alias&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;neg&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;shape: (4, 6)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐───────┬
+│idx| name ┆    birthday	       | gender┆	    bio        ┆  neg  ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │  ---  ┆
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆  str  ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡═══════╡
+│ 1 ┆&amp;#34;张三&amp;#34; ┆ 2009-05-01 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;好好学习，天天向上&amp;#34;|   []  |
+│ 2 ┆&amp;#34;李四&amp;#34; ┆ 2005-10-15 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;泰难了&amp;#34;          | [&amp;#34;难&amp;#34;]|
+│ 3 ┆&amp;#34;王五&amp;#34; ┆ 2000-12-31 00:00:00 ┆ &amp;#34;男&amp;#34;  │&amp;#34;学习有毛用&amp;#34;       | [&amp;#34;毛&amp;#34;]|
+│ 4 ┆&amp;#34;赵六&amp;#34; ┆ 1995-06-15 00:00:00 ┆ &amp;#34;女&amp;#34;  │&amp;#34;躺平ing&amp;#34;         |[&amp;#34;躺平&amp;#34;]|
+└──────────┴─────────────────────┴───────┘─────────────────┴───────┴
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<h2 id="一介绍">一、介绍</h2>
+<p>Polars 是一个用于操作结构化数据的高性能 DataFrame 库，由于 Polars 是从0开始用Rust编写，紧密与机器结合。其矢量化和列式处理可在现代处理器上实现缓存一致性算法和高性能。如果您经常使用 pandas，那么用起 Polars 会感觉很轻松，可以说是平替 Pandas 最有潜质的包。</p>
+<p>Polars 在独立的 TPCH 基准测试中与其他几个解决方案进行了基准测试。该基准测试旨在复制实践中使用的数据整理操作。由于其并行执行引擎、高效算法以及 SIMD（单指令、多数据）矢量化的使用，Polars 轻松胜过其他解决方案。<strong>与pandas相比，它可以实现30倍以上的性能提升</strong>。</p>
+<p>Polars 的目标是提供一个闪电般快速的<code>DataFrame</code>库：</p>
+<ul>
+<li>利用机器上所有可用的内核。</li>
+<li>优化查询以减少不必要的工作/内存分配。</li>
+<li>处理比可用 RAM 大得多的数据集。</li>
+<li>拥有一致且可预测的 API。</li>
+<li>具有严格的架构（在运行查询之前应该知道数据类型）。</li>
+</ul>
+<br>
+<p><a href="https://pola-rs.github.io/polars/user-guide/">User guide: https://pola-rs.github.io/polars/user-guide/</a>
+<a href="https://pola-rs.github.io/polars/py-polars/html/reference/io.html">API reference: https://pola-rs.github.io/polars/py-polars/html/reference/io.html</a></p>
+<br>
+<p>打开命令行， 执行  polars 安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install &#39;polars[all]&#39;
+</code></pre></div><br>
+<h2 id="二数据读写">二、数据读写</h2>
+<p>Polars 读写数据支持</p>
+<ul>
+<li>常见的数据文件，如 csv、xlsx、json、parquet ；</li>
+<li>云存储，如 S3、Azure Blob, BigQuery；</li>
+<li>数据库，如postgres、mysql</li>
+</ul>
+<p>咱们主要分享常见的代码操作</p>
+<h3 id="21-dataframe">2.1 DataFrame</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">polars</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="kn">import</span> <span class="nn">polars.selectors</span> <span class="k">as</span> <span class="nn">cs</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&#34;idx&#34;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+        <span class="s2">&#34;name&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;张三&#34;</span><span class="p">,</span> <span class="s2">&#34;李四&#34;</span><span class="p">,</span> <span class="s2">&#34;王五&#34;</span><span class="p">,</span> <span class="s2">&#34;赵六&#34;</span><span class="p">],</span>
+        <span class="s2">&#34;birthday&#34;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="n">datetime</span><span class="p">(</span><span class="mi">2009</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">datetime</span><span class="p">(</span><span class="mi">2005</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+            <span class="n">datetime</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">31</span><span class="p">),</span>
+            <span class="n">datetime</span><span class="p">(</span><span class="mi">1995</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+        <span class="p">],</span>
+        <span class="s2">&#34;gender&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;男&#34;</span><span class="p">,</span> <span class="s2">&#34;男&#34;</span><span class="p">,</span> <span class="s2">&#34;男&#34;</span><span class="p">,</span> <span class="s2">&#34;女&#34;</span><span class="p">],</span>
+        <span class="s2">&#34;bio&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;好好学习，天天向上&#34;</span><span class="p">,</span> 
+                <span class="s2">&#34;泰难了&#34;</span><span class="p">,</span> 
+                <span class="s2">&#34;学习有毛用&#34;</span><span class="p">,</span> 
+                <span class="s2">&#34;躺平ing&#34;</span><span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1">#存入csv、excel、json、parquet</span>
+<span class="n">df</span><span class="o">.</span><span class="n">write_csv</span><span class="p">(</span><span class="s2">&#34;data.csv&#34;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">write_excel</span><span class="p">(</span><span class="s2">&#34;data.xlsx&#34;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">write_json</span><span class="p">(</span><span class="s2">&#34;data.json&#34;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">write_parquet</span><span class="p">(</span><span class="s2">&#34;data.parquet&#34;</span><span class="p">)</span>
+
+
+<span class="n">df</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆    birthday	       | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&#34;张三&#34; ┆ 2009-05-01 00:00:00 ┆ &#34;男&#34;  │&#34;好好学习，天天向上&#34;|
+│ 2 ┆&#34;李四&#34; ┆ 2005-10-15 00:00:00 ┆ &#34;男&#34;  │&#34;泰难了&#34;          |
+│ 3 ┆&#34;王五&#34; ┆ 2000-12-31 00:00:00 ┆ &#34;男&#34;  │&#34;学习有毛用&#34;       |
+│ 4 ┆&#34;赵六&#34; ┆ 1995-06-15 00:00:00 ┆ &#34;女&#34;  │&#34;躺平ing&#34;         |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+</code></pre></div><br>
+<h3 id="22-csvexcel">2.2 csv、excel</h3>
+<ul>
+<li>df.write_csv 存入csv</li>
+<li>pl.read_csv  读取csv</li>
+<li>df.write_excel 存入xlsx文件</li>
+<li>pl.read_excel   读取xlsx</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df_csv = pl.read_csv(&#39;data.csv&#39;)
+df_xlsx = pl.read_excel(&#39;data.xlsx&#39;)
+
+df_csv
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆       birthday	     | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆        str          ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&#34;张三&#34; ┆  &#34;2009-05-01T00:…   ┆ &#34;男&#34;  │&#34;好好学习，天天向上&#34;|
+│ 2 ┆&#34;李四&#34; ┆  &#34;2005-10-15T00:…	  ┆ &#34;男&#34;  │&#34;泰难了&#34;          |
+│ 3 ┆&#34;王五&#34; ┆  &#34;2000-12-31T00:…   ┆ &#34;男&#34;  │&#34;学习有毛用&#34;       |
+│ 4 ┆&#34;赵六&#34; ┆  &#34;1995-06-15T00:…	  ┆ &#34;女&#34;  │&#34;躺平ing&#34;         |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+</code></pre></div><p>注意哦， 此时的 date 字段数据类型是 str</p>
+<br>
+<h3 id="23-jsonparquet">2.3 json/parquet</h3>
+<ul>
+<li>df.write_json</li>
+<li>pl.read_json</li>
+<li>df.write_parquet</li>
+<li>pl.read_parquet</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df_json</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">read_json</span><span class="p">(</span><span class="s2">&#34;data.json&#34;</span><span class="p">)</span>
+<span class="n">df_parquet</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&#34;data.parquet&#34;</span><span class="p">)</span>
+
+<span class="n">df_json</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆    birthday	       | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&#34;张三&#34; ┆ 2009-05-01 00:00:00 ┆ &#34;男&#34;  │&#34;好好学习，天天向上&#34;|
+│ 2 ┆&#34;李四&#34; ┆ 2005-10-15 00:00:00 ┆ &#34;男&#34;  │&#34;泰难了&#34;          |
+│ 3 ┆&#34;王五&#34; ┆ 2000-12-31 00:00:00 ┆ &#34;男&#34;  │&#34;学习有毛用&#34;       |
+│ 4 ┆&#34;赵六&#34; ┆ 1995-06-15 00:00:00 ┆ &#34;女&#34;  │&#34;躺平ing&#34;         |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+</code></pre></div><p>注意， 使用 df.write_json 或 df.write_parquet 将数据存入 json、parquet， 都可以保留 date 字段的 datetime 类型。而 csv、xlsx 只会将date字段存储为 str 类型。</p>
+<p><br><br></p>
+<h2 id="三常用表达式">三、常用表达式</h2>
+<p><code>Expressions</code>是Polars的核心功能， <code>expressions</code> 既可以解决简单的查询，又可以轻松扩展到复杂的查询。下面是 polars 的基本表达式</p>
+<ul>
+<li><strong>pl.col</strong> 列选择器</li>
+<li><strong>df.select</strong>  结合pl.col， 返回dataframe</li>
+<li><strong>selector</strong>  selector选择器</li>
+<li><strong>df.filter</strong> 结合pl.col， 返回dataframe</li>
+<li><strong>df.with_columns</strong> 结合pl.col， 返回dataframe</li>
+<li><strong>df.grouby</strong>  结合pl.col， 返回dataframe</li>
+</ul>
+<h3 id="31-plcol">3.1 pl.col</h3>
+<p>选择某一(多)个字段(列)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;birthday&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">col(&#34;birthday&#34;)
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;birthday&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">col([&#34;name&#34;, &#34;birthday&#34;])
+</code></pre></div><br>
+<h3 id="32--dfselect">3.2  df.select</h3>
+<p>选择 <em><strong>name</strong></em> 和 <em><strong>birthday</strong></em> 两个字段， 实现该功能有多种写法</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#df[[&#39;name&#39;, &#39;birthday&#39;]]</span>
+
+<span class="c1">#df.select(</span>
+<span class="c1">#    pl.col(&#34;name&#34;), </span>
+<span class="c1">#    pl.col(&#34;birthday&#34;), </span>
+<span class="c1">#)</span>
+
+
+<span class="c1">#df.select([&#34;name&#34;, &#34;birthday&#34;])</span>
+
+
+<span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&#34;name&#34;</span><span class="p">,</span> <span class="s2">&#34;birthday&#34;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 2)
+┌──────┬─────────────────────┬
+│ name ┆    birthday	       | 
+│------┆ ------------------  ┆ 
+│  str ┆    datetime[μs]     ┆ 
+╞══════╪═════════════════════╪
+│&#34;张三&#34; ┆ 2009-05-01 00:00:00 ┆
+│&#34;李四&#34; ┆ 2005-10-15 00:00:00 ┆
+│&#34;王五&#34; ┆ 2000-12-31 00:00:00 ┆
+│&#34;赵六&#34; ┆ 1995-06-15 00:00:00 ┆
+└─────────────────────────────
+</code></pre></div><br>
+<p>polars 即使选择一个字段， 返回的也是dataframe</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#df[[&#39;name&#39;]]</span>
+
+<span class="c1">#df.select([&#34;name&#34;])</span>
+
+<span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&#34;name&#34;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 1)
+┌──────┬
+│ 姓名  ┆
+│------┆ 
+│  str ┆ 
+╞══════╪
+│&#34;张三&#34; ┆
+│&#34;李四&#34; ┆
+│&#34;王五&#34; ┆
+│&#34;赵六&#34; ┆
+└───────
+</code></pre></div><br>
+<h3 id="33-dfwith_columns">3.3 df.with_columns</h3>
+<p>与 df.select 功能类似，但是df.with_columns可以在选择字段的同时，保留之前的字段</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">with_columns</span><span class="p">(</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆       birthday	     | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆        str          ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&#34;张三&#34; ┆  &#34;2009-05-01T00:…   ┆ &#34;男&#34;  │&#34;好好学习，天天向上&#34;|
+│ 2 ┆&#34;李四&#34; ┆  &#34;2005-10-15T00:…	  ┆ &#34;男&#34;  │&#34;泰难了&#34;          |
+│ 3 ┆&#34;王五&#34; ┆  &#34;2000-12-31T00:…   ┆ &#34;男&#34;  │&#34;学习有毛用&#34;       |
+│ 4 ┆&#34;赵六&#34; ┆  &#34;1995-06-15T00:…	  ┆ &#34;女&#34;  │&#34;躺平ing&#34;         |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">with_columns</span><span class="p">(</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;姓名&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 6)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐───────┬
+│idx| name ┆    birthday	       | gender┆	    bio        ┆  姓名  ┆ 
+│---┆------┆-------------------- ┆  ---  ┆ --------------  │-------┆
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆  str  ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡═══════╡
+│ 1 ┆&#34;张三&#34; ┆ 2009-05-01 00:00:00 ┆ &#34;男&#34;  │&#34;好好学习，天天向上&#34;|&#34;张三&#34;  ┆
+│ 2 ┆&#34;李四&#34; ┆ 2005-10-15 00:00:00 ┆ &#34;男&#34;  │&#34;泰难了&#34;          |&#34;李四&#34;  ┆
+│ 3 ┆&#34;王五&#34; ┆ 2000-12-31 00:00:00 ┆ &#34;男&#34;  │&#34;学习有毛用&#34;       |&#34;王五&#34;  ┆
+│ 4 ┆&#34;赵六&#34; ┆ 1995-06-15 00:00:00 ┆ &#34;女&#34;  │&#34;躺平ing&#34;         |&#34;赵六&#34;  ┆ 
+└──────────┴─────────────────────┴───────┘─────────────────┴───────┴
+</code></pre></div><br>
+<h3 id="34--dffilter">3.4  df.filter</h3>
+<p>筛选出生日是 00 后的记录</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+  <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;birthday&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆    birthday	       | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&#34;张三&#34; ┆ 2009-05-01 00:00:00 ┆ &#34;男&#34;  │&#34;好好学习，天天向上&#34;|
+│ 2 ┆&#34;李四&#34; ┆ 2005-10-15 00:00:00 ┆ &#34;男&#34;  │&#34;泰难了&#34;          |
+│ 3 ┆&#34;王五&#34; ┆ 2000-12-31 00:00:00 ┆ &#34;男&#34;  │&#34;学习有毛用&#34;       |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+</code></pre></div><br>
+<h3 id="35-dfgroupby">3.5 df.groupby</h3>
+<p>按 <em><strong>性别gender</strong></em> 进行分组功能</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#for gender, gender_df in df.groupby(&#39;gender&#39;):</span>
+<span class="k">for</span> <span class="n">gender</span><span class="p">,</span> <span class="n">gender_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;gender&#39;</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">gender</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">gender_df</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">gender_df</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">男 3 &lt;class &#39;polars.dataframe.frame.DataFrame&#39;&gt;
+女 1 &lt;class &#39;polars.dataframe.frame.DataFrame&#39;&gt;
+</code></pre></div><br>
+<p>分别计算男女学生的bio的文本长度的均值</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">gender</span><span class="p">,</span> <span class="n">gender_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;gender&#39;</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">gender</span><span class="p">,</span>  <span class="n">gender_df</span><span class="p">[</span><span class="s1">&#39;bio&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">男 5.666666666666667
+女 5.0
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;gender&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;bio&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len_chars</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;mean_len&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (2, 3)
+┌──────┬───────┬───────────┬
+│gender| count ┆ mean_len	 |
+│------┆ ----- ┆-----------┆
+│  str ┆  u32	 ┆   f64     ┆
+╞══════╪═══════╪═══════════╡
+│ &#34;女&#34; ┆  1    ┆    5.0    ┆
+│ &#34;男&#34; ┆  3    ┆  5.666667 ┆
+└──────┴───────┴───────────┘
+</code></pre></div><p><br><br></p>
+<h2 id="四选择器">四、选择器</h2>
+<ul>
+<li>cs.integer、cs.string、cs.numeric 、cs.datetime()、cs.temporal() 按照数据格式筛选字段</li>
+<li>cs.contains 、cs.matches 使用正则表达式筛选字段</li>
+</ul>
+<h3 id="41-按数据格式筛选">4.1 按数据格式筛选</h3>
+<p>筛选出字段数据类型为字符和数字的字段，返回dataframe</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">polars.selectors</span> <span class="k">as</span> <span class="nn">cs</span>
+
+<span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+    <span class="n">cs</span><span class="o">.</span><span class="n">integer</span><span class="p">(),</span> <span class="n">cs</span><span class="o">.</span><span class="n">string</span><span class="p">()</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 4)
+┌───┬──────┬───────┬─────────────────┐
+│idx| name ┆ gender┆	    bio        ┆
+│---┆ ---  ┆  ---  ┆ --------------  │
+│i64┆ str  ┆  str  ┆      str        ┆
+╞═══╪══════╪═══════╡═════════════════╡
+│ 1 ┆&#34;张三&#34; ┆ &#34;男&#34;  │&#34;好好学习，天天向上&#34;|
+│ 2 ┆&#34;李四&#34; ┆ &#34;男&#34;  │&#34;泰难了&#34;          |
+│ 3 ┆&#34;王五&#34; ┆ &#34;男&#34;  │&#34;学习有毛用&#34;       |
+│ 4 ┆&#34;赵六&#34; ┆ &#34;女&#34;  │&#34;躺平ing&#34;         |
+└──────────┴───────┘─────────────────┴
+</code></pre></div><br>
+<p>筛选出 datetime 格式的字段，返回 dataframe</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#df.select(cs.temporal())</span>
+
+<span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+    <span class="n">cs</span><span class="o">.</span><span class="n">datetime</span><span class="p">()</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 1)
+┌───────────────────┬
+│ birthday	        |
+│-------------------┆
+│ datetime[μs]      ┆
+╞═══════════════════╪
+│2009-05-01 00:00:00┆
+│2005-10-15 00:00:00┆
+│2000-12-31 00:00:00┆
+│1995-06-15 00:00:00┆
+└───────────────────┴
+</code></pre></div><br>
+<h3 id="42-cscontains-csmatches">4.2 cs.contains/ cs.matches</h3>
+<p>筛选出含 r 字段，返回dataframe</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#筛选出字段名含 r 的字段</span>
+<span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+    <span class="n">cs</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 2)
+┌───────────────────┬───────┬
+│ birthday	        | gender┆
+│-------------------┆  ---  ┆
+│ datetime[μs]      ┆  str  ┆
+╞═══════════════════╪═══════╡
+│2009-05-01 00:00:00┆ &#34;男&#34;  │
+│2005-10-15 00:00:00┆ &#34;男&#34;  │
+│2000-12-31 00:00:00┆ &#34;男&#34;  │
+│1995-06-15 00:00:00┆ &#34;女&#34;  │
+└───────────────────┴───────┘
+</code></pre></div><br>
+<p>筛选出含 <em><strong>na</strong></em> 或 <em><strong>io</strong></em> 的字段，返回dataframe</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+    <span class="n">cs</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="s1">&#39;na|io&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 2)
+┌─────┬───────────────────┐
+│name ┆       bio         ┆
+│ --- ┆ ---------------   ┆
+│ str ┆  str              ┆
+╞═════╪═══════════════════╡
+│&#34;张三&#34;┆ &#34;好好学习，天天向上&#34; |
+│&#34;李四&#34;┆ &#34;泰难了&#34;           |
+│&#34;王五&#34;┆ &#34;学习有毛用&#34;        |
+│&#34;赵六&#34;┆ &#34;躺平ing&#34;          |
+└─────┴───────────────────┴
+</code></pre></div><p><br><br></p>
+<h2 id="五逻辑条件">五、逻辑条件</h2>
+<p><strong>pl.when(condition).then(result1).otherwise(result2)</strong></p>
+<p>当满足condition时， 值为result1； 反之，则result2</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df.with_columns(
+    pl.when(pl.col(&#39;birthday&#39;)&gt;datetime(2000, 1, 1))
+    .then(True)
+    .otherwise(False)
+    .alias(&#39;00后&#39;)
+)
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐───────┬
+│idx| name ┆    birthday	       | gender┆	    bio        ┆ 00后  ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │  ---- ┆
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆  str  ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡═══════╡
+│ 1 ┆&#34;张三&#34; ┆ 2009-05-01 00:00:00 ┆ &#34;男&#34;  │&#34;好好学习，天天向上&#34;| true  |
+│ 2 ┆&#34;李四&#34; ┆ 2005-10-15 00:00:00 ┆ &#34;男&#34;  │&#34;泰难了&#34;          | true  |
+│ 3 ┆&#34;王五&#34; ┆ 2000-12-31 00:00:00 ┆ &#34;男&#34;  │&#34;学习有毛用&#34;       | true  |
+│ 4 ┆&#34;赵六&#34; ┆ 1995-06-15 00:00:00 ┆ &#34;女&#34;  │&#34;躺平ing&#34;         | false |
+└──────────┴─────────────────────┴───────┘─────────────────┴───────┴
+</code></pre></div><p><br><br></p>
+<h2 id="六字符串操作">六、字符串操作</h2>
+<ul>
+<li><strong>pl.col().str.len_chars()</strong> 字符长度</li>
+<li><strong>pl.col().str.contains(pat)</strong> 是否含某字符(符合pat模式)</li>
+<li><strong>pl.col().str.extract(pat)</strong> 提取出符合模式的文本</li>
+<li><strong>pl.col().str.replace(old_pat, new_pat)</strong>  把old_pat替换为new_pat</li>
+<li></li>
+</ul>
+<h3 id="61-strlen_chars">6.1 str.len_chars()</h3>
+<p>计算 bio 的文字长度，计算结果存储到 lenth 字段中</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;bio&#39;</span><span class="p">),</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;bio&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len_chars</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;lenth&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 2)
+┌─────────────────┐───────┬
+│	      bio       ┆ lenth ┆
+│ --------------  │  ---- ┆
+│      str        ┆  u32  ┆
+╞═════════════════╡═══════╡
+│ &#34;好好学习，天天向上&#34;|   9  |
+│ &#34;泰难了&#34;          |   3  |
+│ &#34;学习有毛用&#34;       |   5  |
+│ &#34;躺平ing&#34;         |   5  |
+└──────────────────┴───────┴
+</code></pre></div><br>
+<h3 id="62-strcontains">6.2 str.contains()</h3>
+<p>从 bio 中筛选出含 <strong>学习</strong> 字眼的记录</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+  <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;bio&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&#34;学习&#34;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 5)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐
+│idx| name ┆    birthday	       | gender┆	    bio        ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡
+│ 1 ┆&#34;张三&#34; ┆ 2009-05-01 00:00:00 ┆ &#34;男&#34;  │&#34;好好学习，天天向上&#34;|
+│ 3 ┆&#34;王五&#34; ┆ 2000-12-31 00:00:00 ┆ &#34;男&#34;  │&#34;学习有毛用&#34;       |
+└──────────┴─────────────────────┴───────┘─────────────────┴
+</code></pre></div><br>
+<h3 id="63-strextract">6.3 str.extract()</h3>
+<p>根据负面词典 <code>'躺平|难|毛'</code> 选出负面词, 结果存储到字段 neg</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">with_columns</span><span class="p">(</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;bio&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">extract_all</span><span class="p">(</span><span class="s1">&#39;躺平|难|毛&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;neg&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">shape: (4, 6)
+┌───┬──────┬─────────────────────┬───────┬─────────────────┐───────┬
+│idx| name ┆    birthday	       | gender┆	    bio        ┆  neg  ┆
+│---┆ ---  ┆    -------------    ┆  ---  ┆ --------------  │  ---  ┆
+│i64┆ str  ┆    datetime[μs]     ┆  str  ┆      str        ┆  str  ┆
+╞═══╪══════╪═════════════════════╪═══════╡═════════════════╡═══════╡
+│ 1 ┆&#34;张三&#34; ┆ 2009-05-01 00:00:00 ┆ &#34;男&#34;  │&#34;好好学习，天天向上&#34;|   []  |
+│ 2 ┆&#34;李四&#34; ┆ 2005-10-15 00:00:00 ┆ &#34;男&#34;  │&#34;泰难了&#34;          | [&#34;难&#34;]|
+│ 3 ┆&#34;王五&#34; ┆ 2000-12-31 00:00:00 ┆ &#34;男&#34;  │&#34;学习有毛用&#34;       | [&#34;毛&#34;]|
+│ 4 ┆&#34;赵六&#34; ┆ 1995-06-15 00:00:00 ┆ &#34;女&#34;  │&#34;躺平ing&#34;         |[&#34;躺平&#34;]|
+└──────────┴─────────────────────┴───────┘─────────────────┴───────┴
+</code></pre></div><p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>数据集 | 2.49亿条中国工商注册企业信息(23.9更新)</title>
       <link>https://textdata.cn/blog/2023-12-03-china-mainland-corporate-registration-information/</link>
