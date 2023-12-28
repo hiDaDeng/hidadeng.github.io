@@ -6,7 +6,7 @@
     <description>Recent content in 数据集 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 27 Dec 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 28 Dec 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>LIST | 可供社科(经管)领域使用的数据集汇总</title>
       <link>https://textdata.cn/blog/datasets_available_for_management_science/</link>
@@ -118,6 +118,402 @@
 <li>如果不想学，也可以考虑外包。更建议找淘宝，如果找我咨询，请先阅读<a href="https://textdata.cn/blog/paid_for_service">有偿说明</a></li>
 </ul>
 </li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>可视化 | 人民日报语料反映七十年文化演变</title>
+      <link>https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/</link>
+      <pubDate>Thu, 28 Dec 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/</guid>
+      <description>使用人民日报1946-2023年之间的新闻数据，通过语义距离刻画文化的变迁。</description>
+      <content:encoded><![CDATA[<h2 id="一引言">一、引言</h2>
+<p>社会文化是一个不断演变的复杂系统，受到历史、科技、经济和社会变革等多种因素的影响。随着时代的推移，人们的语言使用和文化认知也经历着变迁，反映着社会的发展脉络。在这个背景下，使用Word2Vec等词嵌入技术来研究社会文化变迁和刻板印象的重要性日益凸显。</p>
+<p>Word2Vec作为一种词向量表示方法，通过将词汇映射到高维空间中的向量，有效地捕捉了词语之间的语义关系。这使得我们能够以全新的方式理解语言的演变和文化认知的转变。通过对比不同时期的Word2Vec模型，我们可以深入挖掘语言的时代特征，捕捉到文化观念、价值观念以及社会角色的演变。</p>
+<p>研究社会文化变迁和刻板印象，不仅有助于解构历史时刻下的社会结构和文化动态，还能为我们提供深刻的洞察力，揭示出社会变迁中潜在的驱动力和趋势。这种研究有助于建构更为全面、客观的历史记忆，帮助我们更好地理解人类行为背后的深层次原因。</p>
+<p><br><br></p>
+<h2 id="二训练模型">二、训练模型</h2>
+<h3 id="21-获取数据">2.1 获取数据</h3>
+<p><a href="https://textdata.cn/blog/2023-12-14-daily-news-dataset/">新闻数据集 | 含 人民日报/经济日报/光明日报 等 7 家媒体(2023.12.18)</a></p>
+<ul>
+<li><strong>7家媒体数据集打包  1688 元，  加微信 372335839</strong>， 备注「姓名-学校-专业」。</li>
+<li><strong>人民日报数据集 1000 元，  加微信 372335839</strong>， 备注「姓名-学校-专业」。</li>
+</ul>
+<p><span style="font-size: 18px;color: green;">数据是虚拟产品，一经售出，不再退还！</span></p>
+<p><span style="font-size: 18px;color: green;">时间宝贵，请先阅读推文内容， 再加微信详谈购买事宜 </span></p>
+<br>
+<h3 id="22--构造语料">2.2  构造语料</h3>
+<p>本使用的 <em><strong>rmrb.csv.gzip</strong></em> 对该数据集感兴趣的同学，可点击查看  <a href="https://textdata.cn/blog/2023-12-14-daily-news-dataset/">新闻数据集 | 含 人民日报/经济日报/光明日报 等 7 家媒体(2023.12.18)</a>  。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#读取人民日报rmrb.csv.gzip，含1946-2023.12.08全部新闻文本</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;人民日报/rmrb.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+
+<span class="c1">#每5年构造一个语料txt文件</span>
+<span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">freq_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;5Y&#39;</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;corpus/</span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s1">.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">text_series</span> <span class="o">=</span> <span class="n">freq_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
+        <span class="n">text_series</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_series</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1946-12-31 00:00:00
+1951-12-31 00:00:00
+1956-12-31 00:00:00
+1961-12-31 00:00:00
+1966-12-31 00:00:00
+1971-12-31 00:00:00
+1976-12-31 00:00:00
+1981-12-31 00:00:00
+1986-12-31 00:00:00
+1991-12-31 00:00:00
+1996-12-31 00:00:00
+2001-12-31 00:00:00
+2006-12-31 00:00:00
+2011-12-31 00:00:00
+2016-12-31 00:00:00
+2021-12-31 00:00:00
+2026-12-31 00:00:00
+</code></pre></div><p><img loading="lazy" src="img/01-corpus.png" alt=""  />
+</p>
+<p>语料txt命名规则， 实际上每个 <em><strong>year.txt</strong></em> 是存储了 <em><strong>year-5</strong></em>  ~  <em><strong>year</strong></em> 期间的新闻数据。</p>
+<p>1946.txt内实际上只存储了1946.5.15 ~ 1946.12.31之间半年多的数据， 由于数据量太小，后续训练出的word2vec模型，其语义大概率不准。</p>
+<p>2006.txt存储了 <strong>2002.1.1. ~ 2006.12.31</strong> 之间所有的数据</p>
+<p>而2026.txt则存储了 <strong>2022.1.1 ~ 2026.12.31</strong> 之间所有的数据</p>
+<br>
+<h3 id="23-训练word2vec">2.3 训练word2vec</h3>
+<h3 id="231-配置环境">2.3.1 配置环境</h3>
+<p>使用 <strong>cntext2.1.0</strong>，未公开，需微信大邓 372335839 购买获取。 安装方法，将 <strong>cntext-2.1.0-py3-none-any.whl</strong> 放置于桌面， 打开命令行 <em><strong>cmd</strong></em> （mac是terminal), 依次执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+pip3 install cntext-2.1.0-py3-none-any.whl
+</code></pre></div><blockquote>
+<p><strong>cntext2.1.0</strong>    100元，已购买cntext2.0.0可免费更新。</p>
+</blockquote>
+<br>
+<h3 id="232-开始训练">2.3.2 开始训练</h3>
+<p>训练代码比较简单，已经封装到 <strong>cntext2.1.0</strong>， 只需几行代码即可。</p>
+<p>训练环境win11， 内存126G，大家回去可以试试16G、32G，应该也能跑通。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+
+<span class="c1">#获取corpus文件夹内的所有语料txt文件的文件路径</span>
+<span class="n">corpus_files</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;corpus/*.txt&#39;</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">corpus_file</span> <span class="ow">in</span> <span class="n">corpus_files</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">corpus_file</span><span class="p">)</span>
+    <span class="n">w2v_model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">W2VModel</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="n">corpus_file</span><span class="p">,</span> 
+                            <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+    <span class="n">w2v_model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">window_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> 
+                    <span class="n">vector_size</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">corpus/1946.txt
+
+Start Preprocessing Corpus...
+Start Training! This may take a while. Please be patient...
+
+Training word2vec model took 201 seconds
+
+Note: The Word2Vec model has been saved to output/Word2Vec
+
+
+......
+......
+
+corpus/2026.txt
+
+Start Preprocessing Corpus...
+Start Training! This may take a while. Please be patient...
+
+Training word2vec model took 525 seconds
+
+Note: The Word2Vec model has been saved to output/Word2Vec
+
+</code></pre></div><p><img loading="lazy" src="img/02-word2vec.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三检查模型">三、检查模型</h2>
+<p>现在我们要检查模型， 为了方便，我就随机抽查 1946/1981/2001/2026， 查看这四个模型关于【工业】的近义词，看模型语义捕捉的准不准。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">mfiles</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;output/Word2Vec/1946.200.6.bin&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;output/Word2Vec/1981.200.6.bin&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;output/Word2Vec/2001.200.6.bin&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;output/Word2Vec/2026.200.6.bin&#39;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">mfile</span> <span class="ow">in</span> <span class="n">mfiles</span><span class="p">:</span>
+    <span class="n">w2v_model</span>  <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">mfile</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">mfile</span><span class="p">)</span>
+    <span class="n">word_scores</span> <span class="o">=</span> <span class="n">w2v_model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;工业&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">word</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">word_scores</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">output/Word2Vec/1946.200.6.bin
+[(&#39;物价&#39;, 0.9494231343269348),
+ (&#39;市场&#39;, 0.9431201815605164),
+ (&#39;对法&#39;, 0.937946081161499),
+ (&#39;商业&#39;, 0.931341290473938),
+ (&#39;投资&#39;, 0.9277867674827576),
+ (&#39;目前&#39;, 0.9103350043296814),
+ (&#39;农业&#39;, 0.9047650694847107),
+ (&#39;预算&#39;, 0.8974550366401672),
+ (&#39;计划&#39;, 0.8954270482063293),
+ (&#39;贸易&#39;, 0.8907712697982788),
+ (&#39;工商业&#39;, 0.8907474279403687),
+ (&#39;物资&#39;, 0.8891386389732361),
+ (&#39;重工业&#39;, 0.8887518048286438),
+ (&#39;估计&#39;, 0.8853818774223328),
+ (&#39;企业&#39;, 0.8833411931991577),
+ (&#39;规定&#39;, 0.8810412287712097),
+ (&#39;新五年计划&#39;, 0.8747104406356812),
+ (&#39;汽车厂&#39;, 0.8744568824768066),
+ (&#39;赔款&#39;, 0.8743201494216919),
+ (&#39;公司&#39;, 0.8725109100341797)]
+ 
+ 
+ output/Word2Vec/1981.200.6.bin
+ [(&#39;工业发展&#39;, 0.7668374180793762),
+ (&#39;轻工业&#39;, 0.7516288161277771),
+ (&#39;建筑业&#39;, 0.7424570918083191),
+ (&#39;手工业&#39;, 0.7337162494659424),
+ (&#39;重工业&#39;, 0.7331458330154419),
+ (&#39;化学工业&#39;, 0.7137069702148438),
+ (&#39;工业部门&#39;, 0.7033809423446655),
+ (&#39;基础工业&#39;, 0.6979346871376038),
+ (&#39;钢铁工业&#39;, 0.6970150470733643),
+ (&#39;中小企业&#39;, 0.6947773098945618),
+ (&#39;电子工业&#39;, 0.6943748593330383),
+ (&#39;运输业&#39;, 0.6904694437980652),
+ (&#39;造船&#39;, 0.6898190975189209),
+ (&#39;加工工业&#39;, 0.6891008019447327),
+ (&#39;工业生产&#39;, 0.6863811612129211),
+ (&#39;大型企业&#39;, 0.6822050213813782),
+ (&#39;行业&#39;, 0.6812164783477783),
+ (&#39;新兴工业&#39;, 0.6808343529701233),
+ (&#39;机械工业&#39;, 0.6797270178794861),
+ (&#39;民用工业&#39;, 0.6783092021942139)]
+ 
+ 
+ output/Word2Vec/2001.200.6.bin
+ [(&#39;工业发展&#39;, 0.7881254553794861),
+ (&#39;纺织&#39;, 0.749681830406189),
+ (&#39;重工业&#39;, 0.7422634959220886),
+ (&#39;制造业&#39;, 0.7263922095298767),
+ (&#39;产业&#39;, 0.720117449760437),
+ (&#39;汽车工业&#39;, 0.717221736907959),
+ (&#39;军工&#39;, 0.7118045687675476),
+ (&#39;工业部门&#39;, 0.7075888514518738),
+ (&#39;钢铁汽车&#39;, 0.6994239091873169),
+ (&#39;化工&#39;, 0.6939695477485657),
+ (&#39;化学工业&#39;, 0.6878121495246887),
+ (&#39;支柱产业&#39;, 0.6853876709938049),
+ (&#39;传统工业&#39;, 0.6830911636352539),
+ (&#39;纺织业&#39;, 0.6762925386428833),
+ (&#39;轻工业&#39;, 0.6752256155014038),
+ (&#39;传统产业&#39;, 0.6697835922241211),
+ (&#39;冶金&#39;, 0.6670747995376587),
+ (&#39;高科技产业&#39;, 0.666153073310852),
+ (&#39;石油化工&#39;, 0.6655437350273132),
+ (&#39;机械工业&#39;, 0.6599630117416382)]
+ 
+ 
+ output/Word2Vec/2026.200.6.bin
+ [(&#39;新材料&#39;, 0.7669156193733215),
+ (&#39;冶金&#39;, 0.7581453323364258),
+ (&#39;化工&#39;, 0.7405549883842468),
+ (&#39;高端装备&#39;, 0.7401999235153198),
+ (&#39;装备制造&#39;, 0.7394130229949951),
+ (&#39;石化&#39;, 0.7376166582107544),
+ (&#39;制造业&#39;, 0.711894154548645),
+ (&#39;半导体&#39;, 0.7055253386497498),
+ (&#39;制造&#39;, 0.7007594108581543),
+ (&#39;能源&#39;, 0.6951915621757507),
+ (&#39;智能制造&#39;, 0.6938720941543579),
+ (&#39;生物技术&#39;, 0.6936888694763184),
+ (&#39;矿业&#39;, 0.6906037330627441),
+ (&#39;核技术应用&#39;, 0.6892902255058289),
+ (&#39;新一代信息技术&#39;, 0.6885871887207031),
+ (&#39;精细化工&#39;, 0.6876311898231506),
+ (&#39;智能装备&#39;, 0.6843942999839783),
+ (&#39;石油化工&#39;, 0.6837282776832581),
+ (&#39;先进材料&#39;, 0.6828972101211548),
+ (&#39;风能&#39;, 0.6827014684677124)]
+</code></pre></div><p>1946因为数据量较少，语义捕捉的没有后面三个准，但也大差不差的。  后面的分析中，我们就都使用对齐算，对word2vec模型进行语义对齐。</p>
+<p><br><br></p>
+<h2 id="四对齐模型">四、对齐模型</h2>
+<h3 id="41--为什么要进行对齐">4.1  为什么要进行对齐?</h3>
+<p>Word2Vec是一种词嵌入（word embedding）算法，它将词语映射到高维空间中的向量，使得语义相近的词在该空间中距离较近。然而，不同年份的Word2Vec模型在训练时可能受到不同的语料库、训练参数等因素的影响，导致它们的向量空间之间存在一定的差异，所以不能直接拿不同年年份模型直接进行语义比较。</p>
+<p><strong>Procrustes对齐算法目的是通过线性变换来使两个向量空间尽可能地对齐，以便进行比较</strong>。这个过程涉及到对两个向量空间进行旋转、缩放和平移等变换，使它们在某种意义上尽量一致。</p>
+<p>具体原因包括：</p>
+<ol>
+<li><strong>词汇漂移（Lexical Drift）：</strong> 随着时间的推移，词汇的含义和使用可能发生变化，导致不同年份的语料库中的词语存在一定的漂移。Procrustes分析可以在一定程度上对齐这种漂移。</li>
+<li><strong>训练参数不同：</strong> Word2Vec模型的训练参数，如窗口大小、迭代次数等，可能在不同年份有所不同，导致生成的向量空间差异较大。</li>
+<li><strong>语料库的差异：</strong> 不同年份的语料库可能覆盖的主题、文体等存在差异，这也会影响词向量的学习结果。</li>
+</ol>
+<p>通过Procrustes对齐，可以在一定程度上解决这些问题，使得不同年份的Word2Vec模型在语义上更具可比性。这有助于在跨时间的语料库中进行一致的语义分析。</p>
+<br>
+<h3 id="42-对齐之后">4.2 对齐之后</h3>
+<p>对齐后的Word2Vec模型进行的语义变迁研究：</p>
+<ol>
+<li><strong>词义演变：</strong> 比较不同年份相同词汇的词向量，观察其在向量空间中的位置变化，分析词义在语义空间中的演变趋势。</li>
+<li><strong>语境变迁：</strong> 考察同一词语在不同年份的上下文中的变化，了解词语在不同语境下的语义演变情况。</li>
+<li><strong>主题变迁：</strong> 通过对齐后的向量空间，分析不同年份语料库中词语的主题分布变化，探讨社会、文化因素对语言使用的影响。</li>
+<li><strong>时代特征分析：</strong> 通过对比不同年份的模型，识别出每个时期在词向量空间中的独特特征，从而揭示时代背景对语义的影响。</li>
+<li><strong>探索新兴词汇：</strong> 通过对比不同年份的模型，发现在语义空间中新兴词汇的出现和演变，了解新兴概念和文化趋势。</li>
+</ol>
+<p>总的来说，通过对齐Word2Vec模型，你可以更准确地比较不同年份的语料库，深入研究语义的演变和语言使用的变迁。这有助于揭示社会、文化、科技等方面的发展对语言表达的影响。</p>
+<br>
+<h3 id="43-对齐代码">4.3 对齐代码</h3>
+<p>使用 <strong>cntext2.1.0</strong>，未公开，需微信大邓 372335839 购买获取。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="c1">#基准模型</span>
+<span class="n">base_embed</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;output/Word2Vec/2026.200.6.bin&#39;</span><span class="p">)</span>
+
+<span class="c1">#将其他模型与基准模型对齐</span>
+<span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">mfiles</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">other_embed</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">procrusted_w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">procrustes_align</span><span class="p">(</span><span class="n">base_embed</span><span class="o">=</span><span class="n">base_embed</span><span class="p">,</span>
+                                         <span class="n">other_embed</span><span class="o">=</span><span class="n">other_embed</span><span class="p">)</span>
+    <span class="n">year</span><span class="o">=</span><span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="mi">4</span><span class="p">]</span>
+    <span class="n">procrusted_w2v</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;output/Aligned_Word2Vec/</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">.200.6.bin&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Loading word2vec model...
+output/Word2Vec/1946.200.6.bin
+
+Loading word2vec model...
+16221 16221
+16221 16221
+output/Word2Vec/1951.200.6.bin
+
+......
+......
+output/Word2Vec/2026.200.6.bin
+Loading word2vec model...
+14120 14120
+14120 14120
+</code></pre></div><p><img loading="lazy" src="img/03-align.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="五实验-文化变迁">五、实验-文化变迁</h2>
+<p>这里我演示 两个对立词组分别与目标词组进行语义距离计算， 根据语义距离反应刻板印象态度偏见，其实这也反映了文化变迁。</p>
+<h3 id="51-性别与成功">5.1 性别与成功</h3>
+<p>男性、女性与成功之间的语义距离</p>
+<p><strong>cntext2.1.0</strong> 内置了两种算法， 语义投影和语义距离，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">distance = distance(女, 成功) - distance(男, 成功)
+</code></pre></div><p>如果distance趋近于0， 男女在成功概念上语义接近， 无明显刻板印象。</p>
+<p>但是当distance明显大于0， 当人们聊到成功概念时，更容易联想到男性，而不是女性。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+
+<span class="n">gender_suceess_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;成功&#39;</span><span class="p">,</span> <span class="s1">&#39;成就&#39;</span><span class="p">,</span> <span class="s1">&#39;胜利&#39;</span><span class="p">]</span>
+<span class="n">c_words1</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;女&#39;</span><span class="p">,</span> <span class="s1">&#39;女人&#39;</span><span class="p">,</span> <span class="s1">&#39;她&#39;</span><span class="p">,</span> <span class="s1">&#39;母亲&#39;</span><span class="p">,</span> <span class="s1">&#39;女儿&#39;</span><span class="p">,</span> <span class="s1">&#39;奶奶&#39;</span><span class="p">]</span>
+<span class="n">c_words2</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;男&#39;</span><span class="p">,</span> <span class="s1">&#39;男人&#39;</span><span class="p">,</span> <span class="s1">&#39;他&#39;</span><span class="p">,</span> <span class="s1">&#39;父亲&#39;</span><span class="p">,</span> <span class="s1">&#39;儿子&#39;</span><span class="p">,</span> <span class="s1">&#39;爷爷&#39;</span><span class="p">]</span>
+
+<span class="n">mfiles</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;output/Aligned_Word2Vec/*.bin&#39;</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">mfiles</span><span class="p">:</span>
+    <span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">mind</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Text2Mind</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="p">)</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">mind</span><span class="o">.</span><span class="n">sematic_distance</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">,</span> 
+                                     <span class="n">c_words1</span><span class="o">=</span><span class="n">c_words1</span><span class="p">,</span> 
+                                     <span class="n">c_words2</span><span class="o">=</span><span class="n">c_words2</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="mi">4</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">distance</span>
+    <span class="n">gender_suceess_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    
+
+<span class="n">gender_success_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">gender_suceess_data</span><span class="p">)</span>
+<span class="n">gender_success_df</span>
+</code></pre></div><p><img loading="lazy" src="img/04-df.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">scienceplots</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">matplotlib_inline</span>
+<span class="n">matplotlib_inline</span><span class="o">.</span><span class="n">backend_inline</span><span class="o">.</span><span class="n">set_matplotlib_formats</span><span class="p">(</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="s1">&#39;svg&#39;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">jieba</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">([</span><span class="s1">&#39;science&#39;</span><span class="p">,</span> <span class="s1">&#39;no-latex&#39;</span><span class="p">,</span> <span class="s1">&#39;cjk-sc-font&#39;</span><span class="p">])</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>  <span class="c1"># 获取操作系统类型</span>
+<span class="k">if</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Windows&#39;</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;SimHei&#39;</span><span class="p">}</span>
+<span class="k">elif</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Darwin&#39;</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;Arial Unicode MS&#39;</span><span class="p">}</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;sans-serif&#39;</span><span class="p">}</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">font</span><span class="p">)</span>  <span class="c1"># 设置全局字体</span>
+
+<span class="n">gender_success_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;人民日报在「成就」概念的文化变迁&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;大于0表示社会更容易将成功与男性联系起来&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/04-gender.png" alt=""  />
+</p>
+<p>从图中可以看到， 新中国初期distance算法相对准确的刻画了那个时代的文化， 提到「成功概念」， 在「性别」联想区分度不大， 反映了那个时候宣传时候的中性， 立榜样考虑了性别的平衡。</p>
+<p>即随着时间推移， 提到「成功概念」时，社会更容易将成功与「男性」联系起来。</p>
+<p>从我的从小接受的教育， 在新中国初期， 宣传上很进步积极， <strong>妇女撑起半边天</strong> 是那个激情年代的口号，也因此时至今日中国也是世界上女性就业率最高的国家。</p>
+<br>
+<h3 id="52-性别与责任">5.2 性别与责任</h3>
+<p>成就与男性有更高的关联， 背后是否意味着传统文化建构的社会要求男性承担远多于女性的责任。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gender_responsibility_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">words</span> <span class="o">=</span>   <span class="p">[</span><span class="s1">&#39;责任&#39;</span><span class="p">,</span> <span class="s1">&#39;重担&#39;</span><span class="p">,</span> <span class="s1">&#39;担当&#39;</span><span class="p">]</span>
+<span class="n">c_words1</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;女&#39;</span><span class="p">,</span> <span class="s1">&#39;女人&#39;</span><span class="p">,</span> <span class="s1">&#39;她&#39;</span><span class="p">,</span> <span class="s1">&#39;母亲&#39;</span><span class="p">,</span> <span class="s1">&#39;女儿&#39;</span><span class="p">,</span> <span class="s1">&#39;奶奶&#39;</span><span class="p">]</span>
+<span class="n">c_words2</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;男&#39;</span><span class="p">,</span> <span class="s1">&#39;男人&#39;</span><span class="p">,</span> <span class="s1">&#39;他&#39;</span><span class="p">,</span> <span class="s1">&#39;父亲&#39;</span><span class="p">,</span> <span class="s1">&#39;儿子&#39;</span><span class="p">,</span> <span class="s1">&#39;爷爷&#39;</span><span class="p">]</span>
+
+<span class="n">mfiles</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;output/Aligned_Word2Vec/*.bin&#39;</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">mfiles</span><span class="p">:</span>
+    <span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">mind</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Text2Mind</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="p">)</span>
+    <span class="n">projection</span> <span class="o">=</span> <span class="n">mind</span><span class="o">.</span><span class="n">sematic_projection</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">,</span> 
+                                         <span class="n">c_words1</span><span class="o">=</span><span class="n">c_words1</span><span class="p">,</span> 
+                                         <span class="n">c_words2</span><span class="o">=</span><span class="n">c_words2</span><span class="p">)</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">mind</span><span class="o">.</span><span class="n">sematic_distance</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">,</span> 
+                                     <span class="n">c_words1</span><span class="o">=</span><span class="n">c_words1</span><span class="p">,</span> 
+                                     <span class="n">c_words2</span><span class="o">=</span><span class="n">c_words2</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="mi">4</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">distance</span>
+    <span class="n">gender_responsibility_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    
+
+<span class="n">gender_responsibility_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">gender_responsibility_data</span><span class="p">)</span>
+
+
+<span class="n">gender_responsibility_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;人民日报在「责任」语义的文化变迁&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;大于0表示社会更容易将「责任」与男性联系起来&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/05-responsibility.png" alt=""  />
+</p>
+<p>从图中可以看出，在大多数年份， distance是大于0的，即 提到「责任」概念时，社会更容易联想到「男性」，而不是「女性」。</p>
+<br>
+<br>
+<h2 id="五获取资料">五、获取资料</h2>
+<p><a href="https://textdata.cn/blog/2023-12-14-daily-news-dataset/">新闻数据集 | 含 人民日报/经济日报/光明日报 等 7 家媒体(2023.12.18)</a></p>
+<ul>
+<li><strong>7家媒体数据集打包  1688 元，  加微信 372335839</strong>， 备注「姓名-学校-专业」。</li>
+<li><strong>人民日报数据集 1000 元，  加微信 372335839</strong>， 备注「姓名-学校-专业」。</li>
+<li><strong>cntext2.1.0</strong>    100元，已购买cntext2.0.0可以免费更新。</li>
+</ul>
+<p><span style="font-size: 18px;color: green;">数据是虚拟产品，一经售出，不再退还！</span></p>
+<p><span style="font-size: 18px;color: green;">时间宝贵，请先阅读推文内容， 再加微信详谈购买事宜 </span></p>
+<br>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
 </ul>
 ]]></content:encoded>
     </item>
@@ -1254,7 +1650,7 @@ Lu, Liangdong, Jia Xu, and Jiuchang Wei. &amp;#34;Understanding the effects of t
 &lt;/ul&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;五获取数据&#34;&gt;五、获取数据&lt;/h2&gt;
-&lt;p&gt;&lt;span style=&#34;font-size: 18px;color: green;&#34;&gt;1. 付费数据集，200元；加微信 372335839， 备注「姓名-学校-专业」。&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&#34;font-size: 18px;color: green;&#34;&gt;1. 付费数据集，2000元；加微信 372335839， 备注「姓名-学校-专业」。&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;&lt;span style=&#34;font-size: 18px;color: green;&#34;&gt;2. 数据是虚拟产品，一经售出，不再退还！&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;&lt;span style=&#34;font-size: 18px;color: green;&#34;&gt;3. 大家时间其实都很宝贵，请仔细阅读推文内容， 确认无误再加微信详谈购买事宜 &lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
@@ -1500,7 +1896,7 @@ Lu, Liangdong, Jia Xu, and Jiuchang Wei. &#34;Understanding the effects of the t
 </ul>
 <p><br><br></p>
 <h2 id="五获取数据">五、获取数据</h2>
-<p><span style="font-size: 18px;color: green;">1. 付费数据集，200元；加微信 372335839， 备注「姓名-学校-专业」。</span></p>
+<p><span style="font-size: 18px;color: green;">1. 付费数据集，2000元；加微信 372335839， 备注「姓名-学校-专业」。</span></p>
 <p><span style="font-size: 18px;color: green;">2. 数据是虚拟产品，一经售出，不再退还！</span></p>
 <p><span style="font-size: 18px;color: green;">3. 大家时间其实都很宝贵，请仔细阅读推文内容， 确认无误再加微信详谈购买事宜 </span></p>
 <p><br><br></p>
@@ -4032,7 +4428,7 @@ plt.show()
       <content:encoded><![CDATA[<p>新闻日报类数据集，含 <em><strong>人民日报</strong></em>、 <em><strong>光明日报</strong></em>、<em><strong>人民政协报</strong></em>、<em><strong>经济日报</strong></em>、<em><strong>中国青年报</strong></em>、  <em><strong>南方周末</strong></em>、<em><strong>新闻联播</strong></em> 等。</p>
 <br>
 <h2 id="一--研究用途">一、  研究用途</h2>
-<p>新闻日报类数据 可提取丰富的指标，包括但不限于 **经济政策不确定性指数 **、 <strong>媒体关注度指数</strong>、<strong>文本相似度</strong>、<strong>情感分析</strong>。此外， 可训练词向量，开发新的概念词典。数据带时间， 参照前面指标， 依主体、日期、指标进行计算， 可构造面板数据，构建新的指标指数。因此在经济学、管理学、新闻传播学、公共管理等领域均有较高的研究价值。</p>
+<p>新闻日报类数据 可提取丰富的指标，包括但不限于 **经济政策不确定性指数 **、 <strong>媒体关注度指数</strong>、<strong>文本相似度</strong>、<strong>情感分析</strong>。此外， 可训练词向量，开发新的概念词典。数据带时间， 参照前面指标， 依主体、日期、指标进行计算， 可构造面板数据，构建新的指标指数。因此在经济学、管理学、新闻传播学、公共管理、社会学等领域均有较高的研究价值。</p>
 <p>相关参考文献</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[1]洪永淼,刘俸奇,薛涧坡.政府与市场心理因素的经济影响及其测度[J].管理世界,2023,39(03):30-51.
 [2]刘景江,郑畅然,洪永淼.机器学习如何赋能管理学研究？——国内外前沿综述和未来展望[J].管理世界,2023,39(09):191-216.
@@ -4338,7 +4734,10 @@ df[(df[&#39;IT_word_num&#39;]&gt;15) &amp; (df[&#39;IT_word_num&#39;]&lt;20)]
 <p>更多数据集，请查看 <a href="https://textdata.cn/blog/datasets_available_for_management_science/"><strong>LIST | 可供社科(经管)领域使用的数据集汇总</strong></a></p>
 <p><br><br></p>
 <h2 id="六相关内容">六、相关内容</h2>
-<p><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></p>
+<ul>
+<li><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/"><strong>可视化 | 人民日报语料反映七十年文化演变</strong></a></li>
+</ul>
 <p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
 <ul>
