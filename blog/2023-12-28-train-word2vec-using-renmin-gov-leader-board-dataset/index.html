@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>词向量  | 使用人民网领导留言板语料训练Word2Vec模型 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="数据集, 文本分析, 经济管理" />
+<meta name="description" content="本文使用 3.88G 语料训练得到词汇量近 150w 的 Word2Vec 模型，使用该模型，可以用于寻找近义词，扩展(构建)概念词典。 该Word2Vec模型文件可在文末免费下载
+
+一、构建语料 使用 数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12) 来构建本文的语料。
+import pandas as pd df1 = pd.read_csv(&#39;2011-2019.csv.gzip&#39;, compression=&#39;gzip&#39;) df2 = pd.read_csv(&#39;2020-2023.csv.gzip&#39;, compression=&#39;gzip&#39;) text_series1 = df1[&#39;留言内容&#39;] &#43; df1[&#39;回复内容&#39;] text_series1.fillna(&#39;&#39;, inplace=True) text_series2 = df2[&#39;留言内容&#39;] &#43; df2[&#39;回复内容&#39;] text_series2.fillna(&#39;&#39;, inplace=True) with open(&#39;renmin_board.txt&#39;, &#39;a&#43;&#39;, encoding=&#39;utf-8&#39;) as f: text = &#39;&#39;.join(text_series1.tolist()) &#43; &#39;&#39;.join(text_series2.tolist()) f.write(text) 最终得到 3.88 G 的 renmin_board.txt 。
+
+二、训练模型 2.1 配置cntext 使用 cntext 2.0.0 或者 cntext 2.1.0 ， 已购买 cntext2.">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/" />
+<meta name="baidu-site-verification" content="codeva-q71uASYfGi" />
+<meta name="360-site-verification" content="6b9b733ec558a1bb12cee8aa82f2529e" />
+<meta name="sogou-site-verification" content="dZHPIorOhK" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="词向量  | 使用人民网领导留言板语料训练Word2Vec模型" />
+<meta property="og:description" content="本文使用 3.88G 语料训练得到词汇量近 150w 的 Word2Vec 模型，使用该模型，可以用于寻找近义词，扩展(构建)概念词典。 该Word2Vec模型文件可在文末免费下载
+
+一、构建语料 使用 数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12) 来构建本文的语料。
+import pandas as pd df1 = pd.read_csv(&#39;2011-2019.csv.gzip&#39;, compression=&#39;gzip&#39;) df2 = pd.read_csv(&#39;2020-2023.csv.gzip&#39;, compression=&#39;gzip&#39;) text_series1 = df1[&#39;留言内容&#39;] &#43; df1[&#39;回复内容&#39;] text_series1.fillna(&#39;&#39;, inplace=True) text_series2 = df2[&#39;留言内容&#39;] &#43; df2[&#39;回复内容&#39;] text_series2.fillna(&#39;&#39;, inplace=True) with open(&#39;renmin_board.txt&#39;, &#39;a&#43;&#39;, encoding=&#39;utf-8&#39;) as f: text = &#39;&#39;.join(text_series1.tolist()) &#43; &#39;&#39;.join(text_series2.tolist()) f.write(text) 最终得到 3.88 G 的 renmin_board.txt 。
+
+二、训练模型 2.1 配置cntext 使用 cntext 2.0.0 或者 cntext 2.1.0 ， 已购买 cntext2." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/" />
+<meta property="og:image" content="/images/blog/renmin-board.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2023-12-28T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2023-12-28T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/renmin-board.png" />
+<meta name="twitter:title" content="词向量  | 使用人民网领导留言板语料训练Word2Vec模型"/>
+<meta name="twitter:description" content="本文使用 3.88G 语料训练得到词汇量近 150w 的 Word2Vec 模型，使用该模型，可以用于寻找近义词，扩展(构建)概念词典。 该Word2Vec模型文件可在文末免费下载
+
+一、构建语料 使用 数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12) 来构建本文的语料。
+import pandas as pd df1 = pd.read_csv(&#39;2011-2019.csv.gzip&#39;, compression=&#39;gzip&#39;) df2 = pd.read_csv(&#39;2020-2023.csv.gzip&#39;, compression=&#39;gzip&#39;) text_series1 = df1[&#39;留言内容&#39;] &#43; df1[&#39;回复内容&#39;] text_series1.fillna(&#39;&#39;, inplace=True) text_series2 = df2[&#39;留言内容&#39;] &#43; df2[&#39;回复内容&#39;] text_series2.fillna(&#39;&#39;, inplace=True) with open(&#39;renmin_board.txt&#39;, &#39;a&#43;&#39;, encoding=&#39;utf-8&#39;) as f: text = &#39;&#39;.join(text_series1.tolist()) &#43; &#39;&#39;.join(text_series2.tolist()) f.write(text) 最终得到 3.88 G 的 renmin_board.txt 。
+
+二、训练模型 2.1 配置cntext 使用 cntext 2.0.0 或者 cntext 2.1.0 ， 已购买 cntext2."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "词向量  | 使用人民网领导留言板语料训练Word2Vec模型",
+      "item": "/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "词向量  | 使用人民网领导留言板语料训练Word2Vec模型",
+  "name": "词向量  | 使用人民网领导留言板语料训练Word2Vec模型",
+  "description": "本文使用 3.88G 语料训练得到词汇量近 150w 的 Word2Vec 模型，使用该模型，可以用于寻找近义词，扩展(构建)概念词典。 该Word2Vec模型文件可在文末免费下载\n\n一、构建语料 使用 数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12) 来构建本文的语料。\nimport pandas as pd df1 = pd.read_csv(\u0026#39;2011-2019.csv.gzip\u0026#39;, compression=\u0026#39;gzip\u0026#39;) df2 = pd.read_csv(\u0026#39;2020-2023.csv.gzip\u0026#39;, compression=\u0026#39;gzip\u0026#39;) text_series1 = df1[\u0026#39;留言内容\u0026#39;] + df1[\u0026#39;回复内容\u0026#39;] text_series1.fillna(\u0026#39;\u0026#39;, inplace=True) text_series2 = df2[\u0026#39;留言内容\u0026#39;] + df2[\u0026#39;回复内容\u0026#39;] text_series2.fillna(\u0026#39;\u0026#39;, inplace=True) with open(\u0026#39;renmin_board.txt\u0026#39;, \u0026#39;a+\u0026#39;, encoding=\u0026#39;utf-8\u0026#39;) as f: text = \u0026#39;\u0026#39;.join(text_series1.tolist()) + \u0026#39;\u0026#39;.join(text_series2.tolist()) f.write(text) 最终得到 3.88 G 的 renmin_board.txt 。\n\n二、训练模型 2.1 配置cntext 使用 cntext 2.0.0 或者 cntext 2.1.0 ， 已购买 cntext2.",
+  "keywords": [
+    "数据集", "文本分析", "经济管理"
+  ],
+  "articleBody": "本文使用 3.88G 语料训练得到词汇量近 150w 的 Word2Vec 模型，使用该模型，可以用于寻找近义词，扩展(构建)概念词典。 该Word2Vec模型文件可在文末免费下载\n\n一、构建语料 使用 数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12) 来构建本文的语料。\nimport pandas as pd df1 = pd.read_csv('2011-2019.csv.gzip', compression='gzip') df2 = pd.read_csv('2020-2023.csv.gzip', compression='gzip') text_series1 = df1['留言内容'] + df1['回复内容'] text_series1.fillna('', inplace=True) text_series2 = df2['留言内容'] + df2['回复内容'] text_series2.fillna('', inplace=True) with open('renmin_board.txt', 'a+', encoding='utf-8') as f: text = ''.join(text_series1.tolist()) + ''.join(text_series2.tolist()) f.write(text) 最终得到 3.88 G 的 renmin_board.txt 。\n\n二、训练模型 2.1 配置cntext 使用 cntext 2.0.0 或者 cntext 2.1.0 ， 已购买 cntext2.0.0 的同学可以找我更新至 2.1.0 ，微信372335839， 备注「姓名-学校-专业」。\n将 cntext-2.1.0-py3-none-any.whl 放置于桌面， 打开 **命令行cmd **(苹果电脑terminal)，依次执行以下命令\ncd desktop pip3 install cntext-2.1.0-py3-none-any.whl \n2.2 训练Word2Vec 训练 word2vec 代码已封装 cntext2， 所以代码很简洁，只有三行代码。\n训练环境win11, 内存128G。\nimport cntext as ct w2v_model = ct.W2vModel(corpus_file='renmin_board.txt', lang='chinese') w2v_model.train(window_size=6, vector_size=200) Run\nrenmin_board.txt Start Preprocessing Corpus... Start Training! This may take a while. Please be patient... Training word2vec model took 12779 seconds Note: The Word2Vec model has been saved to output/Word2Vec 使用 3.88G 的renmin_board.txt，训练了 12779 秒， 约 3.5 小时。在Python代码文件所在的文件夹内，出现了 output/Word2Vec 文件夹，打开可以看到训练好的模型， 可以看出模型文件的体量还是很大的。\n\n三、使用模型 3.1 读取模型 import cntext ct w2v = ct.load_w2v('output/Word2Vec/renmin_board.200.6.bin') w2v Run\nLoading word2vec model... \n3.2 模型词汇量 #词汇量 len(w2v.wv) Run\n1499961 \n3.3 查看词表 因为词表有 1499961 个词， 为了方便，这里只显示前20个词\n##词表带顺序的 list(w2v.wv.key_to_index.keys())[:20] Run\n[' ', '\\n', '问题', '进行', '小区', '工作', '”', '没有', '情况', '目前', '反映', '业主', '项目', '要求', '“', '公司', '网友您好', '现在', '建设', '反映问题'] \n3.4 获取某词的向量 #w2v.wv['利民'] w2v.wv.get_vector('利民') Run\narray([-0.72336054, 0.5448769 , 0.02187554, 0.18723099, 0.10518928, -0.4829346 , 1.2029709 , 1.325142 , 1.7153364 , -0.9134816 , 0.21033671, -0.05412149, 0.1750608 , 0.36092624, 0.24550831, 0.02644009, 0.95183885, -1.0317421 , -0.10972459, -2.5780423 , -0.89232576, -1.043176 , 0.72673726, -0.17512426, -0.24233247, 0.2569658 , -1.0063888 , 0.5180029 , 0.83510065, 0.8907923 , -0.24386375, -0.53083295, -1.5156878 , -0.9040948 , 0.25330988, -0.79177266, 0.06866979, 0.6199285 , 0.9562961 , 3.6091647 , -1.3558179 , 1.4279033 , -0.6923549 , 0.17637855, 0.6416902 , 0.8726301 , -0.8316238 , 0.8974303 , -1.342718 , 0.3960099 , 0.7404184 , 0.41476634, 0.5397854 , -0.9964916 , 0.72252625, -0.24338841, -1.1583921 , -0.8719721 , -0.1476895 , 0.4893649 , 1.0152714 , -3.2469108 , 0.61867106, -1.1033677 , 0.7277995 , 0.68194056, 1.9562886 , -2.0847485 , 1.5790684 , 0.9881281 , -1.6833613 , 0.52788144, 0.81453127, -0.72605026, 0.67317885, 0.4130878 , 0.5682669 , -0.14777663, 0.6144105 , -0.6402672 , -0.8752994 , 1.6374044 , -0.66893923, 0.5865543 , 0.6375472 , -0.99829054, -1.0806116 , 2.6740906 , -0.7968034 , -0.39872456, -2.0882657 , 0.4091569 , 0.44333985, 0.80311924, -0.02302606, -0.2762922 , 0.172768 , 2.2813802 , -0.39281502, 0.57268375, 1.4626628 , -0.14473361, 0.5739576 , 0.61773837, -0.18331125, 1.2602748 , 0.9424055 , 1.5969577 , 0.6106542 , -2.7610633 , -1.1409078 , -1.7803516 , -0.3264908 , 1.2968934 , 0.7250817 , 0.0589628 , 0.42458364, -0.3242822 , -2.6474693 , 0.3660026 , 0.5749114 , 0.1812738 , 0.34291452, -0.20228535, 0.40417868, 0.06284425, 0.7266579 , 1.5118539 , 2.0363107 , -1.1808697 , -0.19834429, -1.105297 , 0.7594476 , -0.90230256, 0.13537973, 1.5452795 , 1.3571783 , 0.15807565, -1.0794616 , 2.3592122 , 0.62628454, -0.61704504, 0.65674806, -0.91116625, -2.1521432 , -0.08805666, -0.6956923 , -1.4443843 , -0.84095645, 0.64748996, -0.7432282 , 1.7160741 , 1.1697325 , 1.0834908 , -1.0323627 , -1.3480235 , 1.004517 , -0.40515316, 0.38016117, 1.6717825 , -0.40651798, 1.0373042 , 0.24744533, -2.353417 , 0.06758213, 0.34440002, 0.8656946 , 0.76431715, -1.7378451 , 1.2329959 , -1.4538856 , 1.0956937 , 0.6151345 , 2.4905207 , -0.24415112, -0.23886327, 0.09834331, 0.00791643, -0.53527415, 0.7039957 , 0.83675224, -1.5712336 , -0.14135051, 0.34811664, 0.41304144, 0.78504366, -0.13325912, -0.9898512 , -0.497319 , -0.32992417, -0.58120775, 0.29686695, -0.9618549 , 0.39253774, 0.14620592, -0.45337242, 0.69179136, 0.1934781 , -2.0494404 , 1.8545331 ], dtype=float32) \n需要注意，如果查询的词不存在于模型词表，则会出现报错。例如\nword = '这是一个不存在的词' w2v.wv.get_vector(word) Run\n--------------------------------------------------------------------------- KeyError Traceback (most recent call last) Cell In[130], line 2 1 word = '这是一个不存在的词' ---- 2 w2v.wv.get_vector(word) File /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/gensim/models/keyedvectors.py:446, in KeyedVectors.get_vector(self, key, norm) 422 def get_vector(self, key, norm=False): 423 \"\"\"Get the key's vector, as a 1D numpy array. 424 425 Parameters (...) 444 445 \"\"\" -- 446 index = self.get_index(key) 447 if norm: 448 self.fill_norms() File /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/gensim/models/keyedvectors.py:420, in KeyedVectors.get_index(self, key, default) 418 return default 419 else: -- 420 raise KeyError(f\"Key '{key}' not present\") KeyError: \"Key '这是一个不存在的词' not present\" \n3.5 查询近义词 w2v.wv.most_similar(positive=None, topn=10)\n positive 待查的词语列表或者词向量 topn 显示返回多少个近义词  3.5.1 使用词语列表查询 w2v.wv.most_similar(['经济', '建设', '发展'], topn=20) Run\n[('经济发展', 0.7514141201972961), ('产业发展', 0.6954267024993896), ('发展壮大', 0.6707271337509155), ('社会发展', 0.6637671589851379), ('发展重要', 0.6603672504425049), ('城镇化发展', 0.6574274301528931), ('城市发展', 0.6558148264884949), ('高质量发展', 0.6517276167869568), ('大力发展', 0.6500106453895569), ('产业', 0.6494895219802856), ('发展产业', 0.6458864212036133), ('壮大', 0.6379123330116272), ('发展带动', 0.6357436776161194), ('未来发展', 0.6351119875907898), ('第三产业', 0.6345765590667725), ('经济增长', 0.6329594850540161), ('改革开放', 0.6297498345375061), ('融合发展', 0.6290864944458008), ('长远发展', 0.6279110908508301), ('经济繁荣', 0.627375602722168)] \n3.5.2 使用词向量查询 先构建一个函数concept_vector，该函数可以将多个词转化为一个向量。 遇到词语不在词表中的异常，也能正常运行。\nimport numpy as np def concept_vector(words): container = np.zeros(200) for word in words: try: container = container + w2v.wv.get_vector(word) except: pass return container/len(words) word_vec = concept_vector(words=['她', '她们', '母亲', '奶奶', '女性', '女人']) #查找与word_vec近义词10个词 w2v.wv.most_similar(word_vec, topn=10) Run\n[('奶奶', 0.9064152836799622), ('母亲', 0.9003509879112244), ('爷爷', 0.8559296131134033), ('婆婆', 0.846263587474823), ('我妈', 0.8314375877380371), ('老伴', 0.8306034803390503), ('老父亲', 0.8257972598075867), ('姥爷', 0.8255906701087952), ('父亲', 0.821728527545929), ('女孩', 0.8210363984107971)] \n四、 相关 4.1 文献资料 郑石明, 兰雨潇, 黎枫. 网络公共舆论与政府回应的互动逻辑——基于新冠肺炎疫情期间“领导留言板”的数据分析[J]. 公共管理学报, 2021, 18 (03): 24-37+169. 王磊,易扬.公共卫生危机中的数字政府回应如何纾解网络负面舆情——基于人民网“领导留言板”回复情况的调查[J].公共管理学报,2022,19(04):65-78+169. Lu, Liangdong, Jia Xu, and Jiuchang Wei. \"Understanding the effects of the textual complexity on government communication: Insights from China’s online public service platform.\" Telematics and Informatics 83 (2023): 102028. ... \n4.2 代码资料 想用 python 对 csv、xlsx 进行分析， 要学会尽量用 pandas 写代码。 以下是近期 pandas 的一些处理推文免费教程， 感兴趣的可以进去浏览浏览。\n  代码 | 使用地方gov工作报告生成某类概念词频「面板数据」\n  代码 | 使用「新闻数据」构造概念词提及量「面板数据」\n  数据代码| 使用cctv新闻联播文稿构造「面板数据」\n  代码 | 使用3571w专利申请数据集构造「面板数据」\n  代码 | 使用「新闻数据」计算 「经济政策不确定性」指数\n  词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总\n  OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息\n  数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12) 2023-12-22-renmin-gov-leader-comment-board\n\n五、获取资料 5.1 免费资料 本文训练所得的 renmin_board.200.6.bin模型文件 免费开源，\n链接: https://pan.baidu.com/s/1u-eUuATCTSIDjhOvSaG7sA?pwd=whf5 提取码: whf5\n5.2 付费资料 1. 数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12) ，2000元\n2. cntext2.1.0 价格100元，已购买2.0.0可免费更新至2.1.0\n3. 数据是虚拟产品，一经售出，不再退还！\n4. 大家时间其实都很宝贵，请仔细阅读推文内容， 确认无误再加微信372335839， 备注「姓名-学校-专业」详谈购买事宜 \n\n广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
+  "wordCount" : "835",
+  "inLanguage": "en",
+  "image":"/images/blog/renmin-board.png","datePublished": "2023-12-28T00:00:00Z",
+  "dateModified": "2023-12-28T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif" rel="stylesheet">
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/management_python_course/" title="课程" target="_blank">
+                    <span>课程</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/datasets_available_for_management_science/" title="数据" target="_blank">
+                    <span>数据</span>
+                </a>
+            </li>
+            <li>
+                <a href="/index.xml" title="RSS" target="_blank">
+                    <span>RSS</span>
+                </a>
+            </li>
+            <li>
+                <a href="/support/" title="打赏" target="_blank">
+                    <span>打赏</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      词向量  | 使用人民网领导留言板语料训练Word2Vec模型
+    </h1>
+    <div class="post-meta"><span title='2023-12-28 00:00:00 +0000 UTC'>2023-12-28</span>&nbsp;·&nbsp;4 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/renmin-board.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/renmin-board.png" alt=""></a>
+        
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f&amp;hashtags=%e6%95%b0%e6%8d%ae%e9%9b%86%2c%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e7%bb%8f%e6%b5%8e%e7%ae%a1%e7%90%86">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f&amp;title=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b&amp;summary=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b&amp;source=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f&title=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b%20-%20%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on telegram"
+        href="https://telegram.me/share/url?text=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e4%b8%80%e6%9e%84%e5%bb%ba%e8%af%ad%e6%96%99" aria-label="一、构建语料">一、构建语料</a></li>
+                    <li>
+                        <a href="#%e4%ba%8c%e8%ae%ad%e7%bb%83%e6%a8%a1%e5%9e%8b" aria-label="二、训练模型">二、训练模型</a><ul>
+                            
+                    <li>
+                        <a href="#21-%e9%85%8d%e7%bd%aecntext" aria-label="2.1 配置cntext">2.1 配置cntext</a></li>
+                    <li>
+                        <a href="#22-%e8%ae%ad%e7%bb%83word2vec" aria-label="2.2 训练Word2Vec">2.2 训练Word2Vec</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e4%b8%89%e4%bd%bf%e7%94%a8%e6%a8%a1%e5%9e%8b" aria-label="三、使用模型">三、使用模型</a><ul>
+                            
+                    <li>
+                        <a href="#31-%e8%af%bb%e5%8f%96%e6%a8%a1%e5%9e%8b" aria-label="3.1 读取模型">3.1 读取模型</a></li>
+                    <li>
+                        <a href="#32-%e6%a8%a1%e5%9e%8b%e8%af%8d%e6%b1%87%e9%87%8f" aria-label="3.2 模型词汇量">3.2 模型词汇量</a></li>
+                    <li>
+                        <a href="#33-%e6%9f%a5%e7%9c%8b%e8%af%8d%e8%a1%a8" aria-label="3.3 查看词表">3.3 查看词表</a></li>
+                    <li>
+                        <a href="#34-%e8%8e%b7%e5%8f%96%e6%9f%90%e8%af%8d%e7%9a%84%e5%90%91%e9%87%8f" aria-label="3.4 获取某词的向量">3.4 获取某词的向量</a></li>
+                    <li>
+                        <a href="#35-%e6%9f%a5%e8%af%a2%e8%bf%91%e4%b9%89%e8%af%8d" aria-label="3.5 查询近义词">3.5 查询近义词</a><ul>
+                            
+                    <li>
+                        <a href="#351-%e4%bd%bf%e7%94%a8%e8%af%8d%e8%af%ad%e5%88%97%e8%a1%a8%e6%9f%a5%e8%af%a2" aria-label="3.5.1 使用词语列表查询">3.5.1 使用词语列表查询</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#352-%e4%bd%bf%e7%94%a8%e8%af%8d%e5%90%91%e9%87%8f%e6%9f%a5%e8%af%a2" aria-label="3.5.2 使用词向量查询">3.5.2 使用词向量查询</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e5%9b%9b-%e7%9b%b8%e5%85%b3" aria-label="四、 相关">四、 相关</a><ul>
+                            
+                    <li>
+                        <a href="#41-%e6%96%87%e7%8c%ae%e8%b5%84%e6%96%99" aria-label="4.1 文献资料">4.1 文献资料</a></li>
+                    <li>
+                        <a href="#42-%e4%bb%a3%e7%a0%81%e8%b5%84%e6%96%99" aria-label="4.2 代码资料">4.2 代码资料</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e4%ba%94%e8%8e%b7%e5%8f%96%e8%b5%84%e6%96%99" aria-label="五、获取资料">五、获取资料</a><ul>
+                            
+                    <li>
+                        <a href="#51-%e5%85%8d%e8%b4%b9%e8%b5%84%e6%96%99" aria-label="5.1 免费资料">5.1 免费资料</a></li>
+                    <li>
+                        <a href="#52-%e4%bb%98%e8%b4%b9%e8%b5%84%e6%96%99" aria-label="5.2 付费资料">5.2 付费资料</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e5%b9%bf%e8%80%8c%e5%91%8a%e4%b9%8b" aria-label="广而告之">广而告之</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><p>本文使用 3.88G 语料训练得到词汇量近 150w 的 Word2Vec 模型，使用该模型，可以用于寻找近义词，扩展(构建)概念词典。 <strong>该Word2Vec模型文件可在文末免费下载</strong></p>
+<p><br><br></p>
+<h2 id="一构建语料">一、构建语料<a hidden class="anchor" aria-hidden="true" href="#一构建语料">#</a></h2>
+<p>使用 <a href="https://textdata.cn/blog/2023-12-22-renmin-gov-leader-comment-board/"><strong>数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12)</strong></a> 来构建本文的语料。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;2011-2019.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;2020-2023.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+
+
+<span class="n">text_series1</span> <span class="o">=</span> <span class="n">df1</span><span class="p">[</span><span class="s1">&#39;留言内容&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">df1</span><span class="p">[</span><span class="s1">&#39;回复内容&#39;</span><span class="p">]</span>
+<span class="n">text_series1</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">text_series2</span> <span class="o">=</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;留言内容&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;回复内容&#39;</span><span class="p">]</span>
+<span class="n">text_series2</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;renmin_board.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_series1</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_series2</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div><p>最终得到 3.88 G 的 <strong>renmin_board.txt</strong> 。</p>
+<p><br><br></p>
+<h2 id="二训练模型">二、训练模型<a hidden class="anchor" aria-hidden="true" href="#二训练模型">#</a></h2>
+<h3 id="21-配置cntext">2.1 配置cntext<a hidden class="anchor" aria-hidden="true" href="#21-配置cntext">#</a></h3>
+<p>使用 cntext 2.0.0 或者 cntext 2.1.0 ， 已购买 cntext2.0.0 的同学可以找我更新至 2.1.0 ，微信372335839， 备注「姓名-学校-专业」。</p>
+<p>将 <strong>cntext-2.1.0-py3-none-any.whl</strong> 放置于桌面， 打开 **命令行cmd **(苹果电脑terminal)，依次执行以下命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">cd</span> <span class="n">desktop</span>
+<span class="n">pip3</span> <span class="n">install</span> <span class="n">cntext</span><span class="o">-</span><span class="mf">2.1.0</span><span class="o">-</span><span class="n">py3</span><span class="o">-</span><span class="n">none</span><span class="o">-</span><span class="nb">any</span><span class="o">.</span><span class="n">whl</span>
+</code></pre></div><br>
+<h3 id="22-训练word2vec">2.2 训练Word2Vec<a hidden class="anchor" aria-hidden="true" href="#22-训练word2vec">#</a></h3>
+<p>训练 word2vec 代码已封装 cntext2， 所以代码很简洁，只有三行代码。</p>
+<p>训练环境win11,  内存128G。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">w2v_model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">W2vModel</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;renmin_board.txt&#39;</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+<span class="n">w2v_model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">window_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">vector_size</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">renmin_board.txt
+
+Start Preprocessing Corpus...
+Start Training! This may take a while. Please be patient...
+
+Training word2vec model took 12779 seconds
+
+Note: The Word2Vec model has been saved to output/Word2Vec
+</code></pre></div><p>使用 3.88G 的renmin_board.txt，训练了 12779 秒， 约 3.5 小时。在Python代码文件所在的文件夹内，出现了 output/Word2Vec 文件夹，打开可以看到训练好的模型， 可以看出模型文件的体量还是很大的。</p>
+<p><img loading="lazy" src="img/02-word2vec.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三使用模型">三、使用模型<a hidden class="anchor" aria-hidden="true" href="#三使用模型">#</a></h2>
+<h3 id="31-读取模型">3.1 读取模型<a hidden class="anchor" aria-hidden="true" href="#31-读取模型">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="n">ct</span>
+
+<span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;output/Word2Vec/renmin_board.200.6.bin&#39;</span><span class="p">)</span>
+<span class="n">w2v</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Loading word2vec model...
+&lt;gensim.models.word2vec.Word2Vec at 0x2a11dfad0&gt;
+</code></pre></div><br>
+<h3 id="32-模型词汇量">3.2 模型词汇量<a hidden class="anchor" aria-hidden="true" href="#32-模型词汇量">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#词汇量</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1499961
+</code></pre></div><br>
+<h3 id="33-查看词表">3.3 查看词表<a hidden class="anchor" aria-hidden="true" href="#33-查看词表">#</a></h3>
+<p>因为词表有 1499961 个词， 为了方便，这里只显示前20个词</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">##词表带顺序的
+list(w2v.wv.key_to_index.keys())[:20]
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39; &#39;,
+ &#39;\n&#39;,
+ &#39;问题&#39;,
+ &#39;进行&#39;,
+ &#39;小区&#39;,
+ &#39;工作&#39;,
+ &#39;”&#39;,
+ &#39;没有&#39;,
+ &#39;情况&#39;,
+ &#39;目前&#39;,
+ &#39;反映&#39;,
+ &#39;业主&#39;,
+ &#39;项目&#39;,
+ &#39;要求&#39;,
+ &#39;“&#39;,
+ &#39;公司&#39;,
+ &#39;网友您好&#39;,
+ &#39;现在&#39;,
+ &#39;建设&#39;,
+ &#39;反映问题&#39;]
+</code></pre></div><br>
+<h3 id="34-获取某词的向量">3.4 获取某词的向量<a hidden class="anchor" aria-hidden="true" href="#34-获取某词的向量">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#w2v.wv[&#39;利民&#39;]</span>
+<span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">get_vector</span><span class="p">(</span><span class="s1">&#39;利民&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([-0.72336054,  0.5448769 ,  0.02187554,  0.18723099,  0.10518928,
+       -0.4829346 ,  1.2029709 ,  1.325142  ,  1.7153364 , -0.9134816 ,
+        0.21033671, -0.05412149,  0.1750608 ,  0.36092624,  0.24550831,
+        0.02644009,  0.95183885, -1.0317421 , -0.10972459, -2.5780423 ,
+       -0.89232576, -1.043176  ,  0.72673726, -0.17512426, -0.24233247,
+        0.2569658 , -1.0063888 ,  0.5180029 ,  0.83510065,  0.8907923 ,
+       -0.24386375, -0.53083295, -1.5156878 , -0.9040948 ,  0.25330988,
+       -0.79177266,  0.06866979,  0.6199285 ,  0.9562961 ,  3.6091647 ,
+       -1.3558179 ,  1.4279033 , -0.6923549 ,  0.17637855,  0.6416902 ,
+        0.8726301 , -0.8316238 ,  0.8974303 , -1.342718  ,  0.3960099 ,
+        0.7404184 ,  0.41476634,  0.5397854 , -0.9964916 ,  0.72252625,
+       -0.24338841, -1.1583921 , -0.8719721 , -0.1476895 ,  0.4893649 ,
+        1.0152714 , -3.2469108 ,  0.61867106, -1.1033677 ,  0.7277995 ,
+        0.68194056,  1.9562886 , -2.0847485 ,  1.5790684 ,  0.9881281 ,
+       -1.6833613 ,  0.52788144,  0.81453127, -0.72605026,  0.67317885,
+        0.4130878 ,  0.5682669 , -0.14777663,  0.6144105 , -0.6402672 ,
+       -0.8752994 ,  1.6374044 , -0.66893923,  0.5865543 ,  0.6375472 ,
+       -0.99829054, -1.0806116 ,  2.6740906 , -0.7968034 , -0.39872456,
+       -2.0882657 ,  0.4091569 ,  0.44333985,  0.80311924, -0.02302606,
+       -0.2762922 ,  0.172768  ,  2.2813802 , -0.39281502,  0.57268375,
+        1.4626628 , -0.14473361,  0.5739576 ,  0.61773837, -0.18331125,
+        1.2602748 ,  0.9424055 ,  1.5969577 ,  0.6106542 , -2.7610633 ,
+       -1.1409078 , -1.7803516 , -0.3264908 ,  1.2968934 ,  0.7250817 ,
+        0.0589628 ,  0.42458364, -0.3242822 , -2.6474693 ,  0.3660026 ,
+        0.5749114 ,  0.1812738 ,  0.34291452, -0.20228535,  0.40417868,
+        0.06284425,  0.7266579 ,  1.5118539 ,  2.0363107 , -1.1808697 ,
+       -0.19834429, -1.105297  ,  0.7594476 , -0.90230256,  0.13537973,
+        1.5452795 ,  1.3571783 ,  0.15807565, -1.0794616 ,  2.3592122 ,
+        0.62628454, -0.61704504,  0.65674806, -0.91116625, -2.1521432 ,
+       -0.08805666, -0.6956923 , -1.4443843 , -0.84095645,  0.64748996,
+       -0.7432282 ,  1.7160741 ,  1.1697325 ,  1.0834908 , -1.0323627 ,
+       -1.3480235 ,  1.004517  , -0.40515316,  0.38016117,  1.6717825 ,
+       -0.40651798,  1.0373042 ,  0.24744533, -2.353417  ,  0.06758213,
+        0.34440002,  0.8656946 ,  0.76431715, -1.7378451 ,  1.2329959 ,
+       -1.4538856 ,  1.0956937 ,  0.6151345 ,  2.4905207 , -0.24415112,
+       -0.23886327,  0.09834331,  0.00791643, -0.53527415,  0.7039957 ,
+        0.83675224, -1.5712336 , -0.14135051,  0.34811664,  0.41304144,
+        0.78504366, -0.13325912, -0.9898512 , -0.497319  , -0.32992417,
+       -0.58120775,  0.29686695, -0.9618549 ,  0.39253774,  0.14620592,
+       -0.45337242,  0.69179136,  0.1934781 , -2.0494404 ,  1.8545331 ],
+      dtype=float32)
+</code></pre></div><br>
+<p>需要注意，如果查询的词不存在于模型词表，则会出现报错。例如</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">word = &#39;这是一个不存在的词&#39;
+w2v.wv.get_vector(word)
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">---------------------------------------------------------------------------
+KeyError                                  Traceback (most recent call last)
+Cell In[130], line 2
+      1 word = &#39;这是一个不存在的词&#39;
+----&gt; 2 w2v.wv.get_vector(word)
+
+File /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/gensim/models/keyedvectors.py:446, in KeyedVectors.get_vector(self, key, norm)
+    422 def get_vector(self, key, norm=False):
+    423     &#34;&#34;&#34;Get the key&#39;s vector, as a 1D numpy array.
+    424 
+    425     Parameters
+   (...)
+    444 
+    445     &#34;&#34;&#34;
+--&gt; 446     index = self.get_index(key)
+    447     if norm:
+    448         self.fill_norms()
+
+File /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/gensim/models/keyedvectors.py:420, in KeyedVectors.get_index(self, key, default)
+    418     return default
+    419 else:
+--&gt; 420     raise KeyError(f&#34;Key &#39;{key}&#39; not present&#34;)
+
+KeyError: &#34;Key &#39;这是一个不存在的词&#39; not present&#34;
+
+</code></pre></div><br>
+<h3 id="35-查询近义词">3.5 查询近义词<a hidden class="anchor" aria-hidden="true" href="#35-查询近义词">#</a></h3>
+<p><strong>w2v.wv.most_similar(positive=None, topn=10)</strong></p>
+<ul>
+<li>positive 待查的词语列表或者词向量</li>
+<li>topn 显示返回多少个近义词</li>
+</ul>
+<h4 id="351-使用词语列表查询">3.5.1 使用词语列表查询<a hidden class="anchor" aria-hidden="true" href="#351-使用词语列表查询">#</a></h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;经济&#39;</span><span class="p">,</span> <span class="s1">&#39;建设&#39;</span><span class="p">,</span> <span class="s1">&#39;发展&#39;</span><span class="p">],</span> 
+                    <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;经济发展&#39;, 0.7514141201972961),
+ (&#39;产业发展&#39;, 0.6954267024993896),
+ (&#39;发展壮大&#39;, 0.6707271337509155),
+ (&#39;社会发展&#39;, 0.6637671589851379),
+ (&#39;发展重要&#39;, 0.6603672504425049),
+ (&#39;城镇化发展&#39;, 0.6574274301528931),
+ (&#39;城市发展&#39;, 0.6558148264884949),
+ (&#39;高质量发展&#39;, 0.6517276167869568),
+ (&#39;大力发展&#39;, 0.6500106453895569),
+ (&#39;产业&#39;, 0.6494895219802856),
+ (&#39;发展产业&#39;, 0.6458864212036133),
+ (&#39;壮大&#39;, 0.6379123330116272),
+ (&#39;发展带动&#39;, 0.6357436776161194),
+ (&#39;未来发展&#39;, 0.6351119875907898),
+ (&#39;第三产业&#39;, 0.6345765590667725),
+ (&#39;经济增长&#39;, 0.6329594850540161),
+ (&#39;改革开放&#39;, 0.6297498345375061),
+ (&#39;融合发展&#39;, 0.6290864944458008),
+ (&#39;长远发展&#39;, 0.6279110908508301),
+ (&#39;经济繁荣&#39;, 0.627375602722168)]
+
+</code></pre></div><br>
+<h3 id="352-使用词向量查询">3.5.2 使用词向量查询<a hidden class="anchor" aria-hidden="true" href="#352-使用词向量查询">#</a></h3>
+<p>先构建一个函数concept_vector，该函数可以将多个词转化为一个向量。 遇到词语不在词表中的异常，也能正常运行。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<span class="k">def</span> <span class="nf">concept_vector</span><span class="p">(</span><span class="n">words</span><span class="p">):</span>
+    <span class="n">container</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="n">container</span> <span class="o">+</span> <span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">get_vector</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">container</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
+  
+  
+<span class="n">word_vec</span> <span class="o">=</span> <span class="n">concept_vector</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;她&#39;</span><span class="p">,</span> <span class="s1">&#39;她们&#39;</span><span class="p">,</span> <span class="s1">&#39;母亲&#39;</span><span class="p">,</span> <span class="s1">&#39;奶奶&#39;</span><span class="p">,</span> <span class="s1">&#39;女性&#39;</span><span class="p">,</span> <span class="s1">&#39;女人&#39;</span><span class="p">])</span>
+<span class="c1">#查找与word_vec近义词10个词</span>
+<span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">(</span><span class="n">word_vec</span><span class="p">,</span> 
+                    <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;奶奶&#39;, 0.9064152836799622),
+ (&#39;母亲&#39;, 0.9003509879112244),
+ (&#39;爷爷&#39;, 0.8559296131134033),
+ (&#39;婆婆&#39;, 0.846263587474823),
+ (&#39;我妈&#39;, 0.8314375877380371),
+ (&#39;老伴&#39;, 0.8306034803390503),
+ (&#39;老父亲&#39;, 0.8257972598075867),
+ (&#39;姥爷&#39;, 0.8255906701087952),
+ (&#39;父亲&#39;, 0.821728527545929),
+ (&#39;女孩&#39;, 0.8210363984107971)]
+</code></pre></div><p><br><br></p>
+<h2 id="四-相关">四、 相关<a hidden class="anchor" aria-hidden="true" href="#四-相关">#</a></h2>
+<h3 id="41-文献资料">4.1 文献资料<a hidden class="anchor" aria-hidden="true" href="#41-文献资料">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">郑石明, 兰雨潇, 黎枫. 网络公共舆论与政府回应的互动逻辑——基于新冠肺炎疫情期间“领导留言板”的数据分析[J]. 公共管理学报, 2021, 18 (03): 24-37+169.
+王磊,易扬.公共卫生危机中的数字政府回应如何纾解网络负面舆情——基于人民网“领导留言板”回复情况的调查[J].公共管理学报,2022,19(04):65-78+169.
+Lu, Liangdong, Jia Xu, and Jiuchang Wei. &#34;Understanding the effects of the textual complexity on government communication: Insights from China’s online public service platform.&#34; Telematics and Informatics 83 (2023): 102028.
+...
+</code></pre></div><br>
+<h3 id="42-代码资料">4.2 代码资料<a hidden class="anchor" aria-hidden="true" href="#42-代码资料">#</a></h3>
+<p>想用 python 对 csv、xlsx 进行分析， 要学会尽量用 pandas 写代码。 以下是近期 pandas 的一些处理推文免费教程， 感兴趣的可以进去浏览浏览。</p>
+<ul>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/"><strong>代码 | 使用地方gov工作报告生成某类概念词频「面板数据」</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/"><strong>数据代码| 使用cctv新闻联播文稿构造「面板数据」</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/"><strong>代码 | 使用3571w专利申请数据集构造「面板数据」</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/"><strong>代码 | 使用「新闻数据」计算 「经济政策不确定性」指数</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/">OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息</a></p>
+</li>
+</ul>
+<p>数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12)  2023-12-22-renmin-gov-leader-comment-board</p>
+<p><br><br></p>
+<h2 id="五获取资料">五、获取资料<a hidden class="anchor" aria-hidden="true" href="#五获取资料">#</a></h2>
+<h3 id="51-免费资料">5.1 免费资料<a hidden class="anchor" aria-hidden="true" href="#51-免费资料">#</a></h3>
+<p>本文训练所得的 <strong>renmin_board.200.6.bin模型文件</strong> 免费开源，</p>
+<p><img loading="lazy" src="img/02-word2vec.png" alt=""  />
+</p>
+<p>链接: <a href="https://pan.baidu.com/s/1u-eUuATCTSIDjhOvSaG7sA?pwd=whf5">https://pan.baidu.com/s/1u-eUuATCTSIDjhOvSaG7sA?pwd=whf5</a> 提取码: whf5</p>
+<br>
+<h3 id="52-付费资料">5.2 付费资料<a hidden class="anchor" aria-hidden="true" href="#52-付费资料">#</a></h3>
+<p><span style="font-size: 18px;color: green;">1.  <a href="https://textdata.cn/blog/2023-12-22-renmin-gov-leader-comment-board/">数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12)</a> ，2000元</span></p>
+<p><span style="font-size: 18px;color: green;">2. cntext2.1.0 价格100元，已购买2.0.0可免费更新至2.1.0</span></p>
+<p><span style="font-size: 18px;color: green;">3. 数据是虚拟产品，一经售出，不再退还！</span></p>
+<p><span style="font-size: 18px;color: green;">4. 大家时间其实都很宝贵，请仔细阅读推文内容， 确认无误再加微信372335839， 备注「姓名-学校-专业」详谈购买事宜 </span></p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之<a hidden class="anchor" aria-hidden="true" href="#广而告之">#</a></h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/" target='_blank'>数据集</a></li>
+        <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/" target='_blank'>文本分析</a></li>
+        <li><a href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/" target='_blank'>经济管理</a></li>
+      </ul>
+
+
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f&amp;hashtags=%e6%95%b0%e6%8d%ae%e9%9b%86%2c%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e7%bb%8f%e6%b5%8e%e7%ae%a1%e7%90%86">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f&amp;title=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b&amp;summary=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b&amp;source=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f&title=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b%20-%20%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 词向量  | 使用人民网领导留言板语料训练Word2Vec模型 on telegram"
+        href="https://telegram.me/share/url?text=%e8%af%8d%e5%90%91%e9%87%8f%20%20%7c%20%e4%bd%bf%e7%94%a8%e4%ba%ba%e6%b0%91%e7%bd%91%e9%a2%86%e5%af%bc%e7%95%99%e8%a8%80%e6%9d%bf%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83Word2Vec%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'Copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+
+
+    
+    
+</body>
+
+</html>

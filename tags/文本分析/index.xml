@@ -6,7 +6,7 @@
     <description>Recent content in 文本分析 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 27 Dec 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 28 Dec 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>LIST | 社科(经管)数据挖掘文献资料汇总</title>
       <link>https://textdata.cn/blog/the_text_analysis_list_about_ms/</link>
@@ -581,6 +581,9 @@
 <li>
 <p><a href="https://textdata.cn/blog/2023-09-03-government-procurement-contract-data/"><strong>数据集(付费) | 288w政府采购合同公告明细数据（2023.09）</strong></a></p>
 </li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-29-china-area-dataset/">数据集 | 2024年中国全国5级行政区划（省、市、县、镇、村）</a></p>
+</li>
 </ul>
 <p><br><br></p>
 <h2 id="企业">企业</h2>
@@ -625,6 +628,7 @@
 <li><a href="https://textdata.cn/blog/2023-11-20-word2vec-by-year-by-province/"><strong>词向量(付费) | 使用3751w专利申请数据集按年份(按省份)训练词向量</strong></a></li>
 <li><a href="https://textdata.cn/blog/2023-11-10-training-word2vec-model-using-china-3751w-patent-application-dataset/"><strong>词向量(付费) | 使用1985年-2022年专利申请摘要训练word2vec模型</strong></a></li>
 <li><a href="https://textdata.cn/blog/2023-03-24-load-w2v-and-expand-your-concpet-dicitonary/"> <strong>词向量(付费) | 使用MD&amp;A2001-2022语料训练Word2Vec模型</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">词向量  | 使用<strong>人民网领导留言板</strong>语料训练Word2Vec模型</a></li>
 <li><a href="https://textdata.cn/blog/2023-11-18-show-word-meaning-shift-using-word2vec/">案例分享|  使用裁判文书数据集逐年训练年份词向量</a></li>
 <li><a href="https://textdata.cn/blog/embeddings_resource_usage_method/">中文词向量资源汇总 &amp; 使用方法</a></li>
 <li><a href="https://textdata.cn/blog/pretained_nlp_models/">NLP资源 | 汽车、金融等9大领域预训练词向量模型下载资源</a></li>
@@ -657,6 +661,578 @@
 <li>如果不想学，也可以考虑外包。更建议找淘宝，如果找我咨询，请先阅读<a href="https://textdata.cn/blog/paid_for_service">有偿说明</a></li>
 </ul>
 </li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>词向量  | 使用人民网领导留言板语料训练Word2Vec模型</title>
+      <link>https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/</link>
+      <pubDate>Thu, 28 Dec 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/</guid>
+      <description>&lt;p&gt;本文使用 3.88G 语料训练得到词汇量近 150w 的 Word2Vec 模型，使用该模型，可以用于寻找近义词，扩展(构建)概念词典。 &lt;strong&gt;该Word2Vec模型文件可在文末免费下载&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;一构建语料&#34;&gt;一、构建语料&lt;/h2&gt;
+&lt;p&gt;使用 &lt;a href=&#34;https://textdata.cn/blog/2023-12-22-renmin-gov-leader-comment-board/&#34;&gt;&lt;strong&gt;数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12)&lt;/strong&gt;&lt;/a&gt; 来构建本文的语料。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2011-2019.csv.gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df2&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2020-2023.csv.gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;text_series1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;留言内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;回复内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;text_series1&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fillna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;inplace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;text_series2&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;留言内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;回复内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;text_series2&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fillna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;inplace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;renmin_board.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;a+&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text_series1&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;tolist&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text_series2&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;tolist&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;最终得到 3.88 G 的 &lt;strong&gt;renmin_board.txt&lt;/strong&gt; 。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二训练模型&#34;&gt;二、训练模型&lt;/h2&gt;
+&lt;h3 id=&#34;21-配置cntext&#34;&gt;2.1 配置cntext&lt;/h3&gt;
+&lt;p&gt;使用 cntext 2.0.0 或者 cntext 2.1.0 ， 已购买 cntext2.0.0 的同学可以找我更新至 2.1.0 ，微信372335839， 备注「姓名-学校-专业」。&lt;/p&gt;
+&lt;p&gt;将 &lt;strong&gt;cntext-2.1.0-py3-none-any.whl&lt;/strong&gt; 放置于桌面， 打开 **命令行cmd **(苹果电脑terminal)，依次执行以下命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;cd&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;desktop&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;pip3&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;install&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;cntext&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;mf&#34;&gt;2.1.0&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;py3&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;none&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;any&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;whl&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;22-训练word2vec&#34;&gt;2.2 训练Word2Vec&lt;/h3&gt;
+&lt;p&gt;训练 word2vec 代码已封装 cntext2， 所以代码很简洁，只有三行代码。&lt;/p&gt;
+&lt;p&gt;训练环境win11,  内存128G。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;W2vModel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;renmin_board.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lang&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;chinese&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;train&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;window_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;renmin_board.txt
+
+Start Preprocessing Corpus...
+Start Training! This may take a while. Please be patient...
+
+Training word2vec model took 12779 seconds
+
+Note: The Word2Vec model has been saved to output/Word2Vec
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;使用 3.88G 的renmin_board.txt，训练了 12779 秒， 约 3.5 小时。在Python代码文件所在的文件夹内，出现了 output/Word2Vec 文件夹，打开可以看到训练好的模型， 可以看出模型文件的体量还是很大的。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-word2vec.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三使用模型&#34;&gt;三、使用模型&lt;/h2&gt;
+&lt;h3 id=&#34;31-读取模型&#34;&gt;3.1 读取模型&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/Word2Vec/renmin_board.200.6.bin&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Loading word2vec model...
+&amp;lt;gensim.models.word2vec.Word2Vec at 0x2a11dfad0&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-模型词汇量&#34;&gt;3.2 模型词汇量&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#词汇量&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;1499961
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;33-查看词表&#34;&gt;3.3 查看词表&lt;/h3&gt;
+&lt;p&gt;因为词表有 1499961 个词， 为了方便，这里只显示前20个词&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;##词表带顺序的
+list(w2v.wv.key_to_index.keys())[:20]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[&amp;#39; &amp;#39;,
+ &amp;#39;\n&amp;#39;,
+ &amp;#39;问题&amp;#39;,
+ &amp;#39;进行&amp;#39;,
+ &amp;#39;小区&amp;#39;,
+ &amp;#39;工作&amp;#39;,
+ &amp;#39;”&amp;#39;,
+ &amp;#39;没有&amp;#39;,
+ &amp;#39;情况&amp;#39;,
+ &amp;#39;目前&amp;#39;,
+ &amp;#39;反映&amp;#39;,
+ &amp;#39;业主&amp;#39;,
+ &amp;#39;项目&amp;#39;,
+ &amp;#39;要求&amp;#39;,
+ &amp;#39;“&amp;#39;,
+ &amp;#39;公司&amp;#39;,
+ &amp;#39;网友您好&amp;#39;,
+ &amp;#39;现在&amp;#39;,
+ &amp;#39;建设&amp;#39;,
+ &amp;#39;反映问题&amp;#39;]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;34-获取某词的向量&#34;&gt;3.4 获取某词的向量&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#w2v.wv[&amp;#39;利民&amp;#39;]&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;get_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;利民&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;array([-0.72336054,  0.5448769 ,  0.02187554,  0.18723099,  0.10518928,
+       -0.4829346 ,  1.2029709 ,  1.325142  ,  1.7153364 , -0.9134816 ,
+        0.21033671, -0.05412149,  0.1750608 ,  0.36092624,  0.24550831,
+        0.02644009,  0.95183885, -1.0317421 , -0.10972459, -2.5780423 ,
+       -0.89232576, -1.043176  ,  0.72673726, -0.17512426, -0.24233247,
+        0.2569658 , -1.0063888 ,  0.5180029 ,  0.83510065,  0.8907923 ,
+       -0.24386375, -0.53083295, -1.5156878 , -0.9040948 ,  0.25330988,
+       -0.79177266,  0.06866979,  0.6199285 ,  0.9562961 ,  3.6091647 ,
+       -1.3558179 ,  1.4279033 , -0.6923549 ,  0.17637855,  0.6416902 ,
+        0.8726301 , -0.8316238 ,  0.8974303 , -1.342718  ,  0.3960099 ,
+        0.7404184 ,  0.41476634,  0.5397854 , -0.9964916 ,  0.72252625,
+       -0.24338841, -1.1583921 , -0.8719721 , -0.1476895 ,  0.4893649 ,
+        1.0152714 , -3.2469108 ,  0.61867106, -1.1033677 ,  0.7277995 ,
+        0.68194056,  1.9562886 , -2.0847485 ,  1.5790684 ,  0.9881281 ,
+       -1.6833613 ,  0.52788144,  0.81453127, -0.72605026,  0.67317885,
+        0.4130878 ,  0.5682669 , -0.14777663,  0.6144105 , -0.6402672 ,
+       -0.8752994 ,  1.6374044 , -0.66893923,  0.5865543 ,  0.6375472 ,
+       -0.99829054, -1.0806116 ,  2.6740906 , -0.7968034 , -0.39872456,
+       -2.0882657 ,  0.4091569 ,  0.44333985,  0.80311924, -0.02302606,
+       -0.2762922 ,  0.172768  ,  2.2813802 , -0.39281502,  0.57268375,
+        1.4626628 , -0.14473361,  0.5739576 ,  0.61773837, -0.18331125,
+        1.2602748 ,  0.9424055 ,  1.5969577 ,  0.6106542 , -2.7610633 ,
+       -1.1409078 , -1.7803516 , -0.3264908 ,  1.2968934 ,  0.7250817 ,
+        0.0589628 ,  0.42458364, -0.3242822 , -2.6474693 ,  0.3660026 ,
+        0.5749114 ,  0.1812738 ,  0.34291452, -0.20228535,  0.40417868,
+        0.06284425,  0.7266579 ,  1.5118539 ,  2.0363107 , -1.1808697 ,
+       -0.19834429, -1.105297  ,  0.7594476 , -0.90230256,  0.13537973,
+        1.5452795 ,  1.3571783 ,  0.15807565, -1.0794616 ,  2.3592122 ,
+        0.62628454, -0.61704504,  0.65674806, -0.91116625, -2.1521432 ,
+       -0.08805666, -0.6956923 , -1.4443843 , -0.84095645,  0.64748996,
+       -0.7432282 ,  1.7160741 ,  1.1697325 ,  1.0834908 , -1.0323627 ,
+       -1.3480235 ,  1.004517  , -0.40515316,  0.38016117,  1.6717825 ,
+       -0.40651798,  1.0373042 ,  0.24744533, -2.353417  ,  0.06758213,
+        0.34440002,  0.8656946 ,  0.76431715, -1.7378451 ,  1.2329959 ,
+       -1.4538856 ,  1.0956937 ,  0.6151345 ,  2.4905207 , -0.24415112,
+       -0.23886327,  0.09834331,  0.00791643, -0.53527415,  0.7039957 ,
+        0.83675224, -1.5712336 , -0.14135051,  0.34811664,  0.41304144,
+        0.78504366, -0.13325912, -0.9898512 , -0.497319  , -0.32992417,
+       -0.58120775,  0.29686695, -0.9618549 ,  0.39253774,  0.14620592,
+       -0.45337242,  0.69179136,  0.1934781 , -2.0494404 ,  1.8545331 ],
+      dtype=float32)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;需要注意，如果查询的词不存在于模型词表，则会出现报错。例如&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;word = &amp;#39;这是一个不存在的词&amp;#39;
+w2v.wv.get_vector(word)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;---------------------------------------------------------------------------
+KeyError                                  Traceback (most recent call last)
+Cell In[130], line 2
+      1 word = &amp;#39;这是一个不存在的词&amp;#39;
+----&amp;gt; 2 w2v.wv.get_vector(word)
+
+File /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/gensim/models/keyedvectors.py:446, in KeyedVectors.get_vector(self, key, norm)
+    422 def get_vector(self, key, norm=False):
+    423     &amp;#34;&amp;#34;&amp;#34;Get the key&amp;#39;s vector, as a 1D numpy array.
+    424 
+    425     Parameters
+   (...)
+    444 
+    445     &amp;#34;&amp;#34;&amp;#34;
+--&amp;gt; 446     index = self.get_index(key)
+    447     if norm:
+    448         self.fill_norms()
+
+File /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/gensim/models/keyedvectors.py:420, in KeyedVectors.get_index(self, key, default)
+    418     return default
+    419 else:
+--&amp;gt; 420     raise KeyError(f&amp;#34;Key &amp;#39;{key}&amp;#39; not present&amp;#34;)
+
+KeyError: &amp;#34;Key &amp;#39;这是一个不存在的词&amp;#39; not present&amp;#34;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;35-查询近义词&#34;&gt;3.5 查询近义词&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;w2v.wv.most_similar(positive=None, topn=10)&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;positive 待查的词语列表或者词向量&lt;/li&gt;
+&lt;li&gt;topn 显示返回多少个近义词&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;351-使用词语列表查询&#34;&gt;3.5.1 使用词语列表查询&lt;/h4&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;经济&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;建设&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;发展&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; 
+                    &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;经济发展&amp;#39;, 0.7514141201972961),
+ (&amp;#39;产业发展&amp;#39;, 0.6954267024993896),
+ (&amp;#39;发展壮大&amp;#39;, 0.6707271337509155),
+ (&amp;#39;社会发展&amp;#39;, 0.6637671589851379),
+ (&amp;#39;发展重要&amp;#39;, 0.6603672504425049),
+ (&amp;#39;城镇化发展&amp;#39;, 0.6574274301528931),
+ (&amp;#39;城市发展&amp;#39;, 0.6558148264884949),
+ (&amp;#39;高质量发展&amp;#39;, 0.6517276167869568),
+ (&amp;#39;大力发展&amp;#39;, 0.6500106453895569),
+ (&amp;#39;产业&amp;#39;, 0.6494895219802856),
+ (&amp;#39;发展产业&amp;#39;, 0.6458864212036133),
+ (&amp;#39;壮大&amp;#39;, 0.6379123330116272),
+ (&amp;#39;发展带动&amp;#39;, 0.6357436776161194),
+ (&amp;#39;未来发展&amp;#39;, 0.6351119875907898),
+ (&amp;#39;第三产业&amp;#39;, 0.6345765590667725),
+ (&amp;#39;经济增长&amp;#39;, 0.6329594850540161),
+ (&amp;#39;改革开放&amp;#39;, 0.6297498345375061),
+ (&amp;#39;融合发展&amp;#39;, 0.6290864944458008),
+ (&amp;#39;长远发展&amp;#39;, 0.6279110908508301),
+ (&amp;#39;经济繁荣&amp;#39;, 0.627375602722168)]
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;352-使用词向量查询&#34;&gt;3.5.2 使用词向量查询&lt;/h3&gt;
+&lt;p&gt;先构建一个函数concept_vector，该函数可以将多个词转化为一个向量。 遇到词语不在词表中的异常，也能正常运行。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;numpy&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;np&lt;/span&gt;
+
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;concept_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;words&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;container&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;np&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;zeros&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;word&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;words&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;container&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;container&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;get_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;k&#34;&gt;pass&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;container&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;/&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;words&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+  
+  
+&lt;span class=&#34;n&#34;&gt;word_vec&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;concept_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;words&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;她&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;她们&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;母亲&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;奶奶&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;女性&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;女人&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#查找与word_vec近义词10个词&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word_vec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                    &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;奶奶&amp;#39;, 0.9064152836799622),
+ (&amp;#39;母亲&amp;#39;, 0.9003509879112244),
+ (&amp;#39;爷爷&amp;#39;, 0.8559296131134033),
+ (&amp;#39;婆婆&amp;#39;, 0.846263587474823),
+ (&amp;#39;我妈&amp;#39;, 0.8314375877380371),
+ (&amp;#39;老伴&amp;#39;, 0.8306034803390503),
+ (&amp;#39;老父亲&amp;#39;, 0.8257972598075867),
+ (&amp;#39;姥爷&amp;#39;, 0.8255906701087952),
+ (&amp;#39;父亲&amp;#39;, 0.821728527545929),
+ (&amp;#39;女孩&amp;#39;, 0.8210363984107971)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四-相关&#34;&gt;四、 相关&lt;/h2&gt;
+&lt;h3 id=&#34;41-文献资料&#34;&gt;4.1 文献资料&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;郑石明, 兰雨潇, 黎枫. 网络公共舆论与政府回应的互动逻辑——基于新冠肺炎疫情期间“领导留言板”的数据分析[J]. 公共管理学报, 2021, 18 (03): 24-37+169.
+王磊,易扬.公共卫生危机中的数字政府回应如何纾解网络负面舆情——基于人民网“领导留言板”回复情况的调查[J].公共管理学报,2022,19(04):65-78+169.
+Lu, Liangdong, Jia Xu, and Jiuchang Wei. &amp;#34;Understanding the effects of the textual complexity on government communication: Insights from China’s online public service platform.&amp;#34; Telematics and Informatics 83 (2023): 102028.
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;42-代码资料&#34;&gt;4.2 代码资料&lt;/h3&gt;
+&lt;p&gt;想用 python 对 csv、xlsx 进行分析， 要学会尽量用 pandas 写代码。 以下是近期 pandas 的一些处理推文免费教程， 感兴趣的可以进去浏览浏览。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/&#34;&gt;&lt;strong&gt;代码 | 使用地方gov工作报告生成某类概念词频「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/&#34;&gt;&lt;strong&gt;代码 | 使用「新闻数据」构造概念词提及量「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/&#34;&gt;&lt;strong&gt;数据代码| 使用cctv新闻联播文稿构造「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/&#34;&gt;&lt;strong&gt;代码 | 使用3571w专利申请数据集构造「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/&#34;&gt;&lt;strong&gt;代码 | 使用「新闻数据」计算 「经济政策不确定性」指数&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/&#34;&gt;词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/&#34;&gt;OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12)  2023-12-22-renmin-gov-leader-comment-board&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;五获取资料&#34;&gt;五、获取资料&lt;/h2&gt;
+&lt;h3 id=&#34;51-免费资料&#34;&gt;5.1 免费资料&lt;/h3&gt;
+&lt;p&gt;本文训练所得的 &lt;strong&gt;renmin_board.200.6.bin模型文件&lt;/strong&gt; 免费开源，&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-word2vec.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;链接: &lt;a href=&#34;https://pan.baidu.com/s/1u-eUuATCTSIDjhOvSaG7sA?pwd=whf5&#34;&gt;https://pan.baidu.com/s/1u-eUuATCTSIDjhOvSaG7sA?pwd=whf5&lt;/a&gt; 提取码: whf5&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;52-付费资料&#34;&gt;5.2 付费资料&lt;/h3&gt;
+&lt;p&gt;&lt;span style=&#34;font-size: 18px;color: green;&#34;&gt;1.  &lt;a href=&#34;https://textdata.cn/blog/2023-12-22-renmin-gov-leader-comment-board/&#34;&gt;数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12)&lt;/a&gt; ，2000元&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&#34;font-size: 18px;color: green;&#34;&gt;2. cntext2.1.0 价格100元，已购买2.0.0可免费更新至2.1.0&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&#34;font-size: 18px;color: green;&#34;&gt;3. 数据是虚拟产品，一经售出，不再退还！&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&#34;font-size: 18px;color: green;&#34;&gt;4. 大家时间其实都很宝贵，请仔细阅读推文内容， 确认无误再加微信372335839， 备注「姓名-学校-专业」详谈购买事宜 &lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<p>本文使用 3.88G 语料训练得到词汇量近 150w 的 Word2Vec 模型，使用该模型，可以用于寻找近义词，扩展(构建)概念词典。 <strong>该Word2Vec模型文件可在文末免费下载</strong></p>
+<p><br><br></p>
+<h2 id="一构建语料">一、构建语料</h2>
+<p>使用 <a href="https://textdata.cn/blog/2023-12-22-renmin-gov-leader-comment-board/"><strong>数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12)</strong></a> 来构建本文的语料。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;2011-2019.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;2020-2023.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+
+
+<span class="n">text_series1</span> <span class="o">=</span> <span class="n">df1</span><span class="p">[</span><span class="s1">&#39;留言内容&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">df1</span><span class="p">[</span><span class="s1">&#39;回复内容&#39;</span><span class="p">]</span>
+<span class="n">text_series1</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">text_series2</span> <span class="o">=</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;留言内容&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;回复内容&#39;</span><span class="p">]</span>
+<span class="n">text_series2</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;renmin_board.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_series1</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_series2</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div><p>最终得到 3.88 G 的 <strong>renmin_board.txt</strong> 。</p>
+<p><br><br></p>
+<h2 id="二训练模型">二、训练模型</h2>
+<h3 id="21-配置cntext">2.1 配置cntext</h3>
+<p>使用 cntext 2.0.0 或者 cntext 2.1.0 ， 已购买 cntext2.0.0 的同学可以找我更新至 2.1.0 ，微信372335839， 备注「姓名-学校-专业」。</p>
+<p>将 <strong>cntext-2.1.0-py3-none-any.whl</strong> 放置于桌面， 打开 **命令行cmd **(苹果电脑terminal)，依次执行以下命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">cd</span> <span class="n">desktop</span>
+<span class="n">pip3</span> <span class="n">install</span> <span class="n">cntext</span><span class="o">-</span><span class="mf">2.1.0</span><span class="o">-</span><span class="n">py3</span><span class="o">-</span><span class="n">none</span><span class="o">-</span><span class="nb">any</span><span class="o">.</span><span class="n">whl</span>
+</code></pre></div><br>
+<h3 id="22-训练word2vec">2.2 训练Word2Vec</h3>
+<p>训练 word2vec 代码已封装 cntext2， 所以代码很简洁，只有三行代码。</p>
+<p>训练环境win11,  内存128G。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">w2v_model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">W2vModel</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;renmin_board.txt&#39;</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+<span class="n">w2v_model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">window_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">vector_size</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">renmin_board.txt
+
+Start Preprocessing Corpus...
+Start Training! This may take a while. Please be patient...
+
+Training word2vec model took 12779 seconds
+
+Note: The Word2Vec model has been saved to output/Word2Vec
+</code></pre></div><p>使用 3.88G 的renmin_board.txt，训练了 12779 秒， 约 3.5 小时。在Python代码文件所在的文件夹内，出现了 output/Word2Vec 文件夹，打开可以看到训练好的模型， 可以看出模型文件的体量还是很大的。</p>
+<p><img loading="lazy" src="img/02-word2vec.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三使用模型">三、使用模型</h2>
+<h3 id="31-读取模型">3.1 读取模型</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="n">ct</span>
+
+<span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;output/Word2Vec/renmin_board.200.6.bin&#39;</span><span class="p">)</span>
+<span class="n">w2v</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Loading word2vec model...
+&lt;gensim.models.word2vec.Word2Vec at 0x2a11dfad0&gt;
+</code></pre></div><br>
+<h3 id="32-模型词汇量">3.2 模型词汇量</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#词汇量</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1499961
+</code></pre></div><br>
+<h3 id="33-查看词表">3.3 查看词表</h3>
+<p>因为词表有 1499961 个词， 为了方便，这里只显示前20个词</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">##词表带顺序的
+list(w2v.wv.key_to_index.keys())[:20]
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39; &#39;,
+ &#39;\n&#39;,
+ &#39;问题&#39;,
+ &#39;进行&#39;,
+ &#39;小区&#39;,
+ &#39;工作&#39;,
+ &#39;”&#39;,
+ &#39;没有&#39;,
+ &#39;情况&#39;,
+ &#39;目前&#39;,
+ &#39;反映&#39;,
+ &#39;业主&#39;,
+ &#39;项目&#39;,
+ &#39;要求&#39;,
+ &#39;“&#39;,
+ &#39;公司&#39;,
+ &#39;网友您好&#39;,
+ &#39;现在&#39;,
+ &#39;建设&#39;,
+ &#39;反映问题&#39;]
+</code></pre></div><br>
+<h3 id="34-获取某词的向量">3.4 获取某词的向量</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#w2v.wv[&#39;利民&#39;]</span>
+<span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">get_vector</span><span class="p">(</span><span class="s1">&#39;利民&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([-0.72336054,  0.5448769 ,  0.02187554,  0.18723099,  0.10518928,
+       -0.4829346 ,  1.2029709 ,  1.325142  ,  1.7153364 , -0.9134816 ,
+        0.21033671, -0.05412149,  0.1750608 ,  0.36092624,  0.24550831,
+        0.02644009,  0.95183885, -1.0317421 , -0.10972459, -2.5780423 ,
+       -0.89232576, -1.043176  ,  0.72673726, -0.17512426, -0.24233247,
+        0.2569658 , -1.0063888 ,  0.5180029 ,  0.83510065,  0.8907923 ,
+       -0.24386375, -0.53083295, -1.5156878 , -0.9040948 ,  0.25330988,
+       -0.79177266,  0.06866979,  0.6199285 ,  0.9562961 ,  3.6091647 ,
+       -1.3558179 ,  1.4279033 , -0.6923549 ,  0.17637855,  0.6416902 ,
+        0.8726301 , -0.8316238 ,  0.8974303 , -1.342718  ,  0.3960099 ,
+        0.7404184 ,  0.41476634,  0.5397854 , -0.9964916 ,  0.72252625,
+       -0.24338841, -1.1583921 , -0.8719721 , -0.1476895 ,  0.4893649 ,
+        1.0152714 , -3.2469108 ,  0.61867106, -1.1033677 ,  0.7277995 ,
+        0.68194056,  1.9562886 , -2.0847485 ,  1.5790684 ,  0.9881281 ,
+       -1.6833613 ,  0.52788144,  0.81453127, -0.72605026,  0.67317885,
+        0.4130878 ,  0.5682669 , -0.14777663,  0.6144105 , -0.6402672 ,
+       -0.8752994 ,  1.6374044 , -0.66893923,  0.5865543 ,  0.6375472 ,
+       -0.99829054, -1.0806116 ,  2.6740906 , -0.7968034 , -0.39872456,
+       -2.0882657 ,  0.4091569 ,  0.44333985,  0.80311924, -0.02302606,
+       -0.2762922 ,  0.172768  ,  2.2813802 , -0.39281502,  0.57268375,
+        1.4626628 , -0.14473361,  0.5739576 ,  0.61773837, -0.18331125,
+        1.2602748 ,  0.9424055 ,  1.5969577 ,  0.6106542 , -2.7610633 ,
+       -1.1409078 , -1.7803516 , -0.3264908 ,  1.2968934 ,  0.7250817 ,
+        0.0589628 ,  0.42458364, -0.3242822 , -2.6474693 ,  0.3660026 ,
+        0.5749114 ,  0.1812738 ,  0.34291452, -0.20228535,  0.40417868,
+        0.06284425,  0.7266579 ,  1.5118539 ,  2.0363107 , -1.1808697 ,
+       -0.19834429, -1.105297  ,  0.7594476 , -0.90230256,  0.13537973,
+        1.5452795 ,  1.3571783 ,  0.15807565, -1.0794616 ,  2.3592122 ,
+        0.62628454, -0.61704504,  0.65674806, -0.91116625, -2.1521432 ,
+       -0.08805666, -0.6956923 , -1.4443843 , -0.84095645,  0.64748996,
+       -0.7432282 ,  1.7160741 ,  1.1697325 ,  1.0834908 , -1.0323627 ,
+       -1.3480235 ,  1.004517  , -0.40515316,  0.38016117,  1.6717825 ,
+       -0.40651798,  1.0373042 ,  0.24744533, -2.353417  ,  0.06758213,
+        0.34440002,  0.8656946 ,  0.76431715, -1.7378451 ,  1.2329959 ,
+       -1.4538856 ,  1.0956937 ,  0.6151345 ,  2.4905207 , -0.24415112,
+       -0.23886327,  0.09834331,  0.00791643, -0.53527415,  0.7039957 ,
+        0.83675224, -1.5712336 , -0.14135051,  0.34811664,  0.41304144,
+        0.78504366, -0.13325912, -0.9898512 , -0.497319  , -0.32992417,
+       -0.58120775,  0.29686695, -0.9618549 ,  0.39253774,  0.14620592,
+       -0.45337242,  0.69179136,  0.1934781 , -2.0494404 ,  1.8545331 ],
+      dtype=float32)
+</code></pre></div><br>
+<p>需要注意，如果查询的词不存在于模型词表，则会出现报错。例如</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">word = &#39;这是一个不存在的词&#39;
+w2v.wv.get_vector(word)
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">---------------------------------------------------------------------------
+KeyError                                  Traceback (most recent call last)
+Cell In[130], line 2
+      1 word = &#39;这是一个不存在的词&#39;
+----&gt; 2 w2v.wv.get_vector(word)
+
+File /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/gensim/models/keyedvectors.py:446, in KeyedVectors.get_vector(self, key, norm)
+    422 def get_vector(self, key, norm=False):
+    423     &#34;&#34;&#34;Get the key&#39;s vector, as a 1D numpy array.
+    424 
+    425     Parameters
+   (...)
+    444 
+    445     &#34;&#34;&#34;
+--&gt; 446     index = self.get_index(key)
+    447     if norm:
+    448         self.fill_norms()
+
+File /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/gensim/models/keyedvectors.py:420, in KeyedVectors.get_index(self, key, default)
+    418     return default
+    419 else:
+--&gt; 420     raise KeyError(f&#34;Key &#39;{key}&#39; not present&#34;)
+
+KeyError: &#34;Key &#39;这是一个不存在的词&#39; not present&#34;
+
+</code></pre></div><br>
+<h3 id="35-查询近义词">3.5 查询近义词</h3>
+<p><strong>w2v.wv.most_similar(positive=None, topn=10)</strong></p>
+<ul>
+<li>positive 待查的词语列表或者词向量</li>
+<li>topn 显示返回多少个近义词</li>
+</ul>
+<h4 id="351-使用词语列表查询">3.5.1 使用词语列表查询</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;经济&#39;</span><span class="p">,</span> <span class="s1">&#39;建设&#39;</span><span class="p">,</span> <span class="s1">&#39;发展&#39;</span><span class="p">],</span> 
+                    <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;经济发展&#39;, 0.7514141201972961),
+ (&#39;产业发展&#39;, 0.6954267024993896),
+ (&#39;发展壮大&#39;, 0.6707271337509155),
+ (&#39;社会发展&#39;, 0.6637671589851379),
+ (&#39;发展重要&#39;, 0.6603672504425049),
+ (&#39;城镇化发展&#39;, 0.6574274301528931),
+ (&#39;城市发展&#39;, 0.6558148264884949),
+ (&#39;高质量发展&#39;, 0.6517276167869568),
+ (&#39;大力发展&#39;, 0.6500106453895569),
+ (&#39;产业&#39;, 0.6494895219802856),
+ (&#39;发展产业&#39;, 0.6458864212036133),
+ (&#39;壮大&#39;, 0.6379123330116272),
+ (&#39;发展带动&#39;, 0.6357436776161194),
+ (&#39;未来发展&#39;, 0.6351119875907898),
+ (&#39;第三产业&#39;, 0.6345765590667725),
+ (&#39;经济增长&#39;, 0.6329594850540161),
+ (&#39;改革开放&#39;, 0.6297498345375061),
+ (&#39;融合发展&#39;, 0.6290864944458008),
+ (&#39;长远发展&#39;, 0.6279110908508301),
+ (&#39;经济繁荣&#39;, 0.627375602722168)]
+
+</code></pre></div><br>
+<h3 id="352-使用词向量查询">3.5.2 使用词向量查询</h3>
+<p>先构建一个函数concept_vector，该函数可以将多个词转化为一个向量。 遇到词语不在词表中的异常，也能正常运行。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<span class="k">def</span> <span class="nf">concept_vector</span><span class="p">(</span><span class="n">words</span><span class="p">):</span>
+    <span class="n">container</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="n">container</span> <span class="o">+</span> <span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">get_vector</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">container</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
+  
+  
+<span class="n">word_vec</span> <span class="o">=</span> <span class="n">concept_vector</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;她&#39;</span><span class="p">,</span> <span class="s1">&#39;她们&#39;</span><span class="p">,</span> <span class="s1">&#39;母亲&#39;</span><span class="p">,</span> <span class="s1">&#39;奶奶&#39;</span><span class="p">,</span> <span class="s1">&#39;女性&#39;</span><span class="p">,</span> <span class="s1">&#39;女人&#39;</span><span class="p">])</span>
+<span class="c1">#查找与word_vec近义词10个词</span>
+<span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">(</span><span class="n">word_vec</span><span class="p">,</span> 
+                    <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;奶奶&#39;, 0.9064152836799622),
+ (&#39;母亲&#39;, 0.9003509879112244),
+ (&#39;爷爷&#39;, 0.8559296131134033),
+ (&#39;婆婆&#39;, 0.846263587474823),
+ (&#39;我妈&#39;, 0.8314375877380371),
+ (&#39;老伴&#39;, 0.8306034803390503),
+ (&#39;老父亲&#39;, 0.8257972598075867),
+ (&#39;姥爷&#39;, 0.8255906701087952),
+ (&#39;父亲&#39;, 0.821728527545929),
+ (&#39;女孩&#39;, 0.8210363984107971)]
+</code></pre></div><p><br><br></p>
+<h2 id="四-相关">四、 相关</h2>
+<h3 id="41-文献资料">4.1 文献资料</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">郑石明, 兰雨潇, 黎枫. 网络公共舆论与政府回应的互动逻辑——基于新冠肺炎疫情期间“领导留言板”的数据分析[J]. 公共管理学报, 2021, 18 (03): 24-37+169.
+王磊,易扬.公共卫生危机中的数字政府回应如何纾解网络负面舆情——基于人民网“领导留言板”回复情况的调查[J].公共管理学报,2022,19(04):65-78+169.
+Lu, Liangdong, Jia Xu, and Jiuchang Wei. &#34;Understanding the effects of the textual complexity on government communication: Insights from China’s online public service platform.&#34; Telematics and Informatics 83 (2023): 102028.
+...
+</code></pre></div><br>
+<h3 id="42-代码资料">4.2 代码资料</h3>
+<p>想用 python 对 csv、xlsx 进行分析， 要学会尽量用 pandas 写代码。 以下是近期 pandas 的一些处理推文免费教程， 感兴趣的可以进去浏览浏览。</p>
+<ul>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/"><strong>代码 | 使用地方gov工作报告生成某类概念词频「面板数据」</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/"><strong>数据代码| 使用cctv新闻联播文稿构造「面板数据」</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/"><strong>代码 | 使用3571w专利申请数据集构造「面板数据」</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/"><strong>代码 | 使用「新闻数据」计算 「经济政策不确定性」指数</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/">OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息</a></p>
+</li>
+</ul>
+<p>数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12)  2023-12-22-renmin-gov-leader-comment-board</p>
+<p><br><br></p>
+<h2 id="五获取资料">五、获取资料</h2>
+<h3 id="51-免费资料">5.1 免费资料</h3>
+<p>本文训练所得的 <strong>renmin_board.200.6.bin模型文件</strong> 免费开源，</p>
+<p><img loading="lazy" src="img/02-word2vec.png" alt=""  />
+</p>
+<p>链接: <a href="https://pan.baidu.com/s/1u-eUuATCTSIDjhOvSaG7sA?pwd=whf5">https://pan.baidu.com/s/1u-eUuATCTSIDjhOvSaG7sA?pwd=whf5</a> 提取码: whf5</p>
+<br>
+<h3 id="52-付费资料">5.2 付费资料</h3>
+<p><span style="font-size: 18px;color: green;">1.  <a href="https://textdata.cn/blog/2023-12-22-renmin-gov-leader-comment-board/">数据集(付费) | 人民网地方领导留言板原始文本(2011-2023.12)</a> ，2000元</span></p>
+<p><span style="font-size: 18px;color: green;">2. cntext2.1.0 价格100元，已购买2.0.0可免费更新至2.1.0</span></p>
+<p><span style="font-size: 18px;color: green;">3. 数据是虚拟产品，一经售出，不再退还！</span></p>
+<p><span style="font-size: 18px;color: green;">4. 大家时间其实都很宝贵，请仔细阅读推文内容， 确认无误再加微信372335839， 备注「姓名-学校-专业」详谈购买事宜 </span></p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
 </ul>
 ]]></content:encoded>
     </item>
@@ -1772,21 +2348,13 @@ Lu, Liangdong, Jia Xu, and Jiuchang Wei. &amp;#34;Understanding the effects of t
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;四相关代码&#34;&gt;四、相关代码&lt;/h2&gt;
 &lt;p&gt;想用 python 对 csv、xlsx 进行分析， 要学会尽量用 pandas 写代码。 以下是近期 pandas 的一些处理推文免费教程， 感兴趣的可以进去浏览浏览。&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/&#34;&gt;&lt;strong&gt;代码 | 使用地方gov工作报告生成某类概念词频「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/&#34;&gt;&lt;strong&gt;代码 | 使用「新闻数据」构造概念词提及量「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/&#34;&gt;&lt;strong&gt;数据代码| 使用cctv新闻联播文稿构造「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/&#34;&gt;&lt;strong&gt;代码 | 使用3571w专利申请数据集构造「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/&#34;&gt;&lt;strong&gt;代码 | 使用「新闻数据」计算 「经济政策不确定性」指数&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-29-china-area-dataset/&#34;&gt;数据集 | 2024年中国全国5级行政区划（省、市、县、镇、村）&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/&#34;&gt;词向量  | 使用&lt;strong&gt;人民网领导留言板&lt;/strong&gt;语料训练Word2Vec模型&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/&#34;&gt;&lt;strong&gt;代码 | 使用地方gov工作报告生成某类概念词频「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/&#34;&gt;&lt;strong&gt;代码 | 使用「新闻数据」构造概念词提及量「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/&#34;&gt;&lt;strong&gt;数据代码| 使用cctv新闻联播文稿构造「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/&#34;&gt;&lt;strong&gt;代码 | 使用3571w专利申请数据集构造「面板数据」&lt;/strong&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/&#34;&gt;&lt;strong&gt;代码 | 使用「新闻数据」计算 「经济政策不确定性」指数&lt;/strong&gt;&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;五获取数据&#34;&gt;五、获取数据&lt;/h2&gt;
@@ -2018,21 +2586,13 @@ Lu, Liangdong, Jia Xu, and Jiuchang Wei. &#34;Understanding the effects of the t
 </code></pre></div><h2 id="四相关代码">四、相关代码</h2>
 <p>想用 python 对 csv、xlsx 进行分析， 要学会尽量用 pandas 写代码。 以下是近期 pandas 的一些处理推文免费教程， 感兴趣的可以进去浏览浏览。</p>
 <ul>
-<li>
-<p><a href="https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/"><strong>代码 | 使用地方gov工作报告生成某类概念词频「面板数据」</strong></a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/"><strong>数据代码| 使用cctv新闻联播文稿构造「面板数据」</strong></a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/"><strong>代码 | 使用3571w专利申请数据集构造「面板数据」</strong></a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/"><strong>代码 | 使用「新闻数据」计算 「经济政策不确定性」指数</strong></a></p>
-</li>
+<li><a href="https://textdata.cn/blog/2023-12-29-china-area-dataset/">数据集 | 2024年中国全国5级行政区划（省、市、县、镇、村）</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">词向量  | 使用<strong>人民网领导留言板</strong>语料训练Word2Vec模型</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/"><strong>代码 | 使用地方gov工作报告生成某类概念词频「面板数据」</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/"><strong>数据代码| 使用cctv新闻联播文稿构造「面板数据」</strong></a></li>
+<li><a href="https://textdata.cn/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/"><strong>代码 | 使用3571w专利申请数据集构造「面板数据」</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/"><strong>代码 | 使用「新闻数据」计算 「经济政策不确定性」指数</strong></a></li>
 </ul>
 <p><br><br></p>
 <h2 id="五获取数据">五、获取数据</h2>
@@ -3813,6 +4373,7 @@ Finish! 质量概念 candidates saved to output/Word2Vec
 &lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/&#34;&gt;词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/&#34;&gt;转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/&#34;&gt;可视化 | 人民日报语料反映七十年文化演变&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/&#34;&gt;词向量  | 使用&lt;strong&gt;人民网领导留言板&lt;/strong&gt;语料训练Word2Vec模型&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;p&gt;Aceves, Pedro, and James A. Evans. &amp;ldquo;&lt;strong&gt;Mobilizing conceptual spaces: How word embedding models can inform measurement and theory within organization science.&lt;/strong&gt;&amp;rdquo; &lt;em&gt;Organization Science&lt;/em&gt; (2023).&lt;/p&gt;
@@ -4171,6 +4732,7 @@ doc2 =  [&amp;#34;chemistry&amp;#34;, &amp;#34;oceanography&amp;#34;, &amp;#34;c
 <li><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></li>
 <li><a href="https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/">转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用</a></li>
 <li><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/">可视化 | 人民日报语料反映七十年文化演变</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">词向量  | 使用<strong>人民网领导留言板</strong>语料训练Word2Vec模型</a></li>
 </ul>
 <p><br><br></p>
 <p>Aceves, Pedro, and James A. Evans. &ldquo;<strong>Mobilizing conceptual spaces: How word embedding models can inform measurement and theory within organization science.</strong>&rdquo; <em>Organization Science</em> (2023).</p>
@@ -22160,6 +22722,7 @@ Concreteness Score: 2.37 | Example-5: I&#39;ll go search for that t-shirt in gre
 <li><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></li>
 <li><a href="https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/">OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息</a></li>
 <li><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/">可视化 | 人民日报语料反映七十年文化演变</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">词向量  | 使用<strong>人民网领导留言板</strong>语料训练Word2Vec模型</a></li>
 </ul>
 <br>
 <br>
