@@ -6,7 +6,251 @@
     <description>Recent content in Python on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 26 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 03 Jan 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>如何设计好 lambda 函数 ？</title>
+      <link>https://textdata.cn/blog/2024-01-03-how-to-design-lambda-function/</link>
+      <pubDate>Wed, 03 Jan 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-01-03-how-to-design-lambda-function/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;本文来源：掘金社区。仅用于传递和分享更多信息，并不代表本平台赞同其观点和对其真实性负责，版权归原作者所有，如有侵权请联系我们删除。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;br&gt;
+&lt;p&gt;当你需要完成一件小工作时，在本地环境中使用这个函数，可以让工作如此得心应手，它就是Lambda 函数。&lt;/p&gt;
+&lt;p&gt;Lambda 函数是 Python 中的匿名函数。有些人将它们简称为lambdas，它们的语法如下：
+lambda arguments: expression&lt;/p&gt;
+&lt;p&gt;lambda 关键字可以用来创建一个 lambda 函数，紧跟其后的是参数列表和用冒号分割开的单个表达式。例如，lambda x: 2 * x 是将任何输入的数乘2，而 lambda x, y: x+y 是计算两个数字的和。语法十分直截了当，对吧？
+假设您知道什么是 lambda 函数，本文旨在提供有关如何正确使用 lambda 函数的一些常规准则。
+&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;1-不要返回任何值&#34;&gt;1. 不要返回任何值&lt;/h2&gt;
+&lt;p&gt;看看语法，您可能会注意到我们在 lambda 函数中并没有返回任何内容。这都是因为 lambda 函数只能包含一个表达式。然而，使用 return 关键字会构成不符合规定语法的语句，如下所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt;&amp;gt;&amp;gt; integers = [(3, -3), (2, 3), (5, 1), (-4, 4)]
+&amp;gt;&amp;gt;&amp;gt; sorted(integers, key=lambda x: x[-1])
+[(3, -3), (5, 1), (2, 3), (-4, 4)]
+&amp;gt;&amp;gt;&amp;gt; sorted(integers, key=lambda x: return x[-1])
+... 
+  File &amp;#34;&amp;#34;, line 1
+    sorted(integers, key=lambda x: return x[-1])
+                                   ^
+SyntaxError: invalid syntax
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;该错误可能是由于无法区分表达式和语句而引起的。像是包含 return、try、 with 以及 if 的语句会执行特殊动作。然而，表达式指的是那些可以被计算出一个值的表达，例如数值或其他 Python 对象。
+通过使用 lambda 函数，单个表达式会被计算为一个值并且参与后续的计算，例如由 sorted 函数排序。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;2-不要忘记更好的选择&#34;&gt;2. 不要忘记更好的选择&lt;/h2&gt;
+&lt;p&gt;lambda 函数最常见的使用场景是将它作为一些内置工具函数中 key 的实参，比如上面展示的 sorted() 和 max()。根据情况，我们可以使用其他替代方法。思考下面的例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt;&amp;gt;&amp;gt; integers = [-4, 3, 7, -5, -2, 6]
+&amp;gt;&amp;gt;&amp;gt; sorted(integers, key=lambda x: abs(x))
+[-2, 3, -4, -5, 6, 7]
+&amp;gt;&amp;gt;&amp;gt; sorted(integers, key=abs)
+[-2, 3, -4, -5, 6, 7]
+&amp;gt;&amp;gt;&amp;gt; scores = [(93, 100), (92, 99), (95, 94)]
+&amp;gt;&amp;gt;&amp;gt; max(scores, key=lambda x: x[0] + x[1])
+(93, 100)
+&amp;gt;&amp;gt;&amp;gt; max(scores, key=sum)
+(93, 100)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;在数据科学领域，很多人使用 pandas 库来处理数据。如下所示，我们可以使用 lambda 函数通过 map() 函数从现有数据中创建新数据。除了使用 lambda 函数外，我们还可以直接使用算术函数，因为 pandas 是支持的：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt;&amp;gt;&amp;gt; import pandas as pd
+&amp;gt;&amp;gt;&amp;gt; data = pd.Series([1, 2, 3, 4])
+&amp;gt;&amp;gt;&amp;gt; data.map(lambda x: x + 5)
+0    6
+1    7
+2    8
+3    9
+dtype: int64
+&amp;gt;&amp;gt;&amp;gt; data + 5
+0    6
+1    7
+2    8
+3    9
+dtype: int64
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h2 id=&#34;3-不要将它赋值给变量&#34;&gt;3. 不要将它赋值给变量&lt;/h2&gt;
+&lt;p&gt;我曾见过一些人将 lambda 函数误认为是简单函数的另一种声明方式，您可能也见过有人像下面这么做：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt;&amp;gt;&amp;gt; doubler = lambda x: 2 * x
+&amp;gt;&amp;gt;&amp;gt; doubler(5)
+10
+&amp;gt;&amp;gt;&amp;gt; doubler(7)
+14
+&amp;gt;&amp;gt;&amp;gt; type(doubler)
+&amp;lt;class &amp;#39;function&amp;#39;&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;对 lambda 函数命名的唯一作用可能是出于教学目的，以表明 lambda 函数的确是和其他函数一样的函数——可以被调用并且具有某种功能。除此之外，我们不应该将 lambda 函数赋值给变量。&lt;/p&gt;
+&lt;p&gt;为 lambda 函数命名的问题在于这使得调试不那么直观。与其他的使用常规 def 关键字创建的函数不同，lambda 函数没有名字，这也是为什么有时它们被称为匿名函数的原因。思考下面简单的例子，找出细微的区别：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt;&amp;gt;&amp;gt; inversive0 = lambda x: 1 / x
+&amp;gt;&amp;gt;&amp;gt; inversive0(2)
+0.5
+&amp;gt;&amp;gt;&amp;gt; inversive0(0)
+Traceback (most recent call last):
+  File &amp;#34;&amp;#34;, line 1, in &amp;lt;module&amp;gt;
+  File &amp;#34;&amp;#34;, line 1, in
+ZeroDivisionError: division by zero
+&amp;gt;&amp;gt;&amp;gt; def inversive1(x):
+...     return 1 / x
+... 
+&amp;gt;&amp;gt;&amp;gt; inversive1(2)
+0.5
+&amp;gt;&amp;gt;&amp;gt; inversive1(0)
+Traceback (most recent call last):
+  File &amp;#34;&amp;#34;, line 1, in &amp;lt;module&amp;gt;
+  File &amp;#34;&amp;#34;, line 2, in inversive1
+ZeroDivisionError: division by zero
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;当您的代码存在关于 lambda 函数的问题（即 inversive0），Traceback 错误信息只会提示您 lambda 函数存在问题。
+相比之下，使用正常定义的函数，Traceback会清晰地提示您有问题的函数（即 inversive1）。
+与此相关，如果您想多次使用 lambda 函数，最佳实践是使用通过 def 定义的允许使用文档字符串的常规函数。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;4-不要忘记列表推导式&#34;&gt;4. 不要忘记列表推导式&lt;/h2&gt;
+&lt;p&gt;有些人喜欢将 lambda 函数和高阶函数一起使用，比如 map 或 filter。思考下面用法示例：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt;&amp;gt;&amp;gt; # 创建一个数字列表
+&amp;gt;&amp;gt;&amp;gt; numbers = [2, 1, 3, -3]
+&amp;gt;&amp;gt;&amp;gt; # 使用带有 lambda 函数的 map 函数
+&amp;gt;&amp;gt;&amp;gt; list(map(lambda x: x * x, numbers))
+[4, 1, 9, 9]
+&amp;gt;&amp;gt;&amp;gt; # 使用带有 lambda 函数的 filter 函数
+&amp;gt;&amp;gt;&amp;gt; list(filter(lambda x: x % 2, numbers))
+[1, 3, -3]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;我们可以使用可读性更强的列表推导式代替 lambda 函数。如下所示，我们使用列表推导式来创建相同的列表对象。如您所见，与列表推导式相比，之前将 map 或 filter 函数与 lambda 函数一起使用更麻烦。因此，在创建涉及高阶函数的列表时，应考虑使用列表推导式。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt;&amp;gt;&amp;gt; # Use list comprehensions
+&amp;gt;&amp;gt;&amp;gt; [x * x for x in numbers]
+[4, 1, 9, 9]
+&amp;gt;&amp;gt;&amp;gt; [x for x in numbers if x % 2]
+[1, 3, -3]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;结论&#34;&gt;结论&lt;/h2&gt;
+&lt;p&gt;在本文中，我们回顾了使用 lambda 函数可能会犯的四个常见错误。通过避免这些错误，您应该能在代码中正确使用 lambda 函数。
+使用 lambda 函数的经验准则是保持简单以及只在本地使用一次。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;支持开票 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<blockquote>
+<p>本文来源：掘金社区。仅用于传递和分享更多信息，并不代表本平台赞同其观点和对其真实性负责，版权归原作者所有，如有侵权请联系我们删除。</p>
+</blockquote>
+<br>
+<p>当你需要完成一件小工作时，在本地环境中使用这个函数，可以让工作如此得心应手，它就是Lambda 函数。</p>
+<p>Lambda 函数是 Python 中的匿名函数。有些人将它们简称为lambdas，它们的语法如下：
+lambda arguments: expression</p>
+<p>lambda 关键字可以用来创建一个 lambda 函数，紧跟其后的是参数列表和用冒号分割开的单个表达式。例如，lambda x: 2 * x 是将任何输入的数乘2，而 lambda x, y: x+y 是计算两个数字的和。语法十分直截了当，对吧？
+假设您知道什么是 lambda 函数，本文旨在提供有关如何正确使用 lambda 函数的一些常规准则。
+<br></p>
+<h2 id="1-不要返回任何值">1. 不要返回任何值</h2>
+<p>看看语法，您可能会注意到我们在 lambda 函数中并没有返回任何内容。这都是因为 lambda 函数只能包含一个表达式。然而，使用 return 关键字会构成不符合规定语法的语句，如下所示：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&gt;&gt;&gt; integers = [(3, -3), (2, 3), (5, 1), (-4, 4)]
+&gt;&gt;&gt; sorted(integers, key=lambda x: x[-1])
+[(3, -3), (5, 1), (2, 3), (-4, 4)]
+&gt;&gt;&gt; sorted(integers, key=lambda x: return x[-1])
+... 
+  File &#34;&#34;, line 1
+    sorted(integers, key=lambda x: return x[-1])
+                                   ^
+SyntaxError: invalid syntax
+</code></pre></div><br>
+<p>该错误可能是由于无法区分表达式和语句而引起的。像是包含 return、try、 with 以及 if 的语句会执行特殊动作。然而，表达式指的是那些可以被计算出一个值的表达，例如数值或其他 Python 对象。
+通过使用 lambda 函数，单个表达式会被计算为一个值并且参与后续的计算，例如由 sorted 函数排序。</p>
+<p><br><br></p>
+<h2 id="2-不要忘记更好的选择">2. 不要忘记更好的选择</h2>
+<p>lambda 函数最常见的使用场景是将它作为一些内置工具函数中 key 的实参，比如上面展示的 sorted() 和 max()。根据情况，我们可以使用其他替代方法。思考下面的例子：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&gt;&gt;&gt; integers = [-4, 3, 7, -5, -2, 6]
+&gt;&gt;&gt; sorted(integers, key=lambda x: abs(x))
+[-2, 3, -4, -5, 6, 7]
+&gt;&gt;&gt; sorted(integers, key=abs)
+[-2, 3, -4, -5, 6, 7]
+&gt;&gt;&gt; scores = [(93, 100), (92, 99), (95, 94)]
+&gt;&gt;&gt; max(scores, key=lambda x: x[0] + x[1])
+(93, 100)
+&gt;&gt;&gt; max(scores, key=sum)
+(93, 100)
+</code></pre></div><br>
+<p>在数据科学领域，很多人使用 pandas 库来处理数据。如下所示，我们可以使用 lambda 函数通过 map() 函数从现有数据中创建新数据。除了使用 lambda 函数外，我们还可以直接使用算术函数，因为 pandas 是支持的：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&gt;&gt;&gt; import pandas as pd
+&gt;&gt;&gt; data = pd.Series([1, 2, 3, 4])
+&gt;&gt;&gt; data.map(lambda x: x + 5)
+0    6
+1    7
+2    8
+3    9
+dtype: int64
+&gt;&gt;&gt; data + 5
+0    6
+1    7
+2    8
+3    9
+dtype: int64
+</code></pre></div><br>
+<h2 id="3-不要将它赋值给变量">3. 不要将它赋值给变量</h2>
+<p>我曾见过一些人将 lambda 函数误认为是简单函数的另一种声明方式，您可能也见过有人像下面这么做：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&gt;&gt;&gt; doubler = lambda x: 2 * x
+&gt;&gt;&gt; doubler(5)
+10
+&gt;&gt;&gt; doubler(7)
+14
+&gt;&gt;&gt; type(doubler)
+&lt;class &#39;function&#39;&gt;
+</code></pre></div><br>
+<p>对 lambda 函数命名的唯一作用可能是出于教学目的，以表明 lambda 函数的确是和其他函数一样的函数——可以被调用并且具有某种功能。除此之外，我们不应该将 lambda 函数赋值给变量。</p>
+<p>为 lambda 函数命名的问题在于这使得调试不那么直观。与其他的使用常规 def 关键字创建的函数不同，lambda 函数没有名字，这也是为什么有时它们被称为匿名函数的原因。思考下面简单的例子，找出细微的区别：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&gt;&gt;&gt; inversive0 = lambda x: 1 / x
+&gt;&gt;&gt; inversive0(2)
+0.5
+&gt;&gt;&gt; inversive0(0)
+Traceback (most recent call last):
+  File &#34;&#34;, line 1, in &lt;module&gt;
+  File &#34;&#34;, line 1, in
+ZeroDivisionError: division by zero
+&gt;&gt;&gt; def inversive1(x):
+...     return 1 / x
+... 
+&gt;&gt;&gt; inversive1(2)
+0.5
+&gt;&gt;&gt; inversive1(0)
+Traceback (most recent call last):
+  File &#34;&#34;, line 1, in &lt;module&gt;
+  File &#34;&#34;, line 2, in inversive1
+ZeroDivisionError: division by zero
+</code></pre></div><br>
+<p>当您的代码存在关于 lambda 函数的问题（即 inversive0），Traceback 错误信息只会提示您 lambda 函数存在问题。
+相比之下，使用正常定义的函数，Traceback会清晰地提示您有问题的函数（即 inversive1）。
+与此相关，如果您想多次使用 lambda 函数，最佳实践是使用通过 def 定义的允许使用文档字符串的常规函数。</p>
+<p><br><br></p>
+<h2 id="4-不要忘记列表推导式">4. 不要忘记列表推导式</h2>
+<p>有些人喜欢将 lambda 函数和高阶函数一起使用，比如 map 或 filter。思考下面用法示例：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&gt;&gt;&gt; # 创建一个数字列表
+&gt;&gt;&gt; numbers = [2, 1, 3, -3]
+&gt;&gt;&gt; # 使用带有 lambda 函数的 map 函数
+&gt;&gt;&gt; list(map(lambda x: x * x, numbers))
+[4, 1, 9, 9]
+&gt;&gt;&gt; # 使用带有 lambda 函数的 filter 函数
+&gt;&gt;&gt; list(filter(lambda x: x % 2, numbers))
+[1, 3, -3]
+</code></pre></div><br>
+<p>我们可以使用可读性更强的列表推导式代替 lambda 函数。如下所示，我们使用列表推导式来创建相同的列表对象。如您所见，与列表推导式相比，之前将 map 或 filter 函数与 lambda 函数一起使用更麻烦。因此，在创建涉及高阶函数的列表时，应考虑使用列表推导式。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&gt;&gt;&gt; # Use list comprehensions
+&gt;&gt;&gt; [x * x for x in numbers]
+[4, 1, 9, 9]
+&gt;&gt;&gt; [x for x in numbers if x % 2]
+[1, 3, -3]
+</code></pre></div><p><br><br></p>
+<h2 id="结论">结论</h2>
+<p>在本文中，我们回顾了使用 lambda 函数可能会犯的四个常见错误。通过避免这些错误，您应该能在代码中正确使用 lambda 函数。
+使用 lambda 函数的经验准则是保持简单以及只在本地使用一次。</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">支持开票 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>使用 Ruptures 识别时间序列数据中的变化点</title>
       <link>https://textdata.cn/blog/2023-11-26-using-ruptures-to-detect-change-point/</link>
