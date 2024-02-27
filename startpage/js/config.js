@@ -57,7 +57,7 @@ class Config {
 			'bilibili/': {urlPrefix: 'https://search.bilibili.com/all?keyword='},
 			'微信公众号/': {urlPrefix: 'https://mp.weixin.qq.com/'},
 			'github/': {urlPrefix: 'https://github.com/search?q='},
-			"scihub/": {urlPrefix: 'https://sci-hub.ru/'},
+			"scihub/": {urlPrefix: 'https://sci-hub.ee/'},
 			"arxiv/": {urlPrefix: "https://arxiv.org/search/?searchtype=all&abstracts=show&order=-announced_date_first&size=50&query="},
 			"medium/": {urlPrefix: 'https://medium.com/search?q='}
 		};
@@ -147,6 +147,14 @@ class Config {
 				category: 'media'
 			},
 
+
+			{
+				site: 'LetPub',
+				icon: 'letpub',
+				url: 'https://www.letpub.com.cn/index.php?page=journalapp&view=search',
+				category: 'Academic Tools'
+			},
+
 			{
 				site: 'OSF HOME',
 				icon: 'osf',
@@ -192,7 +200,7 @@ class Config {
 			{
 				site: 'Sci-Hub',
 				icon: 'scihub',
-				url: 'https://sci-hub.yncjkj.com/',
+				url: 'https://sci-hub.ee/',
 				category: 'Academic Search Engine'
 			},
 			{
@@ -242,9 +250,9 @@ class Config {
 				category: 'cNews'
 			},
 			{
-				site: '计算传播学小组',
-				icon: 'communication',
-				url: 'https://www.douban.com/group/webmining/discussion?start=0&type=new',
+				site: '豆瓣小组',
+				icon: 'douban',
+				url: 'https://www.douban.com/group/',
 				category: 'cNews'
 			},
 
