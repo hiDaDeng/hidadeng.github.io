@@ -973,7 +973,7 @@ for field, desc in zip(df2.iloc[0, :].index, df2.iloc[0, :].values):
     </item>
     
     <item>
-      <title>数据集 |  A股上市公司基本信息</title>
+      <title>数据集 |  A股上市公司基本信息2000-2022</title>
       <link>https://textdata.cn/blog/2024-04-16-china-listed-company-information-dataset/</link>
       <pubDate>Tue, 16 Apr 2024 00:00:00 +0000</pubDate>
       
@@ -984,6 +984,7 @@ for field, desc in zip(df2.iloc[0, :].index, df2.iloc[0, :].values):
 年份: 2000-2022
 公司数: 5368
 记录数: 58153
+用途: 可与年报、md&amp;a数据集进行并表
 </code></pre></div><p><br><br></p>
 <h2 id="二查看数据">二、查看数据</h2>
 <h3 id="21-导入数据">2.1 导入数据</h3>
@@ -991,9 +992,15 @@ for field, desc in zip(df2.iloc[0, :].index, df2.iloc[0, :].values):
 
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;上市公司基本信息2000-2022.csv&#39;</span><span class="p">)</span>
 <span class="n">df</span>
-</code></pre></div><p><img loading="lazy" src="img/df.png" alt=""  />
+</code></pre></div><p><img loading="lazy" src="img/df1.png" alt=""  />
 </p>
-<br>
+<p><br><br></p>
+<p>如果股票代码中带的字母A别扭，可以剔除掉</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">Symbol</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">Symbol</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<p><br><br></p>
 <h3 id="22-查看字段">2.2 查看字段</h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 查看字段及含义</span>
 <span class="n">max_col_len</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">])</span>
@@ -1048,6 +1055,33 @@ for field, desc in zip(df2.iloc[0, :].index, df2.iloc[0, :].values):
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">5368
 </code></pre></div><br>
 <br>
+<h2 id="三增加其他数据集字段数量">三、增加其他数据集字段数量</h2>
+<p><a href="https://textdata.cn/blog/2023-03-23-china-a-share-market-dataset-mda-from-01-to-21/"><strong>数据集 | 2001-2022年A股上市公司年报&amp;管理层讨论与分析</strong></a> 只有 <em><strong>year</strong></em>、<em><strong>code</strong></em>、<em><strong>text</strong></em> 三个字段， 通过与本数据集合并操作(pd.merge) ，现在希望增加 <em><strong>EndDate</strong></em>、<em><strong>ShortName</strong></em>、<em><strong>IndustryCode</strong></em>、 <em><strong>RegisterAddress</strong></em> 四个字段。<br></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">mda_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mda01-22.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+<span class="n">mda_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mda_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="n">mda_df</span>
+</code></pre></div><p><img loading="lazy" src="img/mda.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#选择需要的字段进行读取</span>
+<span class="n">info_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s1">&#39;Symbol&#39;</span><span class="p">,</span> <span class="s1">&#39;ShortName&#39;</span><span class="p">,</span> <span class="s1">&#39;EndDate&#39;</span><span class="p">,</span> <span class="s1">&#39;IndustryCode&#39;</span><span class="p">,</span> <span class="s1">&#39;RegisterAddress&#39;</span><span class="p">]]</span>
+
+<span class="c1">#更改字段名Symbol为code</span>
+<span class="n">info_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&#34;Symbol&#34;</span><span class="p">:</span> <span class="s2">&#34;code&#34;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1">#根据EndDate计算会计年度year</span>
+<span class="n">info_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">info_df</span><span class="p">[</span><span class="s1">&#39;EndDate&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="n">y</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">info_df</span>
+</code></pre></div><p><img loading="lazy" src="img/info_df.png" alt=""  />
+</p>
+<p><br><br>根据字段 <em><strong>year</strong></em>、<em><strong>code</strong></em> 进行合并，合并方式为内连接 <em><strong>inner</strong></em> ， 即两数据集的交集。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df_merge</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">mda_df</span><span class="p">,</span> <span class="n">info_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;code&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">)</span>
+<span class="n">df_merge</span>
+</code></pre></div><p><img loading="lazy" src="img/merge.png" alt=""  />
+</p>
+<p><br><br></p>
 <h2 id="三相关内容">三、相关内容</h2>
 <ul>
 <li><a href="https://textdata.cn/blog/2023-03-23-china-a-share-market-dataset-mda-from-01-to-21/">数据集 | 2001-2022年A股上市公司年报&amp;管理层讨论与分析</a></li>
@@ -1057,7 +1091,7 @@ for field, desc in zip(df2.iloc[0, :].index, df2.iloc[0, :].values):
 <br>
 <br>
 <h2 id="四获取数据">四、获取数据</h2>
-<p>整理不易， 转发集赞 50+ ， 加微信 372335839 ， 备注 「姓名-学校-专业」。</p>
+<p>整理不易， 50元 ， 加微信 372335839 ， 备注 「姓名-学校-专业」。</p>
 <p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
 <ul>
