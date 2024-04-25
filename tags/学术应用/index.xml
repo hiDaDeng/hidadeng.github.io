@@ -6,7 +6,7 @@
     <description>Recent content in 学术应用 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 24 Apr 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E5%AD%A6%E6%9C%AF%E5%BA%94%E7%94%A8/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 25 Apr 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E5%AD%A6%E6%9C%AF%E5%BA%94%E7%94%A8/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>LIST | 社科(经管)数据挖掘文献资料汇总</title>
       <link>https://textdata.cn/blog/the_text_analysis_list_about_ms/</link>
@@ -88,7 +88,8 @@
 <li><a href="https://textdata.cn/blog/2023-01-13-information-content-of-critical-audit/">金融研究(付费) | 使用Python构建「<strong>关键审计事项信息含量</strong>」</a></li>
 <li><a href="https://textdata.cn/blog/2023-01-10-similarity_of_cental_bank_monetary_policy/">金融研究 | 央行货币政策文本相似度计算与可视化</a></li>
 <li><a href="https://textdata.cn/blog/2023-01-16-papers-using-text-mining-tech-in-journal-of-economic-research/">近年《经济研究》中「文本分析」相关论文</a></li>
-<li><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/">代码 | 使用「新闻数据」计算 「<strong>经济政策不确定性</strong>」指数</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/">代码 | 使用「新闻数据」测量 「<strong>经济政策不确定性EPU指标</strong>」</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-25-firm-economic-policy-uncertainty/">代码 | 使用 「MD&amp;A文本」测量「<em><strong>企业不确定性感知FEPU指标</strong></em>」</a></li>
 </ul>
 <br>
 <br>
@@ -274,7 +275,10 @@
 <p><a href="https://textdata.cn/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/"><strong>代码 | 使用3571w专利申请数据集构造「面板数据」</strong></a></p>
 </li>
 <li>
-<p><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/">代码 | 使用「新闻数据」计算 「经济政策不确定性」指数</a></p>
+<p><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/">代码 | 使用「新闻数据」测量 「<em><strong>经济政策不确定性EPU指标</strong></em>」</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-04-25-firm-economic-policy-uncertainty/">代码 | 使用 「MD&amp;A文本」测量「<em><strong>企业不确定性感知FEPU指标</strong></em>」</a></p>
 </li>
 <li>
 <p><a href="https://textdata.cn/blog/2023-04-26-matching-listed-corporate-with-patent-dataset/">从3571w条专利数据集「匹配」上市公司的专利信息</a></p>
@@ -551,6 +555,610 @@
 <li>如果不想学，也可以考虑外包。更建议找淘宝，如果找我咨询，请先阅读<a href="https://textdata.cn/blog/paid_for_service">有偿说明</a></li>
 </ul>
 </li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>代码 | 使用 MD&amp;A文本测量「企业不确定性感知FEPU」</title>
+      <link>https://textdata.cn/blog/2024-04-25-firm-economic-policy-uncertainty/</link>
+      <pubDate>Thu, 25 Apr 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-04-25-firm-economic-policy-uncertainty/</guid>
+      <description>&lt;p&gt;本文使用的缩写&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;EPU   经济政策不确定性(Economic Policy Uncertainty, EPU)&lt;/li&gt;
+&lt;li&gt;FEPU 企业不确定性感知(FEPU,  Subjective perception of economic policy uncertainty)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;一背景&#34;&gt;一、背景&lt;/h2&gt;
+&lt;p&gt;「&lt;em&gt;&lt;strong&gt;经济政策不确定性&lt;/strong&gt;&lt;/em&gt;(Economic Policy Uncertainty, EPU)」 通常是用来衡量经济中政策不确定性水平的一种度量方式。企业作为一个理性的经济主体， 需要根据未来的期望成本和收益进行决策 。政府的经济政策会在很大程度上影响企业的预期成本和收益 ， 如果经济政策频繁变化 ， 会给企业带来困扰 。现有文献经济政策不确定性测量思路大概有&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;股票市场隐含波动率VIX衡量宏观层面经济不确定性。&lt;/li&gt;
+&lt;li&gt;利用外生变量，并结合企业对这些外生变量的依赖程度衡量企业面临的不确定性 。如政治事件、能源价格、汇率波动、贸易协定签订。&lt;/li&gt;
+&lt;li&gt;利用新闻文本测量的经济不确定性。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;但 经济政策不确定性指标(EPU)存在两个问题&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;EPU是宏观指标， 同期所有企业的EPU有且仅有一个观测值。&lt;/li&gt;
+&lt;li&gt;EPU默认所有企业是同质， 对经济政策不确定性的感知是相同的。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;本推文参考聂辉华等(2020)内的算法,  实现利用 &lt;em&gt;&lt;strong&gt;经营讨论与分析(MD&amp;amp;A)文本数据&lt;/strong&gt;&lt;/em&gt;  测量企业「&lt;em&gt;&lt;strong&gt;企业不确定性感知FEPU&lt;/strong&gt;&lt;/em&gt;」(FEPU,  Subjective perception of economic policy uncertainty) 。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二epufepu&#34;&gt;二、EPU&amp;amp;FEPU&lt;/h2&gt;
+&lt;h3 id=&#34;21-epu&#34;&gt;2.1 EPU&lt;/h3&gt;
+&lt;p&gt;在复现「&lt;em&gt;&lt;strong&gt;企业不确定性感知FEPU&lt;/strong&gt;&lt;/em&gt;」前，我们先了解利用新闻数据测量 &lt;em&gt;&lt;strong&gt;EPU&lt;/strong&gt;&lt;/em&gt; 的算法，这样更容易理解 &lt;em&gt;&lt;strong&gt;FEPU&lt;/strong&gt;&lt;/em&gt; 的原理。参考Huang、Yun&amp;amp; Paul(2020)，大邓在前段时间分享了一个代码教程 &lt;a href=&#34;https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/&#34;&gt;代码 | 使用「新闻数据」计算 「经济政策不确定性」指数&lt;/a&gt; 。 &lt;br&gt;&lt;/p&gt;
+&lt;p&gt;新闻数据计算EPU的算法&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Step-1. 选择了114家中国大陆的报纸，其中包括北京、上海、广州和天津等主要城市的报纸。
+Step-2. 对于每家报纸，搜索包含以下三个关键词之一的文章：经济、不确定性和政策。这些关键词的中文和英文对照可以在论文的表格1中找到。
+Step-3. 将每个月的文章数量按照满足第一个关键词的文章数量进行缩放。
+Step-4. 将时间序列标准化，使其在2000年1月至2011年12月期间的标准差为1。 保证所有媒体计算得到的epu是可比的。
+Step-5. 对十家报纸的月度序列进行简单平均，并将指标归一化，使其在2000年1月至2011年12月期间的平均值为100。
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;文献中算法内容长， 结构化不足， 理解起来需要一些脑力。 大邓换种描述方式&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;EPU_t = m/n
+
+- m  时期 t 同时含经济Economic、政策Policy、不确定Uncertainty三类词的新闻条数m
+- n  时期 t 总的新闻条数n
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h3 id=&#34;22-fepu&#34;&gt;2.2 FEPU&lt;/h3&gt;
+&lt;p&gt;理解了 EPU， 就能类比理解「&lt;em&gt;&lt;strong&gt;企业感知经济政策不确定性FEPU&lt;/strong&gt;&lt;/em&gt;」的算法。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;算法&lt;/th&gt;
+&lt;th&gt;数据&lt;/th&gt;
+&lt;th&gt;层次&lt;/th&gt;
+&lt;th&gt;n&lt;/th&gt;
+&lt;th&gt;m&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;经济政策不确定性EPU&lt;/td&gt;
+&lt;td&gt;新闻媒体文本&lt;/td&gt;
+&lt;td&gt;新闻条数&lt;/td&gt;
+&lt;td&gt;时期t新闻总条数n&lt;/td&gt;
+&lt;td&gt;时期t同时存在E、P、U三类词的新闻条数m&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;感知经济政策不确定性FEPU(word)&lt;/td&gt;
+&lt;td&gt;管理层讨论与分析(md&amp;amp;a)&lt;/td&gt;
+&lt;td&gt;词语数&lt;/td&gt;
+&lt;td&gt;将时期t的企业i的 md&amp;amp;a 文本词语个数n。&lt;/td&gt;
+&lt;td&gt;1. 将md&amp;amp;a分句，得到很多句子。&lt;br/&gt;2. 同时含EP、U两类词的句子中， 统计这些句子中EP、U的词语出现次数之和m &lt;br/&gt;(聂2020文献中只有两类，其中E、P合并为EP)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;感知经济政策不确定性FEPU(sentence)&lt;/td&gt;
+&lt;td&gt;管理层讨论与分析(md&amp;amp;a)&lt;/td&gt;
+&lt;td&gt;句子数&lt;/td&gt;
+&lt;td&gt;将时期t的企业i的 md&amp;amp;a 文本进行分句，得到句子个数n&lt;/td&gt;
+&lt;td&gt;1. 将md&amp;amp;a分句，得到很多句子。&lt;br/&gt;2. 同时含EP、U两类词的句子中， 统计这类句子个数m &lt;br/&gt;(聂2020文献中只有两类，其中E、P合并为EP)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三-准备cntext&#34;&gt;三、 准备cntext&lt;/h2&gt;
+&lt;p&gt;EPU 和 FEPU 于今日刚刚封装到 cntext2.1.1 中， 再计算这两个指数， 就变得容易多了。&lt;/p&gt;
+&lt;h3 id=&#34;31-安装cntext&#34;&gt;3.1 安装cntext&lt;/h3&gt;
+&lt;p&gt;我使用的自己 &lt;strong&gt;未公开&lt;/strong&gt; 的cntext 2.1.1 版本， Bug频出，等调整好了再公开。&lt;/p&gt;
+&lt;p&gt;将 &lt;em&gt;&lt;strong&gt;cntext-2.1.1-py3-none-any.whl&lt;/strong&gt;&lt;/em&gt; 放置于桌面，打开 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt;  (苹果电脑打开terminal)， 输入cd desktop&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd desktop
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;之后在 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt;  (苹果电脑打开terminal) 中使用 &lt;em&gt;&lt;strong&gt;pip3&lt;/strong&gt;&lt;/em&gt; 安装&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install pdfdocx
+pip3 install distinctiveness
+pip3 install pandarallel
+pip3 install cntext-2.1.1-py3-none-any.whl
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;文末有 &lt;em&gt;&lt;strong&gt;cntext-2.1.1-py3-none-any.whl&lt;/strong&gt;&lt;/em&gt;  获取方式&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h3 id=&#34;32-内置词典&#34;&gt;3.2 内置词典&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;内置文件&lt;/th&gt;
+&lt;th&gt;词典&lt;/th&gt;
+&lt;th&gt;参考文献文献&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;zh_common_EPU.yaml&lt;/td&gt;
+&lt;td&gt;经济E、政策P、不确定U&lt;/td&gt;
+&lt;td&gt;Huang, Yun, and Paul Luk（2020）&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;zh_common_FEPU.yaml&lt;/td&gt;
+&lt;td&gt;经济政策EP、不确定性U&lt;/td&gt;
+&lt;td&gt;聂辉华, 阮睿&amp;amp;沈吉（2020）&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;br&gt;
+&lt;h4 id=&#34;31-查看内置词典&#34;&gt;3.1 查看内置词典&lt;/h4&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;__version__&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;get_dict_list&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2.1.1
+
+[&amp;#39;zh_common_NTUSD.yaml&amp;#39;,
+ &amp;#39;zh_common_DUTIR.yaml&amp;#39;,
+ &amp;#39;enzh_common_StopWords.yaml&amp;#39;,
+ &amp;#39;en_valence_Concreteness.yaml&amp;#39;,
+ &amp;#39;en_common_LoughranMcDonald.yaml&amp;#39;,
+ &amp;#39;zh_common_FinanceSenti.yaml&amp;#39;,
+ &amp;#39;zh_common_TsinghuaPraiseDegrade.yaml&amp;#39;,
+ &amp;#39;zh_common_FEPU.yaml&amp;#39;,    聂辉华, 阮睿&amp;amp;沈吉（2020）
+ &amp;#39;en_common_ANEW.yaml&amp;#39;,
+ &amp;#39;en_common_NRC.yaml&amp;#39;,
+ &amp;#39;zh_valence_ChineseEmoBank.yaml&amp;#39;,
+ &amp;#39;zh_valence_SixSemanticDimensionDatabase.yaml&amp;#39;,
+ &amp;#39;zh_common_FinacialFormalUnformal.yaml&amp;#39;,
+ &amp;#39;zh_common_LoughranMcDonald.yaml&amp;#39;,
+ &amp;#39;enzh_common_AdvConj.yaml&amp;#39;,
+ &amp;#39;en_common_SentiWS.yaml&amp;#39;,
+ &amp;#39;zh_common_Digitalization.yaml&amp;#39;,
+ &amp;#39;en_common_LSD2015.yaml&amp;#39;,
+ &amp;#39;zh_common_HowNet.yaml&amp;#39;,
+ &amp;#39;zh_common_EPU.yaml&amp;#39;]      #Huang, Yun, and Paul Luk（2020）
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h4 id=&#34;312-导入词典&#34;&gt;3.1.2 导入词典&lt;/h4&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;FEPU_infos&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_yaml_dict&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;zh_common_FEPU.yaml&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;FEPU_infos&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;{&amp;#39;Name&amp;#39;: &amp;#39;中文经济政策不确定性词典&amp;#39;, 
+
+&amp;#39;Desc&amp;#39;: &amp;#39;中文经济政策不确定性词典, 含经济政策EconomicPolicy、不确定性Uncertainty两个词表&amp;#39;, 
+
+&amp;#39;Refer&amp;#39;: &amp;#39;聂辉华, 阮睿, 沈吉. 企业不确定性感知、投资决策和金融资产配置[J]. 世界经济, 2020, 43 (06): 77-98.&amp;#39;, 
+
+&amp;#39;Category&amp;#39;: [&amp;#39;经济政策&amp;#39;, &amp;#39;不确定&amp;#39;], 
+
+&amp;#39;Dictionary&amp;#39;: 
+    
+    {&amp;#39;经济政策&amp;#39;: [&amp;#39;市政&amp;#39;, &amp;#39;政策&amp;#39;, &amp;#39;货币政策&amp;#39;, &amp;#39;政策鼓励&amp;#39;, &amp;#39;国家&amp;#39;, &amp;#39;扩内需&amp;#39;, &amp;#39;保增长&amp;#39;, &amp;#39;促发展&amp;#39;, &amp;#39;产业发展&amp;#39;, &amp;#39;法律&amp;#39;, &amp;#39;法规&amp;#39;, &amp;#39;行业政策&amp;#39;, &amp;#39;产业政策&amp;#39;, &amp;#39;宏观政策&amp;#39;, &amp;#39;国民经济&amp;#39;, &amp;#39;有关部门&amp;#39;, &amp;#39;产业结构调整&amp;#39;, &amp;#39;产业结构&amp;#39;, &amp;#39;当地政府&amp;#39;, &amp;#39;政府&amp;#39;, &amp;#39;经济政策&amp;#39;, &amp;#39;经济走势&amp;#39;, &amp;#39;所得税&amp;#39;, &amp;#39;税收减免&amp;#39;, &amp;#39;刺激政策&amp;#39;, &amp;#39;限贷令&amp;#39;, &amp;#39;限购令&amp;#39;, &amp;#39;保障房&amp;#39;, &amp;#39;宏观调控&amp;#39;, &amp;#39;产业发展&amp;#39;, &amp;#39;证监会&amp;#39;, &amp;#39;国家政策&amp;#39;, &amp;#39;政治&amp;#39;, &amp;#39;军事&amp;#39;, &amp;#39;政策环境&amp;#39;, &amp;#39;宏观&amp;#39;, &amp;#39;政府补助政策&amp;#39;, &amp;#39;调控政策&amp;#39;, &amp;#39;税收政策&amp;#39;, &amp;#39;政策扶持&amp;#39;], 
+    
+    &amp;#39;不确定&amp;#39;: [&amp;#39;风险&amp;#39;, &amp;#39;经营风险&amp;#39;, &amp;#39;市场风险&amp;#39;, &amp;#39;信用风险&amp;#39;, &amp;#39;不确定&amp;#39;, &amp;#39;波动&amp;#39;, &amp;#39;变化&amp;#39;, &amp;#39;改变&amp;#39;, &amp;#39;徘徊&amp;#39;, &amp;#39;不稳&amp;#39;, &amp;#39;不稳定&amp;#39;, &amp;#39;不寻常&amp;#39;, &amp;#39;错综复杂&amp;#39;, &amp;#39;非常复杂&amp;#39;, &amp;#39;纷繁复杂&amp;#39;, &amp;#39;纷纭复杂&amp;#39;, &amp;#39;十分复杂&amp;#39;, &amp;#39;变得复杂&amp;#39;, &amp;#39;风云突变&amp;#39;, &amp;#39;矛盾突出&amp;#39;, &amp;#39;突变&amp;#39;, &amp;#39;复杂多变&amp;#39;, &amp;#39;诡谲多变&amp;#39;, &amp;#39;阵痛&amp;#39;, &amp;#39;过渡&amp;#39;, &amp;#39;问责&amp;#39;, &amp;#39;整顿&amp;#39;, &amp;#39;危险&amp;#39;, &amp;#39;动荡&amp;#39;, &amp;#39;多变性&amp;#39;, &amp;#39;震荡&amp;#39;, &amp;#39;难以确定&amp;#39;, &amp;#39;难以预测&amp;#39;, &amp;#39;难以语料&amp;#39;, &amp;#39;难以琢磨&amp;#39;, &amp;#39;难以捉摸&amp;#39;, &amp;#39;接受考验&amp;#39;, &amp;#39;混乱&amp;#39;, &amp;#39;时而&amp;#39;, &amp;#39;随机&amp;#39;]}
+    
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h3 id=&#34;33-内置函数&#34;&gt;3.3 内置函数&lt;/h3&gt;
+&lt;p&gt;&lt;em&gt;&lt;strong&gt;ct.epu(df,  freq=&amp;lsquo;Y&amp;rsquo;,e_pattern=&#39;&#39;, p_pattern=&#39;&#39;, u_pattern=&#39;&#39;)&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;df&lt;/strong&gt;&lt;/em&gt;  新闻DataFrame；  DataFrame必须含date和text两个字段；每行一条记录，含所有时期所有的新闻。&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;freq&lt;/strong&gt;&lt;/em&gt; 字符串；决定EPU的时间粒度， 年Y、月M、天D， 默认freq=&amp;lsquo;Y&amp;rsquo;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;e_pattern&lt;/strong&gt;&lt;/em&gt;  字符串；经济类词典，用&lt;code&gt;|&lt;/code&gt;间隔词语，形如 &lt;strong&gt;e_pattern = &amp;lsquo;经济|金融&amp;rsquo;&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;p_pattern&lt;/strong&gt;&lt;/em&gt;  字符串；政策词典，用&lt;code&gt;|&lt;/code&gt;间隔词语，形如 &lt;strong&gt;p_pattern = &amp;lsquo;政策|治理|行政&amp;rsquo;&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;u_pattern&lt;/strong&gt;&lt;/em&gt; 字符串；不确定性词典，用&lt;code&gt;|&lt;/code&gt;间隔词语，形如 &lt;strong&gt;u_pattern = &amp;lsquo;风险|危机|难以预测&amp;rsquo;&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;返回epu时间序列数据，格式为DataFrame&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;&lt;em&gt;&lt;strong&gt;ct.fepu(text,  ep_pattern=&#39;&#39;, u_pattern=&#39;&#39;)&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;text&lt;/strong&gt;&lt;/em&gt;  ；某时期t某企业i的管理层讨论与分析md&amp;amp;a文本&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;ep_pattern&lt;/strong&gt;&lt;/em&gt;  字符串；经济政策类词典，用&lt;code&gt;|&lt;/code&gt;间隔词语，形如 &lt;strong&gt;ep_pattern = &amp;lsquo;经济|金融|政策|治理|行政&amp;rsquo;&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;u_pattern&lt;/strong&gt;&lt;/em&gt; 字符串；不确定性词典，用&lt;code&gt;|&lt;/code&gt;间隔词语，形如 &lt;strong&gt;u_pattern = &amp;lsquo;风险|危机|难以预测&amp;rsquo;&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四测量fepu&#34;&gt;四、测量FEPU&lt;/h2&gt;
+&lt;h3 id=&#34;41-读取数据&#34;&gt;4.1 读取数据&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;mda01-22.csv.gz&lt;/strong&gt;&lt;/em&gt;   管理层讨论与分析2001-2022文本数据&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;行业代码00-22.xlsx&lt;/strong&gt;&lt;/em&gt;  含股票名称、股票代码、行业等字段。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;mda01-22.csv.gz&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;columns&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;会计年度&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;股票代码&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;经营讨论与分析内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#上市公司行业信息&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ind_info_df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_excel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;行业代码00-22.xlsx&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#合并数据&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;merge&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ind_info_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;on&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;股票代码&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;会计年度&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;how&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;inner&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#剔除ST和金融类企业&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;股票简称&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;contains&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;ST&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;行业代码&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;str&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;contains&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;J&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))]&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;42-批量计算fepu&#34;&gt;4.2 批量计算FEPU&lt;/h3&gt;
+&lt;p&gt;选中字段 「&lt;em&gt;&lt;strong&gt;经营讨论与分析内容&lt;/strong&gt;&lt;/em&gt;」， 对该字段 .apply 运行函数 &lt;em&gt;&lt;strong&gt;ct.fepu&lt;/strong&gt;&lt;/em&gt; ，得到企业感知经济不确定性风险FEPU(含词语和句子两个FEPU)&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#常规速度代码&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#import cntext as ct&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#FEPU_df = df[&amp;#39;经营讨论与分析内容&amp;#39;].apply(ct.FEPU)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#res_df = pd.concat([df[[&amp;#39;会计年度&amp;#39;, &amp;#39;股票代码&amp;#39;]], FEPU_df],   axis=1)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#res_df.to_csv(&amp;#39;result.csv&amp;#39;, index=False)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#res_df&lt;/span&gt;
+
+
+&lt;span class=&#34;c1&#34;&gt;#加速版代码&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandarallel&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pandarallel&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;pandarallel&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;initialize&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;fepu_df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;经营讨论与分析内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;parallel_apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fepu&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;res_df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;concat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;会计年度&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;股票代码&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;fepu_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;axis&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;res_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;to_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;result.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;index&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;False&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;res_df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 1.35 s, sys: 1.2 s, total: 2.54 s
+Wall time: 4min 29s
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df2.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;`&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h3 id=&#34;43-可视化&#34;&gt;4.3 可视化&lt;/h3&gt;
+&lt;p&gt;根据 FEPUw 和 FEPUs 的年度均值， 绘制2001-2022期间的经济政策不确定性变化折线图&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;matplotlib.pyplot&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;plt&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;matplotlib&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;scienceplots&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;platform&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;matplotlib_inline&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;matplotlib_inline&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;backend_inline&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;set_matplotlib_formats&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;png&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;svg&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;style&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;use&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;science&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;no-latex&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;cjk-sc-font&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;system&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;platform&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;system&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;# 获取操作系统类型&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;system&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;Windows&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;font&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;family&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;SimHei&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;elif&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;system&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;Darwin&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;font&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;family&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;Arial Unicode MS&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;font&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;family&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;sans-serif&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;matplotlib&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;rc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;font&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;**&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;font&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;# 设置全局字体&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;years&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;range&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2001&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2023&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;FEPUw_s&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;FEPUs_s&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_df&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;res_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;groupby&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;会计年度&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;FEPUw_s&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;FEPUw&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mean&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;FEPUs_s&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;FEPUs&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mean&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;
+    
+    
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;figure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;figsize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;plot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;years&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FEPUw_s&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;plot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;years&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FEPUs_s&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;scatter&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;years&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FEPUw_s&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;label&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;SEPUw&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;scatter&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;years&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FEPUs_s&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;label&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;SEPUs&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;title&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;感知经济政策不确定性FEPU年度均值&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;12&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;xlabel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;年份&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;13&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ylabel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;FEPU均值&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;13&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;legend&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;plt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;show&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/plot.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;五参考文献&#34;&gt;五、参考文献&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[1]聂辉华, 阮睿, 沈吉. 企业不确定性感知、投资决策和金融资产配置[J]. 世界经济, 2020, 43 (06): 77-98.
+
+[2]Li, Jing, Huihua Nie, Rui Ruan, and Xinyi Shen. &amp;#34;Subjective perception of economic policy uncertainty and corporate social responsibility: Evidence from China.&amp;#34; International Review of Financial Analysis 91 (2024): 103022.
+
+[3]Huang, Yun, and Paul Luk. &amp;#34;Measuring economic policy uncertainty in China.&amp;#34; China Economic Review 59 (2020): 10136
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;六获取资料&#34;&gt;六、获取资料&lt;/h2&gt;
+&lt;p&gt;内容原创不易，&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;- 100元 
+   - mda01-22.csv.gz
+   - A01-22.csv.gz 
+
+- 100元 cntext-2.1.1-py3-none-any.whl
+
+- 200元 
+   - mda01-22.csv.gz
+   - A01-22.csv.gz 
+   - cntext-2.1.1-py3-none-any.whl
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;加微信 &lt;strong&gt;372335839&lt;/strong&gt;， 备注「姓名-学校-专业」。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<p>本文使用的缩写</p>
+<ul>
+<li>EPU   经济政策不确定性(Economic Policy Uncertainty, EPU)</li>
+<li>FEPU 企业不确定性感知(FEPU,  Subjective perception of economic policy uncertainty)</li>
+</ul>
+<p><br><br></p>
+<h2 id="一背景">一、背景</h2>
+<p>「<em><strong>经济政策不确定性</strong></em>(Economic Policy Uncertainty, EPU)」 通常是用来衡量经济中政策不确定性水平的一种度量方式。企业作为一个理性的经济主体， 需要根据未来的期望成本和收益进行决策 。政府的经济政策会在很大程度上影响企业的预期成本和收益 ， 如果经济政策频繁变化 ， 会给企业带来困扰 。现有文献经济政策不确定性测量思路大概有</p>
+<ol>
+<li>股票市场隐含波动率VIX衡量宏观层面经济不确定性。</li>
+<li>利用外生变量，并结合企业对这些外生变量的依赖程度衡量企业面临的不确定性 。如政治事件、能源价格、汇率波动、贸易协定签订。</li>
+<li>利用新闻文本测量的经济不确定性。</li>
+</ol>
+<p>但 经济政策不确定性指标(EPU)存在两个问题</p>
+<ol>
+<li>EPU是宏观指标， 同期所有企业的EPU有且仅有一个观测值。</li>
+<li>EPU默认所有企业是同质， 对经济政策不确定性的感知是相同的。</li>
+</ol>
+<p>本推文参考聂辉华等(2020)内的算法,  实现利用 <em><strong>经营讨论与分析(MD&amp;A)文本数据</strong></em>  测量企业「<em><strong>企业不确定性感知FEPU</strong></em>」(FEPU,  Subjective perception of economic policy uncertainty) 。</p>
+<p><br><br></p>
+<h2 id="二epufepu">二、EPU&amp;FEPU</h2>
+<h3 id="21-epu">2.1 EPU</h3>
+<p>在复现「<em><strong>企业不确定性感知FEPU</strong></em>」前，我们先了解利用新闻数据测量 <em><strong>EPU</strong></em> 的算法，这样更容易理解 <em><strong>FEPU</strong></em> 的原理。参考Huang、Yun&amp; Paul(2020)，大邓在前段时间分享了一个代码教程 <a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/">代码 | 使用「新闻数据」计算 「经济政策不确定性」指数</a> 。 <br></p>
+<p>新闻数据计算EPU的算法</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Step-1. 选择了114家中国大陆的报纸，其中包括北京、上海、广州和天津等主要城市的报纸。
+Step-2. 对于每家报纸，搜索包含以下三个关键词之一的文章：经济、不确定性和政策。这些关键词的中文和英文对照可以在论文的表格1中找到。
+Step-3. 将每个月的文章数量按照满足第一个关键词的文章数量进行缩放。
+Step-4. 将时间序列标准化，使其在2000年1月至2011年12月期间的标准差为1。 保证所有媒体计算得到的epu是可比的。
+Step-5. 对十家报纸的月度序列进行简单平均，并将指标归一化，使其在2000年1月至2011年12月期间的平均值为100。
+</code></pre></div><br>
+<p>文献中算法内容长， 结构化不足， 理解起来需要一些脑力。 大邓换种描述方式</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">EPU_t = m/n
+
+- m  时期 t 同时含经济Economic、政策Policy、不确定Uncertainty三类词的新闻条数m
+- n  时期 t 总的新闻条数n
+</code></pre></div><p><br><br></p>
+<h3 id="22-fepu">2.2 FEPU</h3>
+<p>理解了 EPU， 就能类比理解「<em><strong>企业感知经济政策不确定性FEPU</strong></em>」的算法。</p>
+<table>
+<thead>
+<tr>
+<th>算法</th>
+<th>数据</th>
+<th>层次</th>
+<th>n</th>
+<th>m</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>经济政策不确定性EPU</td>
+<td>新闻媒体文本</td>
+<td>新闻条数</td>
+<td>时期t新闻总条数n</td>
+<td>时期t同时存在E、P、U三类词的新闻条数m</td>
+</tr>
+<tr>
+<td>感知经济政策不确定性FEPU(word)</td>
+<td>管理层讨论与分析(md&amp;a)</td>
+<td>词语数</td>
+<td>将时期t的企业i的 md&amp;a 文本词语个数n。</td>
+<td>1. 将md&amp;a分句，得到很多句子。<br/>2. 同时含EP、U两类词的句子中， 统计这些句子中EP、U的词语出现次数之和m <br/>(聂2020文献中只有两类，其中E、P合并为EP)</td>
+</tr>
+<tr>
+<td>感知经济政策不确定性FEPU(sentence)</td>
+<td>管理层讨论与分析(md&amp;a)</td>
+<td>句子数</td>
+<td>将时期t的企业i的 md&amp;a 文本进行分句，得到句子个数n</td>
+<td>1. 将md&amp;a分句，得到很多句子。<br/>2. 同时含EP、U两类词的句子中， 统计这类句子个数m <br/>(聂2020文献中只有两类，其中E、P合并为EP)</td>
+</tr>
+</tbody>
+</table>
+<p><br><br></p>
+<h2 id="三-准备cntext">三、 准备cntext</h2>
+<p>EPU 和 FEPU 于今日刚刚封装到 cntext2.1.1 中， 再计算这两个指数， 就变得容易多了。</p>
+<h3 id="31-安装cntext">3.1 安装cntext</h3>
+<p>我使用的自己 <strong>未公开</strong> 的cntext 2.1.1 版本， Bug频出，等调整好了再公开。</p>
+<p>将 <em><strong>cntext-2.1.1-py3-none-any.whl</strong></em> 放置于桌面，打开 <em><strong>cmd</strong></em>  (苹果电脑打开terminal)， 输入cd desktop</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+</code></pre></div><br>
+<p>之后在 <em><strong>cmd</strong></em>  (苹果电脑打开terminal) 中使用 <em><strong>pip3</strong></em> 安装</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install pdfdocx
+pip3 install distinctiveness
+pip3 install pandarallel
+pip3 install cntext-2.1.1-py3-none-any.whl
+</code></pre></div><br>
+<p>文末有 <em><strong>cntext-2.1.1-py3-none-any.whl</strong></em>  获取方式</p>
+<p><br><br></p>
+<h3 id="32-内置词典">3.2 内置词典</h3>
+<table>
+<thead>
+<tr>
+<th>内置文件</th>
+<th>词典</th>
+<th>参考文献文献</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>zh_common_EPU.yaml</td>
+<td>经济E、政策P、不确定U</td>
+<td>Huang, Yun, and Paul Luk（2020）</td>
+</tr>
+<tr>
+<td>zh_common_FEPU.yaml</td>
+<td>经济政策EP、不确定性U</td>
+<td>聂辉华, 阮睿&amp;沈吉（2020）</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h4 id="31-查看内置词典">3.1 查看内置词典</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+<span class="n">ct</span><span class="o">.</span><span class="n">get_dict_list</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2.1.1
+
+[&#39;zh_common_NTUSD.yaml&#39;,
+ &#39;zh_common_DUTIR.yaml&#39;,
+ &#39;enzh_common_StopWords.yaml&#39;,
+ &#39;en_valence_Concreteness.yaml&#39;,
+ &#39;en_common_LoughranMcDonald.yaml&#39;,
+ &#39;zh_common_FinanceSenti.yaml&#39;,
+ &#39;zh_common_TsinghuaPraiseDegrade.yaml&#39;,
+ &#39;zh_common_FEPU.yaml&#39;,    聂辉华, 阮睿&amp;沈吉（2020）
+ &#39;en_common_ANEW.yaml&#39;,
+ &#39;en_common_NRC.yaml&#39;,
+ &#39;zh_valence_ChineseEmoBank.yaml&#39;,
+ &#39;zh_valence_SixSemanticDimensionDatabase.yaml&#39;,
+ &#39;zh_common_FinacialFormalUnformal.yaml&#39;,
+ &#39;zh_common_LoughranMcDonald.yaml&#39;,
+ &#39;enzh_common_AdvConj.yaml&#39;,
+ &#39;en_common_SentiWS.yaml&#39;,
+ &#39;zh_common_Digitalization.yaml&#39;,
+ &#39;en_common_LSD2015.yaml&#39;,
+ &#39;zh_common_HowNet.yaml&#39;,
+ &#39;zh_common_EPU.yaml&#39;]      #Huang, Yun, and Paul Luk（2020）
+</code></pre></div><br>
+<h4 id="312-导入词典">3.1.2 导入词典</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="n">FEPU_infos</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_yaml_dict</span><span class="p">(</span><span class="s1">&#39;zh_common_FEPU.yaml&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">FEPU_infos</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;Name&#39;: &#39;中文经济政策不确定性词典&#39;, 
+
+&#39;Desc&#39;: &#39;中文经济政策不确定性词典, 含经济政策EconomicPolicy、不确定性Uncertainty两个词表&#39;, 
+
+&#39;Refer&#39;: &#39;聂辉华, 阮睿, 沈吉. 企业不确定性感知、投资决策和金融资产配置[J]. 世界经济, 2020, 43 (06): 77-98.&#39;, 
+
+&#39;Category&#39;: [&#39;经济政策&#39;, &#39;不确定&#39;], 
+
+&#39;Dictionary&#39;: 
+    
+    {&#39;经济政策&#39;: [&#39;市政&#39;, &#39;政策&#39;, &#39;货币政策&#39;, &#39;政策鼓励&#39;, &#39;国家&#39;, &#39;扩内需&#39;, &#39;保增长&#39;, &#39;促发展&#39;, &#39;产业发展&#39;, &#39;法律&#39;, &#39;法规&#39;, &#39;行业政策&#39;, &#39;产业政策&#39;, &#39;宏观政策&#39;, &#39;国民经济&#39;, &#39;有关部门&#39;, &#39;产业结构调整&#39;, &#39;产业结构&#39;, &#39;当地政府&#39;, &#39;政府&#39;, &#39;经济政策&#39;, &#39;经济走势&#39;, &#39;所得税&#39;, &#39;税收减免&#39;, &#39;刺激政策&#39;, &#39;限贷令&#39;, &#39;限购令&#39;, &#39;保障房&#39;, &#39;宏观调控&#39;, &#39;产业发展&#39;, &#39;证监会&#39;, &#39;国家政策&#39;, &#39;政治&#39;, &#39;军事&#39;, &#39;政策环境&#39;, &#39;宏观&#39;, &#39;政府补助政策&#39;, &#39;调控政策&#39;, &#39;税收政策&#39;, &#39;政策扶持&#39;], 
+    
+    &#39;不确定&#39;: [&#39;风险&#39;, &#39;经营风险&#39;, &#39;市场风险&#39;, &#39;信用风险&#39;, &#39;不确定&#39;, &#39;波动&#39;, &#39;变化&#39;, &#39;改变&#39;, &#39;徘徊&#39;, &#39;不稳&#39;, &#39;不稳定&#39;, &#39;不寻常&#39;, &#39;错综复杂&#39;, &#39;非常复杂&#39;, &#39;纷繁复杂&#39;, &#39;纷纭复杂&#39;, &#39;十分复杂&#39;, &#39;变得复杂&#39;, &#39;风云突变&#39;, &#39;矛盾突出&#39;, &#39;突变&#39;, &#39;复杂多变&#39;, &#39;诡谲多变&#39;, &#39;阵痛&#39;, &#39;过渡&#39;, &#39;问责&#39;, &#39;整顿&#39;, &#39;危险&#39;, &#39;动荡&#39;, &#39;多变性&#39;, &#39;震荡&#39;, &#39;难以确定&#39;, &#39;难以预测&#39;, &#39;难以语料&#39;, &#39;难以琢磨&#39;, &#39;难以捉摸&#39;, &#39;接受考验&#39;, &#39;混乱&#39;, &#39;时而&#39;, &#39;随机&#39;]}
+    
+    }
+</code></pre></div><p><br><br></p>
+<h3 id="33-内置函数">3.3 内置函数</h3>
+<p><em><strong>ct.epu(df,  freq=&lsquo;Y&rsquo;,e_pattern='', p_pattern='', u_pattern='')</strong></em></p>
+<ul>
+<li><em><strong>df</strong></em>  新闻DataFrame；  DataFrame必须含date和text两个字段；每行一条记录，含所有时期所有的新闻。</li>
+<li><em><strong>freq</strong></em> 字符串；决定EPU的时间粒度， 年Y、月M、天D， 默认freq=&lsquo;Y&rsquo;</li>
+<li><em><strong>e_pattern</strong></em>  字符串；经济类词典，用<code>|</code>间隔词语，形如 <strong>e_pattern = &lsquo;经济|金融&rsquo;</strong></li>
+<li><em><strong>p_pattern</strong></em>  字符串；政策词典，用<code>|</code>间隔词语，形如 <strong>p_pattern = &lsquo;政策|治理|行政&rsquo;</strong></li>
+<li><em><strong>u_pattern</strong></em> 字符串；不确定性词典，用<code>|</code>间隔词语，形如 <strong>u_pattern = &lsquo;风险|危机|难以预测&rsquo;</strong></li>
+</ul>
+<p>返回epu时间序列数据，格式为DataFrame</p>
+<br>
+<p><em><strong>ct.fepu(text,  ep_pattern='', u_pattern='')</strong></em></p>
+<ul>
+<li><em><strong>text</strong></em>  ；某时期t某企业i的管理层讨论与分析md&amp;a文本</li>
+<li><em><strong>ep_pattern</strong></em>  字符串；经济政策类词典，用<code>|</code>间隔词语，形如 <strong>ep_pattern = &lsquo;经济|金融|政策|治理|行政&rsquo;</strong></li>
+<li><em><strong>u_pattern</strong></em> 字符串；不确定性词典，用<code>|</code>间隔词语，形如 <strong>u_pattern = &lsquo;风险|危机|难以预测&rsquo;</strong></li>
+</ul>
+<p><br><br></p>
+<h2 id="四测量fepu">四、测量FEPU</h2>
+<h3 id="41-读取数据">4.1 读取数据</h3>
+<ul>
+<li><em><strong>mda01-22.csv.gz</strong></em>   管理层讨论与分析2001-2022文本数据</li>
+<li><em><strong>行业代码00-22.xlsx</strong></em>  含股票名称、股票代码、行业等字段。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mda01-22.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;经营讨论与分析内容&#39;</span><span class="p">]</span>
+
+<span class="c1">#上市公司行业信息</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;行业代码00-22.xlsx&#39;</span><span class="p">)</span>
+
+<span class="c1">#合并数据</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">ind_info_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">)</span>
+
+<span class="c1">#剔除ST和金融类企业</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="o">-</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;股票简称&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;ST&#39;</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="o">-</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;行业代码&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;J&#39;</span><span class="p">))]</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/df.png" alt=""  />
+</p>
+<br>
+<h3 id="42-批量计算fepu">4.2 批量计算FEPU</h3>
+<p>选中字段 「<em><strong>经营讨论与分析内容</strong></em>」， 对该字段 .apply 运行函数 <em><strong>ct.fepu</strong></em> ，得到企业感知经济不确定性风险FEPU(含词语和句子两个FEPU)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="c1">#常规速度代码</span>
+<span class="c1">#import cntext as ct</span>
+<span class="c1">#FEPU_df = df[&#39;经营讨论与分析内容&#39;].apply(ct.FEPU)</span>
+<span class="c1">#res_df = pd.concat([df[[&#39;会计年度&#39;, &#39;股票代码&#39;]], FEPU_df],   axis=1)</span>
+<span class="c1">#res_df.to_csv(&#39;result.csv&#39;, index=False)</span>
+<span class="c1">#res_df</span>
+
+
+<span class="c1">#加速版代码</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">from</span> <span class="nn">pandarallel</span> <span class="kn">import</span> <span class="n">pandarallel</span>
+<span class="n">pandarallel</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+<span class="n">fepu_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;经营讨论与分析内容&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parallel_apply</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">fepu</span><span class="p">)</span>
+<span class="n">res_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">[[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">]],</span> <span class="n">fepu_df</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">res_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;result.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">res_df</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 1.35 s, sys: 1.2 s, total: 2.54 s
+Wall time: 4min 29s
+</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<p>`</p>
+<p><br><br></p>
+<h3 id="43-可视化">4.3 可视化</h3>
+<p>根据 FEPUw 和 FEPUs 的年度均值， 绘制2001-2022期间的经济政策不确定性变化折线图</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">scienceplots</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">matplotlib_inline</span>
+<span class="n">matplotlib_inline</span><span class="o">.</span><span class="n">backend_inline</span><span class="o">.</span><span class="n">set_matplotlib_formats</span><span class="p">(</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="s1">&#39;svg&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">([</span><span class="s1">&#39;science&#39;</span><span class="p">,</span> <span class="s1">&#39;no-latex&#39;</span><span class="p">,</span> <span class="s1">&#39;cjk-sc-font&#39;</span><span class="p">])</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>  <span class="c1"># 获取操作系统类型</span>
+<span class="k">if</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Windows&#39;</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;SimHei&#39;</span><span class="p">}</span>
+<span class="k">elif</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Darwin&#39;</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;Arial Unicode MS&#39;</span><span class="p">}</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;sans-serif&#39;</span><span class="p">}</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">font</span><span class="p">)</span>  <span class="c1"># 设置全局字体</span>
+
+
+<span class="n">years</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2001</span><span class="p">,</span> <span class="mi">2023</span><span class="p">)</span>
+<span class="n">FEPUw_s</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">FEPUs_s</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">year_df</span> <span class="ow">in</span> <span class="n">res_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;会计年度&#39;</span><span class="p">):</span>
+    <span class="n">FEPUw_s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">year_df</span><span class="p">[</span><span class="s1">&#39;FEPUw&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+    <span class="n">FEPUs_s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">year_df</span><span class="p">[</span><span class="s1">&#39;FEPUs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+    
+    
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">FEPUw_s</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">FEPUs_s</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">FEPUw_s</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;SEPUw&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">FEPUs_s</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;SEPUs&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;感知经济政策不确定性FEPU年度均值&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;年份&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;FEPU均值&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/plot.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="五参考文献">五、参考文献</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[1]聂辉华, 阮睿, 沈吉. 企业不确定性感知、投资决策和金融资产配置[J]. 世界经济, 2020, 43 (06): 77-98.
+
+[2]Li, Jing, Huihua Nie, Rui Ruan, and Xinyi Shen. &#34;Subjective perception of economic policy uncertainty and corporate social responsibility: Evidence from China.&#34; International Review of Financial Analysis 91 (2024): 103022.
+
+[3]Huang, Yun, and Paul Luk. &#34;Measuring economic policy uncertainty in China.&#34; China Economic Review 59 (2020): 10136
+</code></pre></div><p><br><br></p>
+<h2 id="六获取资料">六、获取资料</h2>
+<p>内容原创不易，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 100元 
+   - mda01-22.csv.gz
+   - A01-22.csv.gz 
+
+- 100元 cntext-2.1.1-py3-none-any.whl
+
+- 200元 
+   - mda01-22.csv.gz
+   - A01-22.csv.gz 
+   - cntext-2.1.1-py3-none-any.whl
+</code></pre></div><p>加微信 <strong>372335839</strong>， 备注「姓名-学校-专业」。</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
 </ul>
 ]]></content:encoded>
     </item>
@@ -1149,6 +1757,7 @@
 <ul>
 <li>吴非, 胡慧芷, 林慧妍, and 任晓怡. &ldquo;企业数字化转型与资本市场表现——来自股票流动性的经验证据.&rdquo; 管理世界 (2021).</li>
 <li>宋德勇, 朱文博, and 丁海. &ldquo;企业数字化能否促进绿色技术创新?.&rdquo; 财经研究 48, no. 4 (2022).</li>
+<li>方明月,聂辉华,阮睿,沈昕毅.企业数字化转型与经济政策不确定性感知[J].金融研究,2023,(02):21-39.</li>
 </ul>
 <p>数字化指标数分析结果以xlsx存储，如下图</p>
 <p><br><br></p>
@@ -1346,7 +1955,7 @@ Digital_Index最大值: 5.963579343618446
 </code></pre></div><p><img loading="lazy" src="img/digital_index.png" alt=""  />
 </p>
 <p><br><br></p>
-<h2 id="获取资料">获取资料</h2>
+<h2 id="七获取资料">七、获取资料</h2>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 100元 管理层讨论与分析数据mda01-22.csv.gz
 
 - 100元 cntext-2.1.1-py3-none-any.whl
@@ -1357,6 +1966,8 @@ Digital_Index最大值: 5.963579343618446
    - 数字化代码.ipynb
    - corporate_digitalization.xlsx
 </code></pre></div><p>加微信 <strong>372335839</strong>， 备注「姓名-学校-专业」。</p>
+<p><br><br></p>
+<h2 id="相关内容">相关内容</h2>
 <p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
 <ul>

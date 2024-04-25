@@ -3188,7 +3188,7 @@ Wall time: 13min 42s
     </item>
     
     <item>
-      <title>代码 | 使用「新闻数据」计算 「经济政策不确定性」指数</title>
+      <title>代码 | 使用「新闻数据」测量 「经济政策不确定性EPU」指标</title>
       <link>https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/</link>
       <pubDate>Sun, 17 Dec 2023 00:00:00 +0000</pubDate>
       
@@ -3213,226 +3213,148 @@ Step-2. 对于每家报纸，搜索包含以下三个关键词之一的文章：
 Step-3. 将每个月的文章数量按照满足第一个关键词的文章数量进行缩放。
 Step-4. 将时间序列标准化，使其在2000年1月至2011年12月期间的标准差为1。 保证所有媒体计算得到的epu是可比的。
 Step-5. 对十家报纸的月度序列进行简单平均，并将指标归一化，使其在2000年1月至2011年12月期间的平均值为100。
-</code></pre></div><p>如果是利用一个媒体进行 类 EPU 指标的构建， 只需用到算法中的前 3 个步骤。</p>
+</code></pre></div><p>文献中算法内容长， 结构化不足， 理解起来需要一些脑力。 大邓换种描述方式</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">EPU_t = m/n
+
+- m  时期 t 同时含经济Economic、政策Policy、不确定Uncertainty三类词的新闻条数m
+- n  时期 t 总的新闻条数n
+</code></pre></div><p>本推文是利用一个媒体进行 *** EPU*** 指标的构建， 只需用到算法中的前 3 个步骤。</p>
 <p><br><br></p>
-<h2 id="二基本知识">二、基本知识</h2>
-<h3 id="21-查看数据">2.1 查看数据</h3>
+<h2 id="二准备工作">二、准备工作</h2>
+<p>EPU 算法代码已封装到 cntext2.1.1 中， 计算这个指数， 就变得容易多了。</p>
+<h3 id="21-安装cntext">2.1 安装cntext</h3>
+<p>我使用的自己 <strong>未公开</strong> 的cntext 2.1.1 版本， Bug频出，等调整好了再公开。</p>
+<p>将 <em><strong>cntext-2.1.1-py3-none-any.whl</strong></em> 放置于桌面，打开 <em><strong>cmd</strong></em>  (苹果电脑打开terminal)， 输入cd desktop</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+</code></pre></div><br>
+<p>之后在 <em><strong>cmd</strong></em>  (苹果电脑打开terminal) 中使用 <em><strong>pip3</strong></em> 安装</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install pdfdocx
+pip3 install distinctiveness
+pip3 install pandarallel
+pip3 install cntext-2.1.1-py3-none-any.whl
+</code></pre></div><br>
+<p>文末有 <em><strong>cntext-2.1.1-py3-none-any.whl</strong></em>  获取方式</p>
+<br>
+<h3 id="22-查看内置词典">2.2 查看内置词典</h3>
+<p>EPU词典已内置于 cntext2.1.1 中</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+<span class="n">ct</span><span class="o">.</span><span class="n">get_dict_list</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2.1.1
+
+[&#39;zh_common_NTUSD.yaml&#39;,
+ &#39;zh_common_DUTIR.yaml&#39;,
+ &#39;enzh_common_StopWords.yaml&#39;,
+ &#39;en_valence_Concreteness.yaml&#39;,
+ &#39;en_common_LoughranMcDonald.yaml&#39;,
+ &#39;zh_common_FinanceSenti.yaml&#39;,
+ &#39;zh_common_TsinghuaPraiseDegrade.yaml&#39;,
+ &#39;zh_common_FEPU.yaml&#39;,    
+ &#39;en_common_ANEW.yaml&#39;,
+ &#39;en_common_NRC.yaml&#39;,
+ &#39;zh_valence_ChineseEmoBank.yaml&#39;,
+ &#39;zh_valence_SixSemanticDimensionDatabase.yaml&#39;,
+ &#39;zh_common_FinacialFormalUnformal.yaml&#39;,
+ &#39;zh_common_LoughranMcDonald.yaml&#39;,
+ &#39;enzh_common_AdvConj.yaml&#39;,
+ &#39;en_common_SentiWS.yaml&#39;,
+ &#39;zh_common_Digitalization.yaml&#39;,
+ &#39;en_common_LSD2015.yaml&#39;,
+ &#39;zh_common_HowNet.yaml&#39;,
+ &#39;zh_common_EPU.yaml&#39;]      #Huang, Yun, and Paul Luk（2020）
+</code></pre></div><br>
+<h3 id="23-导入词典">2.3 导入词典</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="n">EPU_infos</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_yaml_dict</span><span class="p">(</span><span class="s1">&#39;zh_common_EPU.yaml&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">EPU_infos</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;Name&#39;: &#39;中文经济政策不确定性词典EPU&#39;, 
+
+&#39;Desc&#39;: &#39;中文经济政策不确定性词典EPU, 含经济Economic、政策Policy、不确定性Uncertainty三个词表&#39;, &#39;Refer&#39;: &#39;Huang, Yun, and Paul Luk. &#34;Measuring economic policy uncertainty in China.&#34; China Economic Review 59 (2020): 101367&#39;, 
+
+&#39;Category&#39;: [&#39;经济&#39;, &#39;政策&#39;, &#39;不确定&#39;], 
+
+&#39;Dictionary&#39;: 
+   {
+      &#39;经济&#39;: [&#39;经济&#39;, &#39;金融&#39;], 
+      &#39;政策&#39;: [&#39;政策&#39;, &#39;制度&#39;, &#39;体制&#39;, &#39;战略&#39;, &#39;措施&#39;, &#39;规章&#39;, &#39;规例&#39;, &#39;条例&#39;, &#39;政治&#39;, &#39;执政&#39;, &#39;政府&#39;, &#39;政委&#39;, &#39;国务院&#39;, &#39;人大&#39;, &#39;人民代表大会&#39;, &#39;中央&#39;, &#39;国家主席&#39;, &#39;总书记&#39;, &#39;国家领导人&#39;, &#39;总理&#39;, &#39;改革&#39;, &#39;整改&#39;, &#39;整治&#39;, &#39;规管&#39;, &#39;监管&#39;, &#39;财政&#39;, &#39;税&#39;, &#39;人民银行&#39;, &#39;央行&#39;, &#39;赤字&#39;, &#39;利率&#39;], 
+      &#39;不确定&#39;: [&#39;不确定&#39;, &#39;不明确&#39;, &#39;波动&#39;, &#39;震荡&#39;, &#39;动荡&#39;, &#39;不稳&#39;, &#39;未明&#39;, &#39;不明朗&#39;, &#39;不清晰&#39;, &#39;未清晰&#39;, &#39;难料&#39;, &#39;难以预料&#39;, &#39;难以预测&#39;, &#39;难以预计&#39;, &#39;难以估计&#39;, &#39;无法预料&#39;, &#39;无法预测&#39;, &#39;无法预计&#39;, &#39;无法估计&#39;, &#39;不可预料&#39;, &#39;不可预测&#39;, &#39;不可预计&#39;, &#39;不可估计&#39;]
+   }
+}
+</code></pre></div><br>
+<h3 id="24-ctepu">2.4 ct.epu</h3>
+<p>cntext2.1.1内置函数</p>
+<p><em><strong>ct.epu(df,  freq=&lsquo;Y&rsquo;,e_pattern='', p_pattern='', u_pattern='')</strong></em></p>
+<ul>
+<li><em><strong>df</strong></em>  新闻DataFrame；  DataFrame必须含date和text两个字段；每行一条记录，含所有时期所有的新闻。</li>
+<li><em><strong>freq</strong></em> 字符串；决定EPU的时间粒度， 年Y、月M、天D， 默认freq=&lsquo;Y&rsquo;</li>
+<li><em><strong>e_pattern</strong></em>  字符串；经济类词典，用<code>|</code>间隔词语，形如 <strong>e_pattern = &lsquo;经济|金融&rsquo;</strong></li>
+<li><em><strong>p_pattern</strong></em>  字符串；政策词典，用<code>|</code>间隔词语，形如 <strong>p_pattern = &lsquo;政策|治理|行政&rsquo;</strong></li>
+<li><em><strong>u_pattern</strong></em> 字符串；不确定性词典，用<code>|</code>间隔词语，形如 <strong>u_pattern = &lsquo;风险|危机|难以预测&rsquo;</strong></li>
+</ul>
+<p>返回epu时间序列数据，格式为DataFrame</p>
+<br>
+<br>
+<h2 id="三测量epu">三、测量EPU</h2>
+<h3 id="31-读取数据">3.1 读取数据</h3>
 <p>大邓的 <a href="https://textdata.cn/blog/2023-12-14-daily-news-dataset/"><strong>新闻数据集 | 含 人民日报/经济日报/光明日报 等 7 家媒体(2023.12.18)</strong></a>中的所有媒体， 均有csv格式， 内含 date 和 text 两个字段， csv中的每行是一条新闻。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;rmrb.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="n">rmrb_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;rmrb.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+<span class="n">rmrb_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
 </p>
 <br>
-<h3 id="22-日期转化">2.2 日期转化</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;人民日报: &#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">(),</span> <span class="s1">&#39;~&#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">())</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">人民日报:  1946-05-15 ~ 2023-12-18
-</code></pre></div><br>
-<h3 id="23-按日期进行分组">2.3 按日期进行分组</h3>
-<p>使用日期进行分组， 常见的周期是年Y、月M、日D。 以 <code>df.groupby(pd.Grouper(key='date', freq='M'))</code> 为例， 会得到不同 year-month 及对应的dataframe 。观察 freq 设置成 Y、M、D， 代码运行结果，理解代码字段名含义。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">Yfreq_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;Y&#39;</span><span class="p">)):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">Yfreq_df</span><span class="p">))</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1946-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1947-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1948-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1949-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1950-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1951-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1952-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-......
-2016-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2017-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2018-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2019-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2020-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2021-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2022-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">Mfreq_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">Mfreq_df</span><span class="p">))</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1946-05-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-06-30 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-07-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-08-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-09-30 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-10-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-11-30 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-......
-2023-05-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-06-30 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-07-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-08-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-09-30 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-10-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-11-30 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-12-31 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">Dfreq_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">)):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">Dfreq_df</span><span class="p">))</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1946-05-15 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-05-16 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-05-17 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-05-18 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-05-19 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-05-20 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-1946-05-21 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-......
-2023-12-11 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-12-12 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-12-13 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-12-14 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-12-15 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-12-16 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-12-17 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-2023-12-18 00:00:00 &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-
-</code></pre></div><br>
-<h3 id="24-文本操作">2.4 文本操作</h3>
-<p>dataframe中字段如果是字符串格式， 可以用 .str属性， 该str属性具有以下特色功能。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">#某词
-word_pattern1 = &#39;不确定&#39;
-#某类词
-word_pattern2 = &#39;不确定|不明确|波动|震荡&#39;
-
-#是否含某词   
-df[&#39;text&#39;].str.contains(word_pattern1)  
-#是否含某类词   
-df[&#39;text&#39;].str.contains(word_pattern2)  
-
-#某词出现的次数 
-df[&#39;text&#39;].str.count(word_pattern1)  
-
-
-#某类词出现的次数 
-df[&#39;text&#39;].str.count(word_pattern2)  
-</code></pre></div><p>在 EPU 的计算中，使用的是contains。另外  即可以是</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">uncertainty_pattern</span> <span class="o">=</span> <span class="s1">&#39;不确定|不明确|波动|震荡|动荡|不稳|未明|不明朗|不清晰|未清晰|难料|难以预料|难以预测|难以预计|难以估计|无法预料|无法预测|无法预计|无法估计|不可预料|不可预测|不可预计|不可估计&#39;</span>
-
-
-<span class="c1">#每条新闻是否出现 uncertainty_pattern ， 出现True，不出现False</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">uncertainty_pattern</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0          False
-1          False
-2          False
-3          False
-4          False
-           ...  
-2014656    False
-2014657    False
-2014658    False
-2014659    False
-2014660    False
-Name: text, Length: 2014661, dtype: bool
-</code></pre></div><br>
-<br>
-<p>通过加总True的个数，得到出现 uncertainty_pattern 的新闻记录数</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">uncertainty_pattern</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">56358
-</code></pre></div><br>
-<h3 id="24-布尔值的计算">2.4 布尔值的计算</h3>
-<p><em><strong>逻辑且</strong></em> 操作，</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">economic_pattern</span> <span class="o">=</span> <span class="s1">&#39;经济|金融&#39;</span>
-<span class="n">uncertainty_pattern</span> <span class="o">=</span> <span class="s1">&#39;不确定|不明确|波动|震荡|动荡|不稳|未明|不明朗|不清晰|未清晰|难料|难以预料|难以预测|难以预计|难以估计|无法预料|无法预测|无法预计|无法估计|不可预料|不可预测|不可预计|不可估计&#39;</span>
-<span class="n">policy_pattern</span> <span class="o">=</span> <span class="s1">&#39;政策|制度|体制|战略|措施|规章|规例|条例|政治|执政|政府|政委|国务院|人大|人民代表大会|中央|国家主席|总书记|国家领导人|总理|改革|整改|整治|规管|监管|财政|税|人民银行|央行|赤字|利率&#39;</span>
-    
-<span class="n">economic_mask</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">economic_pattern</span><span class="p">)</span>
-<span class="n">policy_mask</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">policy_pattern</span><span class="p">)</span>
-<span class="n">uncertainty_mask</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">uncertainty_pattern</span><span class="p">)</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;enconomic新闻条数: &#39;</span><span class="p">,</span> <span class="n">economic_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;policy新闻条数: &#39;</span><span class="p">,</span> <span class="n">policy_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;uncertainty新闻条数: &#39;</span><span class="p">,</span> <span class="n">uncertainty_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-
-<span class="nb">print</span><span class="p">()</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;enconomic&amp;policy同时出现条数: &#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">economic_mask</span> <span class="o">&amp;</span> <span class="n">policy_mask</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;enconomic&amp;policy&amp;uncertainty同时出现条数: &#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">economic_mask</span> <span class="o">&amp;</span> <span class="n">policy_mask</span> <span class="o">&amp;</span> <span class="n">uncertainty_mask</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">enconomic新闻条数:  617182
-policy新闻条数:  1246681
-uncertainty新闻条数:  56358
-
-enconomic&amp;policy同时出现条数:  510791
-enconomic&amp;policy&amp;uncertainty同时出现条数:  34332
-</code></pre></div><h3 id="25-相关内容">2.5 相关内容</h3>
-<p>用到以上操作的代码，通过本文以及这4个推文，巩固 pandas 操作知识点。</p>
+<h3 id="32-批量运算">3.2 批量运算</h3>
+<p><em><strong>ct.epu(df,  freq=&lsquo;Y&rsquo;,  e_pattern='', p_pattern='', u_pattern='')</strong></em></p>
 <ul>
-<li>
-<p><a href="https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/"><strong>代码 | 使用地方gov工作报告生成某类概念词频「面板数据」</strong></a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/"><strong>数据代码| 使用cctv新闻联播文稿构造「面板数据」</strong></a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/"><strong>代码 | 使用3571w专利申请数据集构造「面板数据」</strong></a></p>
-</li>
+<li><em><strong>df</strong></em>  新闻DataFrame；  DataFrame必须含date和text两个字段；每行一条记录，含所有时期所有的新闻。</li>
+<li><em><strong>freq</strong></em> 字符串；决定EPU的时间粒度， 年Y、月M、天D， 默认freq=&lsquo;Y&rsquo;</li>
+<li><em><strong>e_pattern</strong></em>  字符串；经济类词典，用<code>|</code>间隔词语，形如 <strong>e_pattern = &lsquo;经济|金融&rsquo;</strong></li>
+<li><em><strong>p_pattern</strong></em>  字符串；政策词典，用<code>|</code>间隔词语，形如 <strong>p_pattern = &lsquo;政策|治理|行政&rsquo;</strong></li>
+<li><em><strong>u_pattern</strong></em> 字符串；不确定性词典，用<code>|</code>间隔词语，形如 <strong>u_pattern = &lsquo;风险|危机|难以预测&rsquo;</strong></li>
 </ul>
-<p><br><br></p>
-<h2 id="三epu计算函数">三、EPU计算函数</h2>
-<p>有了以上基本知识，就可以使用大邓设计的 <em><strong>cal_epu_index</strong></em> 函数，该函数可针对任意一个新闻数据(csv格式) 计算 EPU 。</p>
-<p>需要注意， 因为是对一个媒体进行计算，所以没有进行标准化和归一化。</p>
-<p>所以媒体1、媒体2计算得到的两个 <em><strong>epu1</strong></em>、<em><strong>epu2</strong></em> 进行数值大小的比较是没有意义的。 如果你有多个媒体，计算得到多个 <em><strong>epu1</strong></em> 、<em><strong>epu2</strong></em>、 <em><strong>epu3</strong></em>， 想计算 <em><strong>mean_epu</strong></em> , 那么记得实现论文算法里的 <em><strong>step4</strong></em>， 再执行 <em><strong>step5</strong></em> 求均值。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">cal_epu_index</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">):</span>
-    <span class="s2">&#34;&#34;&#34;
-</span><span class="s2">    csvf  新闻csv文件的位置， 含date和text两个字段，每行是一条新闻
-</span><span class="s2">    freq  epu的粒度， 年Y、月M、日D
-</span><span class="s2">    
-</span><span class="s2">    #economic、uncertainty、policy整理自
-</span><span class="s2">    #Huang, Yun, and Paul Luk. &#34;Measuring economic policy uncertainty in China.&#34; China Economic Review 59 (2020): 101367
-</span><span class="s2">    
-</span><span class="s2">    返回dataFrame, 含字段date和epu
-</span><span class="s2">    &#34;&#34;&#34;</span>
-    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-    <span class="n">economic_pattern</span> <span class="o">=</span> <span class="s1">&#39;经济|金融&#39;</span>
-    <span class="n">uncertainty_pattern</span> <span class="o">=</span> <span class="s1">&#39;不确定|不明确|波动|震荡|动荡|不稳|未明|不明朗|不清晰|未清晰|难料|难以预料|难以预测|难以预计|难以估计|无法预料|无法预测|无法预计|无法估计|不可预料|不可预测|不可预计|不可估计&#39;</span>
-    <span class="n">policy_pattern</span> <span class="o">=</span> <span class="s1">&#39;政策|制度|体制|战略|措施|规章|规例|条例|政治|执政|政府|政委|国务院|人大|人民代表大会|中央|国家主席|总书记|国家领导人|总理|改革|整改|整治|规管|监管|财政|税|人民银行|央行|赤字|利率&#39;</span>
-    
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
-    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">])</span>
-    
-    <span class="n">datas</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">period_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="n">freq</span><span class="p">)):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">date</span> <span class="c1">#month是datetime型日期，一般为每个月的最后一日</span>
-        <span class="n">economic_mask</span> <span class="o">=</span> <span class="n">period_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">economic_pattern</span><span class="p">)</span>
-        <span class="n">policy_mask</span> <span class="o">=</span> <span class="n">period_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">policy_pattern</span><span class="p">)</span>
-        <span class="n">uncertainty_mask</span> <span class="o">=</span> <span class="n">period_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">uncertainty_pattern</span><span class="p">)</span>
+<p>返回epu时间序列数据，格式为DataFrame</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="n">ct</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-        <span class="c1">#在出现经济词的新闻中，统计出现政策、不确定新的比例</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;epu&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">economic_mask</span> <span class="o">&amp;</span> <span class="n">policy_mask</span> <span class="o">&amp;</span> <span class="n">uncertainty_mask</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">economic_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">datas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    <span class="n">raw_epu_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">datas</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">raw_epu_df</span>
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#人民日报</span>
-<span class="n">rmrb_EPU_df</span> <span class="o">=</span> <span class="n">cal_epu_index</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;rmrb.csv.gzip&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)</span>
 
-<span class="c1">#保存结果</span>
-<span class="c1">#rmrb_EPU_df.to_csv(&#39;rmrb_epu.csv&#39;, index=False)</span>
+<span class="n">rmrb_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;rmrb.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+
+
+<span class="c1">#默认使用内置的zh_common_EPU.yaml，所以不设置参数e_pattern、p_pattern、u_pattern</span>
+<span class="c1">#EPU的时间粒度是月度M</span>
+<span class="n">rmrb_EPU_df</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">epu</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="n">rmrb_df</span><span class="p">,</span>
+                <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+
 <span class="n">rmrb_EPU_df</span>
 </code></pre></div><p><img loading="lazy" src="img/02-df.png" alt=""  />
 </p>
 <br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">gmrb_EPU_df</span> <span class="o">=</span> <span class="n">cal_epu_index</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;gmrb.csv.gzip&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)</span>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="n">ct</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="c1">#保存结果</span>
-<span class="c1">#gmrb_EPU_df.to_csv(&#39;gmrb_epu.csv&#39;, index=False)</span>
+
+<span class="n">gmrb_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;gmrb.csv.gzip&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+
+
+<span class="c1">#默认使用内置的zh_common_EPU.yaml，所以不设置参数e_pattern、p_pattern、u_pattern</span>
+<span class="c1">#EPU的时间粒度是月度M</span>
+<span class="n">gmrb_EPU_df</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">epu</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="n">gmrb_df</span><span class="p">,</span>
+                <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+
 <span class="n">gmrb_EPU_df</span>
 </code></pre></div><p><img loading="lazy" src="img/03-df.png" alt=""  />
 </p>
+<p><br><br></p>
+<h3 id="33-注意">3.3 注意</h3>
+<p>需要注意， 以上结果都是对一个媒体进行计算，所以没有进行标准化和归一化。</p>
+<p>所以媒体1、媒体2计算得到的两个 <em><strong>epu1</strong></em>、<em><strong>epu2</strong></em> 进行数值大小的比较是没有意义的。 如果你有多个媒体，计算得到多个 <em><strong>epu1</strong></em> 、<em><strong>epu2</strong></em>、 <em><strong>epu3</strong></em>， 想计算 <em><strong>mean_epu</strong></em> , 那么记得实现论文算法里的 <em><strong>step4</strong></em>， 再执行 <em><strong>step5</strong></em> 求均值。</p>
 <p><br><br></p>
 <h2 id="四可视化">四、可视化</h2>
 <h3 id="41-dfplot">4.1 df.plot</h3>
@@ -3504,11 +3426,29 @@ enconomic&amp;policy&amp;uncertainty同时出现条数:  34332
 <p>光明日报数据中缺失了1989年了，所以图中有空挡。但是从两个图中可以看到 epu 的走势大致一致。</p>
 <p>作为事后诸葛的大邓， 从人民日报和光明日报计算出的EPU可以看到， 23年不应该投资，应该保守点。</p>
 <p>嗯嗯， 同时作为投资小白，人群中的反向指标人，今年本人收益率-20%，大家开心不~</p>
-<br>
-<h2 id="五获取资料">五、获取资料</h2>
-<p><a href="epu.ipynb">点击下载本文代码epu.ipynb</a></p>
-<p><a href="rmrb_epu.csv">点击下载rmrb_epu.csv</a></p>
-<p><a href="https://textdata.cn/blog/2023-12-14-daily-news-dataset/">点击购买 <strong>新闻数据集 | 含 人民日报/经济日报/光明日报 等 7 家媒体(2023.12.18)</strong></a></p>
+<p><br><br></p>
+<h2 id="五相关内容">五、相关内容</h2>
+<p>用到以上操作的代码，通过本文以及这4个推文，巩固 pandas 操作知识点。</p>
+<ul>
+<li><a href="https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/">代码 | 使用 <strong>地方gov工作报告</strong> 生成某类概念词频「<strong>面板数据</strong>」</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/">代码 | 使用「<strong>新闻数据</strong>」构造概念词提及量「<strong>面板数据</strong>」</a></li>
+<li><a href="https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/">数据代码| 使用 <strong>cctv新闻联播文稿</strong> 构造「<strong>面板数据</strong>」</a></li>
+<li><a href="https://textdata.cn/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/">代码 | 使用 <strong>3571w专利申请数据</strong> 构造「<strong>面板数据</strong>」</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-25-firm-economic-policy-uncertainty/">代码 | 使用 <strong>MD&amp;A文本</strong> 测量「<strong>企业不确定性感知FEPU指标</strong>」</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="六获取资料">六、获取资料</h2>
+<ul>
+<li>
+<p>免费领取<a href="rmrb_epu.csv">rmrb_epu.csv</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-14-daily-news-dataset/">按需购买 <strong>新闻数据集 | 含 人民日报/经济日报/光明日报 等 7 家媒体(2023.12.18)</strong></a></p>
+</li>
+<li>
+<p>100元 cntext-2.1.1-py3-none-any.whl  加微信372335839，备注「姓名-学校-专业」</p>
+</li>
+</ul>
 <p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
 <ul>
