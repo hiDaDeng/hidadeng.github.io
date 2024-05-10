@@ -107,6 +107,12 @@ class Config {
 				url: 'https://www.36kr.com/',
 				category: 'cNews'
 			},
+			{
+				site: '小红书',
+				icon: 'xiaohongshu',
+				url: 'https://www.xiaohongshu.com/',
+				category: 'cNews'
+			},
 
 
 			{
