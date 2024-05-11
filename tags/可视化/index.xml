@@ -8,6 +8,345 @@
     <language>zh</language>
     <lastBuildDate>Sat, 11 May 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>代码 | 使用地方gov工作报告生成某类概念词词频「面板数据」</title>
+      <link>https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/</link>
+      <pubDate>Sat, 11 May 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/</guid>
+      <description>使用31省市的2002-2024年的省级政府工作报告，绘制出的不同类别关键词的趋势图。直接上最终效果效果图</description>
+      <content:encoded><![CDATA[<p>使用31省市的2002-2024年的省级政府工作报告，绘制出的不同类别关键词的趋势图。 直接上效果效果图</p>
+<p><img loading="lazy" src="img/12-tri-agri.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/13-inovation-plot.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/14-enviroment-plot.png" alt=""  />
+</p>
+<br>
+<p>其实绘制三种图的数据是面板型数据，今天主要分享如何利用省级政府工作报告构建某类概念词频(创新、环保、三农)的面板数据，并绘制8省市概念词频折线图。 大家可以根据自己的研究需要更改代码， 生成自己概念的词频面板数据。</p>
+<br>
+<br>
+<h2 id="获取数据">获取数据</h2>
+<p><a href="https://textdata.cn/blog/2023-12-17-gov-anual-report-dataset/">数据集(付费) | 国、省、市三级政府工作报告文本</a></p>
+<p>数据集100元，  <strong>加微信 372335839， 备注「姓名-学校-专业」</strong>。</p>
+<p><br><br></p>
+<h2 id="一直接上代码">一、直接上代码</h2>
+<h3 id="11-查看数据">1.1 查看数据</h3>
+<p>读取省报告数据文件 <strong>GovReportData/province.csv</strong> ，<a href="https://textdata.cn/blog/2023-12-17-gov-anual-report-dataset/">点击链接，获取政府工作报告数据集</a></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">pdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;GovReportData/province.csv&#39;</span><span class="p">)</span>
+<span class="n">pdf</span>
+</code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
+</p>
+<br>
+<h3 id="12-生成面板数据函数">1.2 生成面板数据函数</h3>
+<p>假设你使用的政府(省、市)工作报告数据是大邓提供的，可以直接使用下面封装的函数，快速生成概念词典，指定省份指定年度区间的面板数据。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">concept_words</span><span class="p">,</span> <span class="n">selected_provs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">selected_years</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">    csvf: csv的文件路径
+</span><span class="s2">    concept_words: 概念词词语列表
+</span><span class="s2">    selected_provs: 筛选指定省份的数据进行计算，列表
+</span><span class="s2">    selected_years: 筛选指定年度的数据进行计算，数字列表
+</span><span class="s2">    
+</span><span class="s2">    结果返回dataframe， 每一行代表一个省，每一列代表一年。
+</span><span class="s2">    &#34;&#34;&#34;</span>
+    
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+    <span class="kn">import</span> <span class="nn">jieba</span>
+    
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csvf</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;doc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;doc&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+
+    <span class="n">table_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> 
+                       <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;year&#39;</span><span class="p">,</span>  <span class="c1">#列-年份</span>
+                       <span class="n">index</span><span class="o">=</span><span class="s1">&#39;province&#39;</span><span class="p">,</span>    <span class="c1">#行-省份</span>
+                       <span class="n">values</span><span class="o">=</span><span class="s1">&#39;doc&#39;</span><span class="p">,</span>   <span class="c1">#单元格-文本</span>
+                       <span class="n">aggfunc</span><span class="o">=</span><span class="k">lambda</span> <span class="n">cs</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">))</span> <span class="c1">#让单元格填充文本</span>
+
+    <span class="k">if</span> <span class="n">selected_provs</span><span class="p">:</span>
+        <span class="n">table_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="p">[</span><span class="n">table_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">selected_provs</span><span class="p">)]</span>
+    
+    <span class="k">if</span> <span class="n">selected_years</span><span class="p">:</span>
+        <span class="n">selected_years</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">selected_years</span><span class="p">]</span>
+        <span class="n">table_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="p">[</span><span class="n">selected_years</span><span class="p">]</span>
+
+
+    <span class="n">word_count_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)))))</span>
+    <span class="n">concept_word_count_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">concept_words</span><span class="p">)))</span>
+    <span class="n">concept_word_ratio_df</span> <span class="o">=</span> <span class="n">concept_word_count_df</span><span class="o">/</span><span class="n">word_count_df</span>
+    <span class="k">return</span> <span class="n">concept_word_ratio_df</span>
+
+
+<span class="n">concept_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;农村&#39;</span><span class="p">,</span> <span class="s1">&#39;农业&#39;</span><span class="p">,</span> <span class="s1">&#39;农民&#39;</span><span class="p">]</span>
+<span class="c1">#所有省份，所有年度(2002-2024)</span>
+<span class="n">panel_data_df</span> <span class="o">=</span> <span class="n">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;GovReportData/province.csv&#39;</span><span class="p">,</span> 
+                                    <span class="n">concept_words</span> <span class="o">=</span> <span class="n">concept_words</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">panel_data_df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+<span class="c1">#如果需要保存</span>
+<span class="c1">#panel_data_df.to_csv(&#39;文件路径2.csv&#39;, index=False)</span>
+
+<span class="n">panel_data_df</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(31, 24)
+</code></pre></div><p><img loading="lazy" src="img/02-panel-data.png" alt=""  />
+</p>
+<br>
+<p>生成 山东省河北省2010-2024期间政府工作报告提及三农词词频占比的面板数据</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">concept_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;农村&#39;</span><span class="p">,</span> <span class="s1">&#39;农业&#39;</span><span class="p">,</span> <span class="s1">&#39;农民&#39;</span><span class="p">]</span>
+<span class="n">selected_provs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;山东省&#39;</span><span class="p">,</span> <span class="s1">&#39;河北省&#39;</span><span class="p">]</span>
+<span class="n">selected_years</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">2025</span><span class="p">))</span>
+<span class="n">panel_data_df</span> <span class="o">=</span> <span class="n">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;GovReportData/province.csv&#39;</span><span class="p">,</span> 
+                                    <span class="n">concept_words</span> <span class="o">=</span> <span class="n">concept_words</span><span class="p">,</span> 
+                                    <span class="n">selected_provs</span> <span class="o">=</span> <span class="n">selected_provs</span><span class="p">,</span>
+                                    <span class="n">selected_years</span> <span class="o">=</span> <span class="n">selected_years</span><span class="p">)</span>
+
+
+<span class="c1">#如果需要保存</span>
+<span class="c1">#panel_data_df.to_csv(&#39;文件路径2.csv&#39;, index=False)</span>
+
+<span class="n">panel_data_df</span>
+</code></pre></div><p><img loading="lazy" src="img/03-hebei-shandong-panel-data.png" alt=""  />
+</p>
+<br>
+<h3 id="13-绘制折线图">1.3 绘制折线图</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">plot_line</span><span class="p">(</span><span class="n">panel_df</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="kn">import</span> <span class="nn">matplotlib</span>
+    <span class="kn">import</span> <span class="nn">scienceplots</span>
+    <span class="kn">import</span> <span class="nn">platform</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+    <span class="kn">import</span> <span class="nn">matplotlib_inline</span>
+    <span class="n">matplotlib_inline</span><span class="o">.</span><span class="n">backend_inline</span><span class="o">.</span><span class="n">set_matplotlib_formats</span><span class="p">(</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="s1">&#39;svg&#39;</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">jieba</span>
+    <span class="kn">import</span> <span class="nn">warnings</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">([</span><span class="s1">&#39;science&#39;</span><span class="p">,</span> <span class="s1">&#39;no-latex&#39;</span><span class="p">,</span> <span class="s1">&#39;cjk-sc-font&#39;</span><span class="p">])</span>
+    <span class="n">system</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>  <span class="c1"># 获取操作系统类型</span>
+
+    <span class="k">if</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Windows&#39;</span><span class="p">:</span>
+        <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;SimHei&#39;</span><span class="p">}</span>
+    <span class="k">elif</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Darwin&#39;</span><span class="p">:</span>
+        <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;Arial Unicode MS&#39;</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;sans-serif&#39;</span><span class="p">}</span>
+    <span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">font</span><span class="p">)</span>  <span class="c1"># 设置全局字体</span>
+    
+    
+    
+    <span class="n">panel_df_T</span> <span class="o">=</span> <span class="n">panel_df</span><span class="o">.</span><span class="n">T</span>
+    <span class="c1">#panel_df_T.index = pd.to_datetime(panel_df_T.index)</span>
+
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">panel_df_T</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+    <span class="c1"># 添加图例，并指定位置和偏移</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.15</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">))</span>
+
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;年份&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;词频&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><br>
+<p>现在我们试试</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">concept_words = [&#39;农村&#39;, &#39;农业&#39;, &#39;农民&#39;]
+selected_provs = [&#39;山东省&#39;, &#39;河北省&#39;]
+selected_years = list(range(2010, 2025)) #2010年-2024年
+
+#生成面板数据
+panel_data_df = generate_panel_data(csvf=&#39;GovReportData/province.csv&#39;, 
+                                    concept_words = concept_words, 
+                                    selected_provs = selected_provs,
+                                    selected_years = selected_years)
+
+#绘图
+plot_line(panel_df=panel_data_df, 
+          title=&#39;山东、河北三农词折线图(2010-2024)&#39;)
+</code></pre></div><p><img loading="lazy" src="img/04-hebei-shandong-plot.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二函数代码拆解">二、函数代码拆解</h2>
+<h3 id="21-读取数据">2.1 读取数据</h3>
+<p>36.6M的数据，含file和text两个字段， <a href="2023-12-17-gov-anual-report-dataset/"><strong>点击获取政府公告文件</strong></a></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-Python" data-lang="Python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">pdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;GovReportData/province.csv&#39;</span><span class="p">)</span>
+<span class="n">pdf</span>
+</code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
+</p>
+<br>
+<h3 id="22-构建透视表">2.2 构建透视表</h3>
+<p>构建透视表，行索引名为省 prov，列名为时间year， 单元格内填充工作报告文本。</p>
+<p>代码不用太深究，只要知道代码操作前后数据形态的变化即可。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">table_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> 
+                       <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;year&#39;</span><span class="p">,</span>  <span class="c1">#列-年份</span>
+                       <span class="n">index</span><span class="o">=</span><span class="s1">&#39;province&#39;</span><span class="p">,</span>    <span class="c1">#行-省份</span>
+                       <span class="n">values</span><span class="o">=</span><span class="s1">&#39;doc&#39;</span><span class="p">,</span>   <span class="c1">#单元格-文本</span>
+                       <span class="n">aggfunc</span><span class="o">=</span><span class="k">lambda</span> <span class="n">cs</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">))</span> <span class="c1">#让单元格填充文本</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">table_df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">table_df</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(31, 24)
+</code></pre></div><p><img loading="lazy" src="img/06-df.png" alt=""  />
+</p>
+<p>table_df是一个31行， 24列的矩阵。 每行代表一个省，每一列代表一个年份。</p>
+<br>
+<h3 id="23-统计总词数">2.3 统计总词数</h3>
+<p>统计所有报告的词语数。代码高度抽象， 咱们只看结果。 从 table_df 变为 word_count_df</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
+<span class="n">word_count_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)))))</span>
+<span class="n">word_count_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(31, 24)
+</code></pre></div><p><img loading="lazy" src="img/07-word_count_df.png" alt=""  />
+</p>
+<br>
+<h3 id="24-统计概念词频占比">2.4 统计概念词频(占比)</h3>
+<p>统计所有报告中，某概念词词频，以三农为例</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">concept_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;农村&#39;</span><span class="p">,</span> <span class="s1">&#39;农业&#39;</span><span class="p">,</span> <span class="s1">&#39;农民&#39;</span><span class="p">]</span>
+
+<span class="n">concept_word_count_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">concept_words</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">concept_word_count_df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+<span class="c1">#为方便，只展示前5行</span>
+<span class="n">concept_word_count_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(31, 24)
+</code></pre></div><p><img loading="lazy" src="img/08-tri-df.png" alt=""  />
+</p>
+<br>
+<p>将数据转化为词频占比，即 **报告「三农词」出现次数/报告总词数 **</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">concept_word_ratio_df</span> <span class="o">=</span> <span class="n">concept_word_count_df</span><span class="o">/</span><span class="n">word_count_df</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">concept_word_ratio_df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">concept_word_ratio_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(31, 24)
+</code></pre></div><p><img loading="lazy" src="img/09-concept_word_ratio_df.png" alt=""  />
+</p>
+<br>
+<p>到目前为止， 已经将一坨文本，转化为结构化的面板数据， 其实现在就可以保存起来啦。</p>
+<br>
+<h3 id="25-保存结果">2.5 保存结果</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">concept_word_ratio_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;concept_word_ratio.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div><p><br><br></p>
+<h2 id="三可视化">三、可视化</h2>
+<h3 id="31-稍作解释">3.1 稍作解释</h3>
+<p>可视化 plot_line 函数内部没有进行过多的数据变换， 仅仅只是进行了转置 和 日期格式变化。本小节只稍作解释，马上进入后续的三个可视化案例。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">concept_word_ratio_df_T = concept_word_ratio_df.T
+concept_word_ratio_df_T
+</code></pre></div><p><img loading="lazy" src="img/10-T.png" alt=""  />
+</p>
+<br>
+<h3 id="32-三农折线图">3.2 「三农」折线图</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">selected_provs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;河北省&#39;</span><span class="p">,</span> <span class="s1">&#39;山东省&#39;</span><span class="p">,</span> <span class="s1">&#39;北京市&#39;</span><span class="p">,</span> <span class="s1">&#39;上海市&#39;</span><span class="p">,</span> <span class="s1">&#39;广东省&#39;</span><span class="p">,</span> <span class="s1">&#39;浙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;黑龙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;湖南省&#39;</span><span class="p">]</span>
+<span class="n">concept_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;农村&#39;</span><span class="p">,</span> <span class="s1">&#39;农业&#39;</span><span class="p">,</span> <span class="s1">&#39;农民&#39;</span><span class="p">]</span>
+<span class="n">tri_agri_panel_df</span> <span class="o">=</span> <span class="n">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;GovReportData/province.csv&#39;</span><span class="p">,</span> 
+                                        <span class="n">concept_words</span> <span class="o">=</span><span class="n">concept_words</span><span class="p">,</span> 
+                                        <span class="n">selected_provs</span> <span class="o">=</span> <span class="n">selected_provs</span><span class="p">)</span>
+
+
+<span class="n">plot_line</span><span class="p">(</span><span class="n">panel_df</span><span class="o">=</span><span class="n">tri_agri_panel_df</span><span class="p">,</span> 
+          <span class="n">title</span><span class="o">=</span><span class="s1">&#39;8省市2002-2024年「三农」词频趋势&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/12-tri-agri.png" alt=""  />
+</p>
+<p>从上图中，可以看出</p>
+<ul>
+<li>05年提及三农词占比最多的是湖南，是20年以来8省市中占比值最高记录</li>
+<li>大多数省份在07年达到峰值</li>
+<li>07年前，工作报告中提及三农词提及三农词的占比趋势是<strong>上升的</strong></li>
+<li>07年后，工作报告中提及三农词提及三农词的占比趋势是<strong>下升的</strong>。</li>
+</ul>
+<br>
+<h3 id="33-创新折线图">3.3 「创新」折线图</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">selected_provs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;河北省&#39;</span><span class="p">,</span> <span class="s1">&#39;山东省&#39;</span><span class="p">,</span> <span class="s1">&#39;北京市&#39;</span><span class="p">,</span> <span class="s1">&#39;上海市&#39;</span><span class="p">,</span> <span class="s1">&#39;广东省&#39;</span><span class="p">,</span> <span class="s1">&#39;浙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;黑龙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;湖南省&#39;</span><span class="p">]</span>
+<span class="n">concept_words</span> <span class="o">=</span>  <span class="p">[</span><span class="s1">&#39;科学&#39;</span><span class="p">,</span> <span class="s1">&#39;技术&#39;</span><span class="p">,</span> <span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;研发&#39;</span><span class="p">,</span> <span class="s1">&#39;科技&#39;</span><span class="p">]</span>
+
+<span class="n">inovation_panel_df</span> <span class="o">=</span> <span class="n">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;GovReportData/province.csv&#39;</span><span class="p">,</span> 
+                                        <span class="n">concept_words</span> <span class="o">=</span><span class="n">concept_words</span><span class="p">,</span> 
+                                        <span class="n">selected_provs</span> <span class="o">=</span> <span class="n">selected_provs</span><span class="p">)</span>
+
+
+<span class="n">plot_line</span><span class="p">(</span><span class="n">panel_df</span><span class="o">=</span><span class="n">inovation_panel_df</span><span class="p">,</span> 
+          <span class="n">title</span><span class="o">=</span><span class="s1">&#39;8省市2002-2024年「创新」词频趋势&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/13-inovation-plot.png" alt=""  />
+</p>
+<p>从上图中，可以看出</p>
+<ul>
+<li>
+<p>整体看，2000年以来八省市工作报告中提及科创相关词的比例是稳定的。</p>
+</li>
+<li>
+<p>2010年之后， <strong>黑龙江</strong>是八省市中提起科创概念词最少的省份。</p>
+</li>
+<li>
+<p>河北省2020年支棱起来了，是提及科创概念词最高的，而且是八省市所有年份最高！</p>
+</li>
+</ul>
+<br>
+<h3 id="34-环保折线图">3.4 「环保」折线图</h3>
+<p>参考 <code>陈诗一,陈登科.雾霾污染、政府治理与经济高质量发展[J].经济研究,2018,53(02):20-34.</code></p>
+<p>本文选取省级政府工作报告中与环境相关词汇出现频数及其比重来度量 <strong>政府环境治理政策</strong> （Chen et al．，2016）。 该指标不仅全面地度量了地方政府环境治理的力度 ， 而且由于地方政府工作报告一般发生在年初 ， 该年度的经济发展无法反向影响事先已经确定的政府工作报告 ， 从而可以减缓采用已有度量指标所产生的的内生性问题 。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">selected_provs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;河北省&#39;</span><span class="p">,</span> <span class="s1">&#39;山东省&#39;</span><span class="p">,</span> <span class="s1">&#39;北京市&#39;</span><span class="p">,</span> <span class="s1">&#39;上海市&#39;</span><span class="p">,</span> <span class="s1">&#39;广东省&#39;</span><span class="p">,</span> <span class="s1">&#39;浙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;黑龙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;湖南省&#39;</span><span class="p">]</span>
+
+<span class="c1">#词语来自 {陈诗一,陈登科.雾霾污染、政府治理与经济高质量发展[J].经济研究,2018,53(02):20-34.}</span>
+<span class="n">concept_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;环境保护&#39;</span><span class="p">,</span> <span class="s1">&#39;环保&#39;</span><span class="p">,</span> <span class="s1">&#39;污染&#39;</span><span class="p">,</span> <span class="s1">&#39;能耗&#39;</span><span class="p">,</span> <span class="s1">&#39;减排&#39;</span><span class="p">,</span> <span class="s1">&#39;排污&#39;</span><span class="p">,</span> 
+                 <span class="s1">&#39;生态&#39;</span><span class="p">,</span> <span class="s1">&#39;绿色&#39;</span><span class="p">,</span> <span class="s1">&#39;低碳&#39;</span><span class="p">,</span> <span class="s1">&#39;空气&#39;</span><span class="p">,</span> <span class="s1">&#39;化学需氧量&#39;</span><span class="p">,</span> 
+                 <span class="s1">&#39;二氧化硫&#39;</span><span class="p">,</span> <span class="s1">&#39;二氧化碳&#39;</span><span class="p">,</span> <span class="s1">&#39;pm10&#39;</span><span class="p">,</span> <span class="s1">&#39;pm2.5&#39;</span><span class="p">]</span>
+
+
+<span class="n">environment_panel_df</span> <span class="o">=</span> <span class="n">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;GovReportData/province.csv&#39;</span><span class="p">,</span> 
+                                        <span class="n">concept_words</span> <span class="o">=</span><span class="n">concept_words</span><span class="p">,</span> 
+                                        <span class="n">selected_provs</span> <span class="o">=</span> <span class="n">selected_provs</span><span class="p">)</span>
+
+
+<span class="n">plot_line</span><span class="p">(</span><span class="n">panel_df</span> <span class="o">=</span> <span class="n">environment_panel_df</span><span class="p">,</span> 
+          <span class="n">title</span><span class="o">=</span><span class="s1">&#39;8省市2002-2024年「环保」词频趋势&#39;</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/14-enviroment-plot.png" alt=""  />
+</p>
+<br>
+<br>
+<h2 id="四相关内容">四、相关内容</h2>
+<h3 id="41-相关代码">4.1 相关代码</h3>
+<ul>
+<li><a href="https://textdata.cn/blog/2023-12-27-measure-gov-digitalization/">代码 | 使用gov工作报告生成数字化词频「面板数据」</a></li>
+</ul>
+<blockquote>
+<p>之前看到一篇论文研究人民网留言板问答中的政府回复行为， 控制变量使用的是政府数字化程度。</p>
+<p>论文使用政府工作报告数字化词语提及次数， 用来测量政府的数字化程度。</p>
+<p><strong>但从今天的实验看，用数字化词频测量政府数字化程度，不怎么准，  要慎重使用</strong>。</p>
+</blockquote>
+<ul>
+<li><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/">代码 | 使用「新闻数据」构造概念词提及量「面板数据」</a></li>
+<li><a href="https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/">数据(付费) | 使用cctv新闻联播文稿构造面板数据</a></li>
+</ul>
+<br>
+<h3 id="43-相关文献">4.3 相关文献</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[1]陈诗一,陈登科.雾霾污染、政府治理与经济高质量发展[J].经济研究,2018,53(02):20-34.
+</code></pre></div><br>
+<br>
+<h2 id="五获取数据集">五、获取数据集</h2>
+<p><a href="https://textdata.cn/blog/2023-12-17-gov-anual-report-dataset/">数据集(付费) | 国、省、市三级政府工作报告文本</a></p>
+<p>数据集100元，  <strong>加微信 372335839， 备注「姓名-学校-专业」</strong>。</p>
+<br>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>数据集(付费) | 国、省、市三级政府工作报告文本(1954-2024)</title>
       <link>https://textdata.cn/blog/2023-12-17-gov-anual-report-dataset/</link>
       <pubDate>Sat, 11 May 2024 00:00:00 +0000</pubDate>
@@ -2085,360 +2424,6 @@ pip3 install cntext-2.1.1-py3-none-any.whl
 </li>
 </ul>
 <p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
-]]></content:encoded>
-    </item>
-    
-    <item>
-      <title>代码 | 使用地方gov工作报告生成某类概念词词频「面板数据」</title>
-      <link>https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/</link>
-      <pubDate>Sun, 17 Dec 2023 00:00:00 +0000</pubDate>
-      
-      <guid>/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/</guid>
-      <description>使用31省市的2002-2023年的省级政府工作报告，绘制出的不同类别关键词的趋势图。直接上最终效果效果图</description>
-      <content:encoded><![CDATA[<p>使用31省市的2002-2023年的省级政府工作报告，绘制出的不同类别关键词的趋势图。 直接上效果效果图</p>
-<p><img loading="lazy" src="img/12-tri-agri.png" alt=""  />
-</p>
-<p><img loading="lazy" src="img/13-inovation-plot.png" alt=""  />
-</p>
-<p><img loading="lazy" src="img/14-enviroment-plot.png" alt=""  />
-</p>
-<br>
-<p>其实绘制三种图的数据是面板型数据，今天主要分享如何利用省级政府工作报告构建某类概念词频(创新、环保、三农)的面板数据，并绘制8省市概念词频折线图。 大家可以根据自己的研究需要更改代码， 生成自己概念的词频面板数据。</p>
-<br>
-<br>
-<h2 id="获取数据">获取数据</h2>
-<p><a href="https://textdata.cn/blog/2023-12-17-gov-anual-report-dataset/">数据集(付费) | 国、省、市三级政府工作报告文本</a></p>
-<p>数据集100元，  <strong>加微信 372335839， 备注「姓名-学校-专业」</strong>。</p>
-<p><br><br></p>
-<h2 id="一直接上代码">一、直接上代码</h2>
-<h3 id="11-查看数据">1.1 查看数据</h3>
-<p>读取省报告数据文件 <strong>prov_report2002-2023.csv</strong> ，<a href="https://textdata.cn/blog/2023-12-17-gov-anual-report-dataset/">点击链接，获取政府工作报告数据集</a></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;prov_report2002-2023.csv&#39;</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
-</p>
-<br>
-<h3 id="12-生成面板数据函数">1.2 生成面板数据函数</h3>
-<p>假设你使用的政府(省、市)工作报告数据是大邓提供的，可以直接使用下面封装的函数，快速生成概念词典，指定省份指定年度区间的面板数据。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">concept_words</span><span class="p">,</span> <span class="n">selected_provs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">selected_years</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="s2">&#34;&#34;&#34;
-</span><span class="s2">    csvf: csv的文件路径
-</span><span class="s2">    concept_words: 概念词词语列表
-</span><span class="s2">    selected_provs: 筛选指定省份的数据进行计算，列表
-</span><span class="s2">    selected_years: 筛选指定年度的数据进行计算，列表
-</span><span class="s2">    
-</span><span class="s2">    结果返回dataframe， 每一行代表一个省，每一列代表一年。
-</span><span class="s2">    &#34;&#34;&#34;</span>
-    
-    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-    <span class="kn">import</span> <span class="nn">jieba</span>
-    
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csvf</span><span class="p">)</span>
-    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;file&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">4</span><span class="p">:])</span>
-    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;prov&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;file&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">4</span><span class="p">])</span> 
-    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;doc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;doc&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-
-
-    <span class="n">table_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> 
-                       <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;year&#39;</span><span class="p">,</span>  <span class="c1">#列-年份</span>
-                       <span class="n">index</span><span class="o">=</span><span class="s1">&#39;prov&#39;</span><span class="p">,</span>    <span class="c1">#行-省份</span>
-                       <span class="n">values</span><span class="o">=</span><span class="s1">&#39;doc&#39;</span><span class="p">,</span>   <span class="c1">#单元格-文本</span>
-                       <span class="n">aggfunc</span><span class="o">=</span><span class="k">lambda</span> <span class="n">cs</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">))</span> <span class="c1">#让单元格填充文本</span>
-
-    <span class="k">if</span> <span class="n">selected_provs</span><span class="p">:</span>
-        <span class="n">table_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="p">[</span><span class="n">table_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">selected_provs</span><span class="p">)]</span>
-    
-    <span class="k">if</span> <span class="n">selected_years</span><span class="p">:</span>
-        <span class="n">selected_years</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">selected_years</span><span class="p">]</span>
-        <span class="n">table_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="p">[</span><span class="n">selected_years</span><span class="p">]</span>
-        
-
-    <span class="n">word_count_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">t</span><span class="p">))))</span>
-    <span class="n">concept_word_count_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">concept_words</span><span class="p">)))</span>
-    <span class="n">concept_word_ratio_df</span> <span class="o">=</span> <span class="n">concept_word_count_df</span><span class="o">/</span><span class="n">word_count_df</span>
-    <span class="k">return</span> <span class="n">concept_word_ratio_df</span>
-
-
-<span class="n">concept_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;农村&#39;</span><span class="p">,</span> <span class="s1">&#39;农业&#39;</span><span class="p">,</span> <span class="s1">&#39;农民&#39;</span><span class="p">]</span>
-<span class="c1">#所有省份，所有年度(2002-2023)</span>
-<span class="n">panel_data_df</span> <span class="o">=</span> <span class="n">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;prov_report2002-2023.csv&#39;</span><span class="p">,</span> 
-                                    <span class="n">concept_words</span> <span class="o">=</span> <span class="n">concept_words</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">panel_data_df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-
-<span class="c1">#如果需要保存</span>
-<span class="c1">#panel_data_df.to_csv(&#39;文件路径2.csv&#39;, index=False)</span>
-
-<span class="n">panel_data_df</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(31, 23)
-</code></pre></div><p><img loading="lazy" src="img/02-panel-data.png" alt=""  />
-</p>
-<br>
-<p>生成 山东省河北省2010-2023期间政府工作报告提及三农词词频占比的面板数据</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">concept_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;农村&#39;</span><span class="p">,</span> <span class="s1">&#39;农业&#39;</span><span class="p">,</span> <span class="s1">&#39;农民&#39;</span><span class="p">]</span>
-<span class="n">selected_provs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;山东省&#39;</span><span class="p">,</span> <span class="s1">&#39;河北省&#39;</span><span class="p">]</span>
-<span class="n">selected_years</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">2024</span><span class="p">))</span>
-<span class="n">panel_data_df</span> <span class="o">=</span> <span class="n">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;prov_report2002-2023.csv&#39;</span><span class="p">,</span> 
-                                    <span class="n">concept_words</span> <span class="o">=</span> <span class="n">concept_words</span><span class="p">,</span> 
-                                    <span class="n">selected_provs</span> <span class="o">=</span> <span class="n">selected_provs</span><span class="p">,</span>
-                                    <span class="n">selected_years</span> <span class="o">=</span> <span class="n">selected_years</span><span class="p">)</span>
-
-
-<span class="c1">#如果需要保存</span>
-<span class="c1">#panel_data_df.to_csv(&#39;文件路径2.csv&#39;, index=False)</span>
-
-<span class="n">panel_data_df</span>
-</code></pre></div><p><img loading="lazy" src="img/03-hebei-shandong-panel-data.png" alt=""  />
-</p>
-<br>
-<h3 id="13-绘制折线图">1.3 绘制折线图</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">plot_line</span><span class="p">(</span><span class="n">panel_df</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
-    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-    <span class="kn">import</span> <span class="nn">matplotlib</span>
-    <span class="kn">import</span> <span class="nn">scienceplots</span>
-    <span class="kn">import</span> <span class="nn">platform</span>
-    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-    <span class="kn">import</span> <span class="nn">matplotlib_inline</span>
-    <span class="n">matplotlib_inline</span><span class="o">.</span><span class="n">backend_inline</span><span class="o">.</span><span class="n">set_matplotlib_formats</span><span class="p">(</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="s1">&#39;svg&#39;</span><span class="p">)</span>
-    <span class="kn">import</span> <span class="nn">jieba</span>
-    <span class="kn">import</span> <span class="nn">warnings</span>
-    <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
-
-    <span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">([</span><span class="s1">&#39;science&#39;</span><span class="p">,</span> <span class="s1">&#39;no-latex&#39;</span><span class="p">,</span> <span class="s1">&#39;cjk-sc-font&#39;</span><span class="p">])</span>
-    <span class="n">system</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>  <span class="c1"># 获取操作系统类型</span>
-
-    <span class="k">if</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Windows&#39;</span><span class="p">:</span>
-        <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;SimHei&#39;</span><span class="p">}</span>
-    <span class="k">elif</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Darwin&#39;</span><span class="p">:</span>
-        <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;Arial Unicode MS&#39;</span><span class="p">}</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;sans-serif&#39;</span><span class="p">}</span>
-    <span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">font</span><span class="p">)</span>  <span class="c1"># 设置全局字体</span>
-    
-    
-    
-    <span class="n">panel_df_T</span> <span class="o">=</span> <span class="n">panel_df</span><span class="o">.</span><span class="n">T</span>
-    <span class="n">panel_df_T</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">panel_df_T</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-
-    <span class="n">ax</span> <span class="o">=</span> <span class="n">panel_df_T</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
-    <span class="c1"># 添加图例，并指定位置和偏移</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.15</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">))</span>
-
-
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;年份&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;词频&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
-
-    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</code></pre></div><p>现在我们试试</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">concept_words = [&#39;农村&#39;, &#39;农业&#39;, &#39;农民&#39;]
-selected_provs = [&#39;山东省&#39;, &#39;河北省&#39;]
-selected_years = list(range(2010, 2024)) #2010年-2023年
-
-#生成面板数据
-panel_data_df = generate_panel_data(csvf=&#39;prov_report2002-2023.csv&#39;, 
-                                    concept_words = concept_words, 
-                                    selected_provs = selected_provs,
-                                    selected_years = selected_years)
-
-#绘图
-plot_line(panel_df=panel_data_df, 
-          title=&#39;山东、河北三农词折线图(2010-2023)&#39;)
-</code></pre></div><p><img loading="lazy" src="img/04-hebei-shandong-plot.png" alt=""  />
-</p>
-<p><br><br></p>
-<h2 id="二函数代码拆解">二、函数代码拆解</h2>
-<h3 id="21-读取数据">2.1 读取数据</h3>
-<p>36.6M的数据，含file和text两个字段， <a href="2023-12-17-gov-anual-report-dataset/"><strong>点击获取政府公告文件</strong></a></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-Python" data-lang="Python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;prov_report2002-2023.csv&#39;</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
-</p>
-<br>
-<h3 id="22-构建provyear字段">2.2 构建prov、year字段</h3>
-<p>根据file中的形态</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">file = &#39;GovReportData/prov2002-2023/浙江省2023.txt&#39;
-</code></pre></div><p>针对字段 file ， 使用 apply方法批量对 file 进行字符串的分割、替换、切片， 整理出 year 和 prov 的字段</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;file&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">4</span><span class="p">:])</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">&#39;prov&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;file&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">4</span><span class="p">])</span> 
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p><img loading="lazy" src="img/05-df.png" alt=""  />
-</p>
-<br>
-<h3 id="23-构建透视表">2.3 构建透视表</h3>
-<p>构建透视表，行索引名为省 prov，列名为时间year， 单元格内填充工作报告文本。</p>
-<p>代码不用太深究，只要知道代码操作前后数据形态的变化即可。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="n">table_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> 
-                       <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;year&#39;</span><span class="p">,</span>  <span class="c1">#列-年份</span>
-                       <span class="n">index</span><span class="o">=</span><span class="s1">&#39;prov&#39;</span><span class="p">,</span>    <span class="c1">#行-省份</span>
-                       <span class="n">values</span><span class="o">=</span><span class="s1">&#39;doc&#39;</span><span class="p">,</span>   <span class="c1">#单元格-文本</span>
-                       <span class="n">aggfunc</span><span class="o">=</span><span class="k">lambda</span> <span class="n">cs</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">))</span> <span class="c1">#让单元格填充文本</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="n">table_df</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(31, 23)
-</code></pre></div><p><img loading="lazy" src="img/06-df.png" alt=""  />
-</p>
-<p>table_df是一个31行， 23列的矩阵。 每行代表一个省，每一列代表一个年份。</p>
-<br>
-<h3 id="24-统计总词数">2.4 统计总词数</h3>
-<p>统计所有报告的词语数。代码高度抽象， 咱们只看结果。 从 table_df 变为 word_count_df</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">jieba</span>
-<span class="n">word_count_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">t</span><span class="p">))))</span>
-<span class="n">word_count_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(31, 23)
-</code></pre></div><p><img loading="lazy" src="img/07-word_count_df.png" alt=""  />
-</p>
-<br>
-<h3 id="25-统计概念词频占比">2.5 统计概念词频(占比)</h3>
-<p>统计所有报告中，某概念词词频，以三农为例</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">concept_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;农村&#39;</span><span class="p">,</span> <span class="s1">&#39;农业&#39;</span><span class="p">,</span> <span class="s1">&#39;农民&#39;</span><span class="p">]</span>
-
-<span class="n">concept_word_count_df</span> <span class="o">=</span> <span class="n">table_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">keywords</span><span class="p">)))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">concept_word_count_df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-
-<span class="c1">#为方便，只展示前5行</span>
-<span class="n">concept_word_count_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(31, 23)
-</code></pre></div><p><img loading="lazy" src="img/08-tri-df.png" alt=""  />
-</p>
-<br>
-<p>将数据转化为词频占比，即 **报告「三农词」出现次数/报告总词数 **</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">concept_word_ratio_df</span> <span class="o">=</span> <span class="n">concept_word_count_df</span><span class="o">/</span><span class="n">word_count_df</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">concept_word_ratio_df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="n">concept_word_ratio_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(31, 23)
-</code></pre></div><p><img loading="lazy" src="img/09-concept_word_ratio_df.png" alt=""  />
-</p>
-<br>
-<p>到目前为止， 已经将一坨文本，转化为结构化的面板数据， 其实现在就可以保存起来啦。</p>
-<br>
-<h3 id="26-保存结果">2.6 保存结果</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">concept_word_ratio_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;concept_word_ratio.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</code></pre></div><p><br><br></p>
-<h2 id="三可视化">三、可视化</h2>
-<h3 id="31-稍作解释">3.1 稍作解释</h3>
-<p>可视化 plot_line 函数内部没有进行过多的数据变换， 仅仅只是进行了转置 和 日期格式变化。本小节只稍作解释，马上进入后续的三个可视化案例。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">concept_word_ratio_df_T = concept_word_ratio_df.T
-concept_word_ratio_df_T
-</code></pre></div><p><img loading="lazy" src="img/10-T.png" alt=""  />
-</p>
-<br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">concept_word_ratio_df_T.index = pd.to_datetime(concept_word_ratio_df_T.index)
-concept_word_ratio_df_T
-</code></pre></div><p><img loading="lazy" src="img/11-datetime.png" alt=""  />
-</p>
-<br>
-<h3 id="32-三农折线图">3.2 「三农」折线图</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">selected_provs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;河北省&#39;</span><span class="p">,</span> <span class="s1">&#39;山东省&#39;</span><span class="p">,</span> <span class="s1">&#39;北京市&#39;</span><span class="p">,</span> <span class="s1">&#39;上海市&#39;</span><span class="p">,</span> <span class="s1">&#39;广东省&#39;</span><span class="p">,</span> <span class="s1">&#39;浙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;黑龙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;湖南省&#39;</span><span class="p">]</span>
-<span class="n">concept_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;农村&#39;</span><span class="p">,</span> <span class="s1">&#39;农业&#39;</span><span class="p">,</span> <span class="s1">&#39;农民&#39;</span><span class="p">]</span>
-<span class="n">tri_agri_panel_df</span> <span class="o">=</span> <span class="n">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;prov_report2002-2023.csv&#39;</span><span class="p">,</span> 
-                                        <span class="n">concept_words</span> <span class="o">=</span><span class="n">concept_words</span><span class="p">,</span> 
-                                        <span class="n">selected_provs</span> <span class="o">=</span> <span class="n">selected_provs</span><span class="p">)</span>
-
-
-<span class="n">plot_line</span><span class="p">(</span><span class="n">panel_df</span><span class="o">=</span><span class="n">tri_agri_panel_df</span><span class="p">,</span> 
-          <span class="n">title</span><span class="o">=</span><span class="s1">&#39;8省市2002-2023年「三农」词频趋势&#39;</span><span class="p">)</span>
-</code></pre></div><p><img loading="lazy" src="img/12-tri-agri.png" alt=""  />
-</p>
-<p>从上图中，可以看出</p>
-<ul>
-<li>05年提及三农词占比最多的是湖南，是20年以来8省市中占比值最高记录</li>
-<li>大多数省份在07年达到峰值</li>
-<li>07年前，工作报告中提及三农词提及三农词的占比趋势是<strong>上升的</strong></li>
-<li>07年后，工作报告中提及三农词提及三农词的占比趋势是<strong>下升的</strong>。</li>
-</ul>
-<br>
-<h3 id="33-创新折线图">3.3 「创新」折线图</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">selected_provs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;河北省&#39;</span><span class="p">,</span> <span class="s1">&#39;山东省&#39;</span><span class="p">,</span> <span class="s1">&#39;北京市&#39;</span><span class="p">,</span> <span class="s1">&#39;上海市&#39;</span><span class="p">,</span> <span class="s1">&#39;广东省&#39;</span><span class="p">,</span> <span class="s1">&#39;浙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;黑龙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;湖南省&#39;</span><span class="p">]</span>
-<span class="n">concept_words</span> <span class="o">=</span>  <span class="p">[</span><span class="s1">&#39;科学&#39;</span><span class="p">,</span> <span class="s1">&#39;技术&#39;</span><span class="p">,</span> <span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;研发&#39;</span><span class="p">,</span> <span class="s1">&#39;科技&#39;</span><span class="p">]</span>
-
-<span class="n">inovation_panel_df</span> <span class="o">=</span> <span class="n">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;prov_report2002-2023.csv&#39;</span><span class="p">,</span> 
-                                        <span class="n">concept_words</span> <span class="o">=</span><span class="n">concept_words</span><span class="p">,</span> 
-                                        <span class="n">selected_provs</span> <span class="o">=</span> <span class="n">selected_provs</span><span class="p">)</span>
-
-
-<span class="n">plot_line</span><span class="p">(</span><span class="n">panel_df</span><span class="o">=</span><span class="n">inovation_panel_df</span><span class="p">,</span> 
-          <span class="n">title</span><span class="o">=</span><span class="s1">&#39;8省市2002-2023年「创新」词频趋势&#39;</span><span class="p">)</span>
-</code></pre></div><p><img loading="lazy" src="img/13-inovation-plot.png" alt=""  />
-</p>
-<p>从上图中，可以看出</p>
-<ul>
-<li>
-<p>整体看，2000年以来八省市工作报告中提及科创相关词的比例是稳定的。</p>
-</li>
-<li>
-<p>2010年之后， <strong>黑龙江</strong>是八省市中提起科创概念词最少的省份。</p>
-</li>
-<li>
-<p>河北省2020年支棱起来了，是提及科创概念词最高的，而且是八省市所有年份最高！</p>
-</li>
-</ul>
-<br>
-<h3 id="34-环保折线图">3.4 「环保」折线图</h3>
-<p>参考 <code>陈诗一,陈登科.雾霾污染、政府治理与经济高质量发展[J].经济研究,2018,53(02):20-34.</code></p>
-<p>本文选取省级政府工作报告中与环境相关词汇出现频数及其比重来度量 <strong>政府环境治理政策</strong> （Chen et al．，2016）。 该指标不仅全面地度量了地方政府环境治理的力度 ， 而且由于地方政府工作报告一般发生在年初 ， 该年度的经济发展无法反向影响事先已经确定的政府工作报告 ， 从而可以减缓采用已有度量指标所产生的的内生性问题 。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">selected_provs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;河北省&#39;</span><span class="p">,</span> <span class="s1">&#39;山东省&#39;</span><span class="p">,</span> <span class="s1">&#39;北京市&#39;</span><span class="p">,</span> <span class="s1">&#39;上海市&#39;</span><span class="p">,</span> <span class="s1">&#39;广东省&#39;</span><span class="p">,</span> <span class="s1">&#39;浙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;黑龙江省&#39;</span><span class="p">,</span> <span class="s1">&#39;湖南省&#39;</span><span class="p">]</span>
-
-<span class="c1">#词语来自 {陈诗一,陈登科.雾霾污染、政府治理与经济高质量发展[J].经济研究,2018,53(02):20-34.}</span>
-<span class="n">concept_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;环境保护&#39;</span><span class="p">,</span> <span class="s1">&#39;环保&#39;</span><span class="p">,</span> <span class="s1">&#39;污染&#39;</span><span class="p">,</span> <span class="s1">&#39;能耗&#39;</span><span class="p">,</span> <span class="s1">&#39;减排&#39;</span><span class="p">,</span> <span class="s1">&#39;排污&#39;</span><span class="p">,</span> 
-                 <span class="s1">&#39;生态&#39;</span><span class="p">,</span> <span class="s1">&#39;绿色&#39;</span><span class="p">,</span> <span class="s1">&#39;低碳&#39;</span><span class="p">,</span> <span class="s1">&#39;空气&#39;</span><span class="p">,</span> <span class="s1">&#39;化学需氧量&#39;</span><span class="p">,</span> 
-                 <span class="s1">&#39;二氧化硫&#39;</span><span class="p">,</span> <span class="s1">&#39;二氧化碳&#39;</span><span class="p">,</span> <span class="s1">&#39;pm10&#39;</span><span class="p">,</span> <span class="s1">&#39;pm2.5&#39;</span><span class="p">]</span>
-
-
-<span class="n">environment_panel_df</span> <span class="o">=</span> <span class="n">generate_panel_data</span><span class="p">(</span><span class="n">csvf</span><span class="o">=</span><span class="s1">&#39;GovReportData/prov_report2002-2023.csv&#39;</span><span class="p">,</span> 
-                                        <span class="n">concept_words</span> <span class="o">=</span><span class="n">concept_words</span><span class="p">,</span> 
-                                        <span class="n">selected_provs</span> <span class="o">=</span> <span class="n">selected_provs</span><span class="p">)</span>
-
-
-<span class="n">plot_line</span><span class="p">(</span><span class="n">panel_df</span> <span class="o">=</span> <span class="n">environment_panel_df</span><span class="p">,</span> 
-          <span class="n">title</span><span class="o">=</span><span class="s1">&#39;8省市2002-2023年「环保」词频趋势&#39;</span><span class="p">)</span>
-</code></pre></div><p><img loading="lazy" src="img/14-enviroment-plot.png" alt=""  />
-</p>
-<br>
-<br>
-<h2 id="四相关内容">四、相关内容</h2>
-<h3 id="41-相关代码">4.1 相关代码</h3>
-<ul>
-<li><a href="https://textdata.cn/blog/2023-12-27-measure-gov-digitalization/">代码 | 使用gov工作报告生成数字化词频「面板数据」</a></li>
-</ul>
-<blockquote>
-<p>之前看到一篇论文研究人民网留言板问答中的政府回复行为， 控制变量使用的是政府数字化程度。</p>
-<p>论文使用政府工作报告数字化词语提及次数， 用来测量政府的数字化程度。</p>
-<p><strong>但从今天的实验看，用数字化词频测量政府数字化程度，不怎么准，  要慎重使用</strong>。</p>
-</blockquote>
-<ul>
-<li><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/">代码 | 使用「新闻数据」构造概念词提及量「面板数据」</a></li>
-<li><a href="https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/">数据(付费) | 使用cctv新闻联播文稿构造面板数据</a></li>
-</ul>
-<br>
-<h3 id="43-相关文献">4.3 相关文献</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[1]陈诗一,陈登科.雾霾污染、政府治理与经济高质量发展[J].经济研究,2018,53(02):20-34.
-</code></pre></div><br>
-<br>
-<h2 id="五获取数据集">五、获取数据集</h2>
-<p><a href="https://textdata.cn/blog/2023-12-17-gov-anual-report-dataset/">数据集(付费) | 国、省、市三级政府工作报告文本</a></p>
-<p>数据集100元，  <strong>加微信 372335839， 备注「姓名-学校-专业」</strong>。</p>
-<br>
-<br>
 <h2 id="广而告之">广而告之</h2>
 <ul>
 <li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
