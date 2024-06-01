@@ -195,12 +195,16 @@ class Config {
 				category: 'Academic Search Engine'
 			},
 
-			
-
 			{
 				site: 'Research Gate',
 				icon: 'researchgate',
 				url: 'https://www.researchgate.net/',
+				category: 'Academic Search Engine'
+			},
+			{
+				site: '图书资源',
+				icon: 'annas-archive',
+				url: 'https://annas-archive.org/',
 				category: 'Academic Search Engine'
 			},
 			{
