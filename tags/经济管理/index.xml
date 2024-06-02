@@ -1091,6 +1091,87 @@
     </item>
     
     <item>
+      <title>新闻数据集 | 1102w条纽约时报(1920-2020)</title>
+      <link>https://textdata.cn/blog/2024-06-01-new-york-times-article-from-1920-2020/</link>
+      <pubDate>Thu, 30 May 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-06-01-new-york-times-article-from-1920-2020/</guid>
+      <description>新闻数据集研究价值大， 您可从中提取丰富的指标，包括但不限于经济政策不确定性指数EPU 、 媒体关注度指数、文本相似度、情感分析。而且可训练词向量，构建新的词典，开发新的指标指数。计算机自然语言处理、经济学、管理学、新闻传播学、公共管理等领域均可使用。</description>
+      <content:encoded><![CDATA[<h2 id="一数据集概况">一、数据集概况</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">媒体名称: New York Times
+覆盖年度: 1920 ~ 2020
+记录条数: 11027535
+所含字段: year, title, excerpt
+数据集地址: https://www.kaggle.com/datasets/tumanovalexander/nyt-articles-data/data
+</code></pre></div><p><img loading="lazy" src="img/screen.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二查看数据">二、查看数据</h2>
+<h3 id="21-读取数据">2.1 读取数据</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s1">&#39;nyt_data.parquet&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">drop_dupliacates</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
+</p>
+<br>
+<h3 id="22-文本长度">2.2 文本长度</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">title_mean_len</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">excerpt_mean_len</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">excerpt</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;标题平均长度: </span><span class="si">{</span><span class="n">title_mean_len</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;摘录平均长度: </span><span class="si">{</span><span class="n">excerpt_mean_len</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">标题平均长度: 173.30
+摘录平均长度: 68.43
+</code></pre></div><br>
+<h3 id="23-缺失率">2.3 缺失率</h3>
+<p>这里我们定义文本长度为0，则该字段为缺失。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">title_na_ratio</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span><span class="o">==</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">/</span> <span class="n">df</span><span class="o">.</span><span class="n">size</span>
+<span class="n">excerpt_na_ratio</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">excerpt</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span><span class="o">==</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">/</span> <span class="n">df</span><span class="o">.</span><span class="n">size</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;标题缺失率: </span><span class="si">{</span><span class="n">title_na_ratio</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;摘录缺失率: </span><span class="si">{</span><span class="n">excerpt_na_ratio</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">标题缺失率: 0.00%
+摘录缺失率: 52.25%
+</code></pre></div><p><br><br></p>
+<h2 id="类似的数据集">类似的数据集</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">媒体名称: Times of India
+覆盖年度: 2001 ~ 2023.q2
+记录条数: 3876557
+所含字段: publish_date, headline_category, headline_text
+数据集地址: https://www.kaggle.com/datasets/therohk/india-headlines-news-dataset
+</code></pre></div><p><br><br></p>
+<h2 id="三相关内容">三、相关内容</h2>
+<ul>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-14-daily-news-dataset/">50G新闻数据集 | 含 人民日报/光明日报/参考消息/经济日报 等 60+ 家媒体(更新至2024.05)</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/">代码 | 如何处理远超电脑内存的csv文件</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/"><strong>可视化 | 人民日报语料反映七十年文化演变</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/">代码 | 使用「新闻数据」测量 「经济政策不确定性EPU」指标</a></p>
+</li>
+</ul>
+<p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>数据集 | 2001-2023年A股上市公司年报&amp;管理层讨论与分析</title>
       <link>https://textdata.cn/blog/2023-03-23-china-a-share-market-dataset-mda-from-01-to-21/</link>
       <pubDate>Wed, 08 May 2024 00:00:00 +0000</pubDate>
