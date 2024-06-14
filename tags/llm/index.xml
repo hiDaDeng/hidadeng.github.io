@@ -6,7 +6,369 @@
     <description>Recent content in LLM on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Thu, 16 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 14 Jun 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>实验 | 使用大模型从文本中提取结构化信息</title>
+      <link>https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/</link>
+      <pubDate>Fri, 14 Jun 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/</guid>
+      <description>&lt;h2 id=&#34;一需求&#34;&gt;一、需求&lt;/h2&gt;
+&lt;p&gt;现在有很多个电子发票PDF文件， 使用自动化工具帮我们批量自动从发票PDF提取出格式化信息。如从发票&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-raw-pdf.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;提取出DICT_DATA&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;DICT_DATA = {
+    &amp;#34;开票日期&amp;#34;: &amp;#34;2023年01月06日&amp;#34;,
+    &amp;#34;销售方纳税识别号&amp;#34;: &amp;#34;91110108MA01WFY0X6&amp;#34;,
+    &amp;#34;销售方地址电话&amp;#34;: &amp;#34;北京市海淀区上地东路1号院4号楼2层221室 010-59928888&amp;#34;,
+    &amp;#34;应税货物(或服务)名称&amp;#34;: &amp;#34;*信息技术服务*技术服务费&amp;#34;,
+    &amp;#34;价税合计(大写)&amp;#34;: &amp;#34;&amp;#34;,
+    &amp;#34;税率&amp;#34;: &amp;#34;6%&amp;#34;,
+    &amp;#34;备注&amp;#34;: &amp;#34;230106163474406331&amp;#34;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二准备工作&#34;&gt;二、准备工作&lt;/h2&gt;
+&lt;h3 id=&#34;21-安装ollama&#34;&gt;2.1 安装ollama&lt;/h3&gt;
+&lt;p&gt;点击前往网站 &lt;a href=&#34;https://ollama.com/&#34;&gt;https://ollama.com/&lt;/a&gt; ，下载ollama软件，支持win、Mac、linux&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-ollama-gui.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;22-下载llm&#34;&gt;2.2 下载LLM&lt;/h3&gt;
+&lt;p&gt;ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-ollama-model.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-ollama-llama3.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama run llama3
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;等待 &lt;strong&gt;llama3:8b&lt;/strong&gt; 下载完成。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;23-安装python包&#34;&gt;2.3 安装python包&lt;/h3&gt;
+&lt;p&gt;在python中调用ollama服务，需要ollama包。&lt;/p&gt;
+&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install ollama
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;24-启动ollama服务&#34;&gt;2.4 启动ollama服务&lt;/h3&gt;
+&lt;p&gt;在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama serve
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2024/06/14 14:52:24 routes.go:1011: INFO server config env=&amp;#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&amp;#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&amp;#34;total blobs: 18&amp;#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&amp;#34;total unused blobs removed: 0&amp;#34;
+time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&amp;#34;Listening on 127.0.0.1:11434 (version 0.1.44)&amp;#34;
+time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&amp;#34;extracting embedded files&amp;#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
+time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&amp;#34;Dynamic LLM libraries [metal]&amp;#34;
+time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&amp;#34;inference compute&amp;#34; id=0 library=metal compute=&amp;#34;&amp;#34; driver=0.0 name=&amp;#34;&amp;#34; total=&amp;#34;72.0 GiB&amp;#34; available=&amp;#34;72.0 GiB&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三实验&#34;&gt;三、实验&lt;/h2&gt;
+&lt;p&gt;点击下载&lt;a href=&#34;data.zip&#34;&gt;实验数据&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;31-读取pdf&#34;&gt;3.1 读取pdf&lt;/h3&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-raw-pdf.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_pdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/1.pdf&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;__version__&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2.1.2
+
+&amp;#39; 机器编号：499098321974北京增值税电子普通发票发票代码： 011002200911\n发票号码： 69453658\n开票日期： 2023年01月06日\n校 验 码： 11092 55849 13734 18748\n购\n买\n方名        称： 哈尔滨所以然信息技术有限公司\n密\n码\n区030898/5&amp;lt;32&amp;gt;*/0*440/63+79*08\n纳税人识别号： 91230109MABT7KBC4M /&amp;lt;54&amp;lt;1*6+49&amp;lt;-*+*&amp;gt;7&amp;lt;-8*04&amp;lt;+01\n地 址、电 话： 68+160026-45904*2&amp;lt;+3+15503&amp;gt;2\n开户行及账号： 98*2/*-*480145+-19*0917-1*61\n货物或应税劳务、服务名称 规格型号 单 位 数 量 单 价 金 额 税率 税 额\n*信息技术服务*技术服务费 1248.113208 248.11 6% 14.89\n合      计 ￥248.11 ￥14.89\n价税合计（大写）\n  贰佰陆拾叁元整             （小写）￥263.00\n销\n售\n方名        称： 北京度友科技有限公司\n备\n注230106163474406331\n纳税人识别号： 91110108MA01WFY0X6\n地 址、电 话： 北京市海淀区上地东路1号院4号楼2层221室 010-59928888\n开户行及账号： 招商银行股份有限公司北京双榆树支行110943531310301\n  收款人：段欣冉 复核：张会珍 开票人：赵金荣 销售方：（章）&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-提取信息&#34;&gt;3.2 提取信息&lt;/h3&gt;
+&lt;p&gt;使用ollama服务中的大模型 &lt;em&gt;&lt;strong&gt;llama3:8b&lt;/strong&gt;&lt;/em&gt; , 需要大模型提示信息及数据。这是我实验里设计的提示信息prompt&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为&amp;#34;开票日期&amp;#34;, &amp;#34;销售方纳税识别号&amp;#34;, &amp;#34;销售方地址电话&amp;#34;, &amp;#34;应税货物(或服务)名称&amp;#34;, &amp;#34;价税合计(大写)&amp;#34;, &amp;#34;税率&amp;#34;, &amp;#34;备注&amp;#34;; 结果只显示DICT_DATA。 TEXT: {text}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+        &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为&amp;#34;开票日期&amp;#34;, &amp;#34;销售方纳税识别号&amp;#34;, &amp;#34;销售方地址电话&amp;#34;, &amp;#34;应税货物(或服务)名称&amp;#34;, &amp;#34;价税合计(大写)&amp;#34;, &amp;#34;税率&amp;#34;, &amp;#34;备注&amp;#34;; 结果只显示DICT_DATA。 TEXT: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text1&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;#39;DICT_DATA = {\n    &amp;#34;开票日期&amp;#34;: &amp;#34;2023年01月06日&amp;#34;,\n    &amp;#34;销售方纳税识别号&amp;#34;: &amp;#34;91110108MA01WFY0X6&amp;#34;,\n    &amp;#34;销售方地址电话&amp;#34;: &amp;#34;北京市海淀区上地东路1号院4号楼2层221室 010-59928888&amp;#34;,\n    &amp;#34;应税货物(或服务)名称&amp;#34;: &amp;#34;*信息技术服务*技术服务费&amp;#34;,\n    &amp;#34;价税合计(大写)&amp;#34;: &amp;#34;&amp;#34;,\n    &amp;#34;税率&amp;#34;: &amp;#34;6%&amp;#34;,\n    &amp;#34;备注&amp;#34;: &amp;#34;230106163474406331&amp;#34;\n}&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;从运行结果看出， 大模型从发票PDF中准确提取到我们需要的信息，耗时大概10s。 需要注意，有时候大模型还会返回&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;#39;Here is the extracted key information in dictionary format:\n\n```\n{\n    &amp;#34;开票日期&amp;#34;: &amp;#34;2023年01月06日&amp;#34;,\n    &amp;#34;销售方纳税识别号&amp;#34;: &amp;#34;91110108MA01WFY0X6&amp;#34;,\n    &amp;#34;销售方地址电话&amp;#34;: &amp;#34;北京市海淀区上地东路1号院4号楼2层221室 010-59928888&amp;#34;,\n    &amp;#34;应税货物(或服务)名称&amp;#34;: &amp;#34;*信息技术服务*技术服务费&amp;#34;,\n    &amp;#34;价税合计(大写)&amp;#34;: &amp;#34;贰佰陆拾叁元整&amp;#34;,\n    &amp;#34;税率&amp;#34;: &amp;#34;6%&amp;#34;,\n    &amp;#34;备注&amp;#34;: &amp;#34;230106163474406331&amp;#34;\n}\n```\n\nLet me know if you have any further requests! 😊&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;现在我们需要将 DICT_DATA 变为真正的字典数据&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;import re
+
+result = response[&amp;#39;message&amp;#39;][&amp;#39;content&amp;#39;]
+result = [r for r in re.split(&amp;#39;```|DICT_DATA = &amp;#39;, result) if &amp;#39;{&amp;#39; in r][0]
+
+print(type(eval(result)))
+print(eval(result))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;class &amp;#39;dict&amp;#39;&amp;gt;
+{&amp;#39;开票日期&amp;#39;: &amp;#39;2023年01月06日&amp;#39;,
+ &amp;#39;销售方纳税识别号&amp;#39;: &amp;#39;91110108MA01WFY0X6&amp;#39;,
+ &amp;#39;销售方地址电话&amp;#39;: &amp;#39;北京市海淀区上地东路1号院4号楼2层221室 010-59928888&amp;#39;,
+ &amp;#39;应税货物(或服务)名称&amp;#39;: &amp;#39;*信息技术服务*技术服务费&amp;#39;,
+ &amp;#39;价税合计(大写)&amp;#39;: &amp;#39;贰佰陆拾叁元整&amp;#39;,
+ &amp;#39;税率&amp;#39;: &amp;#39;6%&amp;#39;,
+ &amp;#39;备注&amp;#39;: &amp;#39;230106163474406331&amp;#39;}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;33-封装成函数extract_info&#34;&gt;3.3 封装成函数extract_info&lt;/h3&gt;
+&lt;p&gt;实验成功，我们将其封装为函数&lt;em&gt;&lt;strong&gt;extract_info&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;re&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;stream&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;False&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;  &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+          &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+            &lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+            &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为&amp;#34;开票日期&amp;#34;, &amp;#34;销售方纳税识别号&amp;#34;, &amp;#34;销售方地址电话&amp;#34;, &amp;#34;应税货物(或服务)名称&amp;#34;, &amp;#34;价税合计(大写)&amp;#34;, &amp;#34;税率&amp;#34;, &amp;#34;备注&amp;#34;; 结果只显示DICT_DATA。 TEXT: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+          &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+        &lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+
+    &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;r&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;r&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;re&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;```|DICT_DATA = &amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;eval&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+  
+  
+
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;{&amp;#39;开票日期&amp;#39;: &amp;#39;2023 02 14&amp;#39;,
+ &amp;#39;销售方纳税识别号&amp;#39;: &amp;#39;91230109MABT7KBC4M&amp;#39;,
+ &amp;#39;销售方地址电话&amp;#39;: &amp;#39;北京市北京经济技术开发区科创十一街18号院C座2层215室 62648622&amp;#39;,
+ &amp;#39;应税货物(或服务)名称&amp;#39;: &amp;#39;*家用厨房电器具*米家 小米电热水 MJDSH03YM&amp;#39;,
+ &amp;#39;价税合计(大写)&amp;#39;: &amp;#39;壹佰贰拾叁圆玖角玖分&amp;#39;,
+ &amp;#39;税率&amp;#39;: &amp;#39;13%&amp;#39;,
+ &amp;#39;备注&amp;#39;: None}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;34-批量提取&#34;&gt;3.4 批量提取&lt;/h3&gt;
+&lt;p&gt;对data文件夹进行批量信息提取，结果存储为csv。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;os&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#cntext版本为2.1.2，非开源，&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#需联系大邓372335839获取&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#当前代码所在的代码文件与data文件夹处于同一个文件夹内&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#获取data内所有pdf的路径&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;pdf_files&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;file&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;file&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;listdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;.pdf&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;dict_datas&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pdf_file&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pdf_files&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;pdf_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_pdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;pdf_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;dict_data&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;pdf_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;dict_datas&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dict_data&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;DataFrame&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dict_datas&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 32 ms, sys: 3.17 ms, total: 35.2 ms
+Wall time: 11.8 s
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/05-df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四讨论&#34;&gt;四、讨论&lt;/h2&gt;
+&lt;p&gt;这三张发票， 识别错误字段集中在销售方纳税识别号。原因主要是ct.read_pdf读入pdf时，文本比较杂乱。 对大模型的语义理解有一定的挑战。目前大模型已经支持文本、图片、音频、视频、网址， 所以各位看官，不用等太久，就可克服此问题。&lt;/p&gt;
+&lt;p&gt;大模型会对每个输入，给出正确概率最大的回答，因此大模型提取数据时存在一定的错误识别风险。为降低该风险，尽量选择特别特殊、显眼，例如三张发票的&lt;strong&gt;价税合计(大写)&lt;/strong&gt;,  因为信息是特殊的中文大写数字， 在所有文本中是最醒目最特别的文本信息，这样大模型处理这类信息时会给这类信息尽可能高的权重，增大回答的准确率。&lt;/p&gt;
+&lt;br&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;精选内容&#34;&gt;精选内容&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/datasets_available_for_management_science/&#34;&gt;LIST | 可供社科(经管)领域使用的数据集汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/the_text_analysis_list_about_ms/&#34;&gt;LIST | 社科(经管)数据挖掘文献资料汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/&#34;&gt;推荐 | 文本分析库cntext2.x使用手册&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<h2 id="一需求">一、需求</h2>
+<p>现在有很多个电子发票PDF文件， 使用自动化工具帮我们批量自动从发票PDF提取出格式化信息。如从发票</p>
+<p><img loading="lazy" src="img/01-raw-pdf.png" alt=""  />
+</p>
+<p>提取出DICT_DATA</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">DICT_DATA = {
+    &#34;开票日期&#34;: &#34;2023年01月06日&#34;,
+    &#34;销售方纳税识别号&#34;: &#34;91110108MA01WFY0X6&#34;,
+    &#34;销售方地址电话&#34;: &#34;北京市海淀区上地东路1号院4号楼2层221室 010-59928888&#34;,
+    &#34;应税货物(或服务)名称&#34;: &#34;*信息技术服务*技术服务费&#34;,
+    &#34;价税合计(大写)&#34;: &#34;&#34;,
+    &#34;税率&#34;: &#34;6%&#34;,
+    &#34;备注&#34;: &#34;230106163474406331&#34;
+}
+</code></pre></div><p><br><br></p>
+<h2 id="二准备工作">二、准备工作</h2>
+<h3 id="21-安装ollama">2.1 安装ollama</h3>
+<p>点击前往网站 <a href="https://ollama.com/">https://ollama.com/</a> ，下载ollama软件，支持win、Mac、linux</p>
+<p><img loading="lazy" src="img/02-ollama-gui.png" alt=""  />
+</p>
+<br>
+<h3 id="22-下载llm">2.2 下载LLM</h3>
+<p>ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，</p>
+<p><img loading="lazy" src="img/03-ollama-model.png" alt=""  />
+</p>
+<br>
+<p>以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。</p>
+<p><img loading="lazy" src="img/04-ollama-llama3.png" alt=""  />
+</p>
+<br>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama run llama3
+</code></pre></div><p>等待 <strong>llama3:8b</strong> 下载完成。</p>
+<br>
+<h3 id="23-安装python包">2.3 安装python包</h3>
+<p>在python中调用ollama服务，需要ollama包。</p>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install ollama
+</code></pre></div><br>
+<h3 id="24-启动ollama服务">2.4 启动ollama服务</h3>
+<p>在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama serve
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2024/06/14 14:52:24 routes.go:1011: INFO server config env=&#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&#34;total blobs: 18&#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&#34;total unused blobs removed: 0&#34;
+time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&#34;Listening on 127.0.0.1:11434 (version 0.1.44)&#34;
+time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&#34;extracting embedded files&#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
+time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&#34;Dynamic LLM libraries [metal]&#34;
+time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&#34;inference compute&#34; id=0 library=metal compute=&#34;&#34; driver=0.0 name=&#34;&#34; total=&#34;72.0 GiB&#34; available=&#34;72.0 GiB&#34;
+</code></pre></div><p>cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。</p>
+<p><br><br></p>
+<h2 id="三实验">三、实验</h2>
+<p>点击下载<a href="data.zip">实验数据</a></p>
+<h3 id="31-读取pdf">3.1 读取pdf</h3>
+<p><img loading="lazy" src="img/01-raw-pdf.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+
+<span class="n">text</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/1.pdf&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+<span class="n">text</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2.1.2
+
+&#39; 机器编号：499098321974北京增值税电子普通发票发票代码： 011002200911\n发票号码： 69453658\n开票日期： 2023年01月06日\n校 验 码： 11092 55849 13734 18748\n购\n买\n方名        称： 哈尔滨所以然信息技术有限公司\n密\n码\n区030898/5&lt;32&gt;*/0*440/63+79*08\n纳税人识别号： 91230109MABT7KBC4M /&lt;54&lt;1*6+49&lt;-*+*&gt;7&lt;-8*04&lt;+01\n地 址、电 话： 68+160026-45904*2&lt;+3+15503&gt;2\n开户行及账号： 98*2/*-*480145+-19*0917-1*61\n货物或应税劳务、服务名称 规格型号 单 位 数 量 单 价 金 额 税率 税 额\n*信息技术服务*技术服务费 1248.113208 248.11 6% 14.89\n合      计 ￥248.11 ￥14.89\n价税合计（大写）\n  贰佰陆拾叁元整             （小写）￥263.00\n销\n售\n方名        称： 北京度友科技有限公司\n备\n注230106163474406331\n纳税人识别号： 91110108MA01WFY0X6\n地 址、电 话： 北京市海淀区上地东路1号院4号楼2层221室 010-59928888\n开户行及账号： 招商银行股份有限公司北京双榆树支行110943531310301\n  收款人：段欣冉 复核：张会珍 开票人：赵金荣 销售方：（章）&#39;
+</code></pre></div><br>
+<h3 id="32-提取信息">3.2 提取信息</h3>
+<p>使用ollama服务中的大模型 <em><strong>llama3:8b</strong></em> , 需要大模型提示信息及数据。这是我实验里设计的提示信息prompt</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为&#34;开票日期&#34;, &#34;销售方纳税识别号&#34;, &#34;销售方地址电话&#34;, &#34;应税货物(或服务)名称&#34;, &#34;价税合计(大写)&#34;, &#34;税率&#34;, &#34;备注&#34;; 结果只显示DICT_DATA。 TEXT: {text}
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">ollama</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+      <span class="p">{</span>
+        <span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为&#34;开票日期&#34;, &#34;销售方纳税识别号&#34;, &#34;销售方地址电话&#34;, &#34;应税货物(或服务)名称&#34;, &#34;价税合计(大写)&#34;, &#34;税率&#34;, &#34;备注&#34;; 结果只显示DICT_DATA。 TEXT: </span><span class="si">{</span><span class="n">text1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+      <span class="p">},</span>
+    <span class="p">])</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+<span class="n">result</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&#39;DICT_DATA = {\n    &#34;开票日期&#34;: &#34;2023年01月06日&#34;,\n    &#34;销售方纳税识别号&#34;: &#34;91110108MA01WFY0X6&#34;,\n    &#34;销售方地址电话&#34;: &#34;北京市海淀区上地东路1号院4号楼2层221室 010-59928888&#34;,\n    &#34;应税货物(或服务)名称&#34;: &#34;*信息技术服务*技术服务费&#34;,\n    &#34;价税合计(大写)&#34;: &#34;&#34;,\n    &#34;税率&#34;: &#34;6%&#34;,\n    &#34;备注&#34;: &#34;230106163474406331&#34;\n}&#39;
+</code></pre></div><p>从运行结果看出， 大模型从发票PDF中准确提取到我们需要的信息，耗时大概10s。 需要注意，有时候大模型还会返回</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&#39;Here is the extracted key information in dictionary format:\n\n```\n{\n    &#34;开票日期&#34;: &#34;2023年01月06日&#34;,\n    &#34;销售方纳税识别号&#34;: &#34;91110108MA01WFY0X6&#34;,\n    &#34;销售方地址电话&#34;: &#34;北京市海淀区上地东路1号院4号楼2层221室 010-59928888&#34;,\n    &#34;应税货物(或服务)名称&#34;: &#34;*信息技术服务*技术服务费&#34;,\n    &#34;价税合计(大写)&#34;: &#34;贰佰陆拾叁元整&#34;,\n    &#34;税率&#34;: &#34;6%&#34;,\n    &#34;备注&#34;: &#34;230106163474406331&#34;\n}\n```\n\nLet me know if you have any further requests! 😊&#39;
+</code></pre></div><br>
+<p>现在我们需要将 DICT_DATA 变为真正的字典数据</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import re
+
+result = response[&#39;message&#39;][&#39;content&#39;]
+result = [r for r in re.split(&#39;```|DICT_DATA = &#39;, result) if &#39;{&#39; in r][0]
+
+print(type(eval(result)))
+print(eval(result))
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&lt;class &#39;dict&#39;&gt;
+{&#39;开票日期&#39;: &#39;2023年01月06日&#39;,
+ &#39;销售方纳税识别号&#39;: &#39;91110108MA01WFY0X6&#39;,
+ &#39;销售方地址电话&#39;: &#39;北京市海淀区上地东路1号院4号楼2层221室 010-59928888&#39;,
+ &#39;应税货物(或服务)名称&#39;: &#39;*信息技术服务*技术服务费&#39;,
+ &#39;价税合计(大写)&#39;: &#39;贰佰陆拾叁元整&#39;,
+ &#39;税率&#39;: &#39;6%&#39;,
+ &#39;备注&#39;: &#39;230106163474406331&#39;}
+</code></pre></div><br>
+<h3 id="33-封装成函数extract_info">3.3 封装成函数extract_info</h3>
+<p>实验成功，我们将其封装为函数<em><strong>extract_info</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">ollama</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="k">def</span> <span class="nf">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+          <span class="p">{</span>
+            <span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为&#34;开票日期&#34;, &#34;销售方纳税识别号&#34;, &#34;销售方地址电话&#34;, &#34;应税货物(或服务)名称&#34;, &#34;价税合计(大写)&#34;, &#34;税率&#34;, &#34;备注&#34;; 结果只显示DICT_DATA。 TEXT: </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+          <span class="p">},</span>
+        <span class="p">])</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```|DICT_DATA = &#39;</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;{&#39;</span> <span class="ow">in</span> <span class="n">r</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+  
+  
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="n">result</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;开票日期&#39;: &#39;2023 02 14&#39;,
+ &#39;销售方纳税识别号&#39;: &#39;91230109MABT7KBC4M&#39;,
+ &#39;销售方地址电话&#39;: &#39;北京市北京经济技术开发区科创十一街18号院C座2层215室 62648622&#39;,
+ &#39;应税货物(或服务)名称&#39;: &#39;*家用厨房电器具*米家 小米电热水 MJDSH03YM&#39;,
+ &#39;价税合计(大写)&#39;: &#39;壹佰贰拾叁圆玖角玖分&#39;,
+ &#39;税率&#39;: &#39;13%&#39;,
+ &#39;备注&#39;: None}
+</code></pre></div><br>
+<h3 id="34-批量提取">3.4 批量提取</h3>
+<p>对data文件夹进行批量信息提取，结果存储为csv。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="c1">#cntext版本为2.1.2，非开源，</span>
+<span class="c1">#需联系大邓372335839获取</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#当前代码所在的代码文件与data文件夹处于同一个文件夹内</span>
+<span class="c1">#获取data内所有pdf的路径</span>
+<span class="n">pdf_files</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;data/</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.pdf&#39;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">]</span>
+
+<span class="n">dict_datas</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">pdf_file</span> <span class="ow">in</span> <span class="n">pdf_files</span><span class="p">:</span>
+    <span class="n">pdf_text</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">)</span>
+    <span class="n">dict_data</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">pdf_text</span><span class="p">)</span>
+    <span class="n">dict_datas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dict_data</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dict_datas</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 32 ms, sys: 3.17 ms, total: 35.2 ms
+Wall time: 11.8 s
+</code></pre></div><p><img loading="lazy" src="img/05-df.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="四讨论">四、讨论</h2>
+<p>这三张发票， 识别错误字段集中在销售方纳税识别号。原因主要是ct.read_pdf读入pdf时，文本比较杂乱。 对大模型的语义理解有一定的挑战。目前大模型已经支持文本、图片、音频、视频、网址， 所以各位看官，不用等太久，就可克服此问题。</p>
+<p>大模型会对每个输入，给出正确概率最大的回答，因此大模型提取数据时存在一定的错误识别风险。为降低该风险，尽量选择特别特殊、显眼，例如三张发票的<strong>价税合计(大写)</strong>,  因为信息是特殊的中文大写数字， 在所有文本中是最醒目最特别的文本信息，这样大模型处理这类信息时会给这类信息尽可能高的权重，增大回答的准确率。</p>
+<br>
+<br>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>Word Embeddings、Transformer与GPT：一文揭示三者关系</title>
       <link>https://textdata.cn/blog/2023-11-16-how-to-understand-the-meaning-of-gpt/</link>
