@@ -6,7 +6,164 @@
     <description>Recent content in 经济管理 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Tue, 18 Jun 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 20 Jun 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>代码 | 如何用Python计算知识宽度(赫芬达尔—赫希曼指数)</title>
+      <link>https://textdata.cn/blog/2024-06-20-using-python-to-caculate-herfindahl-hirschman-index/</link>
+      <pubDate>Thu, 20 Jun 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-06-20-using-python-to-caculate-herfindahl-hirschman-index/</guid>
+      <description>赫芬达尔-赫希曼指数(Herfindahl-Hirschman Index)作为一种衡量市场集中度的经济指标，通常用于分析产业或市场中企业份额的分布情况。近年来有学者使用HHI算法测量专利的所涉领域的集中程度，反应专利的知识宽度。我们是否可能利用HHI来量化某个语料库中不同词汇的使用频率分布，以此来分析个人、群体或时代的语言风格、词汇丰富度、或是语言标准化与变化的趋势。如果词汇分布非常均匀，表明语言使用中的词汇多样性高，HHI值就会较低；反之，如果少数词汇占据了大部分文本空间，表明词汇使用集中，HHI值则较高。</description>
+      <content:encoded><![CDATA[<h2 id="一相关概念">一、相关概念</h2>
+<h3 id="11-赫芬达尔-赫希曼指数">1.1 赫芬达尔-赫希曼指数</h3>
+<p>**赫芬达尔-赫希曼指数(Herfindahl-Hirschman Index)**作为一种衡量市场集中度的经济指标，通常用于分析产业或市场中企业份额的分布情况。近年来有学者使用HHI算法测量专利的所涉领域的集中程度，反应专利的知识宽度。</p>
+<blockquote>
+<p><strong>知识宽度</strong>是指在特定领域或跨领域中，个人或组织掌握的知识的多样性和广度。</p>
+</blockquote>
+<br>
+<p>假设某行业有N家公司，每家公司的市场份额为MSi, 则该行业的HHI指数计算公式</p>
+<p><img loading="lazy" src="img/01-hhi-algo.png" alt=""  />
+</p>
+<br>
+<h3 id="12-专利ipc号">1.2 、专利IPC号</h3>
+<p>IPC号是国际专利分类体系（International Patent Classification, IPC）的缩写，它是一个用于将专利归类到特定技术领域的全球性标准。IPC系统由世界知识产权组织（WIPO）维护，旨在标准化专利文献的分类，以便于检索和分析。</p>
+<p><img loading="lazy" src="img/02-ipc-class.png" alt=""  />
+</p>
+<p>IPC号的结构如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1. 部(Section): 用大写字母A到H表示，共分8个部，每个部覆盖特定的技术领域。
+2. 大类(Class): 用两位数字表示；每个部下面进一步细分为大类。
+3. 小类(Subclass): 用大写字母表示， 大类下面再细分为小类，。
+4. 大组(Main Group) 和 小组(Sub-Group)：小类下面进一步细分，用斜杠（/）分隔的数字表示。
+   - 大组：用两位数字表示。
+   - 小组：大组后面跟着的两位数字。
+</code></pre></div><br>
+<h3 id="13-专利与hhi">1.3 专利与HHI</h3>
+<p>在创新领域，使用hhi计算专利质量，最小粒度是大组(Group)。举例说明</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">|专利序号|       IPC号         |
+|  1   | A01B01/00;A01B01/01 |
+|  2   | A01B01/00;A01C01/01 |
+</code></pre></div><p>如果用HHI计算</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">#1种知识，份额1/1
+patent1_HHI = (1/1)*(1/1)  = 1
+
+#2种知识，份额各1/2
+patent2_HHI = (1/2)*(1/2) + (1/2)*(1/2) = 1/2
+</code></pre></div><p>从知识集中程度（HHI），专利1 知识更聚焦。</p>
+<p>衡量一个人的知识有广度和深度两种不同的角度， 在创新创业领域， 习惯用专利的(1-hhi)来表示专利质量(广度)。</p>
+<p><br><br></p>
+<h2 id="二实验-衡量专利质量">二、实验: 衡量专利质量</h2>
+<p>准备了三个专利，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&#34;A01B01/00&#34;
+&#34;A01B01/00;B01D01/01&#34;
+&#34;A01B01/00;B01D01/01;C01B01/01&#34;
+&#34;A01B01/00;B01D01/01;C01B01/01;D01B01/01&#34;
+&#34;A01B01/00;B01D01/01;C01B01/01;D01B01/01;F01B01/01&#34;
+</code></pre></div><p>从上到下，知识宽度越来越大， 集中程度(HHI)越来越小。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">ipc_hhi</span><span class="p">(</span><span class="n">ipc_text</span><span class="p">):</span>
+  	<span class="c1">#ipc_text字符串，形如&#34;A01B01/00;B01D01/01;F01B01/01&#34;</span>
+    <span class="n">ipc_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">ipc_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)]</span>
+    <span class="n">ipc_group_counts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Counter</span><span class="p">(</span><span class="n">ipc_list</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">ipc_props</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ipc_group_counts</span><span class="p">)</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">ipc_group_counts</span><span class="p">)</span>
+    <span class="n">hhi_value</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">ipc_prop</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">ipc_prop</span> <span class="ow">in</span> <span class="n">ipc_props</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hhi_value</span>
+  
+<span class="nb">print</span><span class="p">(</span><span class="n">ipc_hhi</span><span class="p">(</span><span class="s2">&#34;A01B01/00&#34;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ipc_hhi</span><span class="p">(</span><span class="s2">&#34;A01B01/00;B01D01/01&#34;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ipc_hhi</span><span class="p">(</span><span class="s2">&#34;A01B01/00;B01D01/01;C01B01/01&#34;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ipc_hhi</span><span class="p">(</span><span class="s2">&#34;A01B01/00;B01D01/01;C01B01/01;D01B01/01&#34;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ipc_hhi</span><span class="p">(</span><span class="s2">&#34;A01B01/00;B01D01/01;C01B01/01;D01B01/01;F01B01/01&#34;</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1.0
+0.5
+0.3333333333333333
+0.25
+0.20000000000000004
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">print(1-ipc_hhi(&#34;A01B01/00&#34;))
+print(1-ipc_hhi(&#34;A01B01/00;B01D01/01&#34;))
+print(1-ipc_hhi(&#34;A01B01/00;B01D01/01;C01B01/01&#34;))
+print(1-ipc_hhi(&#34;A01B01/00;B01D01/01;C01B01/01;D01B01/01&#34;))
+print(1-ipc_hhi(&#34;A01B01/00;B01D01/01;C01B01/01;D01B01/01;F01B01/01&#34;))
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0.0
+0.5
+0.6666666666666667
+0.75
+0.7999999999999999
+</code></pre></div><p>知识宽度(1-hhi)越来越大。</p>
+<p><br><br></p>
+<h2 id="三语言的hhi">三、语言的HHI</h2>
+<h3 id="31-联想">3.1 联想</h3>
+<blockquote>
+<p>本节语言是使用的大模型，未查阅文献。通义千问，提问[赫芬达尔-赫希曼指数(Herfindahl-Hirschman Index)是否可以测量一个人用语(表达)的特质]</p>
+</blockquote>
+<p>前人类比市场集中程度，用于测量专利质量(知识宽度)。 那放在文本语言中，我们是否可能利用HHI来量化某个语料库中不同词汇的使用频率分布，以此来分析个人、群体或时代的语言风格、词汇丰富度、或是语言标准化与变化的趋势。</p>
+<ul>
+<li>如果词汇分布非常均匀，表明语言使用中的词汇多样性高，HHI值就会较低；</li>
+<li>反之，如果少数词汇占据了大部分文本空间，表明词汇使用集中，HHI值则较高。</li>
+</ul>
+<p>结合其他语言学指标一起使用，比如TTR（Type-Token Ratio，类型-标记比率）、Shannon entropy（香农熵）等，共同评估语言表达的复杂度和多样性。不过，这类研究的文献相对较少，因为语言学领域有自己一套成熟且专业的分析工具和方法，HHI更多地被视为跨学科应用的一个创新尝试。</p>
+<br>
+<h3 id="32-词语的hhi">3.2 词语的HHI</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">jieba</span>
+
+<span class="k">def</span> <span class="nf">word_hhi</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="s2">&#34;&#34;&#34;计算文本词汇使用的HHI&#34;&#34;&#34;</span>
+    <span class="n">word_counts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Counter</span><span class="p">(</span><span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">))</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">word_props</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">word_counts</span><span class="p">)</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">word_counts</span><span class="p">)</span>
+    <span class="n">hhi_value</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">w_prop</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">w_prop</span> <span class="ow">in</span> <span class="n">word_props</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hhi_value</span>
+  
+<span class="n">personA</span> <span class="o">=</span> <span class="s1">&#39;这场音乐会太嗨了&#39;</span>
+<span class="n">personB</span> <span class="o">=</span> <span class="s1">&#39;这场音乐会说出来令你不敢相信，主办方策划有方，群众激情满满，我印象深刻，体验感拉满&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;A-hhi&#39;</span><span class="p">,</span> <span class="n">word_hhi</span><span class="p">(</span><span class="n">personA</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;B-hhi&#39;</span><span class="p">,</span> <span class="n">word_hhi</span><span class="p">(</span><span class="n">personB</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;A词汇多样性&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="n">word_hhi</span><span class="p">(</span><span class="n">personA</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;B词汇多样性&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="n">word_hhi</span><span class="p">(</span><span class="n">personB</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">A-hhi 0.20000000000000004
+B-hhi 0.07024793388429751
+
+A词汇多样性 0.7999999999999999
+B词汇多样性 0.9297520661157025
+</code></pre></div><br>
+<p>该函数已内置到cntext2.1.3， 需要更新的找大邓领新版cntext</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">personA</span> <span class="o">=</span> <span class="s1">&#39;这场音乐会太嗨了&#39;</span>
+<span class="n">personB</span> <span class="o">=</span> <span class="s1">&#39;这场音乐会说出来令你不敢相信，主办方策划有方，群众激情满满，我印象深刻，体验感拉满&#39;</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;A-hhi&#39;</span><span class="p">,</span> <span class="n">ct</span><span class="o">.</span><span class="n">word_hhi</span><span class="p">(</span><span class="n">personA</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;B-hhi&#39;</span><span class="p">,</span> <span class="n">ct</span><span class="o">.</span><span class="n">word_hhi</span><span class="p">(</span><span class="n">personB</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;A词汇多样性&#39;</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">ct</span><span class="o">.</span><span class="n">word_hhi</span><span class="p">(</span><span class="n">personA</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;B词汇多样性&#39;</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">ct</span><span class="o">.</span><span class="n">word_hhi</span><span class="p">(</span><span class="n">personB</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">A-hhi 0.20000000000000004
+B-hhi 0.07024793388429751
+
+A词汇多样性 0.7999999999999999
+B词汇多样性 0.9297520661157025
+</code></pre></div><br>
+<br>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>2023 | 文本分析在经管研究中的应用</title>
       <link>https://textdata.cn/blog/2023-11-05-xjtu-text-mining-in-ms/</link>
