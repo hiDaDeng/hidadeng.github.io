@@ -6,7 +6,7 @@
     <description>Recent content in LLM on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 16 Jun 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 10 Jul 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>实验 | 使用本地大模型从文本中提取结构化信息</title>
       <link>https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/</link>
@@ -359,6 +359,456 @@ Wall time: 3.8 s
 <li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
 <li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
 <li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>实验 | 使用本地大模型DIY制作单词书教案PDF</title>
+      <link>https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/</link>
+      <pubDate>Wed, 10 Jul 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/</guid>
+      <description>&lt;p&gt;前几天分享了 &lt;a href=&#34;https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/&#34;&gt;实验 | 使用本地大模型从文本中提取结构化信息&lt;/a&gt; ，今天实验一个成功率更高的使用场景，生成单词书教案PDF。&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;一任务描述&#34;&gt;一、任务描述&lt;/h2&gt;
+&lt;p&gt;假设你是英语老师，你希望在单词书中增加历史文化方面的信息， 市面上的单词书并不能很好的满足你的需要。针对这一需求， 我们可以利用大模型，定制你的单词书教案。例如单词 abanon&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/07-pixyII.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/07-pdf.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二准备工作&#34;&gt;二、准备工作&lt;/h2&gt;
+&lt;h3 id=&#34;21-安装ollama&#34;&gt;2.1 安装ollama&lt;/h3&gt;
+&lt;p&gt;点击前往网站 &lt;a href=&#34;https://ollama.com/&#34;&gt;https://ollama.com/&lt;/a&gt; ，下载ollama软件，支持win、Mac、linux&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-ollama-gui.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;22-下载llm&#34;&gt;2.2 下载LLM&lt;/h3&gt;
+&lt;p&gt;ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-ollama-model.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-ollama-llama3.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama pull llama3
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;等待 &lt;strong&gt;llama3:8b&lt;/strong&gt; 下载完成。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;23-安装python包&#34;&gt;2.3 安装python包&lt;/h3&gt;
+&lt;p&gt;在python中调用ollama服务，需要ollama包。&lt;/p&gt;
+&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install ollama
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;24-启动ollama服务&#34;&gt;2.4 启动ollama服务&lt;/h3&gt;
+&lt;p&gt;在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama serve
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2024/06/14 14:52:24 routes.go:1011: INFO server config env=&amp;#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&amp;#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&amp;#34;total blobs: 18&amp;#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&amp;#34;total unused blobs removed: 0&amp;#34;
+time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&amp;#34;Listening on 127.0.0.1:11434 (version 0.1.44)&amp;#34;
+time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&amp;#34;extracting embedded files&amp;#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
+time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&amp;#34;Dynamic LLM libraries [metal]&amp;#34;
+time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&amp;#34;inference compute&amp;#34; id=0 library=metal compute=&amp;#34;&amp;#34; driver=0.0 name=&amp;#34;&amp;#34; total=&amp;#34;72.0 GiB&amp;#34; available=&amp;#34;72.0 GiB&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三实验&#34;&gt;三、实验&lt;/h2&gt;
+&lt;h3 id=&#34;31-读取词表&#34;&gt;3.1 读取词表&lt;/h3&gt;
+&lt;p&gt;假设你需要背 &lt;a href=&#34;words.csv&#34;&gt;*&lt;strong&gt;words.csv&lt;/strong&gt;&lt;/a&gt;* 中的单词，&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;words.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/05-df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;32-小实验&#34;&gt;3.2 小实验&lt;/h3&gt;
+&lt;p&gt;以单词march为例&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+
+
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;diy_dictionary&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+          &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+            &lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+            &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&amp;#34;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                你是一名中英文双语教育专家，拥有帮助将中文视为母语的用户理解和记忆英语单词的专长，请根据用户提供的英语单词&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;完成任务。
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                # &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                [美式音标]
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                ## 语义
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                - 系统地分析用户提供的单词，并以简单易懂的方式解答；
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                ## 例句
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                - 为该单词提供至少 3 个不同场景下的使用方法和例句。并且附上中文翻译，以帮助用户更深入地理解单词意义。其中英文例句加粗斜体！
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                ## 历史文化
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                - 详细介绍单词的造词来源和发展历史，以及在欧美文化中的内涵
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                ## 相关单词
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                - 列出单词对应的名词、单复数、动词、不同时态、形容词、副词等的变形以及对应的中文翻译。
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;               
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                ## 词组搭配
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                - 列出单词对应的固定搭配、组词以及对应的中文翻译。
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                注意: 如非特别说明尽量用中文，结果返回markdown格式; 均为二级标题##， 无序列表用-而不是*。
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                 
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                请根据单词&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;制作内容
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                &amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+          
+        &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+        &lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+
+    &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
+
+
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;diy_dictionary&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;march&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;# March
+[美式音标] /mɑːrtʃ/
+
+## 语义
+march 是一種动詞，主要表达走路、行军或進行某种活动的意思。在日常生活中，march 可以用来描述人们的步伐、进军或进行一些形式上的活动。
+
+## 例句
+- **_I&amp;#39;ll march to the store to pick up some milk._** 我将去超market购买牛奶。
+- _The soldiers marched across the border._ 军队跨越边境行进。
+- _March is one of my favorite months because of the spring weather._ 三月是我最喜欢的月份，因为春天气候很好。
+
+## 历史文化
+march 的词源来自Old French &amp;#34;_marcher_&amp;#34;,表示「walk」或「go」。在中世纪，march 表示军队进军或进行某种活动。在英语语境中，march 通常与spring、summer、autumn、winter 等四季相关联。
+
+## 相关单词
+- 名词：March (一月份的名称)、march (行军、步伐)
+	+ Plural：marches
+- 单复数：
+	+ March (动詞)： march, marched
+	+ March (名詞)： march, marches
+- 动词：
+	+ Present tense： march
+	+ Past tense： marched
+	+ Past participle： marched
+- 不同时态：
+	+ Future tense： will march
+	+ Conditional tense： would march
+- 形容词：marching (进行某种活动的)
+- 副词：on foot (徒步）、by foot (徒步）
+
+## 词组搭配
+- **_take a march_**：徒步旅行
+- **_go on a march_**：进行军事演习或行军
+- **_in step with the march_**：与某种活动保持同步
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;33-批量生成&#34;&gt;3.3 批量生成&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;csv&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;diy_dictionary&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+          &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+            &lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+            &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&amp;#34;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                你是一名中英文双语教育专家，拥有帮助将中文视为母语的用户理解和记忆英语单词的专长，请根据用户提供的英语单词&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;完成任务。
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                # &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                [美式音标]
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                ## 语义
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                - 系统地分析用户提供的单词，并以简单易懂的方式解答；
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                ## 例句
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                - 为该单词提供至少 3 个不同场景下的使用方法和例句。并且附上中文翻译，以帮助用户更深入地理解单词意义。其中英文例句加粗斜体！
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                ## 历史文化
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                - 详细介绍单词的造词来源和发展历史，以及在欧美文化中的内涵
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                ## 相关单词
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                - 列出单词对应的名词、单复数、动词、不同时态、形容词、副词等的变形以及对应的中文翻译。
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;               
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                ## 词组搭配
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                - 列出单词对应的固定搭配、组词以及对应的中文翻译。
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                注意: 如非特别说明尽量用中文，结果返回markdown格式; 均为二级标题##， 无序列表用-而不是*。
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                 
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                请根据单词&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;制作内容
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;                &amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+
+    &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
+  
+  
+&lt;span class=&#34;c1&#34;&gt;#读取词表&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;words.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Dictionary&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Word&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;apply&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;diy_dictionary&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#保存成csv和md&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;to_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;word-dictionary.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;index&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;False&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Your-Diy-Dictionary.md&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;w&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;mdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;mdf&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;lt;br&amp;gt;&amp;lt;br&amp;gt;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Dictionary&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]))&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/06-df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;34-生成单词书&#34;&gt;3.4 生成单词书&lt;/h3&gt;
+&lt;h4 id=&#34;341-选择主题&#34;&gt;3.4.1 选择主题&lt;/h4&gt;
+&lt;p&gt;打开 &lt;strong&gt;Typora&lt;/strong&gt;(一种markdown软件)， 选择一种自己喜欢的 &lt;strong&gt;主题Theme&lt;/strong&gt; ，&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/07-pixyII.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/07-hara.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/07-seniva.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h4 id=&#34;342-导出pdf&#34;&gt;3.4.2 导出pdf&lt;/h4&gt;
+&lt;p&gt;依次&lt;strong&gt;文件&amp;ndash;&amp;gt;导出&amp;ndash;&amp;gt;PDF或HTML&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/07-pdf.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四讨论&#34;&gt;四、讨论&lt;/h2&gt;
+&lt;p&gt;在本文中，我们展示了利用ollama制作单词书教案，实际上各位可以结合自身学习工作需要， 开发更多的应用场景。如果这份利用 ollama 自制教案对你有帮助，欢迎转发分享给你的朋友。&lt;/p&gt;
+&lt;br&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;精选内容&#34;&gt;精选内容&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/datasets_available_for_management_science/&#34;&gt;LIST | 可供社科(经管)领域使用的数据集汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/the_text_analysis_list_about_ms/&#34;&gt;LIST | 社科(经管)数据挖掘文献资料汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-06-16-scrapegraph-ai/&#34;&gt;网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/&#34;&gt;推荐 | 文本分析库cntext2.x使用手册&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/&#34;&gt;实验 | 使用本地大模型从文本中提取结构化信息&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<p>前几天分享了 <a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a> ，今天实验一个成功率更高的使用场景，生成单词书教案PDF。<br><br></p>
+<h2 id="一任务描述">一、任务描述</h2>
+<p>假设你是英语老师，你希望在单词书中增加历史文化方面的信息， 市面上的单词书并不能很好的满足你的需要。针对这一需求， 我们可以利用大模型，定制你的单词书教案。例如单词 abanon</p>
+<p><img loading="lazy" src="img/07-pixyII.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/07-pdf.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二准备工作">二、准备工作</h2>
+<h3 id="21-安装ollama">2.1 安装ollama</h3>
+<p>点击前往网站 <a href="https://ollama.com/">https://ollama.com/</a> ，下载ollama软件，支持win、Mac、linux</p>
+<p><img loading="lazy" src="img/02-ollama-gui.png" alt=""  />
+</p>
+<br>
+<h3 id="22-下载llm">2.2 下载LLM</h3>
+<p>ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，</p>
+<p><img loading="lazy" src="img/03-ollama-model.png" alt=""  />
+</p>
+<br>
+<p>以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。</p>
+<p><img loading="lazy" src="img/04-ollama-llama3.png" alt=""  />
+</p>
+<br>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama pull llama3
+</code></pre></div><p>等待 <strong>llama3:8b</strong> 下载完成。</p>
+<br>
+<h3 id="23-安装python包">2.3 安装python包</h3>
+<p>在python中调用ollama服务，需要ollama包。</p>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install ollama
+</code></pre></div><br>
+<h3 id="24-启动ollama服务">2.4 启动ollama服务</h3>
+<p>在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama serve
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2024/06/14 14:52:24 routes.go:1011: INFO server config env=&#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&#34;total blobs: 18&#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&#34;total unused blobs removed: 0&#34;
+time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&#34;Listening on 127.0.0.1:11434 (version 0.1.44)&#34;
+time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&#34;extracting embedded files&#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
+time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&#34;Dynamic LLM libraries [metal]&#34;
+time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&#34;inference compute&#34; id=0 library=metal compute=&#34;&#34; driver=0.0 name=&#34;&#34; total=&#34;72.0 GiB&#34; available=&#34;72.0 GiB&#34;
+</code></pre></div><p>cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。</p>
+<p><br><br></p>
+<h2 id="三实验">三、实验</h2>
+<h3 id="31-读取词表">3.1 读取词表</h3>
+<p>假设你需要背 <a href="words.csv">*<strong>words.csv</strong></a>* 中的单词，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;words.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/05-df.png" alt=""  />
+</p>
+<br>
+<h3 id="32-小实验">3.2 小实验</h3>
+<p>以单词march为例</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">ollama</span>
+
+
+
+<span class="k">def</span> <span class="nf">diy_dictionary</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+          <span class="p">{</span>
+            <span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&#34;&#34;&#34;
+</span><span class="s2">                你是一名中英文双语教育专家，拥有帮助将中文视为母语的用户理解和记忆英语单词的专长，请根据用户提供的英语单词</span><span class="si">{</span><span class="n">word</span><span class="si">}</span><span class="s2">完成任务。
+</span><span class="s2">                
+</span><span class="s2">                # </span><span class="si">{</span><span class="n">word</span><span class="si">}</span><span class="s2">
+</span><span class="s2">                [美式音标]
+</span><span class="s2">                
+</span><span class="s2">                ## 语义
+</span><span class="s2">                - 系统地分析用户提供的单词，并以简单易懂的方式解答；
+</span><span class="s2">                
+</span><span class="s2">                ## 例句
+</span><span class="s2">                - 为该单词提供至少 3 个不同场景下的使用方法和例句。并且附上中文翻译，以帮助用户更深入地理解单词意义。其中英文例句加粗斜体！
+</span><span class="s2">                
+</span><span class="s2">                ## 历史文化
+</span><span class="s2">                - 详细介绍单词的造词来源和发展历史，以及在欧美文化中的内涵
+</span><span class="s2">                
+</span><span class="s2">                ## 相关单词
+</span><span class="s2">                - 列出单词对应的名词、单复数、动词、不同时态、形容词、副词等的变形以及对应的中文翻译。
+</span><span class="s2">               
+</span><span class="s2">                ## 词组搭配
+</span><span class="s2">                - 列出单词对应的固定搭配、组词以及对应的中文翻译。
+</span><span class="s2">
+</span><span class="s2">
+</span><span class="s2">                注意: 如非特别说明尽量用中文，结果返回markdown格式; 均为二级标题##， 无序列表用-而不是*。
+</span><span class="s2">                 
+</span><span class="s2">                请根据单词</span><span class="si">{</span><span class="n">word</span><span class="si">}</span><span class="s2">制作内容
+</span><span class="s2">                &#34;&#34;&#34;</span><span class="p">,</span>
+          
+        <span class="p">},</span>
+        <span class="p">])</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">diy_dictionary</span><span class="p">(</span><span class="n">word</span> <span class="o">=</span> <span class="s1">&#39;march&#39;</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"># March
+[美式音标] /mɑːrtʃ/
+
+## 语义
+march 是一種动詞，主要表达走路、行军或進行某种活动的意思。在日常生活中，march 可以用来描述人们的步伐、进军或进行一些形式上的活动。
+
+## 例句
+- **_I&#39;ll march to the store to pick up some milk._** 我将去超market购买牛奶。
+- _The soldiers marched across the border._ 军队跨越边境行进。
+- _March is one of my favorite months because of the spring weather._ 三月是我最喜欢的月份，因为春天气候很好。
+
+## 历史文化
+march 的词源来自Old French &#34;_marcher_&#34;,表示「walk」或「go」。在中世纪，march 表示军队进军或进行某种活动。在英语语境中，march 通常与spring、summer、autumn、winter 等四季相关联。
+
+## 相关单词
+- 名词：March (一月份的名称)、march (行军、步伐)
+	+ Plural：marches
+- 单复数：
+	+ March (动詞)： march, marched
+	+ March (名詞)： march, marches
+- 动词：
+	+ Present tense： march
+	+ Past tense： marched
+	+ Past participle： marched
+- 不同时态：
+	+ Future tense： will march
+	+ Conditional tense： would march
+- 形容词：marching (进行某种活动的)
+- 副词：on foot (徒步）、by foot (徒步）
+
+## 词组搭配
+- **_take a march_**：徒步旅行
+- **_go on a march_**：进行军事演习或行军
+- **_in step with the march_**：与某种活动保持同步
+</code></pre></div><br>
+<h3 id="33-批量生成">3.3 批量生成</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">ollama</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="k">def</span> <span class="nf">diy_dictionary</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+          <span class="p">{</span>
+            <span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&#34;&#34;&#34;
+</span><span class="s2">                你是一名中英文双语教育专家，拥有帮助将中文视为母语的用户理解和记忆英语单词的专长，请根据用户提供的英语单词</span><span class="si">{</span><span class="n">word</span><span class="si">}</span><span class="s2">完成任务。
+</span><span class="s2">                
+</span><span class="s2">                # </span><span class="si">{</span><span class="n">word</span><span class="si">}</span><span class="s2">
+</span><span class="s2">                [美式音标]
+</span><span class="s2">                
+</span><span class="s2">                ## 语义
+</span><span class="s2">                - 系统地分析用户提供的单词，并以简单易懂的方式解答；
+</span><span class="s2">                
+</span><span class="s2">                ## 例句
+</span><span class="s2">                - 为该单词提供至少 3 个不同场景下的使用方法和例句。并且附上中文翻译，以帮助用户更深入地理解单词意义。其中英文例句加粗斜体！
+</span><span class="s2">                
+</span><span class="s2">                ## 历史文化
+</span><span class="s2">                - 详细介绍单词的造词来源和发展历史，以及在欧美文化中的内涵
+</span><span class="s2">                
+</span><span class="s2">                ## 相关单词
+</span><span class="s2">                - 列出单词对应的名词、单复数、动词、不同时态、形容词、副词等的变形以及对应的中文翻译。
+</span><span class="s2">               
+</span><span class="s2">                ## 词组搭配
+</span><span class="s2">                - 列出单词对应的固定搭配、组词以及对应的中文翻译。
+</span><span class="s2">
+</span><span class="s2">
+</span><span class="s2">                注意: 如非特别说明尽量用中文，结果返回markdown格式; 均为二级标题##， 无序列表用-而不是*。
+</span><span class="s2">                 
+</span><span class="s2">                请根据单词</span><span class="si">{</span><span class="n">word</span><span class="si">}</span><span class="s2">制作内容
+</span><span class="s2">                &#34;&#34;&#34;</span><span class="p">}</span>
+    <span class="p">])</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">result</span>
+  
+  
+<span class="c1">#读取词表</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;words.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;Dictionary&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Word&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">diy_dictionary</span><span class="p">)</span>
+
+<span class="c1">#保存成csv和md</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;word-dictionary.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;Your-Diy-Dictionary.md&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mdf</span><span class="p">:</span>
+    <span class="n">mdf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;&lt;br&gt;&lt;br&gt;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Dictionary&#39;</span><span class="p">]))</span>
+
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/06-df.png" alt=""  />
+</p>
+<br>
+<h3 id="34-生成单词书">3.4 生成单词书</h3>
+<h4 id="341-选择主题">3.4.1 选择主题</h4>
+<p>打开 <strong>Typora</strong>(一种markdown软件)， 选择一种自己喜欢的 <strong>主题Theme</strong> ，</p>
+<p><img loading="lazy" src="img/07-pixyII.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/07-hara.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/07-seniva.png" alt=""  />
+</p>
+<br>
+<h4 id="342-导出pdf">3.4.2 导出pdf</h4>
+<p>依次<strong>文件&ndash;&gt;导出&ndash;&gt;PDF或HTML</strong></p>
+<p><img loading="lazy" src="img/07-pdf.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="四讨论">四、讨论</h2>
+<p>在本文中，我们展示了利用ollama制作单词书教案，实际上各位可以结合自身学习工作需要， 开发更多的应用场景。如果这份利用 ollama 自制教案对你有帮助，欢迎转发分享给你的朋友。</p>
+<br>
+<br>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a></li>
 </ul>
 ]]></content:encoded>
     </item>
