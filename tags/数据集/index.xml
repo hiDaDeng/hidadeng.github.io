@@ -6,7 +6,253 @@
     <description>Recent content in 数据集 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Mon, 08 Jul 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 12 Jul 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>数据集 | ChinaDaily新闻数据集(2008 ~ 2024)</title>
+      <link>https://textdata.cn/blog/2024-07-12-china-daily-dataset/</link>
+      <pubDate>Fri, 12 Jul 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-07-12-china-daily-dataset/</guid>
+      <description>新闻数据集研究价值大， 您可从中提取丰富的指标，包括但不限于经济政策不确定性指数EPU 、 媒体关注度指数、文本相似度、情感分析。而且可训练词向量，构建新的词典，开发新的指标指数。计算机自然语言处理、经济学、管理学、新闻传播学、公共管理等领域均可使用。</description>
+      <content:encoded><![CDATA[<h2 id="一china-daily概况">一、「China Daily」概况</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">数据来源: chinadaily.com
+覆盖日期: 2008-10-24 ~ 2024-06-29
+所含字段:  date, title, content, source, link, img, lang
+记录条数: 847854
+     - 英文  697241
+     - 中文  150613  
+  
+文件格式: csv
+文件大小: 2648M
+
+科研用途； 如有问题， 加微信 372335839， 备注「姓名-学校-专业-chinadaily」。
+</code></pre></div><p><br><br></p>
+<h2 id="二查看数据">二、查看数据</h2>
+<h3 id="21-读取数据">2.1 读取数据</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;ChinaDaily.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
+</p>
+<br>
+<h3 id="22-覆盖日期">2.2 覆盖日期</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;coerce&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;起: &#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;止: &#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">起:  2008-10-24
+止:  2024-06-29
+</code></pre></div><br>
+<h3 id="23-所含字段">2.3 所含字段</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">date #日期
+title #标题
+content #新闻内容
+source  #来源
+link  #新闻链接
+img  #新闻首图链接
+lang #语言chinese、english
+</code></pre></div><br>
+<h3 id="24-语言">2.4 语言</h3>
+<p>China Daily是双语网站， 数据集中大多为英文新闻，也含少量中文内容。 中英文新闻的记录数</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;lang&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">lang
+english    697241
+chinese    150613
+</code></pre></div><br>
+<h3 id="25-月度发文量">2.5 月度发文量</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">months</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">month_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)):</span>
+    <span class="c1">#print(date)</span>
+    <span class="n">months</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">date</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">month_df</span><span class="p">)))</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">months</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;count&#39;</span><span class="p">]</span>
+<span class="n">data</span>
+</code></pre></div><p><img loading="lazy" src="img/02-df.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">plotnine</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib.font_manager</span> <span class="kn">import</span> <span class="n">FontProperties</span>
+
+<span class="c1">#文泉驿微米黑.ttf位于代码同文件夹</span>
+<span class="n">font_prop</span> <span class="o">=</span> <span class="n">FontProperties</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s1">&#39;文泉驿微米黑.ttf&#39;</span><span class="p">)</span> 
+
+<span class="p">(</span>
+    <span class="n">ggplot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span>  <span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">))</span>
+    <span class="o">+</span><span class="n">geom_point</span><span class="p">()</span>
+    <span class="o">+</span><span class="n">geom_line</span><span class="p">()</span>
+    <span class="o">+</span><span class="n">theme</span><span class="p">(</span><span class="n">figure_size</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+           <span class="n">text</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">family</span> <span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">()),</span> 
+           <span class="n">plot_title</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">family</span> <span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span> <span class="n">size</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+          <span class="p">)</span>
+    <span class="o">+</span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;China Daily月度发文量(2008.10 ~ 2024.06)&#39;</span><span class="p">,</span>
+          <span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;月度&#39;</span><span class="p">,</span> 
+          <span class="n">y</span> <span class="o">=</span> <span class="s1">&#39;发文量&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+
+</code></pre></div><p><img loading="lazy" src="img/03-plot.png" alt=""  />
+</p>
+<br>
+<h3 id="注意">注意</h3>
+<p>如Excel打开csv乱码， 请百度搜【在 Excel 中正确打开 CSV UTF-8 文件】</p>
+<!--所采集的数据并非China Daily全部内容，但采用广度递归采集， 最大深度为7，能看做是对ChinaDaily进行的大规模抽样。-->
+<p><br><br></p>
+<h2 id="三数据用途">三、数据用途</h2>
+<p>新闻数据集 可提取丰富的指标，包括但不限于 <strong>经济政策不确定性指数</strong> 、<strong>环境政策不确定性</strong>、 <strong>媒体关注度指数</strong>、<strong>文本相似度</strong>、<strong>情感分析</strong>。此外， 可训练词向量，开发新的概念词典。数据带时间， 参照前面指标， 依主体、日期、指标进行计算， 可构造面板数据，构建新的指标指数。因此在经济学、管理学、新闻传播学、公共管理、社会学等领域均有较高的研究价值。</p>
+<p>相关参考文献</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[1]洪永淼,刘俸奇,薛涧坡.政府与市场心理因素的经济影响及其测度[J].管理世界,2023,39(03):30-51.
+[2]刘景江,郑畅然,洪永淼.机器学习如何赋能管理学研究？——国内外前沿综述和未来展望[J].管理世界,2023,39(09):191-216.
+[3]张一帆,林建浩,樊嘉诚.新闻文本大数据与消费增速实时预测——基于叙事经济学的视角[J].金融研究,2023,(05):152-169.
+[4]Huang, Yun, and Paul Luk. &#34;Measuring economic policy uncertainty in China.&#34; China Economic Review 59 (2020): 101367
+[5]欧阳资生,陈世丽,杨希特,刘凤根,周学伟.经济政策不确定性、网络舆情与金融机构系统性风险[J].管理科学学报,2023,26(04):62-86.
+[6]逯东,宋昕倍.媒体报道、上市公司年报可读性与融资约束[J].管理科学学报,2021,24(12):45-61.
+[7]彭涛,黄福广,孙凌霞.经济政策不确定性与风险承担:基于风险投资的证据[J].管理科学学报,2021,24(03):98-114.
+[8]庞锐.采纳与内化：多重制度压力如何影响河长制创新扩散——基于省级政府的定向配对事件史分析[J].公共管理学报,2023,20(02):25-37+165-166.
+</code></pre></div><br>
+<br>
+<h2 id="四相关内容">四、相关内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/2024-06-22-usa_today_daily-news-dataset/"><strong>数据集(英文）| USA Today新闻数据集(2012~2024)</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-07-12-entrepreneur-dataset/">数据集 | 企业家Entrepreneur杂志数据集(1996 ~ 2024)</a></li>
+<li><a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/">代码 | 如何处理远超电脑内存的csv文件</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/"><strong>可视化 | 人民日报语料反映七十年文化演变</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/">代码 | 使用「新闻数据」测量 「经济政策不确定性EPU」指标</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>数据集 | 企业家Entrepreneur杂志数据集(1996 ~ 2024)</title>
+      <link>https://textdata.cn/blog/2024-07-12-entrepreneur-dataset/</link>
+      <pubDate>Fri, 12 Jul 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-07-12-entrepreneur-dataset/</guid>
+      <description>新闻数据集研究价值大， 您可从中提取丰富的指标，包括但不限于经济政策不确定性指数EPU 、 媒体关注度指数、文本相似度、情感分析。而且可训练词向量，构建新的词典，开发新的指标指数。计算机自然语言处理、经济学、管理学、新闻传播学、公共管理等领域均可使用。</description>
+      <content:encoded><![CDATA[<h2 id="一enterpreneur概况">一、Enterpreneur概况</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">数据集名称: 企业家杂志
+数据来源: https://www.entrepreneur.com/
+覆盖日期: 1996-01-01 ~ 2024-06-28
+所含字段:  date, title, content, link
+记录条数: 95813
+文件格式: csv
+文件大小: 1418 M
+
+科研用途； 如有问题， 加微信 372335839， 备注「姓名-学校-专业-entrepreneur」。
+</code></pre></div><p><img loading="lazy" src="img/entrepreneur-elon-musk.jpeg" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二查看数据">二、查看数据</h2>
+<h3 id="21-读取数据">2.1 读取数据</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;Entrepreneur.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
+</p>
+<br>
+<h3 id="22-覆盖日期">2.2 覆盖日期</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;coerce&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;起: &#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;止: &#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">起:  1996-01-01
+止:  2024-06-28
+</code></pre></div><br>
+<h3 id="23-所含字段">2.3 所含字段</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">date #日期
+title #标题
+content #新闻内容
+link  #新闻链接
+</code></pre></div><br>
+<h3 id="24-发文量统计">2.4 发文量统计</h3>
+<p>企业家杂志，按照月度发文量进行统计。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">month_volumes</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">month_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)):</span>
+    <span class="n">month_volumes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">date</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">month_df</span><span class="p">)))</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">months</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;count&#39;</span><span class="p">]</span>
+<span class="n">data</span>
+</code></pre></div><p><img loading="lazy" src="img/02-df.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">plotnine</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib.font_manager</span> <span class="kn">import</span> <span class="n">FontProperties</span>
+
+<span class="c1">#文泉驿微米黑.ttf位于代码同文件夹</span>
+<span class="n">font_prop</span> <span class="o">=</span> <span class="n">FontProperties</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s1">&#39;文泉驿微米黑.ttf&#39;</span><span class="p">)</span> 
+
+<span class="p">(</span>
+    <span class="n">ggplot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span>  <span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">))</span>
+    <span class="o">+</span><span class="n">geom_point</span><span class="p">()</span>
+    <span class="o">+</span><span class="n">geom_line</span><span class="p">()</span>
+    <span class="o">+</span><span class="n">theme</span><span class="p">(</span><span class="n">figure_size</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+           <span class="n">text</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">family</span> <span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">()),</span> 
+           <span class="n">plot_title</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">family</span> <span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span> <span class="n">size</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+          <span class="p">)</span>
+    <span class="o">+</span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;企业家Entrepreneur杂志(1996.1-2024.6.28)&#39;</span><span class="p">,</span>
+          <span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;月度&#39;</span><span class="p">,</span> 
+          <span class="n">y</span> <span class="o">=</span> <span class="s1">&#39;发文量&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+
+</code></pre></div><p><img loading="lazy" src="img/03-plot.png" alt=""  />
+</p>
+<br>
+<h3 id="注意">注意</h3>
+<p>如Excel打开csv乱码， 请百度搜「在 Excel 中正确打开 CSV UTF-8 文件」</p>
+<p><br><br></p>
+<h2 id="三数据用途">三、数据用途</h2>
+<p>企业家杂志数据集， 最相关的领域是与企业家相关的创新创业， 通过文本研究全球的企业家创新创业。</p>
+<p>当然也可将该数据集看做新闻数据集， 提取的指标提取丰富的指标，包括但不限于 <strong>经济政策不确定性指数</strong> 、<strong>环境政策不确定性</strong>、 <strong>媒体关注度指数</strong>、<strong>文本相似度</strong>、<strong>情感分析</strong>。此外， 可训练词向量，开发新的概念词典。数据带时间， 参照前面指标， 依主体、日期、指标进行计算， 可构造面板数据，构建新的指标指数。因此在经济学、管理学、新闻传播学、公共管理、社会学等领域均有较高的研究价值。</p>
+<p>相关参考文献</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[1]洪永淼,刘俸奇,薛涧坡.政府与市场心理因素的经济影响及其测度[J].管理世界,2023,39(03):30-51.
+[2]刘景江,郑畅然,洪永淼.机器学习如何赋能管理学研究？——国内外前沿综述和未来展望[J].管理世界,2023,39(09):191-216.
+[3]张一帆,林建浩,樊嘉诚.新闻文本大数据与消费增速实时预测——基于叙事经济学的视角[J].金融研究,2023,(05):152-169.
+[4]Huang, Yun, and Paul Luk. &#34;Measuring economic policy uncertainty in China.&#34; China Economic Review 59 (2020): 101367
+[5]欧阳资生,陈世丽,杨希特,刘凤根,周学伟.经济政策不确定性、网络舆情与金融机构系统性风险[J].管理科学学报,2023,26(04):62-86.
+[6]逯东,宋昕倍.媒体报道、上市公司年报可读性与融资约束[J].管理科学学报,2021,24(12):45-61.
+[7]彭涛,黄福广,孙凌霞.经济政策不确定性与风险承担:基于风险投资的证据[J].管理科学学报,2021,24(03):98-114.
+[8]庞锐.采纳与内化：多重制度压力如何影响河长制创新扩散——基于省级政府的定向配对事件史分析[J].公共管理学报,2023,20(02):25-37+165-166.
+</code></pre></div><br>
+<br>
+<h2 id="四相关内容">四、相关内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/2024-06-22-usa_today_daily-news-dataset/"><strong>数据集(英文）| USA Today新闻数据集(2012~2024)</strong></a></li>
+<li><a href="**https://textdata.cn/blog/2024-07-12-china-daily-dataset/**">数据集(中英) | ChinaDaily新闻数据集(2008 ~ 2024)</a></li>
+<li><a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/">代码 | 如何处理远超电脑内存的csv文件</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/"><strong>可视化 | 人民日报语料反映七十年文化演变</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/">代码 | 使用「新闻数据」测量 「经济政策不确定性EPU」指标</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>Open Sanctions | 使用该网站可查询被制裁的个人、企业组织等制裁清单</title>
       <link>https://textdata.cn/blog/2024-07-08-open-sanctions-dataset/</link>
@@ -124,7 +370,7 @@
 &lt;/p&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;声明&#34;&gt;声明&lt;/h3&gt;
-&lt;p&gt;科研用途，仅供展示；如有任何问题， 加微信 &lt;strong&gt;372335839&lt;/strong&gt;, 备注「姓名-学校-专业-港股ESG」&lt;/p&gt;
+&lt;p&gt;科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-港股ESG」&lt;/p&gt;
 &lt;br&gt;
 &lt;br&gt;
 &lt;h2 id=&#34;二查看数据&#34;&gt;二、查看数据&lt;/h2&gt;
@@ -216,7 +462,7 @@
 </p>
 <br>
 <h3 id="声明">声明</h3>
-<p>科研用途，仅供展示；如有任何问题， 加微信 <strong>372335839</strong>, 备注「姓名-学校-专业-港股ESG」</p>
+<p>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-港股ESG」</p>
 <br>
 <br>
 <h2 id="二查看数据">二、查看数据</h2>
@@ -318,7 +564,7 @@
 <br>
 <h3 id="12-说明">1.2 说明</h3>
 <ul>
-<li>科研用途，如有问题加微信372335839，备注「姓名-学校-专业-news」</li>
+<li>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-news」</li>
 </ul>
 <br>
 <h3 id="13-数据用途">1.3 数据用途</h3>
@@ -367,6 +613,63 @@
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">数据体积 3422 M
 </code></pre></div><br>
+<h3 id="26-发文量统计">2.6 发文量统计</h3>
+<p>按月度，统计发文量</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">months</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">month_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)):</span>
+    <span class="c1">#print(date)</span>
+    <span class="n">months</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">date</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">month_df</span><span class="p">)))</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">months</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;count&#39;</span><span class="p">]</span>
+<span class="n">data</span>
+</code></pre></div><p><img loading="lazy" src="img/03-df.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">plotnine</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib.font_manager</span> <span class="kn">import</span> <span class="n">FontProperties</span>
+
+<span class="c1">#文泉驿微米黑.ttf位于代码同文件夹</span>
+<span class="n">font_prop</span> <span class="o">=</span> <span class="n">FontProperties</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s1">&#39;文泉驿微米黑.ttf&#39;</span><span class="p">)</span> 
+
+<span class="p">(</span>
+    <span class="n">ggplot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span>  <span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">))</span>
+    <span class="o">+</span><span class="n">geom_point</span><span class="p">()</span>
+    <span class="o">+</span><span class="n">geom_line</span><span class="p">()</span>
+    <span class="o">+</span><span class="n">theme</span><span class="p">(</span><span class="n">figure_size</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+           <span class="n">text</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">family</span> <span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">()),</span> 
+           <span class="n">plot_title</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">family</span> <span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span> <span class="n">size</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+          <span class="p">)</span>
+    <span class="o">+</span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;USA Today月度发文量(2001.02 ~2024.06)&#39;</span><span class="p">,</span>
+          <span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;月度&#39;</span><span class="p">,</span> 
+          <span class="n">y</span> <span class="o">=</span> <span class="s1">&#39;发文量&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+
+</code></pre></div><p><img loading="lazy" src="img/04-plot.png" alt=""  />
+</p>
+<br>
+<br>
+<h2 id="三相关内容">三、相关内容</h2>
+<ul>
+<li>
+<p><a href="**https://textdata.cn/blog/2024-07-12-china-daily-dataset/**">数据集(中英) | ChinaDaily新闻数据集(2008 ~ 2024)</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-07-12-entrepreneur-dataset/">数据集 | 企业家Entrepreneur杂志数据集(1996 ~ 2024)</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/">代码 | 如何处理远超电脑内存的csv文件</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/"><strong>可视化 | 人民日报语料反映七十年文化演变</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/">代码 | 使用「新闻数据」测量 「经济政策不确定性EPU」指标</a></p>
+</li>
+</ul>
+<br>
 <br>
 <h2 id="精选内容">精选内容</h2>
 <ul>
@@ -381,18 +684,6 @@
 </li>
 <li>
 <p><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/">代码 | 如何处理远超电脑内存的csv文件</a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/"><strong>可视化 | 人民日报语料反映七十年文化演变</strong></a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/">代码 | 使用「新闻数据」测量 「经济政策不确定性EPU」指标</a></p>
 </li>
 </ul>
 ]]></content:encoded>
@@ -423,7 +714,7 @@
 </p>
 <br>
 <h3 id="12-说明">1.2 说明</h3>
-<p>科研用途展示； 如有问题， 加微信 372335839， 备注「姓名-学校-专业-问政」。</p>
+<p>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-问政」。</p>
 <p><br><br></p>
 <h2 id="二查看数据">二、查看数据</h2>
 <h3 id="21-读取数据">2.1 读取数据</h3>
@@ -1072,7 +1363,7 @@ Selection deleted
       <guid>/blog/2023-12-14-daily-news-dataset/</guid>
       <description>日报数据集研究价值大， 您可从中提取丰富的指标，包括但不限于经济政策不确定性指数EPU 、 媒体关注度指数、文本相似度、情感分析。而且可训练词向量，构建新的词典，开发新的指标指数。计算机自然语言处理、经济学、管理学、新闻传播学、公共管理等领域均可使用。</description>
       <content:encoded><![CDATA[<h2 id="说明">说明</h2>
-<p>科研用途； 如有问题， 加微信 372335839， 备注「姓名-学校-专业-news」。</p>
+<p>科研用途；需要的请加微信 372335839，  备注「姓名-学校-专业-news」。</p>
 <p><br><br></p>
 <h2 id="一中文新闻报刊数据集概况">一、「中文新闻报刊数据集」概况</h2>
 <p>报纸(数字版)数据集，媒体源 120家，</p>
@@ -1650,7 +1941,7 @@ concept_word_ratio_df_T
 市级zf工作报告2003-2024, 记录数6204
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
 &lt;h3 id=&#34;12-说明&#34;&gt;1.2 说明&lt;/h3&gt;
-&lt;p&gt;科研用途展示； 如有问题， 加微信 372335839， 备注「姓名-学校-专业-政府工作报告」。&lt;/p&gt;
+&lt;p&gt;科研用途；需要的请加微信 372335839，  备注「姓名-学校-专业-政府工作报告」。&lt;/p&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;13-文件树目录&#34;&gt;1.3 文件树目录&lt;/h3&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;|- 代码.ipynb
@@ -1810,7 +2101,7 @@ concept_word_ratio_df_T
 市级zf工作报告2003-2024, 记录数6204
 </code></pre></div><br>
 <h3 id="12-说明">1.2 说明</h3>
-<p>科研用途展示； 如有问题， 加微信 372335839， 备注「姓名-学校-专业-政府工作报告」。</p>
+<p>科研用途；需要的请加微信 372335839，  备注「姓名-学校-专业-政府工作报告」。</p>
 <br>
 <h3 id="13-文件树目录">1.3 文件树目录</h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">|- 代码.ipynb
@@ -1981,7 +2272,7 @@ concept_word_ratio_df_T
 &lt;li&gt;gz文件为汇总数据， 解压后是csv文件。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;声明&#34;&gt;声明&lt;/h3&gt;
-&lt;p&gt;科研用途，仅供展示； 如有任何问题，加微信372335839， 备注「姓名-学校-专业」&lt;/p&gt;
+&lt;p&gt;科研用途；需要的请加微信 372335839，  备注「姓名-学校-专业」&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;二年报数据&#34;&gt;二、年报数据&lt;/h2&gt;
 &lt;p&gt;2001-2023年年报数据。数据中只有year、code、text三个字段， 如果想增加诸如公司简称、行业等信息， 可以使用 &lt;a href=&#34;https://textdata.cn/blog/2024-04-16-china-listed-company-information-dataset/&#34;&gt;&lt;strong&gt;数据集 | A股上市公司基本信息&lt;/strong&gt;&lt;/a&gt;   进行并表。&lt;/p&gt;
@@ -2091,7 +2382,7 @@ concept_word_ratio_df_T
 <li>gz文件为汇总数据， 解压后是csv文件。</li>
 </ul>
 <h3 id="声明">声明</h3>
-<p>科研用途，仅供展示； 如有任何问题，加微信372335839， 备注「姓名-学校-专业」</p>
+<p>科研用途；需要的请加微信 372335839，  备注「姓名-学校-专业」</p>
 <p><br><br></p>
 <h2 id="二年报数据">二、年报数据</h2>
 <p>2001-2023年年报数据。数据中只有year、code、text三个字段， 如果想增加诸如公司简称、行业等信息， 可以使用 <a href="https://textdata.cn/blog/2024-04-16-china-listed-company-information-dataset/"><strong>数据集 | A股上市公司基本信息</strong></a>   进行并表。</p>
@@ -2209,7 +2500,7 @@ concept_word_ratio_df_T
 </p>
 <br>
 <h3 id="声明">声明</h3>
-<p>科研用途，仅供展示； 如有任何问题，加微信 372335839， 备注「姓名-学校-专业-CSR」</p>
+<p>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-CSR」</p>
 <p><br><br></p>
 <h2 id="二相关文献">二、相关文献</h2>
 <p>近年来，企业社会责任（csr)已成为全球学术界研究的热点，</p>
@@ -3026,7 +3317,7 @@ mda_df2
 &lt;/p&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;12-声明&#34;&gt;1.2 声明&lt;/h3&gt;
-&lt;p&gt;科研用途，仅供展示；如有任何问题，请加微信 &lt;strong&gt;372335839&lt;/strong&gt;, 备注【姓名-学校-专业-高管】&lt;/p&gt;
+&lt;p&gt;科研用途；需要的请加微信 372335839， 备注【姓名-学校-专业-高管】&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;二查看数据&#34;&gt;二、查看数据&lt;/h2&gt;
 &lt;h3 id=&#34;21-董监高教育背景明细表&#34;&gt;2.1 董监高教育背景明细表&lt;/h3&gt;
@@ -3207,7 +3498,7 @@ for field, desc in zip(df2.iloc[0, :].index, df2.iloc[0, :].values):
 </p>
 <br>
 <h3 id="12-声明">1.2 声明</h3>
-<p>科研用途，仅供展示；如有任何问题，请加微信 <strong>372335839</strong>, 备注【姓名-学校-专业-高管】</p>
+<p>科研用途；需要的请加微信 372335839， 备注【姓名-学校-专业-高管】</p>
 <p><br><br></p>
 <h2 id="二查看数据">二、查看数据</h2>
 <h3 id="21-董监高教育背景明细表">2.1 董监高教育背景明细表</h3>
@@ -4606,6 +4897,8 @@ Note: The Word2Vec model hase saved to output/Word2Vec
 <li><a href="https://textdata.cn/blog/2023-12-14-daily-news-dataset/"><strong>新闻数据集(中文) | 含 人民日报/经济日报/光明日报 等 120 家媒体(2024)</strong></a></li>
 <li><a href="https://textdata.cn/blog/2023-12-22-renmin-gov-leader-comment-board/">数据集 | 人民网地方领导留言板原始文本(2011-2023.12)</a></li>
 <li><a href="https://textdata.cn/blog/2024-06-22-usa_today_daily-news-dataset/"><strong>数据集(英文）| USA Today新闻数据集(2012~2024)</strong></a></li>
+<li><a href="**https://textdata.cn/blog/2024-07-12-china-daily-dataset/**">数据集(中英) | ChinaDaily新闻数据集(2008 ~ 2024)</a></li>
+<li><a href="https://textdata.cn/blog/2024-07-12-entrepreneur-dataset/">数据集 | 企业家Entrepreneur杂志数据集(1996 ~ 2024)</a></li>
 <li><a href="https://textdata.cn/blog/2024-06-05-wenzheng-hunan-dataset/"><strong>数据集 | 30w条「问政湖南」留言&amp;回复数据(2010-2024)</strong></a></li>
 <li><a href="https://textdata.cn/blog/2024-06-03-podcasts-dataset/"><strong>数据集 | 30w播客(Podcast)的560w条评论数据(2005-2023)</strong></a></li>
 <li><a href="https://textdata.cn/blog/2023-09-03-government-procurement-contract-data/"><strong>数据集 | 372w政府采购合同公告明细数据（2024.03）</strong></a></li>
@@ -4947,7 +5240,7 @@ Wall time: 10min 19s
 - 发布时间: 1996-06-05 ~ 2024-03-07, 但主要是2015之后
 
 
-科研用途，仅供展示；如有问题，请加微信 372335839， 备注 【姓名-学校-专业-政府采购】
+科研用途；需要的请加微信 372335839， 备注 【姓名-学校-专业-政府采购】
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;二应用&#34;&gt;二、应用&lt;/h2&gt;
 &lt;p&gt;随着政府采购规模的逐步增加，中国政府采购网披露的信息越来越丰富。近年来一些学者也关 注到中国政府采购数据，但由于文本数据半结构化、高维、数据量大的特性，该数据在文本的整理、 关键变量识别与关键变量提取方面存在着不小的难度，目前而言使用该数据的研究并没有很多。&lt;/p&gt;
@@ -5208,7 +5501,7 @@ Name: 合同名称, Length: 1323, dtype: object
 - 发布时间: 1996-06-05 ~ 2024-03-07, 但主要是2015之后
 
 
-科研用途，仅供展示；如有问题，请加微信 372335839， 备注 【姓名-学校-专业-政府采购】
+科研用途；需要的请加微信 372335839， 备注 【姓名-学校-专业-政府采购】
 </code></pre></div><p><br><br></p>
 <h2 id="二应用">二、应用</h2>
 <p>随着政府采购规模的逐步增加，中国政府采购网披露的信息越来越丰富。近年来一些学者也关 注到中国政府采购数据，但由于文本数据半结构化、高维、数据量大的特性，该数据在文本的整理、 关键变量识别与关键变量提取方面存在着不小的难度，目前而言使用该数据的研究并没有很多。</p>
@@ -5748,7 +6041,7 @@ $ python init_database.py --recreate-vs
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;数据集名称: 国家社会科学基金立项名单
 格式: xlsx
 年份:2010~2023
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;科研用途，仅供展示，如有问题， 加微信372335839， 备注「姓名-学校-专业」&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业」&lt;/p&gt;
 &lt;br&gt;
 &lt;br&gt;
 &lt;h2 id=&#34;二读取数据&#34;&gt;二、读取数据&lt;/h2&gt;
@@ -5880,7 +6173,7 @@ plt.title(&amp;#39;国社科立项数量(2010-2023)&amp;#39;)
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">数据集名称: 国家社会科学基金立项名单
 格式: xlsx
 年份:2010~2023
-</code></pre></div><p>科研用途，仅供展示，如有问题， 加微信372335839， 备注「姓名-学校-专业」</p>
+</code></pre></div><p>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业」</p>
 <br>
 <br>
 <h2 id="二读取数据">二、读取数据</h2>
@@ -6026,12 +6319,9 @@ plt.title(&#39;国社科立项数量(2010-2023)&#39;)
 报告发布日期: 2007-01-08 ~ 2023-12-22
 数据类型: pdf、txt、csv(csv是对所有txt的汇总文件)
 数据体积: 257G
-
-港股年报数据集，500元；加微信 372335839， 备注「姓名-学校-专业」
-数据是虚拟产品，一经售出，不再退还！ 请仔细阅读推文内容， 确认无误再加微信详谈购买事宜 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
 &lt;h3 id=&#34;11-声明&#34;&gt;1.1 声明&lt;/h3&gt;
-&lt;p&gt;科研用途，仅供展示；如有任何问题，加微信 372335839， 备注「姓名-学校-专业-港股年报」。&lt;/p&gt;
+&lt;p&gt;科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-港股年报」。&lt;/p&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;12-数据集截图&#34;&gt;1.2 数据集截图&lt;/h3&gt;
 &lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-size.jpg&#34; alt=&#34;&#34;  /&gt;
@@ -6144,7 +6434,7 @@ plt.title(&#39;国社科立项数量(2010-2023)&#39;)
 &lt;h2 id=&#34;五相关内容&#34;&gt;五、相关内容&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-03-23-china-a-share-market-dataset-mda-from-01-to-21/&#34;&gt;数据集 | 2001-2022年A股上市公司年报&amp;amp;管理层讨论与分析&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-01-18-neeq-china-listed-on-nation-equities-exchange-and-quotation-system-anunal-year-report/&#34;&gt;数据集(付费) | 三板上市公司年报2002-2023.12&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-01-18-neeq-china-listed-on-nation-equities-exchange-and-quotation-system-anunal-year-report/&#34;&gt;数据集 | 三板上市公司年报2002-2023.12&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-01-14-usa-sec-10k-report-dataset/&#34;&gt;数据集 | 美股年报10-K、20-F数据(2000-2023.12)&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
@@ -6165,12 +6455,9 @@ plt.title(&#39;国社科立项数量(2010-2023)&#39;)
 报告发布日期: 2007-01-08 ~ 2023-12-22
 数据类型: pdf、txt、csv(csv是对所有txt的汇总文件)
 数据体积: 257G
-
-港股年报数据集，500元；加微信 372335839， 备注「姓名-学校-专业」
-数据是虚拟产品，一经售出，不再退还！ 请仔细阅读推文内容， 确认无误再加微信详谈购买事宜 
 </code></pre></div><br>
 <h3 id="11-声明">1.1 声明</h3>
-<p>科研用途，仅供展示；如有任何问题，加微信 372335839， 备注「姓名-学校-专业-港股年报」。</p>
+<p>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-港股年报」。</p>
 <br>
 <h3 id="12-数据集截图">1.2 数据集截图</h3>
 <p><img loading="lazy" src="img/01-size.jpg" alt=""  />
@@ -6283,7 +6570,7 @@ plt.title(&#39;国社科立项数量(2010-2023)&#39;)
 <h2 id="五相关内容">五、相关内容</h2>
 <ul>
 <li><a href="https://textdata.cn/blog/2023-03-23-china-a-share-market-dataset-mda-from-01-to-21/">数据集 | 2001-2022年A股上市公司年报&amp;管理层讨论与分析</a></li>
-<li><a href="https://textdata.cn/blog/2024-01-18-neeq-china-listed-on-nation-equities-exchange-and-quotation-system-anunal-year-report/">数据集(付费) | 三板上市公司年报2002-2023.12</a></li>
+<li><a href="https://textdata.cn/blog/2024-01-18-neeq-china-listed-on-nation-equities-exchange-and-quotation-system-anunal-year-report/">数据集 | 三板上市公司年报2002-2023.12</a></li>
 <li><a href="https://textdata.cn/blog/2024-01-14-usa-sec-10k-report-dataset/">数据集 | 美股年报10-K、20-F数据(2000-2023.12)</a></li>
 </ul>
 <p><br><br></p>
@@ -6616,7 +6903,7 @@ csv所含字段:
 &lt;br&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;12--声明&#34;&gt;1.2  声明&lt;/h3&gt;
-&lt;p&gt;&lt;span style=&#34;font-size: 18px;color: green;&#34;&gt;科研用途，仅供展示；如有任何问题， 加微信 372335839， 备注「姓名-学校-专业」。&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&#34;font-size: 18px;color: green;&#34;&gt;科研用途；需要的请加微信 372335839，  备注「姓名-学校-专业」。&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;二查看数据&#34;&gt;二、查看数据&lt;/h2&gt;
 &lt;p&gt;&lt;em&gt;&lt;strong&gt;三板年报.csv.gz&lt;/strong&gt;&lt;/em&gt; 是一个汇总的 csv 文件，特别适合进行数据分析。 解压后大概 15G， 如果你的电脑内存小于32G， &lt;a href=&#34;https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/&#34;&gt;推荐阅读 | 如何处理远超电脑内存的csv文件&lt;/a&gt;&lt;/p&gt;
 &lt;h3 id=&#34;21-读取数据&#34;&gt;2.1 读取数据&lt;/h3&gt;
@@ -6750,7 +7037,7 @@ csv所含字段:
 <br>
 <br>
 <h3 id="12--声明">1.2  声明</h3>
-<p><span style="font-size: 18px;color: green;">科研用途，仅供展示；如有任何问题， 加微信 372335839， 备注「姓名-学校-专业」。</span><br><br></p>
+<p><span style="font-size: 18px;color: green;">科研用途；需要的请加微信 372335839，  备注「姓名-学校-专业」。</span><br><br></p>
 <h2 id="二查看数据">二、查看数据</h2>
 <p><em><strong>三板年报.csv.gz</strong></em> 是一个汇总的 csv 文件，特别适合进行数据分析。 解压后大概 15G， 如果你的电脑内存小于32G， <a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/">推荐阅读 | 如何处理远超电脑内存的csv文件</a></p>
 <h3 id="21-读取数据">2.1 读取数据</h3>
@@ -6875,7 +7162,7 @@ csv所含字段:
 &lt;/p&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;11-声明&#34;&gt;1.1 声明&lt;/h3&gt;
-&lt;p&gt;科研用途，仅供展示；如有任何问题，加微信 372335839， 备注「姓名-学校-专业-美股」&lt;/p&gt;
+&lt;p&gt;科研用途；需要的请加微信 372335839，， 备注「姓名-学校-专业-美股」&lt;/p&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;12-格式说明&#34;&gt;1.2 格式说明&lt;/h3&gt;
 &lt;p&gt;美股报告是html格式(中国沪深交易所的报告是pdf格式),   可以通过爬虫批量下载所有的报告，并保存为html。&lt;/p&gt;
@@ -7002,7 +7289,7 @@ Amendment No. 1 to Employment Agreement dated October 5, 1998 by and between K-T
 </p>
 <br>
 <h3 id="11-声明">1.1 声明</h3>
-<p>科研用途，仅供展示；如有任何问题，加微信 372335839， 备注「姓名-学校-专业-美股」</p>
+<p>科研用途；需要的请加微信 372335839，， 备注「姓名-学校-专业-美股」</p>
 <br>
 <h3 id="12-格式说明">1.2 格式说明</h3>
 <p>美股报告是html格式(中国沪深交易所的报告是pdf格式),   可以通过爬虫批量下载所有的报告，并保存为html。</p>
@@ -7135,7 +7422,7 @@ Amendment No. 1 to Employment Agreement dated October 5, 1998 by and between K-T
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;数据整理自&lt;a href=&#34;https://textdata.cn/blog/2023-05-07-china-law-judgment-documents-datasets/&#34;&gt;数据集 | 中国裁判文书网(2010-2021)&lt;/a&gt;&lt;/p&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;12-声明&#34;&gt;1.2 声明&lt;/h3&gt;
-&lt;p&gt;科研用途，仅供展示；如有任何问题， 加微信 372335839， 备注「姓名-学校-专业」。&lt;/p&gt;
+&lt;p&gt;科研用途；需要的请加微信 372335839，  备注「姓名-学校-专业」。&lt;/p&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;13-相关文献&#34;&gt;1.3 相关文献&lt;/h3&gt;
 &lt;p&gt;上市公司仲裁数据可用于衡量上市公司法律风险等，&lt;/p&gt;
@@ -7220,7 +7507,7 @@ Amendment No. 1 to Employment Agreement dated October 5, 1998 by and between K-T
 </code></pre></div><p>数据整理自<a href="https://textdata.cn/blog/2023-05-07-china-law-judgment-documents-datasets/">数据集 | 中国裁判文书网(2010-2021)</a></p>
 <br>
 <h3 id="12-声明">1.2 声明</h3>
-<p>科研用途，仅供展示；如有任何问题， 加微信 372335839， 备注「姓名-学校-专业」。</p>
+<p>科研用途；需要的请加微信 372335839，  备注「姓名-学校-专业」。</p>
 <br>
 <h3 id="13-相关文献">1.3 相关文献</h3>
 <p>上市公司仲裁数据可用于衡量上市公司法律风险等，</p>
@@ -10753,7 +11040,7 @@ plt.show()
 原始来源:   国家知识产权局
 </code></pre></div><br>
 <h3 id="声明">声明</h3>
-<p>科研用途，仅供展示；如有任何问题， 加微信372335839，备注「姓名-学校-专业-专利」</p>
+<p>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-专利」</p>
 <br>
 <br>
 <h2 id="二数据探索">二、数据探索</h2>
@@ -12919,7 +13206,7 @@ Name: sex, dtype: int64
 </p>
 <br>
 <h3 id="12-声明">1.2 声明</h3>
-<p>科研用途，仅供展示；如有问题，加微信372335839，备注「姓名-学校-专业-裁判」</p>
+<p>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-裁判」</p>
 <br>
 <h3 id="13-字段含">1.3 字段含</h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">-  标题
@@ -13703,7 +13990,7 @@ Name: 国际申请, Length: 357881, dtype: object
     Name: 公告内容, Length: 2297, dtype: float64
 </code></pre></div><p><br><br></p>
 <h2 id="四声明">四、声明</h2>
-<p>科研用途，仅供展示；如有任何问题，  加微信372335839， 备注【姓名-学校-专业】</p>
+<p>科研用途；需要的请加微信 372335839，  备注【姓名-学校-专业】</p>
 <br>
 <p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
@@ -14423,7 +14710,7 @@ dtype: int64
 - 解压后整个文件夹大概 20 G。 
 </code></pre></div><br>
 <h3 id="12-说明">1.2 说明</h3>
-<p>科研用途展示； 如有问题， 加微信 372335839， 备注「姓名-学校-专业-专利申请」。</p>
+<p>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-专利申请」。</p>
 <p><img loading="lazy" src="img/screen-datasets2.png" alt=""  />
 </p>
 <h3 id="13-分省统计">1.3 分省统计</h3>
@@ -14790,7 +15077,7 @@ Name: 专利学科, Length: 5728705, dtype: object
 <p>与之前分享的 <a href="https://textdata.cn/blog/2023-04-12-china-mainland-corporate-registration-information/"><strong>数据集 | 2亿条中国大陆工商企业注册信息</strong></a> ，可以结合起来使用。</p>
 <p><br><br></p>
 <h2 id="声明">声明</h2>
-<p>科研用途，仅供展示；如有问题，加微信372335839，备注「姓名-学校-专业-poi」</p>
+<p>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-poi」</p>
 <p><br><br></p>
 <h2 id="一数据集概况">一、数据集概况</h2>
 <p>370个地市， 截止2022年12月份的POI数据集。压缩文件夹体积800M，解压3.9G。</p>
@@ -18672,7 +18959,7 @@ big data
 <h2 id="获取">获取</h2>
 <blockquote>
 <p>链接: <a href="https://pan.baidu.com/s/1jw6VGGAN9cxROoqWN2X4vw">https://pan.baidu.com/s/1jw6VGGAN9cxROoqWN2X4vw</a> 提取码: g3cn</p>
-<p>声明: 科研用途，如有任何问题，加微信372335839，备注「姓名-学校-专业」</p>
+<p>声明: 科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业」</p>
 </blockquote>
 <p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
