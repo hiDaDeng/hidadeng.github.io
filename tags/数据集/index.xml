@@ -6,9 +6,132 @@
     <description>Recent content in 数据集 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Fri, 12 Jul 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 13 Jul 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>数据集 | ChinaDaily新闻数据集(2008 ~ 2024)</title>
+      <title>数据集(英文) | CBS News新闻数据集(1998 ~ 2024)</title>
+      <link>https://textdata.cn/blog/2024-07-13-cbs-news-dataset/</link>
+      <pubDate>Sat, 13 Jul 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-07-13-cbs-news-dataset/</guid>
+      <description>新闻数据集研究价值大， 您可从中提取丰富的指标，包括但不限于经济政策不确定性指数EPU 、 媒体关注度指数、文本相似度、情感分析。而且可训练词向量，构建新的词典，开发新的指标指数。计算机自然语言处理、经济学、管理学、新闻传播学、公共管理等领域均可使用。</description>
+      <content:encoded><![CDATA[<h2 id="一cbs-news概况">一、CBS News概况</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">数据集名称: CBS News
+数据来源: https://www.cbsnews.com/
+覆盖日期: 1998-04-16 ~ 2024-06-30
+所含字段:  date, title, content, author_link, publisher, link
+记录条数: 190483
+文件格式: csv
+文件大小: 1475 M
+</code></pre></div><p><img loading="lazy" src="img/cbs-main.jpg" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二查看数据">二、查看数据</h2>
+<h3 id="21-读取数据">2.1 读取数据</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;CBS-News.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
+</p>
+<br>
+<h3 id="22-覆盖日期">2.2 覆盖日期</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;coerce&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;起: &#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;止: &#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">起:  1998-04-16
+止:  2024-06-30
+</code></pre></div><br>
+<h3 id="23-所含字段">2.3 所含字段</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">date #日期
+title #标题
+content #新闻内容
+author_link  #作者主页链接
+publisher #出版社
+link  #文章链接
+</code></pre></div><br>
+<h3 id="24-发文量统计">2.4 发文量统计</h3>
+<p>企业家杂志，按照月度发文量进行统计。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">month_volumes</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">month_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)):</span>
+    <span class="n">month_volumes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">date</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">month_df</span><span class="p">)))</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">months</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;count&#39;</span><span class="p">]</span>
+<span class="n">data</span>
+</code></pre></div><p><img loading="lazy" src="img/02-df.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">plotnine</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib.font_manager</span> <span class="kn">import</span> <span class="n">FontProperties</span>
+
+<span class="c1">#文泉驿微米黑.ttf位于代码同文件夹</span>
+<span class="n">font_prop</span> <span class="o">=</span> <span class="n">FontProperties</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s1">&#39;文泉驿微米黑.ttf&#39;</span><span class="p">)</span> 
+
+<span class="n">date_breaks</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> 
+                                                          <span class="n">end</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> 
+                                                          <span class="n">freq</span> <span class="o">=</span> <span class="s1">&#39;12M&#39;</span><span class="p">)]</span>
+
+<span class="n">date_labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">date_breaks</span><span class="p">]</span>
+
+
+<span class="p">(</span>
+    <span class="n">ggplot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span>  <span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">))</span>
+    <span class="o">+</span><span class="n">geom_point</span><span class="p">()</span>
+    <span class="o">+</span><span class="n">geom_line</span><span class="p">()</span>
+    <span class="o">+</span><span class="n">theme</span><span class="p">(</span><span class="n">figure_size</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+           <span class="n">text</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">family</span> <span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">()),</span> 
+           <span class="n">plot_title</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">family</span> <span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span> <span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+          <span class="p">)</span>
+    <span class="o">+</span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;CBS News月度发文量(1998.4 ~ 2024.6)&#39;</span><span class="p">,</span>
+          <span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;月度&#39;</span><span class="p">,</span> 
+          <span class="n">y</span> <span class="o">=</span> <span class="s1">&#39;发文量&#39;</span><span class="p">)</span>
+    <span class="o">+</span><span class="n">scale_x_datetime</span><span class="p">(</span><span class="n">breaks</span><span class="o">=</span><span class="n">date_breaks</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">date_labels</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/03-plot.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三说明">三、说明</h2>
+<p>我们都知道六度分割理论(通过任意六个人，我们能认识世界上任意一个人。)， 类比到爬虫场景， 通过广度递归，当我们设置最大采集深度7， 意味理论上通过点击7次链接， 可以触达到任意一个页面。 <a href="https://textdata.cn/blog/2024-07-12-china-daily-dataset/">ChinaDaily</a>、 <a href="https://textdata.cn/blog/2024-06-22-usa_today_daily-news-dataset/">UsaToday</a>、 <a href="https://textdata.cn/blog/2024-07-12-entrepreneur-dataset/">Enterpreneur</a> 与 CBS News均采用scrapy广度递归，最大深度7。</p>
+<p>但从月度统计中可以看出CBS News ，有很多个月份(周期性)接近于0 轴的， 网站一般不会出这么周期性的问题， 大概率说明采集遇到问题。</p>
+<p><br><br></p>
+<h2 id="四获取数据">四、获取数据</h2>
+<p>虽然数据采集出现了问题，但因为该csv数据结构整洁、体量较大， 特别适合给各位拿来练习Python文本分析。</p>
+<blockquote>
+<p>CBS News链接: <a href="https://pan.baidu.com/s/1DlCo3PRnzcG1iZ_7V7PVlg?pwd=i4rr">https://pan.baidu.com/s/1DlCo3PRnzcG1iZ_7V7PVlg?pwd=i4rr</a> 提取码: i4rr</p>
+</blockquote>
+<br>
+<h3 id="注意">注意</h3>
+<p>如Excel打开csv乱码， 请百度搜「在 Excel 中正确打开 CSV UTF-8 文件」</p>
+<br>
+<br>
+<h2 id="五相关内容">五、相关内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/2024-06-22-usa_today_daily-news-dataset/"><strong>数据集(英文）| USA Today新闻数据集(2012~2024)</strong></a></li>
+<li><a href="**https://textdata.cn/blog/2024-07-12-china-daily-dataset/**">数据集(中英) | ChinaDaily新闻数据集(2008 ~ 2024)</a></li>
+<li><a href="https://textdata.cn/blog/2024-07-12-entrepreneur-dataset/">数据集 | 企业家Entrepreneur杂志数据集(1996 ~ 2024)</a></li>
+<li><a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/">代码 | 如何处理远超电脑内存的csv文件</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/"><strong>代码 | 使用「新闻数据」构造概念词提及量「面板数据」</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/"><strong>可视化 | 人民日报语料反映七十年文化演变</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-12-20-measure-china-economic-policy-uncertainty/">代码 | 使用「新闻数据」测量 「经济政策不确定性EPU」指标</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>数据集 | ChinaDaily 新闻数据集(2008 ~ 2024)</title>
       <link>https://textdata.cn/blog/2024-07-12-china-daily-dataset/</link>
       <pubDate>Fri, 12 Jul 2024 00:00:00 +0000</pubDate>
       
@@ -26,7 +149,9 @@
 文件大小: 2648M
 
 科研用途； 如有问题， 加微信 372335839， 备注「姓名-学校-专业-chinadaily」。
-</code></pre></div><p><br><br></p>
+</code></pre></div><p><img loading="lazy" src="img/china-daily-main.jpg" alt=""  />
+</p>
+<p><br><br></p>
 <h2 id="二查看数据">二、查看数据</h2>
 <h3 id="21-读取数据">2.1 读取数据</h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -82,17 +207,25 @@ chinese    150613
 <span class="c1">#文泉驿微米黑.ttf位于代码同文件夹</span>
 <span class="n">font_prop</span> <span class="o">=</span> <span class="n">FontProperties</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s1">&#39;文泉驿微米黑.ttf&#39;</span><span class="p">)</span> 
 
+<span class="n">date_breaks</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> 
+                                                          <span class="n">end</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> 
+                                                          <span class="n">freq</span> <span class="o">=</span> <span class="s1">&#39;12M&#39;</span><span class="p">)]</span>
+
+<span class="n">date_labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">date_breaks</span><span class="p">]</span>
+
+
 <span class="p">(</span>
     <span class="n">ggplot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span>  <span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">))</span>
     <span class="o">+</span><span class="n">geom_point</span><span class="p">()</span>
     <span class="o">+</span><span class="n">geom_line</span><span class="p">()</span>
     <span class="o">+</span><span class="n">theme</span><span class="p">(</span><span class="n">figure_size</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
            <span class="n">text</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">family</span> <span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">()),</span> 
-           <span class="n">plot_title</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">family</span> <span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span> <span class="n">size</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+           <span class="n">plot_title</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">family</span> <span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span> <span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
           <span class="p">)</span>
     <span class="o">+</span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;China Daily月度发文量(2008.10 ~ 2024.06)&#39;</span><span class="p">,</span>
           <span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;月度&#39;</span><span class="p">,</span> 
           <span class="n">y</span> <span class="o">=</span> <span class="s1">&#39;发文量&#39;</span><span class="p">)</span>
+    <span class="o">+</span><span class="n">scale_x_datetime</span><span class="p">(</span><span class="n">breaks</span><span class="o">=</span><span class="n">date_breaks</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">date_labels</span><span class="p">)</span>
 <span class="p">)</span>
 
 </code></pre></div><p><img loading="lazy" src="img/03-plot.png" alt=""  />
@@ -136,7 +269,7 @@ chinese    150613
     </item>
     
     <item>
-      <title>数据集 | 企业家Entrepreneur杂志数据集(1996 ~ 2024)</title>
+      <title>数据集 | 企业家 Entrepreneur 杂志数据集(1996 ~ 2024)</title>
       <link>https://textdata.cn/blog/2024-07-12-entrepreneur-dataset/</link>
       <pubDate>Fri, 12 Jul 2024 00:00:00 +0000</pubDate>
       
@@ -200,6 +333,9 @@ link  #新闻链接
 <span class="c1">#文泉驿微米黑.ttf位于代码同文件夹</span>
 <span class="n">font_prop</span> <span class="o">=</span> <span class="n">FontProperties</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s1">&#39;文泉驿微米黑.ttf&#39;</span><span class="p">)</span> 
 
+<span class="n">date_labels</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1996</span><span class="p">,</span> <span class="mi">2025</span><span class="p">,</span> <span class="mi">2</span><span class="p">)]</span>
+
+
 <span class="p">(</span>
     <span class="n">ggplot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span>  <span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">))</span>
     <span class="o">+</span><span class="n">geom_point</span><span class="p">()</span>
@@ -211,6 +347,8 @@ link  #新闻链接
     <span class="o">+</span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;企业家Entrepreneur杂志(1996.1-2024.6.28)&#39;</span><span class="p">,</span>
           <span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;月度&#39;</span><span class="p">,</span> 
           <span class="n">y</span> <span class="o">=</span> <span class="s1">&#39;发文量&#39;</span><span class="p">)</span>
+    <span class="o">+</span><span class="n">scale_x_datetime</span><span class="p">(</span><span class="n">labels</span> <span class="o">=</span> <span class="n">date_labels</span><span class="p">,</span> <span class="n">breaks</span><span class="o">=</span><span class="n">date_labels</span><span class="p">)</span>
+   
 <span class="p">)</span>
 
 </code></pre></div><p><img loading="lazy" src="img/03-plot.png" alt=""  />
@@ -631,6 +769,9 @@ link  #新闻链接
 <span class="c1">#文泉驿微米黑.ttf位于代码同文件夹</span>
 <span class="n">font_prop</span> <span class="o">=</span> <span class="n">FontProperties</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s1">&#39;文泉驿微米黑.ttf&#39;</span><span class="p">)</span> 
 
+<span class="n">date_labels</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2001</span><span class="p">,</span> <span class="mi">2025</span><span class="p">)]</span>
+
+
 <span class="p">(</span>
     <span class="n">ggplot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span>  <span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">))</span>
     <span class="o">+</span><span class="n">geom_point</span><span class="p">()</span>
@@ -642,8 +783,8 @@ link  #新闻链接
     <span class="o">+</span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;USA Today月度发文量(2001.02 ~2024.06)&#39;</span><span class="p">,</span>
           <span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;月度&#39;</span><span class="p">,</span> 
           <span class="n">y</span> <span class="o">=</span> <span class="s1">&#39;发文量&#39;</span><span class="p">)</span>
+    <span class="o">+</span><span class="n">scale_x_datetime</span><span class="p">(</span><span class="n">labels</span> <span class="o">=</span> <span class="n">date_labels</span><span class="p">,</span> <span class="n">breaks</span><span class="o">=</span><span class="n">date_labels</span><span class="p">)</span>
 <span class="p">)</span>
-
 </code></pre></div><p><img loading="lazy" src="img/04-plot.png" alt=""  />
 </p>
 <br>
@@ -1800,7 +1941,7 @@ plot_line(panel_df=panel_data_df,
 </code></pre></div><p><img loading="lazy" src="img/08-tri-df.png" alt=""  />
 </p>
 <br>
-<p>将数据转化为词频占比，即 **报告「三农词」出现次数/报告总词数 **</p>
+<p>将数据转化为词频占比，即 <strong>报告「三农词」出现次数/报告总词数</strong></p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">concept_word_ratio_df</span> <span class="o">=</span> <span class="n">concept_word_count_df</span><span class="o">/</span><span class="n">word_count_df</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">concept_word_ratio_df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 <span class="n">concept_word_ratio_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
@@ -1910,8 +2051,7 @@ concept_word_ratio_df_T
 </code></pre></div><br>
 <br>
 <h2 id="五获取数据集">五、获取数据集</h2>
-<p><a href="https://textdata.cn/blog/2023-12-17-gov-anual-report-dataset/">数据集(付费) | 国、省、市三级政府工作报告文本</a></p>
-<p>数据集100元，  <strong>加微信 372335839， 备注「姓名-学校-专业」</strong>。</p>
+<p><a href="https://textdata.cn/blog/2023-12-17-gov-anual-report-dataset/">数据集| 国、省、市三级政府工作报告文本</a></p>
 <br>
 <br>
 <h2 id="广而告之">广而告之</h2>
@@ -4897,11 +5037,12 @@ Note: The Word2Vec model hase saved to output/Word2Vec
 <li><a href="https://textdata.cn/blog/2023-12-14-daily-news-dataset/"><strong>新闻数据集(中文) | 含 人民日报/经济日报/光明日报 等 120 家媒体(2024)</strong></a></li>
 <li><a href="https://textdata.cn/blog/2023-12-22-renmin-gov-leader-comment-board/">数据集 | 人民网地方领导留言板原始文本(2011-2023.12)</a></li>
 <li><a href="https://textdata.cn/blog/2024-06-22-usa_today_daily-news-dataset/"><strong>数据集(英文）| USA Today新闻数据集(2012~2024)</strong></a></li>
-<li><a href="**https://textdata.cn/blog/2024-07-12-china-daily-dataset/**">数据集(中英) | ChinaDaily新闻数据集(2008 ~ 2024)</a></li>
-<li><a href="https://textdata.cn/blog/2024-07-12-entrepreneur-dataset/">数据集 | 企业家Entrepreneur杂志数据集(1996 ~ 2024)</a></li>
+<li><a href="https://textdata.cn/blog/2024-07-12-china-daily-dataset/"><strong>数据集(中英) | ChinaDaily新闻数据集(2008 ~ 2024)</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-07-12-entrepreneur-dataset/"><strong>数据集 | 企业家Entrepreneur杂志数据集(1996 ~ 2024)</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-07-13-cbs-news-dataset/">数据集(英文) | CBS News新闻数据集(1998 ~ 2024)</a></li>
 <li><a href="https://textdata.cn/blog/2024-06-05-wenzheng-hunan-dataset/"><strong>数据集 | 30w条「问政湖南」留言&amp;回复数据(2010-2024)</strong></a></li>
 <li><a href="https://textdata.cn/blog/2024-06-03-podcasts-dataset/"><strong>数据集 | 30w播客(Podcast)的560w条评论数据(2005-2023)</strong></a></li>
-<li><a href="https://textdata.cn/blog/2023-09-03-government-procurement-contract-data/"><strong>数据集 | 372w政府采购合同公告明细数据（2024.03）</strong></a></li>
+<li><a href="https://textdata.cn/blog/2023-09-03-government-procurement-contract-data/">数据集 | 372w政府采购合同公告明细数据（2024.03)</a></li>
 <li><a href="https://textdata.cn/blog/2023-12-17-gov-anual-report-dataset/"><strong>数据集 | 国、省、市三级政府工作报告文本(1954-2023)</strong></a></li>
 <li><a href="https://textdata.cn/blog/2024-06-01-new-york-times-article-from-1920-2020">新闻数据集 | 1102w条纽约时报(1920-2020)</a></li>
 <li><a href="https://textdata.cn/blog/2024-04-16-douban-movie-1000w-ratings-comments-dataset/"><strong>数据集 |  使用1000w条豆瓣影评训练Word2Vec</strong></a></li>
