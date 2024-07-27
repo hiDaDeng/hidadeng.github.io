@@ -3556,10 +3556,16 @@ mda_df2
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">管理层讨论信息含量/
 ├── 代码.ipynb
 ├── data/
-│   ├── 行业代码00-22.xlsx
-│   └── mda01-22.csv.gz
-├── mda_infor2001-2022.csv
+│   ├── 上市公司基本信息2000-2023.xlsx
+│   └── mda01-23.csv.gz
+├── mda_infor2001-2023.csv
 ├── mda_infor_output/
+│   └── 2023/
+│       ├── A000002.csv
+│       ├── A000004.csv
+│       ├── A000005.csv
+│       ├── A000006.csv
+│       ├── ...
 │   └── 2022/
 │       ├── A000002.csv
 │       ├── A000004.csv
@@ -3572,27 +3578,27 @@ mda_df2
 │       ├── A000005.csv
 │       ├── A000006.csv
 │       ├── ...
-│   └── 2019/
-│       ├── A000002.csv
-│       ├── A000004.csv
-│       ├── A000005.csv
-│       ├── A000006.csv
-│       ├── ...
 │   └── ...
 </code></pre></div><p><br><br></p>
 <h2 id="二导入数据">二、导入数据</h2>
-<p>这里准备了2001-2022年A股经营讨论与分析内容和行业代码数据。</p>
+<p>这里准备了2001-2023年A股经营讨论与分析内容和行业代码数据。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/mda01-22.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+<span class="c1">#读取md&amp;a</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/mda01-23.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
 <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;经营讨论与分析内容&#39;</span><span class="p">]</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
 
 <span class="c1">#上市公司行业信息</span>
-<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/行业代码00-22.xlsx&#39;</span><span class="p">)</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/上市公司基本信息2000-2023.xlsx&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Symbol&#39;</span><span class="p">,</span> <span class="s1">&#39;EndDate&#39;</span><span class="p">,</span> <span class="s1">&#39;IndustryCodeC&#39;</span><span class="p">,</span> <span class="s1">&#39;ShortName&#39;</span><span class="p">])</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="p">[</span><span class="n">ind_info_df</span><span class="o">.</span><span class="n">Symbol</span><span class="o">!=</span><span class="s1">&#39;股票代码&#39;</span><span class="p">]</span>
+<span class="n">ind_info_df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="o">.</span><span class="n">EndDate</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">date</span><span class="p">:</span> <span class="n">date</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">ind_info_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Symbol&#39;</span><span class="p">:</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;IndustryCodeC&#39;</span><span class="p">:</span><span class="s1">&#39;行业代码&#39;</span><span class="p">,</span> <span class="s1">&#39;ShortName&#39;</span><span class="p">:</span> <span class="s1">&#39;股票简称&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="p">[[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;行业代码&#39;</span><span class="p">,</span> <span class="s1">&#39;股票简称&#39;</span><span class="p">]]</span>
 
-
+<span class="c1">#合并数据</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">ind_info_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">)</span>
-
 
 <span class="c1"># 剔除金融行业处理</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;行业代码&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&#34;J&#34;</span><span class="p">)]</span>
@@ -3602,16 +3608,16 @@ mda_df2
 </code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
 </p>
 <p><br><br></p>
-<h2 id="三以2020年为例">三、以2020年为例</h2>
-<p>写代码先局部后整体，以2020年为例，如果2020年可以成功计算出信息含量，则可以for循环推广到所有股票所有年份。本章节需要做</p>
+<h2 id="三以2023年为例">三、以2023年为例</h2>
+<p>写代码先局部后整体，以2023年为例，如果2023年可以成功计算出信息含量，则可以for循环推广到所有股票所有年份。本章节需要做</p>
 <ol>
-<li>选定某年份，以2020年为例</li>
+<li>选定某年份，以2023年为例</li>
 <li>定义transform函数，用于处理「经营讨论与分析内容」字段内的内容。</li>
 <li>文本向量化，向量标准化。</li>
 </ol>
 <br>
-<h3 id="31-选定2020年">3.1 选定2020年</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df_per_year</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">2020</span><span class="p">]</span>
+<h3 id="31-选定2023年">3.1 选定2023年</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df_per_year</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;2023&#39;</span><span class="p">]</span>
 <span class="n">df_per_year</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">df_per_year</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </code></pre></div><p><img loading="lazy" src="img/df3.png" alt=""  />
@@ -3690,19 +3696,19 @@ Wall time: 4.2 s
 </code></pre></div><p><img loading="lazy" src="img/df6.png" alt=""  />
 </p>
 <p><br><br></p>
-<h2 id="四计算2020年行业向量市场向量">四、计算2020年行业向量、市场向量</h2>
-<p>计算2020年所有公司的市场向量、行业向量。这里</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">os</span>
+<h2 id="四计算2023年行业向量市场向量">四、计算2023年行业向量、市场向量</h2>
+<p>计算2023年所有公司的市场向量、行业向量。这里</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
-<span class="c1">#将中间计算结果存储在 mda_infor_output 文件夹。</span>
-<span class="c1">#没有该文件夹，就新建</span>
 <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s1">&#39;mda_infor_output&#39;</span><span class="p">):</span>
     <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="s1">&#39;mda_infor_output&#39;</span><span class="p">)</span>
     
-    
-<span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dtm_per_year</span><span class="p">)),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&#34;会计年度2020进度&#34;</span><span class="p">):</span>
+
+<span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dtm_per_year</span><span class="p">)),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&#34;会计年度2023进度&#34;</span><span class="p">):</span>
     <span class="n">code</span> <span class="o">=</span> <span class="n">dtm_per_year</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">]</span>
     <span class="n">ind</span> <span class="o">=</span> <span class="n">dtm_per_year</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;行业代码&#39;</span><span class="p">]</span>
     <span class="n">year</span> <span class="o">=</span> <span class="n">dtm_per_year</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">]</span>
@@ -3728,10 +3734,12 @@ Wall time: 4.2 s
         <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="s1">&#39;mda_infor_output/</span><span class="si">{year}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">))</span>
     <span class="n">corporate_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;mda_infor_output/</span><span class="si">{year}</span><span class="s1">/</span><span class="si">{code}</span><span class="s1">.csv&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">code</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">会计年度2020进度: 100%|███████████████| 3923/3923 [1:35:32&lt;00:00,  1.46s/it]
-</code></pre></div><p>从运行的进度条可知2020 年符合规则的记录有3923 条， 运行时间 1 小时 35 分钟。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">会计年度2023进度: 100%|███████████████████| 2699/2699 [1:00:41&lt;00:00,  1.35s/it]
+CPU times: user 55min 56s, sys: 4min 33s, total: 1h 29s
+Wall time: 1h 41s
+</code></pre></div><p>从运行的进度条可知2023 年符合规则的记录有2699 条， 运行时间 1 小时 35 分钟。</p>
 <p><br><br></p>
-<h2 id="五计算2001-2022年所有公司行业向量市场向量">五、计算2001-2022年所有公司行业向量、市场向量</h2>
+<h2 id="五计算2001-2023年所有公司行业向量市场向量">五、计算2001-2023年所有公司行业向量、市场向量</h2>
 <p>信息含量的定义。 由于每个公司的 MD&amp;A 中不仅包括公司经营状况等历史信息， 也包括与其他公司相似的信息， 如外部环境、市场格局、风险因素等内容。 因此， 本文参考 Hanley and Hoberg （ 2010 ）， 从行业和市场两个维度来考察和定义公司 MD&amp;A 中的信息含量。</p>
 <ul>
 <li><strong>市场因素</strong>， 所有上市公司都处于相同的宏观经济环境、风险因素和政治、政策背景之下；</li>
@@ -3773,18 +3781,27 @@ Wall time: 4.2 s
 
 
 
-
-<span class="c1">#读取数据</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/mda01-22.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+<span class="c1">#读取md&amp;a</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/mda01-23.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
 <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;经营讨论与分析内容&#39;</span><span class="p">]</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
 
 <span class="c1">#上市公司行业信息</span>
-<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/行业代码00-22.xlsx&#39;</span><span class="p">)</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/上市公司基本信息2000-2023.xlsx&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Symbol&#39;</span><span class="p">,</span> <span class="s1">&#39;EndDate&#39;</span><span class="p">,</span> <span class="s1">&#39;IndustryCodeC&#39;</span><span class="p">,</span> <span class="s1">&#39;ShortName&#39;</span><span class="p">])</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="p">[</span><span class="n">ind_info_df</span><span class="o">.</span><span class="n">Symbol</span><span class="o">!=</span><span class="s1">&#39;股票代码&#39;</span><span class="p">]</span>
+<span class="n">ind_info_df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="o">.</span><span class="n">EndDate</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">date</span><span class="p">:</span> <span class="n">date</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">ind_info_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Symbol&#39;</span><span class="p">:</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;IndustryCodeC&#39;</span><span class="p">:</span><span class="s1">&#39;行业代码&#39;</span><span class="p">,</span> <span class="s1">&#39;ShortName&#39;</span><span class="p">:</span> <span class="s1">&#39;股票简称&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="p">[[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;行业代码&#39;</span><span class="p">,</span> <span class="s1">&#39;股票简称&#39;</span><span class="p">]]</span>
+
+<span class="c1">#合并数据</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">ind_info_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">)</span>
 
 <span class="c1"># 剔除金融行业处理</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;行业代码&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&#34;J&#34;</span><span class="p">)]</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;股票简称&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&#34;ST&#34;</span><span class="p">)]</span>
+
+
 
  
 <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
@@ -3837,20 +3854,20 @@ Prefix dict has been built successfully.
 会计年度2002进度: 100%|█████████████████████| 1073/1073 [04:53&lt;00:00,  3.65it/s]
 会计年度2003进度: 100%|█████████████████████| 1102/1102 [05:41&lt;00:00,  3.22it/s]
 ......
-会计年度2020进度: 100%|███████████████| 3923/3923 [1:35:32&lt;00:00,  1.46s/it]
 会计年度2021进度: 100%|███████████████████| 4412/4412 [2:51:33&lt;00:00,  2.33s/it]
 会计年度2022进度: 100%|███████████████████| 4880/4880 [3:23:30&lt;00:00,  2.50s/it]
+会计年度2023进度: 100%|███████████████████| 2699/2699 [4:10:30&lt;00:00,  2.45s/it]
 </code></pre></div><p>大邓使用的电脑是 96G 内存， 运行时间大概 12 小时。 常见电脑的内存是 16 G， 速度可能会慢一点， 预估 12 ~ 20 小时左右。</p>
 <p><br><br></p>
 <h2 id="六标准信息信息含量">六、标准信息、信息含量</h2>
-<p>以2020年000002为例，计算其标准信息、信息含量。计算成功后，再计算所有年份所有上市公司 md&amp;a的标准信息、信息含量。</p>
+<p>以2023年000002为例，计算其标准信息、信息含量。计算成功后，再计算所有年份所有上市公司 md&amp;a的标准信息、信息含量。</p>
 <p><strong>原文除了计算md&amp;a，还将md&amp;a区分为回顾过去、展望未来两部分，并分别计算了对应的标准信息、信息含量。这里只计算md&amp;a的标准信息、信息含量。</strong></p>
 <p><img loading="lazy" src="img/infor_pre.png" alt=""  />
 </p>
 <p>这里使用Python的统计模型statsmodels库OLS来计算标准信息和信息含量。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="n">csv_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mda_infor_output/2020/A000002.csv&#39;</span><span class="p">)</span>
+<span class="n">csv_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mda_infor_output/2023/A000002.csv&#39;</span><span class="p">)</span>
 <span class="n">csv_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </code></pre></div><p><img loading="lazy" src="img/df7.png" alt=""  />
 </p>
@@ -3873,31 +3890,31 @@ Prefix dict has been built successfully.
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">OLS Regression Results                            
 ==============================================================================
-Dep. Variable:                   Norm   R-squared:                       0.302
-Model:                            OLS   Adj. R-squared:                  0.302
-Method:                 Least Squares   F-statistic:                     733.0
-Date:                Mon, 06 May 2024   Prob (F-statistic):          3.00e-265
-Time:                        13:56:33   Log-Likelihood:                 17276.
-No. Observations:                3391   AIC:                        -3.455e+04
-Df Residuals:                    3388   BIC:                        -3.453e+04
+Dep. Variable:                   Norm   R-squared:                       1.000
+Model:                            OLS   Adj. R-squared:                  1.000
+Method:                 Least Squares   F-statistic:                 9.583e+27
+Date:                Sat, 27 Jul 2024   Prob (F-statistic):               0.00
+Time:                        17:07:19   Log-Likelihood:             1.5646e+05
+No. Observations:                4662   AIC:                        -3.129e+05
+Df Residuals:                    4659   BIC:                        -3.129e+05
 Df Model:                           2                                         
 Covariance Type:            nonrobust                                         
 ===============================================================================
                   coef    std err          t      P&gt;|t|      [0.025      0.975]
 -------------------------------------------------------------------------------
-Intercept    1.564e-05   3.42e-05      0.457      0.647   -5.14e-05    8.27e-05
-Norm_Ind        0.9839      0.026     37.377      0.000       0.932       1.035
-Norm_Market    -0.0369      0.079     -0.467      0.640      -0.192       0.118
+Intercept    6.524e-16   1.21e-17     53.966      0.000    6.29e-16    6.76e-16
+Norm_Ind        1.0000   7.27e-15   1.37e+14      0.000       1.000       1.000
+Norm_Market -3.345e-15   3.54e-14     -0.095      0.925   -7.27e-14     6.6e-14
 ==============================================================================
-Omnibus:                     4561.934   Durbin-Watson:                   1.982
-Prob(Omnibus):                  0.000   Jarque-Bera (JB):          7732466.674
-Skew:                           6.755   Prob(JB):                         0.00
-Kurtosis:                     236.548   Cond. No.                     3.11e+03
+Omnibus:                    10415.000   Durbin-Watson:                   0.035
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):         80430526.920
+Skew:                          20.542   Prob(JB):                         0.00
+Kurtosis:                     645.160   Cond. No.                     3.76e+03
 ==============================================================================
 
 Notes:
 [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
-[2] The condition number is large, 3.11e+03. This might indicate that there are
+[2] The condition number is large, 3.76e+03. This might indicate that there are
 strong multicollinearity or other numerical problems.
 </code></pre></div><br>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#标准信息</span>
@@ -3911,8 +3928,8 @@ strong multicollinearity or other numerical problems.
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;A000002标准信息: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">standard_info</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;A000002信息含量: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">informative_content</span><span class="p">))</span>
 </code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">A000002标准信息: 0.9469675274217055
-A000002信息含量: 1.2260754443533075
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">A000002标准信息: 0.9999999999999309
+A000002信息含量: 2.986269512206345e-12
 </code></pre></div><br>
 <p>既然能成功计算某年某公司的标准信息、信息含量，现在推广到所有年份所有公司，计算结果存储为一个csv文件。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
@@ -3925,7 +3942,7 @@ A000002信息含量: 1.2260754443533075
 
 
 <span class="c1">#结果存储到mda_infor.csv</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;mda_infor2001-2022.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvf</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;mda_infor2001-2023.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvf</span><span class="p">:</span>
     <span class="n">fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;标准信息&#39;</span><span class="p">,</span> <span class="s1">&#39;信息含量&#39;</span><span class="p">]</span>
     <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">fieldnames</span><span class="o">=</span><span class="n">fieldnames</span><span class="p">)</span>
     <span class="n">writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
@@ -3949,7 +3966,7 @@ A000002信息含量: 1.2260754443533075
                 <span class="c1">#信息含量</span>
                 <span class="n">informative_content</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">resid</span><span class="p">))</span>
 
-                <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;股票代码&#39;</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d</span><span class="si">{6}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">csvf</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> 
+                <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;股票代码&#39;</span><span class="p">:</span> <span class="s1">&#39;A&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d</span><span class="si">{6}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">csvf</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> 
                         <span class="s1">&#39;会计年度&#39;</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">csvf</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> 
                         <span class="s1">&#39;标准信息&#39;</span><span class="p">:</span> <span class="n">standard_info</span><span class="p">,</span> 
                         <span class="s1">&#39;信息含量&#39;</span><span class="p">:</span> <span class="n">informative_content</span><span class="p">}</span>
@@ -3960,22 +3977,32 @@ A000002信息含量: 1.2260754443533075
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 7min 40s, sys: 33min 5s, total: 40min 45s
 Wall time: 4min 36s
 </code></pre></div><p><br><br></p>
-<p>读取生成的<em><strong>mda_infor2001-2022.csv</strong></em>  文件，欣赏一下 <code>标准信息、信息含量</code></p>
+<p>读取生成的<em><strong>mda_infor2001-2023.csv</strong></em>  文件，欣赏一下 <code>标准信息、信息含量</code></p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mda_infor2001-2022.csv&#39;</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mda_infor2001-2023.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span>
 </code></pre></div><p><img loading="lazy" src="img/df9.png" alt=""  />
 </p>
 <br>
 <p>需要注意，原文选取 2007 — 2015 年中国上市公司年报中的 MD&amp;A 信息作为研究样本。 之所以选取 2007 年作为样本的起点， 是因为从 2007 年开始， MD&amp;A 在企业定期报告中的披露要求已经较为完善， 而且 2007 年是中国会计准则国际趋同的重要时点， 新制定的《企业会计准则》已经开始实施， 为避免前后会计准则差异而产生的影响， 因此选取 2007 年作为样本区间的起点。</p>
-<p><strong>mda_infor.csv含有2010-2022年的数据，如要复现原文，需要注意筛选数据。</strong></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mda_infor.csv记录数:&#39;</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+<p><strong>如要复现原文，需要注意筛选2007之后的数据。</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mda_infor2001-2023.csv 记录数:&#39;</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
 </code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">mda_infor2001-2022.csv记录数: 50811
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">mda_infor2001-2023.csv记录数: 53502
 </code></pre></div><p><br><br></p>
 <h2 id="七资料获取">七、资料获取</h2>
-<p>内容创作不易， <strong>200</strong> 元，加微信 <strong>372335839</strong>， 备注「姓名-学校-专业」。</p>
+<p>数据&amp;代码创作不易，如果需要源代码和数据， 加微信372335839， 备注「姓名-学校-专业」</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">打包价 200元， 含
+ - 管理层讨论与分析(mda01-23.csv.gz)、上市公司基本信息2000-2023.xlsx
+ - cntext2安装文件(cntext-2.1.3-py3-none-any.whl)
+ - 计算结果(mda_infor2001-2023.csv)
+  
+零卖价
+ - 100元  管理层讨论与分析(mda01-22.csv.gz)、年报(A01-22.csv.gz)
+ - 100元  cntext2安装文件(cntext-2.1.1-py3-none-any.whl)
+ - 50元   计算结果(mda_infor2001-2023.csv)
+</code></pre></div><br>
 <p>资料截图， 整个资料文件夹体积高达 12 G。</p>
 <p><img loading="lazy" src="img/screen.png" alt=""  />
 </p>
@@ -13316,6 +13343,7 @@ Length: 211, dtype: float64
 &lt;li&gt;词典选择(构建)步骤&lt;/li&gt;
 &lt;li&gt;监督机器学习步骤&lt;/li&gt;
 &lt;/ol&gt;
+&lt;br&gt;
 &lt;h3 id=&#34;21-数据获取预处理&#34;&gt;2.1 数据获取&amp;amp;预处理&lt;/h3&gt;
 &lt;ol&gt;
 &lt;li&gt;&lt;strong&gt;数据获取&lt;/strong&gt; 使用人工手动或爬虫从EDGAR、公司网站、社交媒体等数据源采集下载&lt;/li&gt;
@@ -13387,6 +13415,7 @@ Length: 211, dtype: float64
 <li>词典选择(构建)步骤</li>
 <li>监督机器学习步骤</li>
 </ol>
+<br>
 <h3 id="21-数据获取预处理">2.1 数据获取&amp;预处理</h3>
 <ol>
 <li><strong>数据获取</strong> 使用人工手动或爬虫从EDGAR、公司网站、社交媒体等数据源采集下载</li>

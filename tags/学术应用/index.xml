@@ -4861,21 +4861,27 @@ Wall time: 5min 9s
     text2文本是否为融资约束:  False
 </code></pre></div><p><br><br></p>
 <h2 id="三批量识别融资约束样本">三、批量识别融资约束样本</h2>
-<p>接下来对对 <em><strong>data/mda01-22.csv.gz</strong></em> 数据集所有md&amp;a进行识别。</p>
+<p>接下来对对 <em><strong>data/mda01-23.csv.gz</strong></em> 数据集所有md&amp;a进行识别。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/mda01-22.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+<span class="c1">#读取md&amp;a</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/mda01-23.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
 <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;经营讨论与分析内容&#39;</span><span class="p">]</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
 
 <span class="c1">#上市公司行业信息</span>
-<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/行业代码00-22.xlsx&#39;</span><span class="p">)</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/上市公司基本信息2000-2023.xlsx&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Symbol&#39;</span><span class="p">,</span> <span class="s1">&#39;EndDate&#39;</span><span class="p">,</span> <span class="s1">&#39;IndustryCodeC&#39;</span><span class="p">])</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="p">[</span><span class="n">ind_info_df</span><span class="o">.</span><span class="n">Symbol</span><span class="o">!=</span><span class="s1">&#39;股票代码&#39;</span><span class="p">]</span>
+<span class="n">ind_info_df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="o">.</span><span class="n">EndDate</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">date</span><span class="p">:</span> <span class="n">date</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">ind_info_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Symbol&#39;</span><span class="p">:</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;IndustryCodeC&#39;</span><span class="p">:</span><span class="s1">&#39;行业代码&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="p">[[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;行业代码&#39;</span><span class="p">]]</span>
 
 <span class="c1">#合并数据</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">ind_info_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
 <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">55767
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">57545
 </code></pre></div><p><img loading="lazy" src="img/df1.png" alt=""  />
 </p>
 <br>
@@ -4901,7 +4907,7 @@ Wall time: 5min 9s
 <br>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#融资约束样本占比</span>
 <span class="n">df</span><span class="p">[</span><span class="s1">&#39;融资约束&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-</code></pre></div><pre><code>0.1062814926390159
+</code></pre></div><pre><code>0.10631679555130767
 </code></pre>
 <br>
 <h3 id="注意">注意</h3>
@@ -4939,15 +4945,15 @@ Wall time: 5min 9s
 </li>
 </ol>
 <p><br><br></p>
-<h3 id="41-计算2020年的vec_it">4.1 计算2020年的Vec_it</h3>
-<p>计算量太大，先以2020为例写代码。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df_per_year</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">2020</span><span class="p">]</span>
+<h3 id="41-计算2023年的vec_it">4.1 计算2023年的Vec_it</h3>
+<p>计算量太大，先以2023为例写代码。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df_per_year</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;2023&#39;</span><span class="p">]</span>
 <span class="n">df_per_year</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">df_per_year</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </code></pre></div><p><img loading="lazy" src="img/df4.png" alt=""  />
 </p>
 <br>
-<p>处理2020年的 「<em><strong>经营讨论与分析内容</strong></em>」字段内容，使其:</p>
+<p>处理2023年的 「<em><strong>经营讨论与分析内容</strong></em>」字段内容，使其:</p>
 <ol>
 <li>只保留中文内容</li>
 <li>剔除停用词</li>
@@ -4998,15 +5004,15 @@ Wall time: 5min 9s
 </code></pre></div><p><img loading="lazy" src="img/df5.png" alt=""  />
 </p>
 <br>
-<h3 id="42--2020年的板块评分行业评分">4.2  2020年的板块评分、行业评分</h3>
-<p>计算2020年所有公司的 <strong>板块评分BoardScore</strong>、<strong>行业评分IndustrySocre</strong>。该部分代码运行较慢，运行下来大约2小时。</p>
+<h3 id="42--2023年的板块评分行业评分">4.2  2023年的板块评分、行业评分</h3>
+<p>计算2023年所有公司的 <strong>板块评分BoardScore</strong>、<strong>行业评分IndustrySocre</strong>。该部分代码运行较慢，运行下来大约2小时。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 
-<span class="n">year</span> <span class="o">=</span> <span class="mi">2020</span>
+<span class="n">year</span> <span class="o">=</span> <span class="mi">2023</span>
 
 <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s1">&#39;fin_constrain_output&#39;</span><span class="p">):</span>
     <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="s1">&#39;fin_constrain_output&#39;</span><span class="p">)</span>
@@ -5113,14 +5119,18 @@ Wall time: 5min 9s
     
     
 
-
-    
-<span class="c1">#读取数据</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/mda01-22.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+<span class="c1">#读取md&amp;a</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/mda01-23.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
 <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;经营讨论与分析内容&#39;</span><span class="p">]</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
 
 <span class="c1">#上市公司行业信息</span>
-<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/行业代码00-22.xlsx&#39;</span><span class="p">)</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/上市公司基本信息2000-2023.xlsx&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Symbol&#39;</span><span class="p">,</span> <span class="s1">&#39;EndDate&#39;</span><span class="p">,</span> <span class="s1">&#39;IndustryCodeC&#39;</span><span class="p">])</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="p">[</span><span class="n">ind_info_df</span><span class="o">.</span><span class="n">Symbol</span><span class="o">!=</span><span class="s1">&#39;股票代码&#39;</span><span class="p">]</span>
+<span class="n">ind_info_df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="o">.</span><span class="n">EndDate</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">date</span><span class="p">:</span> <span class="n">date</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">ind_info_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Symbol&#39;</span><span class="p">:</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;IndustryCodeC&#39;</span><span class="p">:</span><span class="s1">&#39;行业代码&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="p">[[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;行业代码&#39;</span><span class="p">]]</span>
 
 <span class="c1">#合并数据</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">ind_info_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">)</span>
@@ -5191,7 +5201,7 @@ Wall time: 5min 9s
         <span class="n">corporate_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;fin_constrain_output/</span><span class="si">{year}</span><span class="s1">/</span><span class="si">{code}</span><span class="s1">.csv&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">code</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
              
 </code></pre></div><p><br><br></p>
-<h3 id="44-融资约束2020">4.4 融资约束2020</h3>
+<h3 id="44-融资约束2023">4.4 融资约束2023</h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    - ConstrainedScore_it =β0 + β1 * BoardScore_bt + β2 * IndustryScore_it + E_it
     - BoardScore_bt  交易所引发的融资约束相似度
     - IndustryScore_it  行业特征引发的融资约束相似度
@@ -5199,7 +5209,7 @@ Wall time: 5min 9s
 </code></pre></div><br>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="n">csv_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;fin_constrain_output/2020/A000002.csv&#39;</span><span class="p">)</span>
+<span class="n">csv_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;fin_constrain_output/2023/A000001.csv&#39;</span><span class="p">,</span>  <span class="n">converters</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;股票代码&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">})</span>
 <span class="n">csv_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </code></pre></div><p><img loading="lazy" src="img/df6.png" alt=""  />
 </p>
@@ -5222,53 +5232,54 @@ Wall time: 5min 9s
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">OLS Regression Results                            
 ==============================================================================
-Dep. Variable:       ConstrainedScore   R-squared:                       0.988
-Model:                            OLS   Adj. R-squared:                  0.988
-Method:                 Least Squares   F-statistic:                 1.416e+05
-Date:                Mon, 06 May 2024   Prob (F-statistic):               0.00
-Time:                        13:59:18   Log-Likelihood:                 46460.
-No. Observations:                3426   AIC:                        -9.291e+04
-Df Residuals:                    3423   BIC:                        -9.290e+04
+Dep. Variable:       ConstrainedScore   R-squared:                       0.986
+Model:                            OLS   Adj. R-squared:                  0.986
+Method:                 Least Squares   F-statistic:                 1.612e+05
+Date:                Sat, 27 Jul 2024   Prob (F-statistic):               0.00
+Time:                        14:12:31   Log-Likelihood:                 64496.
+No. Observations:                4703   AIC:                        -1.290e+05
+Df Residuals:                    4700   BIC:                        -1.290e+05
 Df Model:                           2                                         
 Covariance Type:            nonrobust                                         
 =================================================================================
                     coef    std err          t      P&gt;|t|      [0.025      0.975]
 ---------------------------------------------------------------------------------
-Intercept      1.048e-08   5.37e-09      1.952      0.051   -4.91e-11     2.1e-08
-IndustryScore     0.0791      0.000    250.868      0.000       0.079       0.080
-BoardScore        0.8076      0.004    196.675      0.000       0.800       0.816
+Intercept     -1.534e-08   3.92e-09     -3.914      0.000    -2.3e-08   -7.65e-09
+IndustryScore     0.1173      0.002     60.638      0.000       0.114       0.121
+BoardScore        1.0034      0.007    139.246      0.000       0.989       1.018
 ==============================================================================
-Omnibus:                     2749.003   Durbin-Watson:                   1.974
-Prob(Omnibus):                  0.000   Jarque-Bera (JB):         21379060.688
-Skew:                           2.083   Prob(JB):                         0.00
-Kurtosis:                     389.973   Cond. No.                     7.71e+05
+Omnibus:                     9389.385   Durbin-Watson:                   1.795
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):         35835031.254
+Skew:                         -15.930   Prob(JB):                         0.00
+Kurtosis:                     429.445   Cond. No.                     1.90e+06
 ==============================================================================
 
 Notes:
 [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
-[2] The condition number is large, 7.71e+05. This might indicate that there are
+[2] The condition number is large, 1.9e+06. This might indicate that there are
 strong multicollinearity or other numerical problems.
+
 </code></pre></div><br>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#融资约束FC</span>
 <span class="n">FC</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">resid</span><span class="p">))</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;2020年 A000002融资约束指标 FC: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">FC</span><span class="p">))</span>
-</code></pre></div><pre><code>2020年 A000002融资约束指标FC: 0.000157493927967096
-</code></pre>
-<br>
-<h3 id="45-融资约束2001-2022">4.5 融资约束2001-2022</h3>
-<p>根据步骤4.4我们成功计算出了2020的融资约束FC指标，现在推广到2001-2022， 并将计算结果存储到 <em><strong>fin_constrain2001-2022.csv</strong></em>， csv 含 <em><strong>code</strong></em>、<em><strong>year</strong></em>、<em><strong>FC</strong></em> 三个字段。</p>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;2023年 A000001融资约束指标 FC: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">FC</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2023年 A000001融资约束指标 FC: 0.00020066158329792454
+</code></pre></div><br>
+<h3 id="45-融资约束2001-2023">4.5 融资约束2001-2023</h3>
+<p>根据步骤4.4我们成功计算出了2023的融资约束FC指标，现在推广到2001-2023， 并将计算结果存储到 <em><strong>fin_constrain2001-2023.csv</strong></em>， csv 含 <em><strong>code</strong></em>、<em><strong>year</strong></em>、<em><strong>FC</strong></em> 三个字段。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
 
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">csv</span>
 <span class="kn">import</span> <span class="nn">statsmodels.formula.api</span> <span class="k">as</span> <span class="nn">smf</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;fin_constrain2001-2022.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvf</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;fin_constrain2001-2023.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvf</span><span class="p">:</span>
     <span class="n">fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;FC&#39;</span><span class="p">]</span>
     <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">fieldnames</span><span class="o">=</span><span class="n">fieldnames</span><span class="p">)</span>
     <span class="n">writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
-    
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;fin_constrain_output/*/*.csv&#39;</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">df_</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
@@ -5276,35 +5287,44 @@ strong multicollinearity or other numerical problems.
             <span class="n">formula</span> <span class="o">=</span> <span class="s1">&#39;ConstrainedScore ~ IndustryScore + BoardScore&#39;</span>
             <span class="n">model</span> <span class="o">=</span> <span class="n">smf</span><span class="o">.</span><span class="n">ols</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">df_</span><span class="p">)</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+            <span class="n">FC</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">resid</span><span class="p">)</span>
             <span class="n">FC</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">resid</span><span class="p">))</span>
             <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n">df_</span><span class="p">[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="n">df_</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="s1">&#39;FC&#39;</span><span class="p">:</span> <span class="n">FC</span>
-            <span class="p">}</span>
+                    <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n">df_</span><span class="p">[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="n">df_</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="s1">&#39;FC&#39;</span><span class="p">:</span> <span class="n">FC</span>
+                <span class="p">}</span>
             <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="k">except</span><span class="p">:</span>
             <span class="k">pass</span>
+
+
 </code></pre></div><br>
-<p>最后查看(欣赏)这个融资约束数据 <em><strong>fin_constrain2001-2022.csv</strong></em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">fc_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;fin_constrain2001-2022.csv&#39;</span><span class="p">)</span>
+<p>最后查看(欣赏)这个融资约束数据 <em><strong>fin_constrain2001-2023.csv</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">fc_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;fin_constrain2001-2023.csv&#39;</span><span class="p">)</span>
 <span class="n">fc_df</span>
 </code></pre></div><p><img loading="lazy" src="img/df8.png" alt=""  />
 </p>
 <br>
 <br>
 <h2 id="五获取资料">五、获取资料</h2>
-<h3 id="51-打包">5.1 打包</h3>
-<p>内容创作不易， <strong>200</strong> 元，加微信 <strong>372335839</strong>， 备注「姓名-学校-专业」。</p>
-<p>资料截图， 整个资料文件夹体积高达 11 G。</p>
+<p>数据&amp;代码创作不易，如果需要源代码和数据， 加微信372335839， 备注「姓名-学校-专业」</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">打包200元, 含
+   - 管理层讨论与分析(mda01-23.csv.gz)、上市公司基本信息2000-2023.xlsx
+   - cntext2安装文件(cntext-2.1.3-py3-none-any.whl)
+   - 计算结果(fin_constrain2001-2023.csv)
+
+
+零卖价
+  - 100元  管理层讨论与分析(mda01-23.csv.gz)、上市公司基本信息2000-2023.xlsx
+  - 100元  cntext2安装文件(cntext-2.1.3-py3-none-any.whl)
+  - 50元   计算结果(fin_constrain2001-2023.csv)
+</code></pre></div><br>
 <p><img loading="lazy" src="img/screen.png" alt=""  />
 </p>
 <p><img loading="lazy" src="img/size.png" alt=""  />
 </p>
-<br>
-<h3 id="52-单买">5.2 单买</h3>
-<p>只要 <em><strong>fin_constrain2001-2022.csv</strong></em> 这一个文件， 100元， 加微信 <strong>372335839</strong>， 备注「姓名-学校-专业」。</p>
-<br>
+<p><br><br></p>
 <h2 id="相关内容">相关内容</h2>
 <ul>
 <li>
