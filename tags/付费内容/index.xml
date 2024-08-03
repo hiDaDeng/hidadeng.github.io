@@ -400,14 +400,14 @@
 <p><br><br></p>
 <h2 id="三代码实现">三、代码实现</h2>
 <h3 id="31-文件结构">3.1 文件结构</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 金融研究2022信息含量文件夹
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 金融研究2023信息含量文件夹
     - 代码.ipynb                                    #代码文件
     
     - data                                         #数据文件夹
-       - mda01-22.csv.gz                           #md&amp;a
-       - 行业代码00-22.xlsx                          #股票行业信息
+       - mda01-23.csv.gz                           #md&amp;a
+       - 上市公司基本信息2000-2023.xlsx               #股票行业信息
        
-    - 信息含量.csv                                   #计算结果
+    - 关键审计-信息含量01-23.csv                      #计算结果
 </code></pre></div><br>
 <h3 id="32-读取数据">3.2 读取数据</h3>
 <p>原文数据描述</p>
@@ -416,15 +416,25 @@
 </blockquote>
 <br>
 <p>大邓这里没有「<strong>审计报告文本</strong>」数据集， 用「<strong>管理层讨论与分析</strong>」代替。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/mda01-22.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#读取md&amp;a</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/mda01-23.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
 <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;经营讨论与分析内容&#39;</span><span class="p">]</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
 
 <span class="c1">#上市公司行业信息</span>
-<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/行业代码00-22.xlsx&#39;</span><span class="p">)</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">ind_info_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">)</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/上市公司基本信息2000-2023.xlsx&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Symbol&#39;</span><span class="p">,</span> <span class="s1">&#39;EndDate&#39;</span><span class="p">,</span> <span class="s1">&#39;IndustryCodeC&#39;</span><span class="p">,</span> <span class="s1">&#39;ShortName&#39;</span><span class="p">])</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="p">[</span><span class="n">ind_info_df</span><span class="o">.</span><span class="n">Symbol</span><span class="o">!=</span><span class="s1">&#39;股票代码&#39;</span><span class="p">]</span>
+<span class="n">ind_info_df</span><span class="p">[</span><span class="s1">&#39;会计年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="o">.</span><span class="n">EndDate</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">date</span><span class="p">:</span> <span class="n">date</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">ind_info_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Symbol&#39;</span><span class="p">:</span> <span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;IndustryCodeC&#39;</span><span class="p">:</span><span class="s1">&#39;行业代码&#39;</span><span class="p">,</span> <span class="s1">&#39;ShortName&#39;</span><span class="p">:</span> <span class="s1">&#39;股票简称&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ind_info_df</span> <span class="o">=</span> <span class="n">ind_info_df</span><span class="p">[[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">,</span> <span class="s1">&#39;行业代码&#39;</span><span class="p">,</span> <span class="s1">&#39;股票简称&#39;</span><span class="p">]]</span>
 
+<span class="c1">#合并数据</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">ind_info_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;股票代码&#39;</span><span class="p">,</span> <span class="s1">&#39;会计年度&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">)</span>
 
 <span class="c1"># 剔除金融行业处理</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;行业代码&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&#34;J&#34;</span><span class="p">)]</span>
@@ -483,7 +493,7 @@ Wall time: 55min 16s
 <span class="c1"># 生成稀疏bow矩阵</span>
 <span class="c1">#dtm 文档-词频-矩阵</span>
 <span class="n">dtm_df</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;clean_text&#39;</span><span class="p">])</span> 
-<span class="c1">#保证新生成的dtm_df.index 与 df.index 完全相同</span>
+<span class="c1">#保证新生成的dtm_df2.index 与 df2.index 完全相同</span>
 <span class="n">dtm_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dtm_df</span><span class="o">.</span><span class="n">toarray</span><span class="p">(),</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 <span class="n">dtm_df</span>
 </code></pre></div><p>Run</p>
