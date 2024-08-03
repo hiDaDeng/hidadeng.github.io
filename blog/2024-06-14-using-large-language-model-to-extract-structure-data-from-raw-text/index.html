@@ -148,8 +148,8 @@ ollama serve Run
   "keywords": [
     "Python", "大模型", "ollama"
   ],
-  "articleBody": "非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了从非结构提取结构化信息的能力，谁就拥有科研上的数据优势。\n\n一、需求 现在有很多个电子发票PDF文件， 使用自动化工具帮我们批量自动从发票PDF提取出格式化信息。如从发票\n提取出DICT_DATA\nDICT_DATA = { \"开票日期\": \"2023年01月06日\", \"应税货物(或服务)名称\": \"*信息技术服务*技术服务费\", \"价税合计(大写)\": \"\", \"税率\": \"6%\", \"备注\": \"230106163474406331\" } \n二、准备工作 2.1 安装ollama 点击前往网站 https://ollama.com/ ，下载ollama软件，支持win、Mac、linux\n2.2 下载LLM ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，\n以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。\n打开电脑命令行cmd(mac是terminal), 网络是连网状态，执行模型下载(安装)命令\nollama pull llama3 等待 llama3:8b 下载完成。\n2.3 安装python包 在python中调用ollama服务，需要ollama包。\n打开电脑命令行cmd(mac是terminal), 网络是连网状态，执行安装命令\npip3 install ollama \n2.4 启动ollama服务 在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行\nollama serve Run\n2024/06/14 14:52:24 routes.go:1011: INFO server config env=\"map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]\" time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=\"total blobs: 18\" time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=\"total unused blobs removed: 0\" time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=\"Listening on 127.0.0.1:11434 (version 0.1.44)\" time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=\"extracting embedded files\" dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=\"Dynamic LLM libraries [metal]\" time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=\"inference compute\" id=0 library=metal compute=\"\" driver=0.0 name=\"\" total=\"72.0 GiB\" available=\"72.0 GiB\" cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。\n\n三、实验 点击下载实验数据\n3.1 读取pdf import cntext as ct text = ct.read_pdf('data/1.pdf') print(ct.__version__) text Run\n2.1.2 ' 北京增值税电子普通发票发票代码： \\n发票号码： 69453658\\n开票日期： 2023年01月06日\\n校 验 码： \\n购\\n买\\n方名 称： 哈尔滨所以然信息技术有限公司\\n密\\n码\\n区030898/5*/0*440/63+79*08\\n纳税人识别号： 91230109MABT7KBC4M /72\\n开户行及账号： 98*2/*-*480145+-19*0917-1*61\\n货物或应税劳务、服务名称 规格型号 单 位 数 量 单 价 金 额 税率 税 额\\n*信息技术服务*技术服务费 1248.113208 248.11 6% 14.89\\n合 计 ￥248.11 ￥14.89\\n价税合计（大写）\\n 贰佰陆拾叁元整 （小写）￥263.00\\n销\\n售\\n方名 称： \\n备\\n注230106163474406331\\n纳税人识别号： 91110108MA01WFY0X6\\n地 址、电 话： \\n开户行及账号： \\n 收款人： 复核： 开票人： 销售方：（章）' \n3.2 提取信息 使用ollama服务中的大模型 llama3:8b , 需要大模型提示信息及数据。这是我实验里设计的提示信息prompt\n提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为\"开票日期\", \"销售方纳税识别号\", \"销售方地址电话\", \"应税货物(或服务)名称\", \"价税合计(大写)\", \"税率\", \"备注\"; 结果只显示DICT_DATA。 TEXT: {text} \nimport ollama response = ollama.chat(model='llama3:8b', messages=[ { 'role': 'user', 'content': f'提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为\"开票日期\", \"应税货物(或服务)名称\", \"价税合计(大写)\", \"税率\", \"备注\"; 结果只显示DICT_DATA。 TEXT: {text1}', }, ]) result = response['message']['content'] result Run\n'DICT_DATA = {\\n \"开票日期\": \"2023年01月06日\",\\n \"应税货物(或服务)名称\": \"*信息技术服务*技术服务费\",\\n \"价税合计(大写)\": \"\",\\n \"税率\": \"6%\",\\n \"备注\": \"230106163474406331\"\\n}' 从运行结果看出， 大模型从发票PDF中准确提取到我们需要的信息，耗时大概10s。 需要注意，有时候大模型还会返回\n'Here is the extracted key information in dictionary format:\\n\\n```\\n{\\n \"开票日期\": \"2023年01月06日\",\\n \"应税货物(或服务)名称\": \"*信息技术服务*技术服务费\",\\n \"价税合计(大写)\": \"贰佰陆拾叁元整\",\\n \"税率\": \"6%\",\\n \"备注\": \"230106163474406331\"\\n}\\n```\\n\\nLet me know if you have any further requests! 😊' \n现在我们需要将 DICT_DATA 变为真正的字典数据\nimport re result = response['message']['content'] result = [r for r in re.split('```|DICT_DATA = ', result) if '{' in r][0] print(type(eval(result))) print(eval(result)) Run\n{'开票日期': '2023年01月06日', '应税货物(或服务)名称': '*信息技术服务*技术服务费', '价税合计(大写)': '贰佰陆拾叁元整', '税率': '6%', '备注': '230106163474406331'} \n3.3 封装成函数extract_info 实验成功，我们将其封装为函数extract_info\nimport ollama import re def extract_info(text): response = ollama.chat(model='llama3:8b', stream=False, messages=[ { 'role': 'user', 'content': f'提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为\"开票日期\", \"应税货物(或服务)名称\", \"价税合计(大写)\", \"税率\", \"备注\"; 结果只显示DICT_DATA。 TEXT: {text}', }, ]) result = response['message']['content'] result = [r for r in re.split('```|DICT_DATA = ', result) if '{' in r][0] return eval(result) result = extract_info(text) result Run\n{'开票日期': '2023 02 14', '应税货物(或服务)名称': '*家用厨房电器具*米家 小米电热水 MJDSH03YM', '价税合计(大写)': '壹佰贰拾叁圆玖角玖分', '税率': '13%', '备注': None} \n3.4 批量提取 假设data文件夹内有成百上千的发票(实际上只有一张发票)， 对data文件夹进行批量信息提取，结果存储为csv。\n%%time import os #cntext版本为2.1.2，非开源， #需联系大邓372335839获取 import cntext as ct import pandas as pd #当前代码所在的代码文件与data文件夹处于同一个文件夹内 #获取data内所有pdf的路径 pdf_files = [f'data/{file}' for file in os.listdir('data') if '.pdf' in file] dict_datas = [] for pdf_file in pdf_files: pdf_text = ct.read_pdf(pdf_file) dict_data = extract_info(pdf_text) dict_datas.append(dict_data) df = pd.DataFrame(dict_datas) df Run\nCPU times: user 32 ms, sys: 2.17 ms, total: 15.2 ms Wall time: 3.8 s \n四、讨论 本文只使用了一张发票进行实验， 实际上准确率没有这么高， 识别错误字段集中在销售方纳税识别号(案例没有展示销售方纳税识别号的识别)。原因主要是ct.read_pdf读入pdf时，文本比较杂乱。对大模型的语义理解有一定的挑战。目前大模型已经支持文本、图片、音频、视频、网址， 所以各位看官，不用等太久，就可克服此问题。\n大模型会对每个输入，给出正确概率最大的回答，因此大模型提取数据时存在一定的错误识别风险。为降低该风险，尽量选择特别特殊、显眼，例如三张发票的价税合计(大写), 因为信息是特殊的中文大写数字， 在所有文本中是最醒目最特别的文本信息，这样大模型处理这类信息时会给这类信息尽可能高的权重，增大回答的准确率。\n精选内容  LIST | 可供社科(经管)领域使用的数据集汇总 LIST | 社科(经管)数据挖掘文献资料汇总 网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据 推荐 | 文本分析库cntext2.x使用手册 付费视频课 | Python实证指标构建与文本分析  ",
-  "wordCount" : "484",
+  "articleBody": "非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了从非结构提取结构化信息的能力，谁就拥有科研上的数据优势。\n\n一、需求 现在有很多个电子发票PDF文件， 使用自动化工具帮我们批量自动从发票PDF提取出格式化信息。如从发票\n提取出DICT_DATA\nDICT_DATA = { \"开票日期\": \"2023年01月06日\", \"应税货物(或服务)名称\": \"*信息技术服务*技术服务费\", \"价税合计(大写)\": \"\", \"税率\": \"6%\", \"备注\": \"230106163474406331\" } \n二、准备工作 2.1 安装ollama 点击前往网站 https://ollama.com/ ，下载ollama软件，支持win、Mac、linux\n2.2 下载LLM ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，\n以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。\n打开电脑命令行cmd(mac是terminal), 网络是连网状态，执行模型下载(安装)命令\nollama pull llama3 等待 llama3:8b 下载完成。\n2.3 安装python包 在python中调用ollama服务，需要ollama包。\n打开电脑命令行cmd(mac是terminal), 网络是连网状态，执行安装命令\npip3 install ollama \n2.4 启动ollama服务 在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行\nollama serve Run\n2024/06/14 14:52:24 routes.go:1011: INFO server config env=\"map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]\" time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=\"total blobs: 18\" time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=\"total unused blobs removed: 0\" time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=\"Listening on 127.0.0.1:11434 (version 0.1.44)\" time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=\"extracting embedded files\" dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=\"Dynamic LLM libraries [metal]\" time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=\"inference compute\" id=0 library=metal compute=\"\" driver=0.0 name=\"\" total=\"72.0 GiB\" available=\"72.0 GiB\" cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。\n\n三、实验 3.1 代码结构 点击下载 本文代码\nproject | - 代码.ipynb #代码 - prompt.txt #提示模板 - data |--- 1.pdf #实验的发票 - result.csv #结果 \n3.2 读取pdf import cntext as ct #cntext版本为2.1.3，非开源， #需联系大邓372335839获取 text = ct.read_pdf('data/1.pdf') print(ct.__version__) text Run\n2.1.3 ' 北京增值税电子普通发票发票代码： \\n发票号码： 69453658\\n开票日期： 2023年01月06日\\n校 验 码： \\n购\\n买\\n方名 称： 哈尔滨所以然信息技术有限公司\\n密\\n码\\n区030898/5*/0*440/63+79*08\\n纳税人识别号： 91230109MABT7KBC4M /72\\n开户行及账号： 98*2/*-*480145+-19*0917-1*61\\n货物或应税劳务、服务名称 规格型号 单 位 数 量 单 价 金 额 税率 税 额\\n*信息技术服务*技术服务费 1248.113208 248.11 6% 14.89\\n合 计 ￥248.11 ￥14.89\\n价税合计（大写）\\n 贰佰陆拾叁元整 （小写）￥263.00\\n销\\n售\\n方名 称： \\n备\\n注230106163474406331\\n纳税人识别号： 91110108MA01WFY0X6\\n地 址、电 话： \\n开户行及账号： \\n 收款人： 复核： 开票人： 销售方：（章）' \n3.4 提取信息 使用ollama服务中的大模型 llama3:8b , 需要大模型提示信息及数据。这是我实验里设计的提示信息prompt\nprompt = open('prompt.txt', encoding='utf-8').read() print(prompt) Run\n发票文本内容 --- {TEXT} --- 以 JSON 格式回答。 JSON 应包含如下信息， 依次为\"开票日期\", \"应税货物(或服务)名称\", \"价税合计(大写)\", \"税率\", \"备注\"; \n%%time import ollama import cntext as ct #cntext版本为2.1.3，非开源， 需联系大邓372335839获取 #读取发票pdf content = ct.read_pdf('data/1.pdf') #读取prompt prompt = open('prompt.txt', encoding='utf-8').read() response = ollama.chat(model='llama3:8b', messages=[ {'role': 'system','content': prompt}, {'role': 'user','content': content}, ]) result = response['message']['content'] result = eval(result.split('```\\n')[1].split('\\n```')[0]) result Run\nCPU times: user 20.5 ms, sys: 2.34 ms, total: 22.9 ms Wall time: 3.58 s {'开票日期': '2023年01月06日', '应税货物(或服务)名称': '*信息技术服务*技术服务费', '价税合计(大写)': '贰佰陆拾叁元整', '税率': '6%', '备注': '230106163474406331'} \n3.3 封装成函数extract_info 实验成功，我们将其封装为函数extract_info， 为增强代码的鲁棒性， 函数内设置了异常处理机制，最多可重试3次。\nimport ollama import re def extract_info(text, prompt, max_retries=3): for attempt in range(max_retries + 1): try: response = ollama.chat( model='llama3:8b', messages=[ {'role': 'system', 'content': prompt}, {'role': 'user', 'content': text} ] ) result = response['message']['content'] result = eval(result.split('```\\n')[1].split('\\n```')[0]) return result except Exception as e: if attempt  max_retries: print(f\"An error occurred: {e}. Retrying ({attempt + 1}/{max_retries + 1})...\") else: raise e #读取prompt prompt = open('prompt.txt', encoding='utf-8').read() result = extract_info(text, prompt) result result与之前无异， 为了节省版面，这里就不显示result。\n3.4 批量提取 假设data文件夹内有成百上千的发票(实际上只有一张发票)， 对data文件夹进行批量信息提取，结果存储为csv。\n%%time import os import ollama #cntext版本为2.1.3，非开源， 需联系大邓372335839获取 import cntext as ct import pandas as pd def extract_info(text, prompt, max_retries=3): for attempt in range(max_retries + 1): try: response = ollama.chat( model='llama3:8b', messages=[ {'role': 'system', 'content': prompt}, {'role': 'user', 'content': text} ] ) result = response['message']['content'] result = eval(result.split('```\\n')[1].split('\\n```')[0]) return result except Exception as e: if attempt  max_retries: print(f\"An error occurred: {e}. Retrying ({attempt + 1}/{max_retries + 1})...\") else: raise e #当前代码所在的代码文件与data文件夹处于同一个文件夹内 #获取data内所有pdf的路径 pdf_files = [f'data/{file}' for file in os.listdir('data') if '.pdf' in file] #读取prompt prompt = open('prompt.txt', encoding='utf-8').read() dict_datas = [] for pdf_file in pdf_files: text = ct.read_pdf(pdf_file) dict_data = extract_info(text, prompt) dict_datas.append(dict_data) df = pd.DataFrame(dict_datas) df.to_csv('result.csv', index=False) df Run\nCPU times: user 32 ms, sys: 2.17 ms, total: 15.2 ms Wall time: 3.8 s \n四、讨论 本文只使用了一张发票进行实验， 实际上准确率没有这么高， 识别错误字段集中在销售方纳税识别号(案例没有展示销售方纳税识别号的识别)。原因主要是ct.read_pdf读入pdf时，文本比较杂乱。对大模型的语义理解有一定的挑战。目前大模型已经支持文本、图片、音频、视频、网址， 所以各位看官，不用等太久，就可克服此问题。\n大模型会对每个输入，给出正确概率最大的回答，因此大模型提取数据时存在一定的错误识别风险。为降低该风险，尽量选择特别特殊、显眼，例如三张发票的价税合计(大写), 因为信息是特殊的中文大写数字， 在所有文本中是最醒目最特别的文本信息，这样大模型处理这类信息时会给这类信息尽可能高的权重，增大回答的准确率。\n精选内容  LIST | 可供社科(经管)领域使用的数据集汇总 LIST | 社科(经管)数据挖掘文献资料汇总 网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据 推荐 | 文本分析库cntext2.x使用手册 付费视频课 | Python实证指标构建与文本分析  ",
+  "wordCount" : "543",
   "inLanguage": "en",
   "image":"/images/blog/bala-ollama.png","datePublished": "2024-06-14T00:00:00Z",
   "dateModified": "2024-06-14T00:00:00Z",
@@ -378,9 +378,11 @@ onload="renderMathInElement(document.body);"></script>
                         <a href="#%e4%b8%89%e5%ae%9e%e9%aa%8c" aria-label="三、实验">三、实验</a><ul>
                             
                     <li>
-                        <a href="#31-%e8%af%bb%e5%8f%96pdf" aria-label="3.1 读取pdf">3.1 读取pdf</a></li>
+                        <a href="#31-%e4%bb%a3%e7%a0%81%e7%bb%93%e6%9e%84" aria-label="3.1 代码结构">3.1 代码结构</a></li>
                     <li>
-                        <a href="#32-%e6%8f%90%e5%8f%96%e4%bf%a1%e6%81%af" aria-label="3.2 提取信息">3.2 提取信息</a></li>
+                        <a href="#32-%e8%af%bb%e5%8f%96pdf" aria-label="3.2 读取pdf">3.2 读取pdf</a></li>
+                    <li>
+                        <a href="#34-%e6%8f%90%e5%8f%96%e4%bf%a1%e6%81%af" aria-label="3.4 提取信息">3.4 提取信息</a></li>
                     <li>
                         <a href="#33-%e5%b0%81%e8%a3%85%e6%88%90%e5%87%bd%e6%95%b0extract_info" aria-label="3.3 封装成函数extract_info">3.3 封装成函数extract_info</a></li>
                     <li>
@@ -509,51 +511,65 @@ time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&#34;infere
 </code></pre></div><p>cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。</p>
 <p><br><br></p>
 <h2 id="三实验">三、实验<a hidden class="anchor" aria-hidden="true" href="#三实验">#</a></h2>
-<p>点击下载<a href="data.zip">实验数据</a></p>
-<h3 id="31-读取pdf">3.1 读取pdf<a hidden class="anchor" aria-hidden="true" href="#31-读取pdf">#</a></h3>
+<h3 id="31-代码结构">3.1 代码结构<a hidden class="anchor" aria-hidden="true" href="#31-代码结构">#</a></h3>
+<p>点击下载 <a href="project.zip">本文代码</a></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">project
+   |
+  - 代码.ipynb   #代码
+  - prompt.txt  #提示模板
+  - data
+      |--- 1.pdf #实验的发票
+  - result.csv   #结果
+</code></pre></div><br>
+<h3 id="32-读取pdf">3.2 读取pdf<a hidden class="anchor" aria-hidden="true" href="#32-读取pdf">#</a></h3>
 <p><img loading="lazy" src="img/01-raw-pdf.png" alt=""  />
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
-
+<span class="c1">#cntext版本为2.1.3，非开源， #需联系大邓372335839获取</span>
 
 <span class="n">text</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/1.pdf&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
 <span class="n">text</span>
 </code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2.1.2
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2.1.3
 
 &#39; 北京增值税电子普通发票发票代码： \n发票号码： 69453658\n开票日期： 2023年01月06日\n校 验 码： \n购\n买\n方名        称： 哈尔滨所以然信息技术有限公司\n密\n码\n区030898/5&lt;32&gt;*/0*440/63+79*08\n纳税人识别号： 91230109MABT7KBC4M /&lt;54&lt;1*6+49&lt;-*+*&gt;7&lt;-8*04&lt;+01\n地 址、电 话： 68+160026-45904*2&lt;+3+15503&gt;2\n开户行及账号： 98*2/*-*480145+-19*0917-1*61\n货物或应税劳务、服务名称 规格型号 单 位 数 量 单 价 金 额 税率 税 额\n*信息技术服务*技术服务费 1248.113208 248.11 6% 14.89\n合      计 ￥248.11 ￥14.89\n价税合计（大写）\n  贰佰陆拾叁元整             （小写）￥263.00\n销\n售\n方名        称： \n备\n注230106163474406331\n纳税人识别号： 91110108MA01WFY0X6\n地 址、电 话： \n开户行及账号： \n  收款人： 复核： 开票人： 销售方：（章）&#39;
 </code></pre></div><br>
-<h3 id="32-提取信息">3.2 提取信息<a hidden class="anchor" aria-hidden="true" href="#32-提取信息">#</a></h3>
+<h3 id="34-提取信息">3.4 提取信息<a hidden class="anchor" aria-hidden="true" href="#34-提取信息">#</a></h3>
 <p>使用ollama服务中的大模型 <em><strong>llama3:8b</strong></em> , 需要大模型提示信息及数据。这是我实验里设计的提示信息prompt</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为&#34;开票日期&#34;, &#34;销售方纳税识别号&#34;, &#34;销售方地址电话&#34;, &#34;应税货物(或服务)名称&#34;, &#34;价税合计(大写)&#34;, &#34;税率&#34;, &#34;备注&#34;; 结果只显示DICT_DATA。 TEXT: {text}
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">prompt = open(&#39;prompt.txt&#39;, encoding=&#39;utf-8&#39;).read()
+print(prompt)
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">发票文本内容
+--- 
+{TEXT} 
+---
+
+以 JSON 格式回答。 JSON 应包含如下信息， 依次为&#34;开票日期&#34;, &#34;应税货物(或服务)名称&#34;, &#34;价税合计(大写)&#34;, &#34;税率&#34;, &#34;备注&#34;; 
 </code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">ollama</span>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">ollama</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="c1">#cntext版本为2.1.3，非开源， 需联系大邓372335839获取</span>
+
+<span class="c1">#读取发票pdf</span>
+<span class="n">content</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/1.pdf&#39;</span><span class="p">)</span>
+<span class="c1">#读取prompt</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 
 <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
-      <span class="p">{</span>
-        <span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为&#34;开票日期&#34;, &#34;应税货物(或服务)名称&#34;, &#34;价税合计(大写)&#34;, &#34;税率&#34;, &#34;备注&#34;; 结果只显示DICT_DATA。 TEXT: </span><span class="si">{</span><span class="n">text1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
-      <span class="p">},</span>
+      <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span><span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">},</span>
+      <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span><span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">content</span><span class="p">},</span>
     <span class="p">])</span>
 
 <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+<span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
 <span class="n">result</span>
 </code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&#39;DICT_DATA = {\n    &#34;开票日期&#34;: &#34;2023年01月06日&#34;,\n        &#34;应税货物(或服务)名称&#34;: &#34;*信息技术服务*技术服务费&#34;,\n    &#34;价税合计(大写)&#34;: &#34;&#34;,\n    &#34;税率&#34;: &#34;6%&#34;,\n    &#34;备注&#34;: &#34;230106163474406331&#34;\n}&#39;
-</code></pre></div><p>从运行结果看出， 大模型从发票PDF中准确提取到我们需要的信息，耗时大概10s。 需要注意，有时候大模型还会返回</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&#39;Here is the extracted key information in dictionary format:\n\n```\n{\n    &#34;开票日期&#34;: &#34;2023年01月06日&#34;,\n       &#34;应税货物(或服务)名称&#34;: &#34;*信息技术服务*技术服务费&#34;,\n    &#34;价税合计(大写)&#34;: &#34;贰佰陆拾叁元整&#34;,\n    &#34;税率&#34;: &#34;6%&#34;,\n    &#34;备注&#34;: &#34;230106163474406331&#34;\n}\n```\n\nLet me know if you have any further requests! 😊&#39;
-</code></pre></div><br>
-<p>现在我们需要将 DICT_DATA 变为真正的字典数据</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import re
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 20.5 ms, sys: 2.34 ms, total: 22.9 ms
+Wall time: 3.58 s
 
-result = response[&#39;message&#39;][&#39;content&#39;]
-result = [r for r in re.split(&#39;```|DICT_DATA = &#39;, result) if &#39;{&#39; in r][0]
-
-print(type(eval(result)))
-print(eval(result))
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&lt;class &#39;dict&#39;&gt;
 {&#39;开票日期&#39;: &#39;2023年01月06日&#39;,
  &#39;应税货物(或服务)名称&#39;: &#39;*信息技术服务*技术服务费&#39;,
  &#39;价税合计(大写)&#39;: &#39;贰佰陆拾叁元整&#39;,
@@ -561,54 +577,85 @@ print(eval(result))
  &#39;备注&#39;: &#39;230106163474406331&#39;}
 </code></pre></div><br>
 <h3 id="33-封装成函数extract_info">3.3 封装成函数extract_info<a hidden class="anchor" aria-hidden="true" href="#33-封装成函数extract_info">#</a></h3>
-<p>实验成功，我们将其封装为函数<em><strong>extract_info</strong></em></p>
+<p>实验成功，我们将其封装为函数<em><strong>extract_info</strong></em>， 为增强代码的鲁棒性， 函数内设置了异常处理机制，最多可重试3次。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">ollama</span>
 <span class="kn">import</span> <span class="nn">re</span>
 
-<span class="k">def</span> <span class="nf">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
-          <span class="p">{</span>
-            <span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;提取TEXT中的关键信息，返回DICT_DATA, DICT_DATA为dict数据格式，所含关键词依次为&#34;开票日期&#34;,  &#34;应税货物(或服务)名称&#34;, &#34;价税合计(大写)&#34;, &#34;税率&#34;, &#34;备注&#34;; 结果只显示DICT_DATA。 TEXT: </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
-          <span class="p">},</span>
-        <span class="p">])</span>
 
-    <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```|DICT_DATA = &#39;</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;{&#39;</span> <span class="ow">in</span> <span class="n">r</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-  
-  
+<span class="k">def</span> <span class="nf">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span>
+                <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">text</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
 
-<span class="n">result</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">result</span>
+        
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_retries</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;An error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Retrying (</span><span class="si">{</span><span class="n">attempt</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">)...&#34;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>
+  
+<span class="c1">#读取prompt</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">)</span>
 <span class="n">result</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;开票日期&#39;: &#39;2023 02 14&#39;,
- &#39;应税货物(或服务)名称&#39;: &#39;*家用厨房电器具*米家 小米电热水 MJDSH03YM&#39;,
- &#39;价税合计(大写)&#39;: &#39;壹佰贰拾叁圆玖角玖分&#39;,
- &#39;税率&#39;: &#39;13%&#39;,
- &#39;备注&#39;: None}
-</code></pre></div><br>
+</code></pre></div><p>result与之前无异， 为了节省版面，这里就不显示result。</p>
+<br>
 <h3 id="34-批量提取">3.4 批量提取<a hidden class="anchor" aria-hidden="true" href="#34-批量提取">#</a></h3>
 <p>假设data文件夹内有成百上千的发票(实际上只有一张发票)， 对data文件夹进行批量信息提取，结果存储为csv。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="c1">#cntext版本为2.1.2，非开源，</span>
-<span class="c1">#需联系大邓372335839获取</span>
+<span class="kn">import</span> <span class="nn">ollama</span>
+<span class="c1">#cntext版本为2.1.3，非开源， 需联系大邓372335839获取</span>
 <span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
+
+<span class="k">def</span> <span class="nf">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span>
+                <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">text</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">result</span>
+        
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_retries</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;An error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Retrying (</span><span class="si">{</span><span class="n">attempt</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">)...&#34;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>
+                
+  
 <span class="c1">#当前代码所在的代码文件与data文件夹处于同一个文件夹内</span>
 <span class="c1">#获取data内所有pdf的路径</span>
 <span class="n">pdf_files</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;data/</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.pdf&#39;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">]</span>
+<span class="c1">#读取prompt</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 
 <span class="n">dict_datas</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">pdf_file</span> <span class="ow">in</span> <span class="n">pdf_files</span><span class="p">:</span>
-    <span class="n">pdf_text</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">)</span>
-    <span class="n">dict_data</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">pdf_text</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">)</span>
+    <span class="n">dict_data</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">)</span>
     <span class="n">dict_datas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dict_data</span><span class="p">)</span>
 
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dict_datas</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;result.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">df</span>
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 32 ms, sys: 2.17 ms, total: 15.2 ms
