@@ -13,308 +13,7 @@
       <pubDate>Sat, 03 Aug 2024 00:00:00 +0000</pubDate>
       
       <guid>/blog/2024-08-03-literature-document-parsing-using-large-language-models-with-code/</guid>
-      <description>&lt;p&gt;非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了&lt;em&gt;&lt;strong&gt;从非结构提取结构化信息的能力&lt;/strong&gt;&lt;/em&gt;，谁就拥有科研上的数据优势。正则表达式是一种强大的文档解析工具，但它们常常难以应对现实世界文档的复杂性和多变性。而随着chatGPT这类LLM的出现，为我们提供了更强大、更灵活的方法来处理多种类型的文档结构和内容类型。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/&#34;&gt;代码 | 使用本地大模型从文本中提取结构化信息&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/&#34;&gt;实验 | 使用本地大模型DIY制作单词书教案PDF&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;为方便理解和实验，今天再新增一个案例，即论文处理的场景为例&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;一任务&#34;&gt;一、任务&lt;/h2&gt;
-&lt;p&gt;从海量的论文pdf文件中批量提取出&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;论文标题&lt;/li&gt;
-&lt;li&gt;出版年份&lt;/li&gt;
-&lt;li&gt;作者&lt;/li&gt;
-&lt;li&gt;联系作者&lt;/li&gt;
-&lt;li&gt;抽象的&lt;/li&gt;
-&lt;li&gt;摘要&lt;/li&gt;
-&lt;/ul&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;11-为何选择llm而不是正则表达式&#34;&gt;1.1 为何选择LLM，而不是正则表达式&lt;/h3&gt;
-&lt;p&gt;在灵活性、上下文理解能力、维护和可扩展性三方面， 我们对比一下LLM和正则表达式&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;方面&lt;/th&gt;
-&lt;th&gt;LLM&lt;/th&gt;
-&lt;th&gt;正则表达式&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;灵活性&lt;/td&gt;
-&lt;td&gt;能够自动理解和适应各种文档结构，并且无论位于文档的什么位置，都能够识别相关信息。&lt;/td&gt;
-&lt;td&gt;需要每个文档结构都有特定的模式，当给定的文档偏离预期的格式时就会失败。&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;上下文理解&lt;/td&gt;
-&lt;td&gt;对每个文档的含义有细致的理解，从而可以更准确地提取相关信息。&lt;/td&gt;
-&lt;td&gt;无需理解上下文或含义即可匹配模式。&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;维护和可扩展性&lt;/td&gt;
-&lt;td&gt;可以轻松适应新的文档类型，只需在初始提示中进行最少的更改，从而使其更具可扩展性。&lt;/td&gt;
-&lt;td&gt;需要随着文档格式的变化而不断更新。添加对新类型信息的支持需要编写一个全新的正则表达式。&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;综上， 选择LLM更适合做「从论文PDF中提取信息」这一任务。&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;12-工作流程&#34;&gt;1.2 工作流程&lt;/h3&gt;
-&lt;p&gt;为了方便实验，让我们以论文处理的场景为例，下图是使用LLM批量提取论文中元信息的工作流程。&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/00-document-parsing.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;p&gt;工作流程总体上有三个主要组成部分：输入、处理和输出。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;首先，提交文件（在本例中为PDF格式的科研论文）进行处理。&lt;/li&gt;
-&lt;li&gt;处理组件的第一个模块从每个 PDF 中提取原始数据，并将其与包含大型语言模型指令的提示相结合，以有效地提取数据。&lt;/li&gt;
-&lt;li&gt;然后，大型语言模型使用提示来提取所有元数据。&lt;/li&gt;
-&lt;li&gt;对于每个PDF，最终结果以JSON格式保存，可用于进一步分析。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;br&gt;
-&lt;br&gt;
-&lt;h2 id=&#34;二准备工作&#34;&gt;二、准备工作&lt;/h2&gt;
-&lt;h3 id=&#34;21-安装ollama&#34;&gt;2.1 安装ollama&lt;/h3&gt;
-&lt;p&gt;点击前往网站 &lt;a href=&#34;https://ollama.com/&#34;&gt;https://ollama.com/&lt;/a&gt; ，下载ollama软件，支持win、Mac、linux&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-ollama-gui.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;22-下载llm&#34;&gt;2.2 下载LLM&lt;/h3&gt;
-&lt;p&gt;ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3、llama3.1)，  本文选择最近新出的模型 llama3.1&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-ollama-model.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;p&gt;以llama3.1为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-ollama-llama3.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama pull llama3.1
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;等待 &lt;strong&gt;llama3.1:8b&lt;/strong&gt; 下载完成。&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;23-安装python包&#34;&gt;2.3 安装python包&lt;/h3&gt;
-&lt;p&gt;在python中调用ollama服务，需要ollama包。&lt;/p&gt;
-&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install ollama
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;24-启动ollama服务&#34;&gt;2.4 启动ollama服务&lt;/h3&gt;
-&lt;p&gt;在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama serve
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2024/08/03 14:52:24 routes.go:1011: INFO server config env=&amp;#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&amp;#34;
-time=2024-08-03T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&amp;#34;total blobs: 18&amp;#34;
-time=2024-08-03T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&amp;#34;total unused blobs removed: 0&amp;#34;
-time=2024-08-03T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&amp;#34;Listening on 127.0.0.1:11434 (version 0.1.44)&amp;#34;
-time=2024-08-03T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&amp;#34;extracting embedded files&amp;#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
-time=2024-08-03T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&amp;#34;Dynamic LLM libraries [metal]&amp;#34;
-time=2024-08-03T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&amp;#34;inference compute&amp;#34; id=0 library=metal compute=&amp;#34;&amp;#34; driver=0.0 name=&amp;#34;&amp;#34; total=&amp;#34;72.0 GiB&amp;#34; available=&amp;#34;72.0 GiB&amp;#34;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。&lt;/p&gt;
-&lt;br&gt;
-&lt;br&gt;
-&lt;h2 id=&#34;三实验&#34;&gt;三、实验&lt;/h2&gt;
-&lt;h3 id=&#34;31-代码结构&#34;&gt;3.1 代码结构&lt;/h3&gt;
-&lt;p&gt;点击下载本文 &lt;a href=&#34;project.zip&#34;&gt;实验代码&lt;/a&gt;&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;project
-   |
-  - Extract_Metadata_With_Large_Language_Models.ipynb
-  - prompts
-       |--- scientific_papers_prompt.txt
-  - data
-      |--- 1706.03762v7.pdf
-      |--- 2301.09056v1.pdf
-  - extracted_metadata/
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;project文件夹&lt;/strong&gt;&lt;/em&gt; 是根文件夹，包含 &lt;em&gt;&lt;strong&gt;ipynb代码文件&lt;/strong&gt;&lt;/em&gt;、 &lt;em&gt;&lt;strong&gt;prompts文件夹&lt;/strong&gt;&lt;/em&gt;、&lt;em&gt;&lt;strong&gt;data文件夹&lt;/strong&gt;&lt;/em&gt;、&lt;em&gt;&lt;strong&gt;extracted_metadata文件夹&lt;/strong&gt;&lt;/em&gt;&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;prompts文件夹&lt;/strong&gt;&lt;/em&gt; 有txt文件格式的提示信息&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;data文件夹&lt;/strong&gt;&lt;/em&gt; 存储着实验论文pdf数据&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;extracted_metadata文件夹&lt;/strong&gt;&lt;/em&gt; 目前为空，将存储从论文pdf中提取的元信息，以 json 文件格式存储&lt;/li&gt;
-&lt;/ul&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;32-提示工程&#34;&gt;3.2 提示工程&lt;/h3&gt;
-&lt;p&gt;我们需要从论文pdf中提取&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;论文标题&lt;/li&gt;
-&lt;li&gt;出版年份&lt;/li&gt;
-&lt;li&gt;作者&lt;/li&gt;
-&lt;li&gt;联系作者&lt;/li&gt;
-&lt;li&gt;抽象的&lt;/li&gt;
-&lt;li&gt;摘要&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;这是我设计的提示， 该提示存储在 &lt;em&gt;&lt;strong&gt;prompts/scientific_papers_prompt.txt&lt;/strong&gt;&lt;/em&gt; 中。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;科学研究论文&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;---&lt;/span&gt; 
-&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;document&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; 
-&lt;span class=&#34;o&#34;&gt;---&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;您是分析科学研究论文的专家&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;请仔细阅读上面提供的研究论文&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;并提取以下关键信息&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;从研究论文中提取以下六&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;个属性&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;论文标题&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;研究论文的全名&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;出版年份&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;论文发表的年份&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;作者&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;论文所有作者的全名&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;作者联系方式&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;字典列表&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;其中每个字典包含每个作者的以下键&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;
-  &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;姓名&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;作者的全名&lt;/span&gt;
-  &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;机构&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;作者的机构隶属关系&lt;/span&gt;
-  &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;电子邮件&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;作者的电子邮件地址&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;（&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;如果提供&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;）&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;摘要&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;论文摘要的全文&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;摘要总结&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;用&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;句话简洁地总结摘要&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;突出重点&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;指南&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;提取的信息应属实&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;并准确无误&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;除摘要外&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;应极其简洁&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;摘要应完整复制&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;提取的实体应该是独立的&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;并且不需要论文的其余部分就能轻松理解&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;如果论文中缺少任何属性&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;请将该字段留空&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;而不是猜测&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;对于摘要总结&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;重点介绍研究的主要目标&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;、&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;方法和主要发现&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt;
-&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;对于作者联系方式&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;请为每个作者创建一个条目&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;即使缺少一些信息&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;如果没有提供作者的电子邮件或机构&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;请在字典中将该字段留空&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;以&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;JSON&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;格式回答&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;JSON&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;应包含&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;个键&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;：&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;PaperTitle&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;PublicationYear&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Authors&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;AuthorContact&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Abstract&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;SummaryAbstract&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;AuthorContact&amp;#34;&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;字段应该是字典列表格式&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;32-提取信息&#34;&gt;3.2 提取信息&lt;/h3&gt;
-&lt;p&gt;读取 &lt;em&gt;&lt;strong&gt;data/1706.03762v7.pdf&lt;/strong&gt;&lt;/em&gt;， 提取该论文首页中感兴趣的6个信息，如&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/6-paper.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
-
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;  
-&lt;span class=&#34;c1&#34;&gt;#cntext版本为2.1.2，非开源， #需联系大邓372335839获取&lt;/span&gt;
-
-&lt;span class=&#34;c1&#34;&gt;#我们感兴趣的信息在论文的第一页，所以这里粗糙的选择前4000个字符。&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;paper_content&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_pdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/1706.03762v7.pdf&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[:&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;prompt_content&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;prompts/scientific_papers_prompt.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3.1:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
-                       &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
-                           &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;system&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt_content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
-                           &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;paper_content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-                       &lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;eval&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;```&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;```&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 3.5 ms, sys: 2.13 ms, total: 5.63 ms
-Wall time: 11.8 s
-
-
-{&amp;#39;PaperTitle&amp;#39;: &amp;#39;Attention Is All You Need&amp;#39;,
- &amp;#39;PublicationYear&amp;#39;: 2017,
- &amp;#39;Authors&amp;#39;: [&amp;#39;Ashish Vaswani&amp;#39;,
-  &amp;#39;Noam Shazeer&amp;#39;,
-  &amp;#39;Niki Parmar&amp;#39;,
-  &amp;#39;Jakob Uszkoreit&amp;#39;,
-  &amp;#39;Llion Jones&amp;#39;,
-  &amp;#39;Aidan N. Gomez&amp;#39;,
-  &amp;#39;Łukasz Kaiser&amp;#39;,
-  &amp;#39;Illia Polosukhin&amp;#39;],
- &amp;#39;AuthorContact&amp;#39;: [{&amp;#39;Name&amp;#39;: &amp;#39;Ashish Vaswani&amp;#39;,
-   &amp;#39;Institution&amp;#39;: &amp;#39;Google Brain&amp;#39;,
-   &amp;#39;Email&amp;#39;: &amp;#39;avaswani@google.com&amp;#39;},
-  {&amp;#39;Name&amp;#39;: &amp;#39;Noam Shazeer&amp;#39;,
-   &amp;#39;Institution&amp;#39;: &amp;#39;Google Brain&amp;#39;,
-   &amp;#39;Email&amp;#39;: &amp;#39;noam@google.com&amp;#39;},
-  {&amp;#39;Name&amp;#39;: &amp;#39;Niki Parmar&amp;#39;,
-   &amp;#39;Institution&amp;#39;: &amp;#39;Google Research&amp;#39;,
-   &amp;#39;Email&amp;#39;: &amp;#39;nikip@google.com&amp;#39;},
-  {&amp;#39;Name&amp;#39;: &amp;#39;Jakob Uszkoreit&amp;#39;,
-   &amp;#39;Institution&amp;#39;: &amp;#39;Google Research&amp;#39;,
-   &amp;#39;Email&amp;#39;: &amp;#39;usz@google.com&amp;#39;},
-  {&amp;#39;Name&amp;#39;: &amp;#39;Llion Jones&amp;#39;,
-   &amp;#39;Institution&amp;#39;: &amp;#39;Google Research&amp;#39;,
-   &amp;#39;Email&amp;#39;: &amp;#39;llion@google.com&amp;#39;},
-  {&amp;#39;Name&amp;#39;: &amp;#39;Aidan N. Gomez&amp;#39;,
-   &amp;#39;Institution&amp;#39;: &amp;#39;University of Toronto&amp;#39;,
-   &amp;#39;Email&amp;#39;: &amp;#39;aidan@cs.toronto.edu&amp;#39;},
-  {&amp;#39;Name&amp;#39;: &amp;#39;Łukasz Kaiser&amp;#39;,
-   &amp;#39;Institution&amp;#39;: &amp;#39;Google Brain&amp;#39;,
-   &amp;#39;Email&amp;#39;: &amp;#39;lukaszkaiser@google.com&amp;#39;},
-  {&amp;#39;Name&amp;#39;: &amp;#39;Illia Polosukhin&amp;#39;,
-   &amp;#39;Institution&amp;#39;: &amp;#39;&amp;#39;,
-   &amp;#39;Email&amp;#39;: &amp;#39;illia.polosukhin@gmail.com&amp;#39;}],
- &amp;#39;Abstract&amp;#39;: &amp;#39;The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.&amp;#39;,
- &amp;#39;SummaryAbstract&amp;#39;: &amp;#39;本文提出了一种新的Transformer模型，基于注意力机制，抛弃了递归和卷积等复杂方法。该模型在机器翻译任务上表现出优异的效果，并且可以更好地并行化和训练。&amp;#39;}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;从运行结果看， 摘要&lt;em&gt;&lt;strong&gt;Abstract&lt;/strong&gt;&lt;/em&gt; 的提取不够准确，有一定的遗漏。&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;33-封装成函数extract_info&#34;&gt;3.3 封装成函数extract_info&lt;/h3&gt;
-&lt;p&gt;实验成功，我们将其封装为函数&lt;em&gt;&lt;strong&gt;extract_info&lt;/strong&gt;&lt;/em&gt; ，因为LLM返回的内容的格式存在不确定性， 所以为了保证函数尽可能的成功的运行出结果，这里我设置了异常处理机制。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;  
-&lt;span class=&#34;c1&#34;&gt;#cntext版本为2.1.2，非开源， #需联系大邓372335839获取&lt;/span&gt;
-
-
-&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;paper_content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt_content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;range&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-        &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
-                &lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3.1:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
-                &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
-                    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;system&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt_content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
-                    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;paper_content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-                &lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-            &lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-
-            &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;eval&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;```&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;```&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
-            &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
-        
-        &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt; &lt;span class=&#34;ne&#34;&gt;Exception&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-            &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-                &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;An error occurred: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;. Retrying (&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;)...&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-            &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-                &lt;span class=&#34;k&#34;&gt;raise&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;
-
-
-&lt;span class=&#34;c1&#34;&gt;#我们感兴趣的信息在论文的第一页，所以这里粗糙的选择前4000个字符。&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;paper_content&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_pdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/1706.03762v7.pdf&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[:&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;prompt_content&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;prompts/scientific_papers_prompt.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;paper_content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt_content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;运行结果与之前无异，为节约板面空间，这里就不展示result了。&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;34-批量提取&#34;&gt;3.4 批量提取&lt;/h3&gt;
-&lt;p&gt;假设data文件夹内有成百上千的发票(实际上只有一张发票)， 对data文件夹进行批量信息提取，结果存储为csv。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
-
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;os&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;#cntext版本为2.1.3，非开源，需联系大邓372335839获取&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;jsonlines&lt;/span&gt;
-
-&lt;span class=&#34;c1&#34;&gt;#当前代码所在的代码文件与data文件夹处于同一个文件夹内&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;#获取data内所有pdf的路径&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;pdf_files&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;file&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;file&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;listdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;.pdf&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;prompt_content&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;prompts/scientific_papers_prompt.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-
-&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pdf_file&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pdf_files&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;paper_content&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_pdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;pdf_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[:&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;dict_data&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;paper_content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt_content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;jsonf&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pdf_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;replace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;extracted_metadata&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;replace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;pdf&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;jsonl&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;jsonlines&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;jsonf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;w&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;jf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-        &lt;span class=&#34;n&#34;&gt;jf&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dict_data&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 919 ms, sys: 14.8 ms, total: 933 ms
-Wall time: 24.6 s
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/05-2result-json.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;四讨论&#34;&gt;四、讨论&lt;/h2&gt;
-&lt;p&gt;本文简要概述了 LLM 在从复杂文档中提取元数据方面的应用，提取的 json 数据可以存储在非关系数据库中以供进一步分析。&lt;/p&gt;
-&lt;p&gt;LLM 和 Regex 在内容提取方面各有优缺点，应根据用例明智地应用每种方法。希望本简短教程能帮助您获得新技能。&lt;/p&gt;
-&lt;br&gt;
-&lt;br&gt;
-&lt;h2 id=&#34;精选内容&#34;&gt;精选内容&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/datasets_available_for_management_science/&#34;&gt;LIST | 可供社科(经管)领域使用的数据集汇总&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/the_text_analysis_list_about_ms/&#34;&gt;LIST | 社科(经管)数据挖掘文献资料汇总&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-06-16-scrapegraph-ai/&#34;&gt;网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/&#34;&gt;推荐 | 文本分析库cntext2.x使用手册&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
+      <description>非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了从非结构提取结构化信息的能力，谁就拥有科研上的数据优势。正则表达式是一种强大的文档解析工具，但它们常常难以应对现实世界文档的复杂性和多变性。而随着chatGPT这类LLM的出现，为我们提供了更强大、更灵活的方法来处理多种类型的文档结构和内容类型。For many years, regular expressions have been my go-to tool for parsing documents, and I am sure it has been the same for many other technical folks and industries.Even though regular expressions are powerful and successful in some case, they often struggle with the complexity and variability of real-world documents.Large language models on the other end provide a more powerful, and flexible approach to handle many types of document structures and content types.</description>
       <content:encoded><![CDATA[<p>非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了<em><strong>从非结构提取结构化信息的能力</strong></em>，谁就拥有科研上的数据优势。正则表达式是一种强大的文档解析工具，但它们常常难以应对现实世界文档的复杂性和多变性。而随着chatGPT这类LLM的出现，为我们提供了更强大、更灵活的方法来处理多种类型的文档结构和内容类型。</p>
 <ul>
 <li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">代码 | 使用本地大模型从文本中提取结构化信息</a></li>
@@ -606,452 +305,6 @@ Wall time: 24.6 s
 <h2 id="四讨论">四、讨论</h2>
 <p>本文简要概述了 LLM 在从复杂文档中提取元数据方面的应用，提取的 json 数据可以存储在非关系数据库中以供进一步分析。</p>
 <p>LLM 和 Regex 在内容提取方面各有优缺点，应根据用例明智地应用每种方法。希望本简短教程能帮助您获得新技能。</p>
-<br>
-<br>
-<h2 id="精选内容">精选内容</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
-<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
-<li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
-<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
-]]></content:encoded>
-    </item>
-    
-    <item>
-      <title>实验 | 使用本地大模型从文本中提取结构化信息</title>
-      <link>https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/</link>
-      <pubDate>Fri, 14 Jun 2024 00:00:00 +0000</pubDate>
-      
-      <guid>/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/</guid>
-      <description>&lt;p&gt;非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了&lt;em&gt;&lt;strong&gt;从非结构提取结构化信息的能力&lt;/strong&gt;&lt;/em&gt;，谁就拥有科研上的数据优势。&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;一需求&#34;&gt;一、需求&lt;/h2&gt;
-&lt;p&gt;现在有很多个电子发票PDF文件， 使用自动化工具帮我们批量自动从发票PDF提取出格式化信息。如从发票&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-raw-pdf.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;p&gt;提取出DICT_DATA&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;DICT_DATA = {
-    &amp;#34;开票日期&amp;#34;: &amp;#34;2023年01月06日&amp;#34;,
-    &amp;#34;应税货物(或服务)名称&amp;#34;: &amp;#34;*信息技术服务*技术服务费&amp;#34;,
-    &amp;#34;价税合计(大写)&amp;#34;: &amp;#34;&amp;#34;,
-    &amp;#34;税率&amp;#34;: &amp;#34;6%&amp;#34;,
-    &amp;#34;备注&amp;#34;: &amp;#34;230106163474406331&amp;#34;
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;二准备工作&#34;&gt;二、准备工作&lt;/h2&gt;
-&lt;h3 id=&#34;21-安装ollama&#34;&gt;2.1 安装ollama&lt;/h3&gt;
-&lt;p&gt;点击前往网站 &lt;a href=&#34;https://ollama.com/&#34;&gt;https://ollama.com/&lt;/a&gt; ，下载ollama软件，支持win、Mac、linux&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-ollama-gui.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;22-下载llm&#34;&gt;2.2 下载LLM&lt;/h3&gt;
-&lt;p&gt;ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-ollama-model.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;p&gt;以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-ollama-llama3.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama pull llama3
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;等待 &lt;strong&gt;llama3:8b&lt;/strong&gt; 下载完成。&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;23-安装python包&#34;&gt;2.3 安装python包&lt;/h3&gt;
-&lt;p&gt;在python中调用ollama服务，需要ollama包。&lt;/p&gt;
-&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install ollama
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;24-启动ollama服务&#34;&gt;2.4 启动ollama服务&lt;/h3&gt;
-&lt;p&gt;在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama serve
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2024/06/14 14:52:24 routes.go:1011: INFO server config env=&amp;#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&amp;#34;
-time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&amp;#34;total blobs: 18&amp;#34;
-time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&amp;#34;total unused blobs removed: 0&amp;#34;
-time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&amp;#34;Listening on 127.0.0.1:11434 (version 0.1.44)&amp;#34;
-time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&amp;#34;extracting embedded files&amp;#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
-time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&amp;#34;Dynamic LLM libraries [metal]&amp;#34;
-time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&amp;#34;inference compute&amp;#34; id=0 library=metal compute=&amp;#34;&amp;#34; driver=0.0 name=&amp;#34;&amp;#34; total=&amp;#34;72.0 GiB&amp;#34; available=&amp;#34;72.0 GiB&amp;#34;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;三实验&#34;&gt;三、实验&lt;/h2&gt;
-&lt;h3 id=&#34;31-代码结构&#34;&gt;3.1 代码结构&lt;/h3&gt;
-&lt;p&gt;点击下载 &lt;a href=&#34;project.zip&#34;&gt;本文代码&lt;/a&gt;&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;project
-   |
-  - 代码.ipynb   #代码
-  - prompt.txt  #提示模板
-  - data
-      |--- 1.pdf #实验的发票
-  - result.csv   #结果
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;32-读取pdf&#34;&gt;3.2 读取pdf&lt;/h3&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-raw-pdf.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;#cntext版本为2.1.3，非开源， #需联系大邓372335839获取&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_pdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/1.pdf&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;__version__&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2.1.3
-
-&amp;#39; 北京增值税电子普通发票发票代码： \n发票号码： 69453658\n开票日期： 2023年01月06日\n校 验 码： \n购\n买\n方名        称： 哈尔滨所以然信息技术有限公司\n密\n码\n区030898/5&amp;lt;32&amp;gt;*/0*440/63+79*08\n纳税人识别号： 91230109MABT7KBC4M /&amp;lt;54&amp;lt;1*6+49&amp;lt;-*+*&amp;gt;7&amp;lt;-8*04&amp;lt;+01\n地 址、电 话： 68+160026-45904*2&amp;lt;+3+15503&amp;gt;2\n开户行及账号： 98*2/*-*480145+-19*0917-1*61\n货物或应税劳务、服务名称 规格型号 单 位 数 量 单 价 金 额 税率 税 额\n*信息技术服务*技术服务费 1248.113208 248.11 6% 14.89\n合      计 ￥248.11 ￥14.89\n价税合计（大写）\n  贰佰陆拾叁元整             （小写）￥263.00\n销\n售\n方名        称： \n备\n注230106163474406331\n纳税人识别号： 91110108MA01WFY0X6\n地 址、电 话： \n开户行及账号： \n  收款人： 复核： 开票人： 销售方：（章）&amp;#39;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;34-提取信息&#34;&gt;3.4 提取信息&lt;/h3&gt;
-&lt;p&gt;使用ollama服务中的大模型 &lt;em&gt;&lt;strong&gt;llama3:8b&lt;/strong&gt;&lt;/em&gt; , 需要大模型提示信息及数据。这是我实验里设计的提示信息prompt&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;prompt = open(&amp;#39;prompt.txt&amp;#39;, encoding=&amp;#39;utf-8&amp;#39;).read()
-print(prompt)
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;发票文本内容
---- 
-{TEXT} 
----
-
-以 JSON 格式回答。 JSON 应包含如下信息， 依次为&amp;#34;开票日期&amp;#34;, &amp;#34;应税货物(或服务)名称&amp;#34;, &amp;#34;价税合计(大写)&amp;#34;, &amp;#34;税率&amp;#34;, &amp;#34;备注&amp;#34;; 
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
-
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;#cntext版本为2.1.3，非开源， 需联系大邓372335839获取&lt;/span&gt;
-
-&lt;span class=&#34;c1&#34;&gt;#读取发票pdf&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;content&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_pdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/1.pdf&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;#读取prompt&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;prompt.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
-      &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;system&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
-      &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
-    &lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;eval&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;```&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;```&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 20.5 ms, sys: 2.34 ms, total: 22.9 ms
-Wall time: 3.58 s
-
-{&amp;#39;开票日期&amp;#39;: &amp;#39;2023年01月06日&amp;#39;,
- &amp;#39;应税货物(或服务)名称&amp;#39;: &amp;#39;*信息技术服务*技术服务费&amp;#39;,
- &amp;#39;价税合计(大写)&amp;#39;: &amp;#39;贰佰陆拾叁元整&amp;#39;,
- &amp;#39;税率&amp;#39;: &amp;#39;6%&amp;#39;,
- &amp;#39;备注&amp;#39;: &amp;#39;230106163474406331&amp;#39;}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;33-封装成函数extract_info&#34;&gt;3.3 封装成函数extract_info&lt;/h3&gt;
-&lt;p&gt;实验成功，我们将其封装为函数&lt;em&gt;&lt;strong&gt;extract_info&lt;/strong&gt;&lt;/em&gt;， 为增强代码的鲁棒性， 函数内设置了异常处理机制，最多可重试3次。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;re&lt;/span&gt;
-
-
-&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;range&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-        &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
-                &lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
-                &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
-                    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;system&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
-                    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-                &lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-            &lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-
-            &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;eval&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;```&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;```&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
-            &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
-        
-        &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt; &lt;span class=&#34;ne&#34;&gt;Exception&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-            &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-                &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;An error occurred: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;. Retrying (&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;)...&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-            &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-                &lt;span class=&#34;k&#34;&gt;raise&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;
-  
-&lt;span class=&#34;c1&#34;&gt;#读取prompt&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;prompt.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;result与之前无异， 为了节省版面，这里就不显示result。&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;34-批量提取&#34;&gt;3.4 批量提取&lt;/h3&gt;
-&lt;p&gt;假设data文件夹内有成百上千的发票(实际上只有一张发票)， 对data文件夹进行批量信息提取，结果存储为csv。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
-
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;os&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;#cntext版本为2.1.3，非开源， 需联系大邓372335839获取&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
-
-
-&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;range&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-        &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
-                &lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
-                &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
-                    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;system&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
-                    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-                &lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-            &lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-
-            &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;eval&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;```&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;```&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
-            &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
-        
-        &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt; &lt;span class=&#34;ne&#34;&gt;Exception&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-            &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-                &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;An error occurred: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;. Retrying (&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;)...&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-            &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-                &lt;span class=&#34;k&#34;&gt;raise&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;
-                
-  
-&lt;span class=&#34;c1&#34;&gt;#当前代码所在的代码文件与data文件夹处于同一个文件夹内&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;#获取data内所有pdf的路径&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;pdf_files&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;file&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;file&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;listdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;.pdf&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;#读取prompt&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;prompt.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;dict_datas&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
-&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pdf_file&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pdf_files&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_pdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;pdf_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;dict_data&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;dict_datas&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dict_data&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;DataFrame&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dict_datas&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;to_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;result.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;index&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;False&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 32 ms, sys: 2.17 ms, total: 15.2 ms
-Wall time: 3.8 s
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/05-df.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;四讨论&#34;&gt;四、讨论&lt;/h2&gt;
-&lt;p&gt;本文只使用了一张发票进行实验， 实际上准确率没有这么高， 识别错误字段集中在销售方纳税识别号(案例没有展示销售方纳税识别号的识别)。原因主要是ct.read_pdf读入pdf时，文本比较杂乱。对大模型的语义理解有一定的挑战。目前大模型已经支持文本、图片、音频、视频、网址， 所以各位看官，不用等太久，就可克服此问题。&lt;/p&gt;
-&lt;p&gt;大模型会对每个输入，给出正确概率最大的回答，因此大模型提取数据时存在一定的错误识别风险。为降低该风险，尽量选择特别特殊、显眼，例如三张发票的&lt;strong&gt;价税合计(大写)&lt;/strong&gt;,  因为信息是特殊的中文大写数字， 在所有文本中是最醒目最特别的文本信息，这样大模型处理这类信息时会给这类信息尽可能高的权重，增大回答的准确率。&lt;/p&gt;
-&lt;br&gt;
-&lt;br&gt;
-&lt;h2 id=&#34;精选内容&#34;&gt;精选内容&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/datasets_available_for_management_science/&#34;&gt;LIST | 可供社科(经管)领域使用的数据集汇总&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/the_text_analysis_list_about_ms/&#34;&gt;LIST | 社科(经管)数据挖掘文献资料汇总&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-06-16-scrapegraph-ai/&#34;&gt;网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/&#34;&gt;推荐 | 文本分析库cntext2.x使用手册&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-      <content:encoded><![CDATA[<p>非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了<em><strong>从非结构提取结构化信息的能力</strong></em>，谁就拥有科研上的数据优势。</p>
-<p><br><br></p>
-<h2 id="一需求">一、需求</h2>
-<p>现在有很多个电子发票PDF文件， 使用自动化工具帮我们批量自动从发票PDF提取出格式化信息。如从发票</p>
-<p><img loading="lazy" src="img/01-raw-pdf.png" alt=""  />
-</p>
-<p>提取出DICT_DATA</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">DICT_DATA = {
-    &#34;开票日期&#34;: &#34;2023年01月06日&#34;,
-    &#34;应税货物(或服务)名称&#34;: &#34;*信息技术服务*技术服务费&#34;,
-    &#34;价税合计(大写)&#34;: &#34;&#34;,
-    &#34;税率&#34;: &#34;6%&#34;,
-    &#34;备注&#34;: &#34;230106163474406331&#34;
-}
-</code></pre></div><p><br><br></p>
-<h2 id="二准备工作">二、准备工作</h2>
-<h3 id="21-安装ollama">2.1 安装ollama</h3>
-<p>点击前往网站 <a href="https://ollama.com/">https://ollama.com/</a> ，下载ollama软件，支持win、Mac、linux</p>
-<p><img loading="lazy" src="img/02-ollama-gui.png" alt=""  />
-</p>
-<br>
-<h3 id="22-下载llm">2.2 下载LLM</h3>
-<p>ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，</p>
-<p><img loading="lazy" src="img/03-ollama-model.png" alt=""  />
-</p>
-<br>
-<p>以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。</p>
-<p><img loading="lazy" src="img/04-ollama-llama3.png" alt=""  />
-</p>
-<br>
-<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama pull llama3
-</code></pre></div><p>等待 <strong>llama3:8b</strong> 下载完成。</p>
-<br>
-<h3 id="23-安装python包">2.3 安装python包</h3>
-<p>在python中调用ollama服务，需要ollama包。</p>
-<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install ollama
-</code></pre></div><br>
-<h3 id="24-启动ollama服务">2.4 启动ollama服务</h3>
-<p>在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama serve
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2024/06/14 14:52:24 routes.go:1011: INFO server config env=&#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&#34;
-time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&#34;total blobs: 18&#34;
-time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&#34;total unused blobs removed: 0&#34;
-time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&#34;Listening on 127.0.0.1:11434 (version 0.1.44)&#34;
-time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&#34;extracting embedded files&#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
-time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&#34;Dynamic LLM libraries [metal]&#34;
-time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&#34;inference compute&#34; id=0 library=metal compute=&#34;&#34; driver=0.0 name=&#34;&#34; total=&#34;72.0 GiB&#34; available=&#34;72.0 GiB&#34;
-</code></pre></div><p>cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。</p>
-<p><br><br></p>
-<h2 id="三实验">三、实验</h2>
-<h3 id="31-代码结构">3.1 代码结构</h3>
-<p>点击下载 <a href="project.zip">本文代码</a></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">project
-   |
-  - 代码.ipynb   #代码
-  - prompt.txt  #提示模板
-  - data
-      |--- 1.pdf #实验的发票
-  - result.csv   #结果
-</code></pre></div><br>
-<h3 id="32-读取pdf">3.2 读取pdf</h3>
-<p><img loading="lazy" src="img/01-raw-pdf.png" alt=""  />
-</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
-<span class="c1">#cntext版本为2.1.3，非开源， #需联系大邓372335839获取</span>
-
-<span class="n">text</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/1.pdf&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
-<span class="n">text</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2.1.3
-
-&#39; 北京增值税电子普通发票发票代码： \n发票号码： 69453658\n开票日期： 2023年01月06日\n校 验 码： \n购\n买\n方名        称： 哈尔滨所以然信息技术有限公司\n密\n码\n区030898/5&lt;32&gt;*/0*440/63+79*08\n纳税人识别号： 91230109MABT7KBC4M /&lt;54&lt;1*6+49&lt;-*+*&gt;7&lt;-8*04&lt;+01\n地 址、电 话： 68+160026-45904*2&lt;+3+15503&gt;2\n开户行及账号： 98*2/*-*480145+-19*0917-1*61\n货物或应税劳务、服务名称 规格型号 单 位 数 量 单 价 金 额 税率 税 额\n*信息技术服务*技术服务费 1248.113208 248.11 6% 14.89\n合      计 ￥248.11 ￥14.89\n价税合计（大写）\n  贰佰陆拾叁元整             （小写）￥263.00\n销\n售\n方名        称： \n备\n注230106163474406331\n纳税人识别号： 91110108MA01WFY0X6\n地 址、电 话： \n开户行及账号： \n  收款人： 复核： 开票人： 销售方：（章）&#39;
-</code></pre></div><br>
-<h3 id="34-提取信息">3.4 提取信息</h3>
-<p>使用ollama服务中的大模型 <em><strong>llama3:8b</strong></em> , 需要大模型提示信息及数据。这是我实验里设计的提示信息prompt</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">prompt = open(&#39;prompt.txt&#39;, encoding=&#39;utf-8&#39;).read()
-print(prompt)
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">发票文本内容
---- 
-{TEXT} 
----
-
-以 JSON 格式回答。 JSON 应包含如下信息， 依次为&#34;开票日期&#34;, &#34;应税货物(或服务)名称&#34;, &#34;价税合计(大写)&#34;, &#34;税率&#34;, &#34;备注&#34;; 
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
-
-<span class="kn">import</span> <span class="nn">ollama</span>
-<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
-<span class="c1">#cntext版本为2.1.3，非开源， 需联系大邓372335839获取</span>
-
-<span class="c1">#读取发票pdf</span>
-<span class="n">content</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/1.pdf&#39;</span><span class="p">)</span>
-<span class="c1">#读取prompt</span>
-<span class="n">prompt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-
-<span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
-      <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span><span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">},</span>
-      <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span><span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">content</span><span class="p">},</span>
-    <span class="p">])</span>
-
-<span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
-<span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-<span class="n">result</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 20.5 ms, sys: 2.34 ms, total: 22.9 ms
-Wall time: 3.58 s
-
-{&#39;开票日期&#39;: &#39;2023年01月06日&#39;,
- &#39;应税货物(或服务)名称&#39;: &#39;*信息技术服务*技术服务费&#39;,
- &#39;价税合计(大写)&#39;: &#39;贰佰陆拾叁元整&#39;,
- &#39;税率&#39;: &#39;6%&#39;,
- &#39;备注&#39;: &#39;230106163474406331&#39;}
-</code></pre></div><br>
-<h3 id="33-封装成函数extract_info">3.3 封装成函数extract_info</h3>
-<p>实验成功，我们将其封装为函数<em><strong>extract_info</strong></em>， 为增强代码的鲁棒性， 函数内设置了异常处理机制，最多可重试3次。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">ollama</span>
-<span class="kn">import</span> <span class="nn">re</span>
-
-
-<span class="k">def</span> <span class="nf">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span>
-                <span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span>
-                <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
-                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">},</span>
-                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">text</span><span class="p">}</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
-
-            <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="k">return</span> <span class="n">result</span>
-        
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_retries</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;An error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Retrying (</span><span class="si">{</span><span class="n">attempt</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">)...&#34;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">e</span>
-  
-<span class="c1">#读取prompt</span>
-<span class="n">prompt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-<span class="n">result</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">)</span>
-<span class="n">result</span>
-</code></pre></div><p>result与之前无异， 为了节省版面，这里就不显示result。</p>
-<br>
-<h3 id="34-批量提取">3.4 批量提取</h3>
-<p>假设data文件夹内有成百上千的发票(实际上只有一张发票)， 对data文件夹进行批量信息提取，结果存储为csv。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
-
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">ollama</span>
-<span class="c1">#cntext版本为2.1.3，非开源， 需联系大邓372335839获取</span>
-<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-
-<span class="k">def</span> <span class="nf">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span>
-                <span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span>
-                <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
-                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">},</span>
-                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">text</span><span class="p">}</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
-
-            <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="k">return</span> <span class="n">result</span>
-        
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_retries</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;An error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Retrying (</span><span class="si">{</span><span class="n">attempt</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">)...&#34;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">e</span>
-                
-  
-<span class="c1">#当前代码所在的代码文件与data文件夹处于同一个文件夹内</span>
-<span class="c1">#获取data内所有pdf的路径</span>
-<span class="n">pdf_files</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;data/</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.pdf&#39;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">]</span>
-<span class="c1">#读取prompt</span>
-<span class="n">prompt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-
-<span class="n">dict_datas</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">pdf_file</span> <span class="ow">in</span> <span class="n">pdf_files</span><span class="p">:</span>
-    <span class="n">text</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">)</span>
-    <span class="n">dict_data</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">)</span>
-    <span class="n">dict_datas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dict_data</span><span class="p">)</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dict_datas</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;result.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">df</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 32 ms, sys: 2.17 ms, total: 15.2 ms
-Wall time: 3.8 s
-</code></pre></div><p><img loading="lazy" src="img/05-df.png" alt=""  />
-</p>
-<p><br><br></p>
-<h2 id="四讨论">四、讨论</h2>
-<p>本文只使用了一张发票进行实验， 实际上准确率没有这么高， 识别错误字段集中在销售方纳税识别号(案例没有展示销售方纳税识别号的识别)。原因主要是ct.read_pdf读入pdf时，文本比较杂乱。对大模型的语义理解有一定的挑战。目前大模型已经支持文本、图片、音频、视频、网址， 所以各位看官，不用等太久，就可克服此问题。</p>
-<p>大模型会对每个输入，给出正确概率最大的回答，因此大模型提取数据时存在一定的错误识别风险。为降低该风险，尽量选择特别特殊、显眼，例如三张发票的<strong>价税合计(大写)</strong>,  因为信息是特殊的中文大写数字， 在所有文本中是最醒目最特别的文本信息，这样大模型处理这类信息时会给这类信息尽可能高的权重，增大回答的准确率。</p>
 <br>
 <br>
 <h2 id="精选内容">精选内容</h2>
@@ -1957,6 +1210,452 @@ Processing chunks: 100%|██████████████████�
 <ul>
 <li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
 <li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>实验 | 使用本地大模型从文本中提取结构化信息</title>
+      <link>https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/</link>
+      <pubDate>Fri, 14 Jun 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/</guid>
+      <description>&lt;p&gt;非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了&lt;em&gt;&lt;strong&gt;从非结构提取结构化信息的能力&lt;/strong&gt;&lt;/em&gt;，谁就拥有科研上的数据优势。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;一需求&#34;&gt;一、需求&lt;/h2&gt;
+&lt;p&gt;现在有很多个电子发票PDF文件， 使用自动化工具帮我们批量自动从发票PDF提取出格式化信息。如从发票&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-raw-pdf.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;提取出DICT_DATA&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;DICT_DATA = {
+    &amp;#34;开票日期&amp;#34;: &amp;#34;2023年01月06日&amp;#34;,
+    &amp;#34;应税货物(或服务)名称&amp;#34;: &amp;#34;*信息技术服务*技术服务费&amp;#34;,
+    &amp;#34;价税合计(大写)&amp;#34;: &amp;#34;&amp;#34;,
+    &amp;#34;税率&amp;#34;: &amp;#34;6%&amp;#34;,
+    &amp;#34;备注&amp;#34;: &amp;#34;230106163474406331&amp;#34;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二准备工作&#34;&gt;二、准备工作&lt;/h2&gt;
+&lt;h3 id=&#34;21-安装ollama&#34;&gt;2.1 安装ollama&lt;/h3&gt;
+&lt;p&gt;点击前往网站 &lt;a href=&#34;https://ollama.com/&#34;&gt;https://ollama.com/&lt;/a&gt; ，下载ollama软件，支持win、Mac、linux&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-ollama-gui.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;22-下载llm&#34;&gt;2.2 下载LLM&lt;/h3&gt;
+&lt;p&gt;ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-ollama-model.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-ollama-llama3.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama pull llama3
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;等待 &lt;strong&gt;llama3:8b&lt;/strong&gt; 下载完成。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;23-安装python包&#34;&gt;2.3 安装python包&lt;/h3&gt;
+&lt;p&gt;在python中调用ollama服务，需要ollama包。&lt;/p&gt;
+&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install ollama
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;24-启动ollama服务&#34;&gt;2.4 启动ollama服务&lt;/h3&gt;
+&lt;p&gt;在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama serve
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2024/06/14 14:52:24 routes.go:1011: INFO server config env=&amp;#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&amp;#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&amp;#34;total blobs: 18&amp;#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&amp;#34;total unused blobs removed: 0&amp;#34;
+time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&amp;#34;Listening on 127.0.0.1:11434 (version 0.1.44)&amp;#34;
+time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&amp;#34;extracting embedded files&amp;#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
+time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&amp;#34;Dynamic LLM libraries [metal]&amp;#34;
+time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&amp;#34;inference compute&amp;#34; id=0 library=metal compute=&amp;#34;&amp;#34; driver=0.0 name=&amp;#34;&amp;#34; total=&amp;#34;72.0 GiB&amp;#34; available=&amp;#34;72.0 GiB&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三实验&#34;&gt;三、实验&lt;/h2&gt;
+&lt;h3 id=&#34;31-代码结构&#34;&gt;3.1 代码结构&lt;/h3&gt;
+&lt;p&gt;点击下载 &lt;a href=&#34;project.zip&#34;&gt;本文代码&lt;/a&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;project
+   |
+  - 代码.ipynb   #代码
+  - prompt.txt  #提示模板
+  - data
+      |--- 1.pdf #实验的发票
+  - result.csv   #结果
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-读取pdf&#34;&gt;3.2 读取pdf&lt;/h3&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-raw-pdf.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#cntext版本为2.1.3，非开源， #需联系大邓372335839获取&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_pdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/1.pdf&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;__version__&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2.1.3
+
+&amp;#39; 北京增值税电子普通发票发票代码： \n发票号码： 69453658\n开票日期： 2023年01月06日\n校 验 码： \n购\n买\n方名        称： 哈尔滨所以然信息技术有限公司\n密\n码\n区030898/5&amp;lt;32&amp;gt;*/0*440/63+79*08\n纳税人识别号： 91230109MABT7KBC4M /&amp;lt;54&amp;lt;1*6+49&amp;lt;-*+*&amp;gt;7&amp;lt;-8*04&amp;lt;+01\n地 址、电 话： 68+160026-45904*2&amp;lt;+3+15503&amp;gt;2\n开户行及账号： 98*2/*-*480145+-19*0917-1*61\n货物或应税劳务、服务名称 规格型号 单 位 数 量 单 价 金 额 税率 税 额\n*信息技术服务*技术服务费 1248.113208 248.11 6% 14.89\n合      计 ￥248.11 ￥14.89\n价税合计（大写）\n  贰佰陆拾叁元整             （小写）￥263.00\n销\n售\n方名        称： \n备\n注230106163474406331\n纳税人识别号： 91110108MA01WFY0X6\n地 址、电 话： \n开户行及账号： \n  收款人： 复核： 开票人： 销售方：（章）&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;34-提取信息&#34;&gt;3.4 提取信息&lt;/h3&gt;
+&lt;p&gt;使用ollama服务中的大模型 &lt;em&gt;&lt;strong&gt;llama3:8b&lt;/strong&gt;&lt;/em&gt; , 需要大模型提示信息及数据。这是我实验里设计的提示信息prompt&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;prompt = open(&amp;#39;prompt.txt&amp;#39;, encoding=&amp;#39;utf-8&amp;#39;).read()
+print(prompt)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;发票文本内容
+--- 
+{TEXT} 
+---
+
+以 JSON 格式回答。 JSON 应包含如下信息， 依次为&amp;#34;开票日期&amp;#34;, &amp;#34;应税货物(或服务)名称&amp;#34;, &amp;#34;价税合计(大写)&amp;#34;, &amp;#34;税率&amp;#34;, &amp;#34;备注&amp;#34;; 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#cntext版本为2.1.3，非开源， 需联系大邓372335839获取&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#读取发票pdf&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;content&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_pdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/1.pdf&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#读取prompt&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;prompt.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;system&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;eval&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;```&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;```&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 20.5 ms, sys: 2.34 ms, total: 22.9 ms
+Wall time: 3.58 s
+
+{&amp;#39;开票日期&amp;#39;: &amp;#39;2023年01月06日&amp;#39;,
+ &amp;#39;应税货物(或服务)名称&amp;#39;: &amp;#39;*信息技术服务*技术服务费&amp;#39;,
+ &amp;#39;价税合计(大写)&amp;#39;: &amp;#39;贰佰陆拾叁元整&amp;#39;,
+ &amp;#39;税率&amp;#39;: &amp;#39;6%&amp;#39;,
+ &amp;#39;备注&amp;#39;: &amp;#39;230106163474406331&amp;#39;}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;33-封装成函数extract_info&#34;&gt;3.3 封装成函数extract_info&lt;/h3&gt;
+&lt;p&gt;实验成功，我们将其封装为函数&lt;em&gt;&lt;strong&gt;extract_info&lt;/strong&gt;&lt;/em&gt;， 为增强代码的鲁棒性， 函数内设置了异常处理机制，最多可重试3次。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;re&lt;/span&gt;
+
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;range&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+                &lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+                &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+                    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;system&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+                    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+                &lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+            &lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+            &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;eval&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;```&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;```&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+            &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
+        
+        &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt; &lt;span class=&#34;ne&#34;&gt;Exception&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+                &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;An error occurred: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;. Retrying (&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;)...&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+            &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+                &lt;span class=&#34;k&#34;&gt;raise&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;
+  
+&lt;span class=&#34;c1&#34;&gt;#读取prompt&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;prompt.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;result与之前无异， 为了节省版面，这里就不显示result。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;34-批量提取&#34;&gt;3.4 批量提取&lt;/h3&gt;
+&lt;p&gt;假设data文件夹内有成百上千的发票(实际上只有一张发票)， 对data文件夹进行批量信息提取，结果存储为csv。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;os&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#cntext版本为2.1.3，非开源， 需联系大邓372335839获取&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;range&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+                &lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+                &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+                    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;system&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+                    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+                &lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+            &lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+            &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;eval&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;```&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;```&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+            &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;
+        
+        &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt; &lt;span class=&#34;ne&#34;&gt;Exception&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+                &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;An error occurred: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;. Retrying (&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;attempt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;max_retries&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;)...&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+            &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+                &lt;span class=&#34;k&#34;&gt;raise&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;
+                
+  
+&lt;span class=&#34;c1&#34;&gt;#当前代码所在的代码文件与data文件夹处于同一个文件夹内&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#获取data内所有pdf的路径&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;pdf_files&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;file&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;file&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;listdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;.pdf&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#读取prompt&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;prompt.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;dict_datas&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pdf_file&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pdf_files&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_pdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;pdf_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;dict_data&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;extract_info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prompt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;dict_datas&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dict_data&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;DataFrame&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dict_datas&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;to_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;result.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;index&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;False&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 32 ms, sys: 2.17 ms, total: 15.2 ms
+Wall time: 3.8 s
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/05-df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四讨论&#34;&gt;四、讨论&lt;/h2&gt;
+&lt;p&gt;本文只使用了一张发票进行实验， 实际上准确率没有这么高， 识别错误字段集中在销售方纳税识别号(案例没有展示销售方纳税识别号的识别)。原因主要是ct.read_pdf读入pdf时，文本比较杂乱。对大模型的语义理解有一定的挑战。目前大模型已经支持文本、图片、音频、视频、网址， 所以各位看官，不用等太久，就可克服此问题。&lt;/p&gt;
+&lt;p&gt;大模型会对每个输入，给出正确概率最大的回答，因此大模型提取数据时存在一定的错误识别风险。为降低该风险，尽量选择特别特殊、显眼，例如三张发票的&lt;strong&gt;价税合计(大写)&lt;/strong&gt;,  因为信息是特殊的中文大写数字， 在所有文本中是最醒目最特别的文本信息，这样大模型处理这类信息时会给这类信息尽可能高的权重，增大回答的准确率。&lt;/p&gt;
+&lt;br&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;精选内容&#34;&gt;精选内容&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/datasets_available_for_management_science/&#34;&gt;LIST | 可供社科(经管)领域使用的数据集汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/the_text_analysis_list_about_ms/&#34;&gt;LIST | 社科(经管)数据挖掘文献资料汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-06-16-scrapegraph-ai/&#34;&gt;网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/&#34;&gt;推荐 | 文本分析库cntext2.x使用手册&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<p>非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了<em><strong>从非结构提取结构化信息的能力</strong></em>，谁就拥有科研上的数据优势。</p>
+<p><br><br></p>
+<h2 id="一需求">一、需求</h2>
+<p>现在有很多个电子发票PDF文件， 使用自动化工具帮我们批量自动从发票PDF提取出格式化信息。如从发票</p>
+<p><img loading="lazy" src="img/01-raw-pdf.png" alt=""  />
+</p>
+<p>提取出DICT_DATA</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">DICT_DATA = {
+    &#34;开票日期&#34;: &#34;2023年01月06日&#34;,
+    &#34;应税货物(或服务)名称&#34;: &#34;*信息技术服务*技术服务费&#34;,
+    &#34;价税合计(大写)&#34;: &#34;&#34;,
+    &#34;税率&#34;: &#34;6%&#34;,
+    &#34;备注&#34;: &#34;230106163474406331&#34;
+}
+</code></pre></div><p><br><br></p>
+<h2 id="二准备工作">二、准备工作</h2>
+<h3 id="21-安装ollama">2.1 安装ollama</h3>
+<p>点击前往网站 <a href="https://ollama.com/">https://ollama.com/</a> ，下载ollama软件，支持win、Mac、linux</p>
+<p><img loading="lazy" src="img/02-ollama-gui.png" alt=""  />
+</p>
+<br>
+<h3 id="22-下载llm">2.2 下载LLM</h3>
+<p>ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，</p>
+<p><img loading="lazy" src="img/03-ollama-model.png" alt=""  />
+</p>
+<br>
+<p>以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。</p>
+<p><img loading="lazy" src="img/04-ollama-llama3.png" alt=""  />
+</p>
+<br>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama pull llama3
+</code></pre></div><p>等待 <strong>llama3:8b</strong> 下载完成。</p>
+<br>
+<h3 id="23-安装python包">2.3 安装python包</h3>
+<p>在python中调用ollama服务，需要ollama包。</p>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install ollama
+</code></pre></div><br>
+<h3 id="24-启动ollama服务">2.4 启动ollama服务</h3>
+<p>在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama serve
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2024/06/14 14:52:24 routes.go:1011: INFO server config env=&#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&#34;total blobs: 18&#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&#34;total unused blobs removed: 0&#34;
+time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&#34;Listening on 127.0.0.1:11434 (version 0.1.44)&#34;
+time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&#34;extracting embedded files&#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
+time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&#34;Dynamic LLM libraries [metal]&#34;
+time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&#34;inference compute&#34; id=0 library=metal compute=&#34;&#34; driver=0.0 name=&#34;&#34; total=&#34;72.0 GiB&#34; available=&#34;72.0 GiB&#34;
+</code></pre></div><p>cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。</p>
+<p><br><br></p>
+<h2 id="三实验">三、实验</h2>
+<h3 id="31-代码结构">3.1 代码结构</h3>
+<p>点击下载 <a href="project.zip">本文代码</a></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">project
+   |
+  - 代码.ipynb   #代码
+  - prompt.txt  #提示模板
+  - data
+      |--- 1.pdf #实验的发票
+  - result.csv   #结果
+</code></pre></div><br>
+<h3 id="32-读取pdf">3.2 读取pdf</h3>
+<p><img loading="lazy" src="img/01-raw-pdf.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="c1">#cntext版本为2.1.3，非开源， #需联系大邓372335839获取</span>
+
+<span class="n">text</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/1.pdf&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+<span class="n">text</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2.1.3
+
+&#39; 北京增值税电子普通发票发票代码： \n发票号码： 69453658\n开票日期： 2023年01月06日\n校 验 码： \n购\n买\n方名        称： 哈尔滨所以然信息技术有限公司\n密\n码\n区030898/5&lt;32&gt;*/0*440/63+79*08\n纳税人识别号： 91230109MABT7KBC4M /&lt;54&lt;1*6+49&lt;-*+*&gt;7&lt;-8*04&lt;+01\n地 址、电 话： 68+160026-45904*2&lt;+3+15503&gt;2\n开户行及账号： 98*2/*-*480145+-19*0917-1*61\n货物或应税劳务、服务名称 规格型号 单 位 数 量 单 价 金 额 税率 税 额\n*信息技术服务*技术服务费 1248.113208 248.11 6% 14.89\n合      计 ￥248.11 ￥14.89\n价税合计（大写）\n  贰佰陆拾叁元整             （小写）￥263.00\n销\n售\n方名        称： \n备\n注230106163474406331\n纳税人识别号： 91110108MA01WFY0X6\n地 址、电 话： \n开户行及账号： \n  收款人： 复核： 开票人： 销售方：（章）&#39;
+</code></pre></div><br>
+<h3 id="34-提取信息">3.4 提取信息</h3>
+<p>使用ollama服务中的大模型 <em><strong>llama3:8b</strong></em> , 需要大模型提示信息及数据。这是我实验里设计的提示信息prompt</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">prompt = open(&#39;prompt.txt&#39;, encoding=&#39;utf-8&#39;).read()
+print(prompt)
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">发票文本内容
+--- 
+{TEXT} 
+---
+
+以 JSON 格式回答。 JSON 应包含如下信息， 依次为&#34;开票日期&#34;, &#34;应税货物(或服务)名称&#34;, &#34;价税合计(大写)&#34;, &#34;税率&#34;, &#34;备注&#34;; 
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">ollama</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="c1">#cntext版本为2.1.3，非开源， 需联系大邓372335839获取</span>
+
+<span class="c1">#读取发票pdf</span>
+<span class="n">content</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/1.pdf&#39;</span><span class="p">)</span>
+<span class="c1">#读取prompt</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+      <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span><span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">},</span>
+      <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span><span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">content</span><span class="p">},</span>
+    <span class="p">])</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+<span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">result</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 20.5 ms, sys: 2.34 ms, total: 22.9 ms
+Wall time: 3.58 s
+
+{&#39;开票日期&#39;: &#39;2023年01月06日&#39;,
+ &#39;应税货物(或服务)名称&#39;: &#39;*信息技术服务*技术服务费&#39;,
+ &#39;价税合计(大写)&#39;: &#39;贰佰陆拾叁元整&#39;,
+ &#39;税率&#39;: &#39;6%&#39;,
+ &#39;备注&#39;: &#39;230106163474406331&#39;}
+</code></pre></div><br>
+<h3 id="33-封装成函数extract_info">3.3 封装成函数extract_info</h3>
+<p>实验成功，我们将其封装为函数<em><strong>extract_info</strong></em>， 为增强代码的鲁棒性， 函数内设置了异常处理机制，最多可重试3次。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">ollama</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+
+<span class="k">def</span> <span class="nf">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span>
+                <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">text</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">result</span>
+        
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_retries</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;An error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Retrying (</span><span class="si">{</span><span class="n">attempt</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">)...&#34;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>
+  
+<span class="c1">#读取prompt</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">)</span>
+<span class="n">result</span>
+</code></pre></div><p>result与之前无异， 为了节省版面，这里就不显示result。</p>
+<br>
+<h3 id="34-批量提取">3.4 批量提取</h3>
+<p>假设data文件夹内有成百上千的发票(实际上只有一张发票)， 对data文件夹进行批量信息提取，结果存储为csv。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">ollama</span>
+<span class="c1">#cntext版本为2.1.3，非开源， 需联系大邓372335839获取</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+<span class="k">def</span> <span class="nf">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span>
+                <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">text</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">result</span>
+        
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_retries</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;An error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Retrying (</span><span class="si">{</span><span class="n">attempt</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">)...&#34;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>
+                
+  
+<span class="c1">#当前代码所在的代码文件与data文件夹处于同一个文件夹内</span>
+<span class="c1">#获取data内所有pdf的路径</span>
+<span class="n">pdf_files</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;data/</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.pdf&#39;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">]</span>
+<span class="c1">#读取prompt</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+<span class="n">dict_datas</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">pdf_file</span> <span class="ow">in</span> <span class="n">pdf_files</span><span class="p">:</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">)</span>
+    <span class="n">dict_data</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">)</span>
+    <span class="n">dict_datas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dict_data</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dict_datas</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;result.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 32 ms, sys: 2.17 ms, total: 15.2 ms
+Wall time: 3.8 s
+</code></pre></div><p><img loading="lazy" src="img/05-df.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="四讨论">四、讨论</h2>
+<p>本文只使用了一张发票进行实验， 实际上准确率没有这么高， 识别错误字段集中在销售方纳税识别号(案例没有展示销售方纳税识别号的识别)。原因主要是ct.read_pdf读入pdf时，文本比较杂乱。对大模型的语义理解有一定的挑战。目前大模型已经支持文本、图片、音频、视频、网址， 所以各位看官，不用等太久，就可克服此问题。</p>
+<p>大模型会对每个输入，给出正确概率最大的回答，因此大模型提取数据时存在一定的错误识别风险。为降低该风险，尽量选择特别特殊、显眼，例如三张发票的<strong>价税合计(大写)</strong>,  因为信息是特殊的中文大写数字， 在所有文本中是最醒目最特别的文本信息，这样大模型处理这类信息时会给这类信息尽可能高的权重，增大回答的准确率。</p>
+<br>
+<br>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
 <li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
 <li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
 </ul>
