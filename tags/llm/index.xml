@@ -6,7 +6,7 @@
     <description>Recent content in LLM on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 03 Aug 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 05 Aug 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>实验 | 使用本地大模型从论文PDF中提取结构化信息</title>
       <link>https://textdata.cn/blog/2024-08-03-literature-document-parsing-using-large-language-models-with-code/</link>
@@ -319,33 +319,654 @@ Wall time: 24.6 s
     </item>
     
     <item>
-      <title>实验 | 使用本地大模型DIY制作单词书教案PDF</title>
+      <title>实验 | 使用 Crewai 和 Ollama 构建智能体(AI Agent)帮我撰写博客文章</title>
+      <link>https://textdata.cn/blog/2024-08-05-create-a-blog-writer-multi-agent-system-using-crewai-and-ollama/</link>
+      <pubDate>Mon, 05 Aug 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-08-05-create-a-blog-writer-multi-agent-system-using-crewai-and-ollama/</guid>
+      <description>大邓是一个技术博主，运营着公众号，每天要消耗大量的时间进行选题、创作、编辑。随着LLM的流行， 能否让LLM替我进行选题、创作、编辑，从此进入躺平式人生新阶段。  这不是做梦， 使用软件Ollama、Python的CrewAI库，设计好智能体(AI Agent)，就能实现大邓的白日梦。In technical terms an AI Agent is a software entity designed to perform tasks autonomously or semi-autonomously on behalf of a user or another program. These agents leverage artificial intelligence to make decisions, take actions, and interact with their environment or other systems.</description>
+      <content:encoded><![CDATA[<p>大邓是一个技术博主，运营着公众号，每天要消耗大量的时间进行选题、创作、编辑。随着LLM的流行， 能否让LLM替我进行选题、创作、编辑，从此进入躺平式人生新阶段。  这不是做梦， 使用软件Ollama、Python的CrewAI库，设计好智能体(AI Agent)，就能实现大邓的白日梦。</p>
+<br>
+<p><img loading="lazy" src="img/01-multiagent-worflow.png" alt="Multiagent Workflow using CrewAI and Ollama"  />
+</p>
+<h2 id="一什么是智能体ai-agent">一、什么是智能体(AI Agent)?</h2>
+<p>从技术角度来说，**智能体(AI Agent)**是一种软件实体，旨在代表用户或其他程序自主或半自主地执行任务。这些代理利用人工智能做出决策、采取行动并与环境或其他系统进行交互。智能体的主要特征有：</p>
+<ol>
+<li><strong>自治</strong>：智能体无需人工干预即可运行。一旦被赋予目标，它们就可以独立执行任务。</li>
+<li><strong>决策</strong>：智能体使用算法、规则和人工智能模型， 根据自己的感知和目标做出决策。这包括评估不同的选择并选择最佳行动方案。</li>
+<li><strong>学习</strong>：许多智能体采用机器学习技术来提高其性能。它们可以从过去的经验中学习并适应新情况。</li>
+<li><strong>交互</strong>：智能体可以与用户、其他智能体或系统进行通信和协作。这种交互可能涉及自然语言处理、发送和接收数据或执行协调任务。</li>
+<li><strong>专业化</strong>：智能体可以专门用于特定任务或领域。例如，某些智能体可能专为网页浏览而设计，而其他智能体则可能处理数据库交互、执行复杂计算或生成图像。</li>
+<li><strong>目标导向</strong>：智能体通常被设定有特定的目标或目的。它们通过一系列动作和决策来实现这些目标。</li>
+</ol>
+<p>总之，智能体是强大的工具，可以自动化和增强广泛的活动，从简单的重复任务到复杂的问题解决场景，这使得它们在各种应用和行业中具有无价的价值。</p>
+<p>想象一下，将上述所有概念整合在一起，共同朝着预先确定的目标努力，实现预期结果。这些任务可以按顺序或分层流程执行，所有智能体都像一个协调的团队一样工作。这种强大的协作可以彻底改变我们处理复杂问题的方式，使流程更高效，结果更有效。这就是 <em><strong>CrewAI框架</strong></em>发挥作用的地方。</p>
+<p><br><br></p>
+<h2 id="二ollama介绍配置">二、Ollama介绍&amp;配置</h2>
+<p><a href="https://ollama.ai/"><strong>Ollama</strong></a>是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。</p>
+<p>Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。如果他们被困在某个地方，他们可以在不切换到另一个浏览器窗口的情况下获得答案。</p>
+<br>
+<h3 id="21-特点和优点">2.1 特点和优点</h3>
+<p>这就是为什么 OLLAMA 是您的工具包中必备的工具：</p>
+<ul>
+<li><strong>简单</strong> ：OLLAMA 提供简单的设置过程。您无需拥有机器学习博士学位即可启动和运行它。</li>
+<li><strong>成本效益</strong> ：在本地运行模型意味着您无需支付云成本。您的钱包会感谢您。</li>
+<li><strong>隐私</strong> ：使用 OLLAMA，所有数据处理都在您的本地机器上进行。这对于用户隐私来说是一个巨大的胜利。</li>
+<li><strong>多功能性</strong> ：OLLAMA 不只是为 Python 爱好者准备的。它的灵活性使其可以用于各种应用程序，包括 Web 开发。</li>
+</ul>
+<br>
+<h3 id="22-安装ollama">2.2 安装ollama</h3>
+<p>点击前往网站 <a href="https://ollama.com/">https://ollama.com/</a> ，下载ollama软件，支持win、Mac、linux</p>
+<p><img loading="lazy" src="img/03-ollama-gui.png" alt=""  />
+</p>
+<br>
+<h3 id="23-下载llm模型">2.3 下载LLM模型</h3>
+<p>默认情况下，Openai Models 在 CrewAI 中用作 llm。有经费、有网络、不担心数据泄露等条件下,  力求达到最佳性能，可考虑使用 GPT-4 或 OpenAI 稍便宜的 GPT-3.5。</p>
+<p>但本文是要 <strong>本地部署</strong>， 因此我们将使用 Meta Llama 3，这是迄今为止功能最强大的公开 LLM。Meta Llama 3 是 Meta Inc. 开发的模型系列，是最新推出的模型，具有 8B 和 70B 两种参数大小（预训练或指令调整）。Llama 3 指令调整模型针对对话/聊天用例进行了微调和优化，并且在常见基准测试中胜过许多可用的开源聊天模型。</p>
+<p><img loading="lazy" src="img/04-llama3-performance.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/05-llama3-performance.png" alt=""  />
+</p>
+<br>
+<p>打开Ollama模型页面 <em><strong><a href="https://ollama.com/library">https://ollama.com/library</a></strong></em>， 第一个就是 Metal 近期发布的 LLama3.1 模型。</p>
+<p><img loading="lazy" src="img/06-ollama-model.png" alt=""  />
+</p>
+<br>
+<p>以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。</p>
+<p><img loading="lazy" src="img/06-ollama-llama3.png" alt=""  />
+</p>
+<br>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama pull llama3.1:8b
+</code></pre></div><p>等待 <strong>llama3.1:8b</strong> 下载完成。</p>
+<br>
+<h3 id="23-启动ollama服务">2.3 启动ollama服务</h3>
+<p>ollama服务有两种启动方式，即鼠标启动ollama服务 和 命令行启动ollama服务 。<br></p>
+<h4 id="231-鼠标启动ollama服务">2.3.1 鼠标启动ollama服务</h4>
+<p>在电脑中找到ollama软件，双击打开，就开启了ollama本地服务。</p>
+<br>
+<h4 id="232-命令行启动ollama服务">2.3.2 命令行启动ollama服务</h4>
+<p>在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama serve
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2024/06/14 14:52:24 routes.go:1011: INFO server config env=&#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&#34;total blobs: 18&#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&#34;total unused blobs removed: 0&#34;
+time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&#34;Listening on 127.0.0.1:11434 (version 0.1.44)&#34;
+time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&#34;extracting embedded files&#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
+time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&#34;Dynamic LLM libraries [metal]&#34;
+time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&#34;inference compute&#34; id=0 library=metal compute=&#34;&#34; driver=0.0 name=&#34;&#34; total=&#34;72.0 GiB&#34; available=&#34;72.0 GiB&#34;
+</code></pre></div><p>cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。</p>
+<p><br><br></p>
+<h2 id="三crewai框架介绍">三、CrewAI框架介绍</h2>
+<p>CrewAi 是一个用于协调角色扮演、自主 AI 代理的尖端框架。通过促进协作智能，CrewAI 使代理能够无缝协作，解决复杂的任务。</p>
+<br>
+<h3 id="31-安装crew">3.1 安装crew</h3>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install crewai
+pip3 install langchain_openai
+</code></pre></div><br>
+<h3 id="32-crewai核心概念">3.2 CrewAI核心概念</h3>
+<ol>
+<li><em><strong>智能体(Agents)</strong></em>：这些是经过编程的独立单元，用于执行任务、做出决策和与其他代理进行通信。它们可以使用的 <em><strong>工具Tools</strong></em> 可以是简单的搜索功能，也可以是涉及其他链、API 等的复杂集成。</li>
+<li><em><strong>任务(Tasks)</strong></em>：任务是智能体需要完成的任务或工作。它们可以包含其他信息，例如哪个代理应该执行该任务以及它们可能需要哪些工具。</li>
+<li><em><strong>团队(Crew)</strong></em>  一个团队是由一群智能体组成的，每个 <em><strong>智能体(Agent)</strong></em> 都有特定的角色，他们齐心协力实现共同目标。组建团队的过程包括召集代理、定义他们的任务以及建立任务执行顺序。</li>
+</ol>
+<p><img loading="lazy" src="img/02-crewai-system.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="四实验代码">四、实验代码</h2>
+<p>大邓是一个技术博主，运营着公众号，每天要消耗大量的时间进行选题、创作、编辑。随着LLM的流行， 能否让LLM替我进行选题、创作、编辑，从此进入躺平式人生新阶段。在实验章节， 代码内容将分为</p>
+<ul>
+<li>调用llm</li>
+<li>设置agent</li>
+<li>设置task</li>
+<li>组装成crew</li>
+<li>最终运行</li>
+</ul>
+<h3 id="41-调用llm">4.1 调用LLM</h3>
+<p>在Python中调用开启的ollama服务， 为crewai调用llm做准备。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">langchain_openai</span> <span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1">#将ollama的api转化为OPENAI式的api，方便crewai调用</span>
+<span class="c1">#设置系统环境变量OPENAI_API_BASE和OPENAI_API_KEY</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&#34;OPENAI_API_BASE&#34;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&#34;http://localhost:11434/v1&#34;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&#34;OPENAI_API_KEY&#34;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&#34;NA&#34;</span>
+
+<span class="n">llama_model</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s2">&#34;llama3.1:8b&#34;</span><span class="p">)</span>
+</code></pre></div><br>
+<h3 id="42-设置agent">4.2 设置Agent</h3>
+<p>大邓运营的公众号的日常，一个人身兼数个职位。 大致拆分成三个员工（智能体）</p>
+<ul>
+<li>内容策划专员</li>
+<li>内容创作专员</li>
+<li>内容编辑专员</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">crewai</span> <span class="kn">import</span> <span class="n">Agent</span>
+
+<span class="n">planner</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span>
+    <span class="n">role</span> <span class="o">=</span> <span class="s2">&#34;内容策划专员&#34;</span><span class="p">,</span>
+    <span class="n">goal</span> <span class="o">=</span> <span class="s2">&#34;策划有关</span><span class="si">{topic}</span><span class="s2">的引人入胜且事实准确的内容&#34;</span><span class="p">,</span>
+    <span class="n">backstory</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&#34;您是一名内容策划专员，正在计划撰写一篇主题为“</span><span class="si">{topic}</span><span class="s2">”的博客文章， &#34;</span>
+        <span class="s2">&#34;文章将发布在 &#39;https://medium.com/&#39;。&#34;</span>
+        <span class="s2">&#34;您收集的信息可帮助受众了解某些内容,使受众能因此做出明智的决定。&#34;</span>
+        <span class="s2">&#34;您必须准备一份详细的大纲，博客文章中应包含的相关主题和子主题。&#34;</span>
+        <span class="s2">&#34;您的工作是内容创作专员撰写此主题文章的基础。&#34;</span>
+        <span class="s2">&#34;工作语言是中文。&#34;</span>
+    <span class="p">),</span>
+    <span class="n">llm</span> <span class="o">=</span> <span class="n">llama_model</span><span class="p">,</span>
+    <span class="n">allow_delegation</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span>
+
+
+<span class="n">writer</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span>
+    <span class="n">role</span> <span class="o">=</span> <span class="s2">&#34;内容创作专员&#34;</span><span class="p">,</span>
+    <span class="n">goal</span> <span class="o">=</span> <span class="s2">&#34;撰写主题</span><span class="si">{topic}</span><span class="s2">的评论文章，要深刻且事实准确&#34;</span><span class="p">,</span>
+    <span class="n">backstory</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&#34;您是一名内容编辑专员，正在撰写一篇主题 “</span><span class="si">{topic}</span><span class="s2">” 的新观点文章， &#34;</span>
+        <span class="s2">&#34;文章将发表在 &#39;https://medium.com/&#39;。&#34;</span>
+        <span class="s2">&#34;内容策划师提供了有关该主题的大纲和相关背景。&#34;</span>
+        <span class="s2">&#34;您创作内容时，请遵循内容策划师提供的大纲为主要目标和方向。&#34;</span>
+        <span class="s2">&#34;同时您将提供客观公正的见解，并使用内容策划师提供的信息支持您的见解。&#34;</span>
+        <span class="s2">&#34;您在观点文章中承认您的陈述是意见，而不是客观陈述。&#34;</span>
+        <span class="s2">&#34;工作语言是中文。&#34;</span>
+    <span class="p">),</span>
+    <span class="n">allow_delegation</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">llm</span> <span class="o">=</span> <span class="n">llama_model</span><span class="p">,</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span>
+
+
+<span class="n">editor</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span>
+    <span class="n">role</span> <span class="o">=</span> <span class="s2">&#34;内容编辑专员&#34;</span><span class="p">,</span>
+    <span class="n">goal</span> <span class="o">=</span> <span class="s2">&#34;编辑给定的博客文章，以符合网站 &#39;https://medium.com/&#39; 的写作风格&#34;</span><span class="p">,</span>
+    <span class="n">backstory</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&#34;您是一名内容编辑专员，收到内容创作专员发来的博客文章。&#34;</span>
+        <span class="s2">&#34;您的目标是审核博客文章，确保其符合新闻业最佳实践，&#34;</span>
+        <span class="s2">&#34;在发表意见或主张时提供平衡的观点，并尽可能避免重大争议话题或意见。&#34;</span>
+        <span class="s2">&#34;工作语言是中文。&#34;</span>
+    <span class="p">),</span>
+    <span class="n">llm</span> <span class="o">=</span> <span class="n">llama_model</span><span class="p">,</span>
+    <span class="n">allow_delegation</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span>
+</code></pre></div><p>参数解读</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">crewai</span><span class="o">.</span><span class="n">Agent</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="n">goal</span><span class="p">,</span> <span class="n">backstory</span><span class="p">,</span> <span class="n">llm</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">function_calling_llm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maxter</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">max_execution_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">allow_delegation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">step_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">max_retry_limit</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div><ul>
+<li><em><strong>role</strong></em>: 定义代理在团队中的职能。它决定了代理最适合执行的任务类型。</li>
+<li><em><strong>goal</strong></em> : 代理希望实现的个体目标。它指导代理的决策过程。</li>
+<li><em><strong>backstory</strong></em>：为代理的角色和目标提供背景，丰富互动和协作动力。</li>
+<li><em><strong>llm</strong></em>：(可选)表示将运行代理的语言模型。它从<code>OPENAI_MODEL_NAME</code>环境变量中动态获取模型名称，如果未指定，则默认为 “gpt-4”。</li>
+<li><em><strong>tools</strong></em>：(可选)代理可用于执行任务的功能或函数集。应为与代理的执行环境兼容的自定义类的实例。工具使用空列表的默认值进行初始化。</li>
+<li><em><strong>function_calling_llm</strong></em>：（可选）指定处理此代理的工具调用的语言模型，如果已传递，则覆盖工作人员函数调用 LLM。默认值为 <code>None</code>。</li>
+<li><em><strong>maxter</strong></em>：（可选）代理在被迫给出最佳答案之前可以执行的最大迭代次数。默认值为<code>25</code>。</li>
+<li><em><strong>max_rpm</strong></em>：（可选）代理每分钟可以执行的最大请求数，以避免速率限制。它是可选的，可以不指定，默认值为<code>None</code>。</li>
+<li><em><strong>max_execution_time</strong></em>：（可选）代理执行任务的最大执行时间。它是可选的，可以不指定，默认值为 <code>None</code>，表示没有最大执行时间</li>
+<li><em><strong>verbose</strong></em>：（可选）将其设置为 <code>True</code>配置内部记录器以提供详细的执行日志，帮助调试和监控。默认值为<code>False</code>。</li>
+<li><em><strong>allow_delegation</strong></em>： （可选）代理可以相互委派任务或问题，确保每项任务都由最合适的代理处理。默认值为<code>True</code>。</li>
+<li><em><strong>step_callback</strong></em>： （可选）代理每执行一步后调用的函数。可用于记录代理的操作或执行其他操作。它将覆盖工作人员<code>step_callback</code>。默认值<code>None</code>。</li>
+<li><em><strong>cache</strong></em>： （可选）指示代理是否应使用缓存来使用工具。默认值为<code>True</code></li>
+</ul>
+<br>
+<h3 id="43-设置task">4.3 设置Task</h3>
+<p>大邓三个智能体角色(内容策划专员、内容创作专员、内容策划专员)， 都各自有对应的 <em><strong>任务(plan、write、edit)</strong></em>。 这里需要设置每种任务，的工作任务(内容)、预期产出。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">crewai</span> <span class="kn">import</span> <span class="n">Task</span>
+
+<span class="n">plan</span> <span class="o">=</span> <span class="n">Task</span><span class="p">(</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&#34;1. 优先考虑“</span><span class="si">{topic}</span><span class="s2">”的最新趋势、关键参与者和值得关注的新闻。</span><span class="se">\n</span><span class="s2">&#34;</span>
+        <span class="s2">&#34;2. 确定目标受众，考虑他们的兴趣和痛点。</span><span class="se">\n</span><span class="s2">&#34;</span>
+        <span class="s2">&#34;3. 制定详细的内容大纲，包括简介、要点和行动号召。</span><span class="se">\n</span><span class="s2">&#34;</span>
+        <span class="s2">&#34;4. 包括 SEO 关键字和相关数据或来源。&#34;</span>
+    <span class="p">),</span>
+    <span class="n">expected_output</span> <span class="o">=</span> <span class="s2">&#34;一份全面的内容计划文档，其中包含大纲、受众分析、SEO 关键字和参考资源。&#34;</span><span class="p">,</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">planner</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="n">write</span> <span class="o">=</span> <span class="n">Task</span><span class="p">(</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&#34;1. 使用内容策划专员的内容策划，撰写一篇关于“</span><span class="si">{topic}</span><span class="s2">”的引人入胜的博客文章。</span><span class="se">\n</span><span class="s2">&#34;</span>
+        <span class="s2">&#34;2. 自然地融入 SEO 关键词。</span><span class="se">\n</span><span class="s2">&#34;</span>
+        <span class="s2">&#34;3. 章节/副标题以引人入胜的方式正确命名。</span><span class="se">\n</span><span class="s2">&#34;</span>
+        <span class="s2">&#34;4. 确保文章结构合理，有引人入胜的介绍、有见地的正文和总结性结论。</span><span class="se">\n</span><span class="s2">&#34;</span>
+        <span class="s2">&#34;5. 校对语法错误并与品牌调性保持一致。</span><span class="se">\n</span><span class="s2">&#34;</span>
+    <span class="p">),</span>
+    <span class="n">expected_output</span> <span class="o">=</span> <span class="s2">&#34;一篇写得很好的、准备发布的 Markdown 格式的博客文章，每个部分应该有 2 或 3 个段落。&#34;</span><span class="p">,</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">writer</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="n">edit</span> <span class="o">=</span> <span class="n">Task</span><span class="p">(</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&#34;校对给定的博客文章&#34;</span>
+        <span class="s2">&#34;检查其语法错误并与品牌调性保持一致。&#34;</span>
+    <span class="p">),</span>
+    <span class="n">expected_output</span> <span class="o">=</span> <span class="s2">&#34;一篇写得很好的、准备发布的 Markdown 格式的博客文章，每个部分应该有 2 或 3 个段落。&#34;</span><span class="p">,</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">editor</span>
+<span class="p">)</span>
+
+</code></pre></div><br>
+<p>参数解读</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">crewai</span><span class="o">.</span><span class="n">Task</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">agent</span><span class="p">,</span> <span class="n">expected_output</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">async_execution</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_json</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pydantic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">human_input</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div><ul>
+<li><em><strong>description</strong></em>： 对任务内容的清晰、简洁的陈述。</li>
+<li><em><strong>agent</strong></em> ：负责该任务的代理人，可直接指派或由机组人员流程指派。</li>
+<li><em><strong>expected_output</strong></em> : 任务完成情况的详细描述。</li>
+<li><em><strong>tools</strong></em>：（可选）代理可以利用执行任务的功能或能力。默认值<code>None</code>。</li>
+<li><em><strong>async_execution</strong></em>：（可选）如果设置，任务将异步执行，允许进展而无需等待完成。默认值<code>False</code>。</li>
+<li><em><strong>context</strong></em>： （可选）指定其输出用作此任务的上下文的任务。默认值<code>None</code>。</li>
+<li><em><strong>config</strong></em>：（可选）执行任务的代理的附加配置详细信息，允许进一步定制。默认值<code>None</code>。</li>
+<li><em><strong>output_json</strong></em>：（可选）输出 JSON 对象，需要 OpenAI 客户端。只能设置一种输出格式。默认值<code>None</code>。</li>
+<li><em><strong>output_pydantic</strong></em>：（可选）输出 Pydantic 模型对象，需要 OpenAI 客户端。只能设置一种输出格式。默认值<code>None</code>。</li>
+<li><em><strong>output_file</strong></em>：（可选）将任务输出保存到文件。如果与<code>Output JSON</code>或一起使用<code>Output Pydantic</code>，则指定如何保存输出。默认值<code>None</code>。</li>
+<li><em><strong>callback</strong></em>：（可选）在完成任务后，使用任务的输出执行的 Python 可调用函数。默认值<code>None</code>。</li>
+<li><em><strong>human_input</strong></em>：（可选）表示任务是否在最后需要人工反馈，对于需要人工监督的任务很有用。默认值<code>False</code>。</li>
+</ul>
+<br>
+<h3 id="44-组装运行">4.4 组装&amp;运行</h3>
+<p>将大邓三个角色(planner, writer, editor) 及对应的任务(plan, write, edit)组装成一个整体crew， 并试着让程序以 「<strong>topic: Python做文本分析</strong>」 为题进行创作。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#组装成CREW</span>
+<span class="n">crew</span> <span class="o">=</span> <span class="n">Crew</span><span class="p">(</span>
+    <span class="n">agents</span> <span class="o">=</span> <span class="p">[</span><span class="n">planner</span><span class="p">,</span> <span class="n">writer</span><span class="p">,</span> <span class="n">editor</span><span class="p">],</span>
+    <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">plan</span><span class="p">,</span> <span class="n">write</span><span class="p">,</span> <span class="n">edit</span><span class="p">],</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="p">)</span>
+
+
+<span class="c1">#撰写一个Topic: &#34;在管理学领域，如何用Python做文本分析&#34; 的文章</span>
+<span class="n">inputs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;topic&#34;</span><span class="p">:</span> <span class="s2">&#34;Python文本分析&#34;</span><span class="p">}</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">crew</span><span class="o">.</span><span class="n">kickoff</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mysql" data-lang="mysql"><span class="w"> </span><span class="p">[</span><span class="mi">2024</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">05</span><span class="w"> </span><span class="mi">22</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">01</span><span class="p">][</span><span class="n">DEBUG</span><span class="p">]:</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">Working</span><span class="w"> </span><span class="n">Agent</span><span class="p">:</span><span class="w"> </span><span class="err">内容策划专员</span><span class="w">
+</span><span class="w"> </span><span class="p">[</span><span class="mi">2024</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">05</span><span class="w"> </span><span class="mi">22</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">01</span><span class="p">][</span><span class="n">INFO</span><span class="p">]:</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="k">Starting</span><span class="w"> </span><span class="n">Task</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">.</span><span class="w"> </span><span class="err">优先考虑“</span><span class="n">Python文本分析</span><span class="err">”的最新趋势、关键参与者和值得关注的新闻。</span><span class="w">
+</span><span class="w"></span><span class="mi">2</span><span class="p">.</span><span class="w"> </span><span class="err">确定目标受众，考虑他们的兴趣和痛点。</span><span class="w">
+</span><span class="w"></span><span class="mi">3</span><span class="p">.</span><span class="w"> </span><span class="err">制定详细的内容大纲，包括简介、要点和行动号召。</span><span class="w">
+</span><span class="w"></span><span class="mi">4</span><span class="p">.</span><span class="w"> </span><span class="err">包括</span><span class="w"> </span><span class="n">SEO</span><span class="w"> </span><span class="err">关键字和相关数据或来源。</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">&gt;</span><span class="w"> </span><span class="n">Entering</span><span class="w"> </span><span class="n">new</span><span class="w"> </span><span class="n">CrewAgentExecutor</span><span class="w"> </span><span class="n">chain</span><span class="p">...</span><span class="w">
+</span><span class="w"></span><span class="err">我在撰写关于“</span><span class="n">Python文本分析</span><span class="err">”时已进行了详细的调研和准备。现在我可以制定出一份具有深度及准确性的计划文档，并针对各个要素提供详述答案：</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">### Final Answer: Python文本分析全面内容策划
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="c1">#### 1. 引言——最新趋势、关键参与者与新闻
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="err">介绍</span><span class="n">python在自然语言处理领域的地位</span><span class="err">，包括</span><span class="n">BERT</span><span class="p">,</span><span class="w"> </span><span class="n">RoBERTa等前沿模型</span><span class="err">。引用当前的科技和学术报道作为案例，比如自然语言理解（</span><span class="n">NLU</span><span class="err">）技术如何用于构建更智能的语言助手、情绪分析（</span><span class="n">Sentiment</span><span class="w"> </span><span class="n">Analysis</span><span class="err">）、文本摘要、信息检索等领域的发展动态。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="o">**</span><span class="err">趋势</span><span class="o">**</span><span class="err">：突出像生成对抗网络（</span><span class="n">GANs</span><span class="err">）在文本合成中、解释性的预估模型或者深度语义理解和对话系统等方面的最新进展。</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="o">**</span><span class="err">关键参与者</span><span class="o">**</span><span class="err">：提及与</span><span class="n">Python生态紧密相关的开发者框架</span><span class="err">（如</span><span class="n">spaCy</span><span class="err">，</span><span class="n">NLTK</span><span class="err">），及顶级科技企业（例如</span><span class="n">IBM</span><span class="w"> </span><span class="n">Watson</span><span class="w"> </span><span class="n">AI</span><span class="p">,</span><span class="w"> </span><span class="n">Google</span><span class="err">）的领导角色。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">#### 2. 目标受众
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="err">该篇文章旨在满足数据分析师、数据科学家、自然语言处理研究人员以及对机器学习兴趣浓厚的学习者。他们的兴趣可能偏向于如何提高开发效率、探索文本与情感分析的技术细节，或者是希望将文本分析技术应用到某个特定领域，如市场调研、舆情监控等。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">#### 3. 内容构建大纲
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="c1">##### 框架一：基础知识
+</span><span class="c1"></span><span class="o">-</span><span class="w"> </span><span class="err">“理解</span><span class="n">Python文本处理库</span><span class="err">”（例如：</span><span class="o">`</span><span class="n">nltk</span><span class="o">`</span><span class="p">,</span><span class="w"> </span><span class="o">`</span><span class="n">spaCy</span><span class="o">`</span><span class="p">,</span><span class="w"> </span><span class="o">`</span><span class="n">Gensim</span><span class="o">`</span><span class="err">）</span><span class="w">
+</span><span class="w">  </span><span class="o">-</span><span class="w"> </span><span class="err">图文并茂教程展示简单文本预处理和分析的方法，如标记化、停用词移除、词干提取等。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">##### 框架二：实践案例
+</span><span class="c1"></span><span class="w">  </span><span class="o">-</span><span class="w"> </span><span class="err">“从文字到洞察力”实例解析</span><span class="w">
+</span><span class="w">  </span><span class="o">-</span><span class="w"> </span><span class="err">介绍不同领域利用文本分析的实用场景及应用策略（比如产品评论分析、股票预测中的文本情感指标使用）</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">##### 详细步骤：
+</span><span class="c1">### 应用实践篇：
+</span><span class="c1"></span><span class="err">《</span><span class="mi">1</span><span class="err">周完成</span><span class="n">NLP基础</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="err">初恋你的</span><span class="nf">Python助手</span><span class="w"> </span><span class="p">(</span><span class="err">自然语言处理入门实践</span><span class="p">)</span><span class="err">》，内容包括从</span><span class="n">Python环境配置到常用库实战讲解</span><span class="err">，以及常见的问题解决和技巧分享。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">#### SEO关键词
+</span><span class="c1"></span><span class="o">-</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="kt">text</span><span class="w"> </span><span class="n">mining</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="err">情感分析</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="err">饭碗推荐文本挖掘</span><span class="w"> </span><span class="n">Python</span><span class="w"> </span><span class="err">聚类代码</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="n">nlp项目</span><span class="w"> </span><span class="o">/</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="n">sentiment</span><span class="w"> </span><span class="n">analysis</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="err">使用</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="err">进行文档情感分类</span><span class="w"> </span><span class="o">/</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="err">培训模型</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="err">教程</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="err">深度学习用于</span><span class="n">python文本理解的实现</span><span class="w"> </span><span class="o">/</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">
+</span><span class="c1">#### 参考资源与资料
+</span><span class="c1"></span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">`</span><span class="n">Pudim</span><span class="o">`</span><span class="p">,</span><span class="w"> </span><span class="n">F</span><span class="p">.,</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">Rezende</span><span class="p">,</span><span class="w"> </span><span class="n">L</span><span class="p">.</span><span class="w"> </span><span class="p">(</span><span class="mi">2019</span><span class="p">).</span><span class="w"> </span><span class="n">Practical</span><span class="w"> </span><span class="n">Named</span><span class="w"> </span><span class="n">Entity</span><span class="w"> </span><span class="n">Recognition</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">PyTorch</span><span class="err">’</span><span class="n">s</span><span class="w"> </span><span class="n">WordPiece</span><span class="w"> </span><span class="n">Tokenizer</span><span class="p">.</span><span class="w"> </span><span class="n">GitHub</span><span class="w"> </span><span class="n">Pages</span><span class="p">.</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="n">Bergelson</span><span class="err">，</span><span class="n">A</span><span class="err">。（</span><span class="n">n</span><span class="p">.</span><span class="n">d</span><span class="p">.</span><span class="err">）《</span><span class="n">NLP</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">Scratch</span><span class="err">》</span><span class="n">Google</span><span class="w"> </span><span class="n">Slides教程</span><span class="p">.</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="err">通过提供这样的策划结构，并确保与</span><span class="n">SEO相关的关键字</span><span class="err">，该文章会成为一个引人入胜的资源站，满足目标客户群的需要。最终输出内容需结合提供的格式、目标和要求来组织具体细节或实例，请务必严格遵循指定的结构方式完成此任务。</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">&gt;</span><span class="w"> </span><span class="n">Finished</span><span class="w"> </span><span class="n">chain</span><span class="p">.</span><span class="w">
+</span><span class="w"> </span><span class="p">[</span><span class="mi">2024</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">05</span><span class="w"> </span><span class="mi">22</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">20</span><span class="p">][</span><span class="n">DEBUG</span><span class="p">]:</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">[</span><span class="err">内容策划专员</span><span class="p">]</span><span class="w"> </span><span class="n">Task</span><span class="w"> </span><span class="n">output</span><span class="p">:</span><span class="w"> </span><span class="n">Python文本分析全面内容策划</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">#### 1. 引言——最新趋势、关键参与者与新闻
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="err">介绍</span><span class="n">python在自然语言处理领域的地位</span><span class="err">，包括</span><span class="n">BERT</span><span class="p">,</span><span class="w"> </span><span class="n">RoBERTa等前沿模型</span><span class="err">。引用当前的科技和学术报道作为案例，比如自然语言理解（</span><span class="n">NLU</span><span class="err">）技术如何用于构建更智能的语言助手、情绪分析（</span><span class="n">Sentiment</span><span class="w"> </span><span class="n">Analysis</span><span class="err">）、文本摘要、信息检索等领域的发展动态。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="o">**</span><span class="err">趋势</span><span class="o">**</span><span class="err">：突出像生成对抗网络（</span><span class="n">GANs</span><span class="err">）在文本合成中、解释性的预估模型或者深度语义理解和对话系统等方面的最新进展。</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="o">**</span><span class="err">关键参与者</span><span class="o">**</span><span class="err">：提及与</span><span class="n">Python生态紧密相关的开发者框架</span><span class="err">（如</span><span class="n">spaCy</span><span class="err">，</span><span class="n">NLTK</span><span class="err">），及顶级科技企业（例如</span><span class="n">IBM</span><span class="w"> </span><span class="n">Watson</span><span class="w"> </span><span class="n">AI</span><span class="p">,</span><span class="w"> </span><span class="n">Google</span><span class="err">）的领导角色。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">#### 2. 目标受众
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="err">该篇文章旨在满足数据分析师、数据科学家、自然语言处理研究人员以及对机器学习兴趣浓厚的学习者。他们的兴趣可能偏向于如何提高开发效率、探索文本与情感分析的技术细节，或者是希望将文本分析技术应用到某个特定领域，如市场调研、舆情监控等。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">#### 3. 内容构建大纲
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="c1">##### 框架一：基础知识
+</span><span class="c1"></span><span class="o">-</span><span class="w"> </span><span class="err">“理解</span><span class="n">Python文本处理库</span><span class="err">”（例如：</span><span class="o">`</span><span class="n">nltk</span><span class="o">`</span><span class="p">,</span><span class="w"> </span><span class="o">`</span><span class="n">spaCy</span><span class="o">`</span><span class="p">,</span><span class="w"> </span><span class="o">`</span><span class="n">Gensim</span><span class="o">`</span><span class="err">）</span><span class="w">
+</span><span class="w">  </span><span class="o">-</span><span class="w"> </span><span class="err">图文并茂教程展示简单文本预处理和分析的方法，如标记化、停用词移除、词干提取等。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">##### 框架二：实践案例
+</span><span class="c1"></span><span class="o">-</span><span class="w"> </span><span class="err">“从文字到洞察力”实例解析</span><span class="w">
+</span><span class="w">  </span><span class="o">-</span><span class="w"> </span><span class="err">介绍不同领域利用文本分析的实用场景及应用策略（比如产品评论分析、股票预测中的文本情感指标使用）</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">##### 详细步骤：
+</span><span class="c1">### 应用实践篇：
+</span><span class="c1"></span><span class="err">《</span><span class="mi">1</span><span class="err">周完成</span><span class="n">NLP基础</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="err">初恋你的</span><span class="nf">Python助手</span><span class="w"> </span><span class="p">(</span><span class="err">自然语言处理入门实践</span><span class="p">)</span><span class="err">》，内容包括从</span><span class="n">Python环境配置到常用库实战讲解</span><span class="err">，以及常见的问题解决和技巧分享。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">#### SEO关键词
+</span><span class="c1"></span><span class="o">-</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="kt">text</span><span class="w"> </span><span class="n">mining</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="err">情感分析</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="err">饭碗推荐文本挖掘</span><span class="w"> </span><span class="n">Python</span><span class="w"> </span><span class="err">聚类代码</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="n">nlp项目</span><span class="w"> </span><span class="o">/</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="n">sentiment</span><span class="w"> </span><span class="n">analysis</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="err">使用</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="err">进行文档情感分类</span><span class="w"> </span><span class="o">/</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="err">培训模型</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="err">教程</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="err">深度学习用于</span><span class="n">python文本理解的实现</span><span class="w"> </span><span class="o">/</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">
+</span><span class="c1">#### 参考资源与资料
+</span><span class="c1"></span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">`</span><span class="n">Pudim</span><span class="o">`</span><span class="p">,</span><span class="w"> </span><span class="n">F</span><span class="p">.,</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">Rezende</span><span class="p">,</span><span class="w"> </span><span class="n">L</span><span class="p">.</span><span class="w"> </span><span class="p">(</span><span class="mi">2019</span><span class="p">).</span><span class="w"> </span><span class="n">Practical</span><span class="w"> </span><span class="n">Named</span><span class="w"> </span><span class="n">Entity</span><span class="w"> </span><span class="n">Recognition</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">PyTorch</span><span class="err">’</span><span class="n">s</span><span class="w"> </span><span class="n">WordPiece</span><span class="w"> </span><span class="n">Tokenizer</span><span class="p">.</span><span class="w"> </span><span class="n">GitHub</span><span class="w"> </span><span class="n">Pages</span><span class="p">.</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="n">Bergelson</span><span class="err">，</span><span class="n">A</span><span class="err">。（</span><span class="n">n</span><span class="p">.</span><span class="n">d</span><span class="p">.</span><span class="err">）《</span><span class="n">NLP</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">Scratch</span><span class="err">》</span><span class="n">Google</span><span class="w"> </span><span class="n">Slides教程</span><span class="p">.</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="err">通过提供这样的策划结构，并确保与</span><span class="n">SEO相关的关键字</span><span class="err">，该文章会成为一个引人入胜的资源站，满足目标客户群的需要。最终输出内容需结合提供的格式、目标和要求来组织具体细节或实例，请务必严格遵循指定的结构方式完成此任务。</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"> </span><span class="p">[</span><span class="mi">2024</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">05</span><span class="w"> </span><span class="mi">22</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">20</span><span class="p">][</span><span class="n">DEBUG</span><span class="p">]:</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">Working</span><span class="w"> </span><span class="n">Agent</span><span class="p">:</span><span class="w"> </span><span class="err">内容创作专员</span><span class="w">
+</span><span class="w"> </span><span class="p">[</span><span class="mi">2024</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">05</span><span class="w"> </span><span class="mi">22</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">20</span><span class="p">][</span><span class="n">INFO</span><span class="p">]:</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="k">Starting</span><span class="w"> </span><span class="n">Task</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">.</span><span class="w"> </span><span class="err">使用内容策划专员的内容策划，撰写一篇关于“</span><span class="n">Python文本分析</span><span class="err">”的引人入胜的博客文章。</span><span class="w">
+</span><span class="w"></span><span class="mi">2</span><span class="p">.</span><span class="w"> </span><span class="err">自然地融入</span><span class="w"> </span><span class="n">SEO</span><span class="w"> </span><span class="err">关键词。</span><span class="w">
+</span><span class="w"></span><span class="mi">3</span><span class="p">.</span><span class="w"> </span><span class="err">章节</span><span class="o">/</span><span class="err">副标题以引人入胜的方式正确命名。</span><span class="w">
+</span><span class="w"></span><span class="mi">4</span><span class="p">.</span><span class="w"> </span><span class="err">确保文章结构合理，有引人入胜的介绍、有见地的正文和总结性结论。</span><span class="w">
+</span><span class="w"></span><span class="mi">5</span><span class="p">.</span><span class="w"> </span><span class="err">校对语法错误并与品牌调性保持一致。</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">&gt;</span><span class="w"> </span><span class="n">Entering</span><span class="w"> </span><span class="n">new</span><span class="w"> </span><span class="n">CrewAgentExecutor</span><span class="w"> </span><span class="n">chain</span><span class="p">...</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">Title: Python文本分析的未来前沿及实操指南 
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="c1">### 引言 - 最新趋势、关键参与者与新闻
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="c1">#### 1引路 - 在自然语言理解领域的新高度
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="nf">Python正引领着NLP</span><span class="p">(</span><span class="err">自然语言处理</span><span class="p">)</span><span class="err">潮流，尤其是基于</span><span class="n">BERT</span><span class="err">（</span><span class="n">Bidirectional</span><span class="w"> </span><span class="n">Encoder</span><span class="w"> </span><span class="n">Representations</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">Transformers</span><span class="err">）与</span><span class="n">RoBERTa的创新</span><span class="err">。这些模型在《自然》（</span><span class="n">Nature</span><span class="err">）等顶级学术期刊上被频繁讨论用于构建更人性化的人工智能助手，深度分析和解读情绪、实现文本摘要以及改善信息检索系统等方面有飞速进步。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">##### * **前沿进展** ：
+</span><span class="c1"></span><span class="o">-</span><span class="w"> </span><span class="err">创新的文本生成技术包括对文字合成</span><span class="n">Gan</span><span class="err">（</span><span class="n">Generative</span><span class="w"> </span><span class="n">Adversarial</span><span class="w"> </span><span class="n">Network</span><span class="err">）领域，使得生成自然的语言成为可能。</span><span class="w">
+</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="err">同时利用深度学习技术为语义理解和对话系统带来突破，在《麻省理工科技评论》等平台中分享实例。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">#### 见识顶级领导者及其所贡献
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="err">在这一领域</span><span class="n">Python的开发者框架如</span><span class="o">`</span><span class="n">spaCy</span><span class="o">`</span><span class="p">(</span><span class="err">一个专用于</span><span class="n">NLP编程接口的强大库</span><span class="p">)</span><span class="err">，和像</span><span class="n">IBM</span><span class="w"> </span><span class="n">Watson</span><span class="w"> </span><span class="n">AI这样的大企业</span><span class="err">，通过整合这些先进模型在多个层面上推动产业发展。他们不断地对用户需求做出响应，使得</span><span class="n">Python文本分析的未来前景无限</span><span class="err">。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">
+</span><span class="c1">### **目标受众**
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="err">本文瞄准几类核心读者：数据分析师、数据科学家、自然语言处理（</span><span class="n">NLP</span><span class="err">）领域学者或任何关注机器学习进展和寻找提升开发效率的开发者及研究人员个体或团队。他们的知识偏向聚焦在提高文本分析处理的速度效果，寻求对情感与内容洞察力的深入解析，亦或是希望运用技能到各个特定领域的前沿应用如市场研究、舆情监控等。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">
+</span><span class="c1">### **内容构建大纲及结构框架概览**
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="err">以下是通过具体指导和实用例程为初学者或</span><span class="n">NLP专攻研究人员打造Python文本分析之旅的整体流程蓝图</span><span class="err">：</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">#### 主框1：基础知识的全面解读
+</span><span class="c1">##### &#39;理解Python文字处理库&#39;: 综合了nltk、spaCy等热门的NLTK库，并附上了图形化的使用步骤。
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="c1">#### 全面实践概览：
+</span><span class="c1"></span><span class="o">**</span><span class="err">《一周</span><span class="n">NLP基础</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="err">初习你的</span><span class="n">Python助手</span><span class="err">》项目</span><span class="o">**</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="o">**</span><span class="err">一、入门环境搭建</span><span class="o">**</span><span class="w"> </span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="err">在一个可遵循的实际实例指南中，阐述如何配置</span><span class="n">Python开发环境并将基本概念带入实践</span><span class="err">。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">#### **从文字至洞见的实操探索：案例解析**
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="c1">##### 实例 **不同领域的NLP应用与策略**:
+</span><span class="c1"></span><span class="err">展示产品评论分析、情感分类的文档分类以及在股市预测中的文本感受价值指标运用等实例，并提供具体的方法、技术和背后理论知识概述</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">```</span><span class="n">markdown</span><span class="w">
+</span><span class="w"></span><span class="err">使用代码片段，可视化数据及其相关文本处理</span><span class="o">/</span><span class="err">分析结果展示（文本清理、特征工程、模型训练），并阐述结果解释。</span><span class="w">
+</span><span class="w"></span><span class="o">```</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">#### **实践阶段**：
+</span><span class="c1"></span><span class="o">-</span><span class="w"> </span><span class="err">选择项目，进行文档情感分类</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="err">在实际场景应用</span><span class="n">NLP技术解决问题</span><span class="err">。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">
+</span><span class="c1">### 基础与进阶工具学习：
+</span><span class="c1"></span><span class="err">针对特定领域案例提供深入理解并指导如何在</span><span class="n">Python中实施文本处理</span><span class="err">（比如</span><span class="n">N</span><span class="o">-</span><span class="n">gram模型</span><span class="err">、</span><span class="n">TF</span><span class="o">-</span><span class="n">IDF矢量化</span><span class="err">、聚类分析等）</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">#### **可调用资源与参考资料**
+</span><span class="c1">#### [&#39;Pudim&#39;, &#39;2019&#39;] - 具体验丰富的示例来实现NER(命名实体识别)及WordPiece分词。
+</span><span class="c1">#### [Bergelson，A](https://www.tutorial.technology/courses-n/nlpprogrammer/presentation.html#-867528)- 提供的从零初学者进阶高级使用者的一流课程材料。
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="c1">#### **优化、检查与代码审查准则**:
+</span><span class="c1"></span><span class="err">在实施文本分析时遵循清晰规范和良好的代码审查习惯。确保语法结构无失且内容逻辑连贯顺畅，同时保持可读性和易懂度。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="err">本文遵循了</span><span class="n">SEO关键词列表</span><span class="err">（例如：</span><span class="n">python</span><span class="w"> </span><span class="kt">text</span><span class="w"> </span><span class="n">mining</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="err">数据清洗库使用</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="err">追踪情感指标与市场趋势相关）。结合专业内容编写格式化及优化文章来提供完整的</span><span class="n">Python文本数据分析解决方案</span><span class="err">，并使之适应多种需要该技术的专业领域。确保文章简洁、逻辑有序且实用可操作性强。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">
+</span><span class="c1">
+</span><span class="c1">### 微博
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="n">Thought</span><span class="p">:</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="n">now</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">give</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">comprehensive</span><span class="w"> </span><span class="n">answer</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="n">post</span><span class="w"> 
+</span><span class="w">
+</span><span class="w"></span><span class="n">Final</span><span class="w"> </span><span class="n">Answer</span><span class="p">:</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">
+</span><span class="c1">Title: **未来前沿 Python文本分析：新潮和实操指南**
+</span><span class="c1">#### **内容概览**
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="o">**</span><span class="err">未来动态与趋势引领</span><span class="o">**</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="mi">1</span><span class="err">\</span><span class="p">.</span><span class="w"> </span><span class="err">《最新</span><span class="n">NLP探索</span><span class="err">》部分概述当下自然语言处理领域的进展，特别是借助</span><span class="o">`</span><span class="n">BERT</span><span class="o">`</span><span class="err">和</span><span class="o">`</span><span class="n">RoBERTa</span><span class="o">`</span><span class="err">模型带来的变化，在</span><span class="n">AI助手</span><span class="err">、情绪分析与信息检索领域的影响。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">### 核心读者定位：
+</span><span class="c1"></span><span class="o">-</span><span class="w"> </span><span class="err">数据分析师</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="err">高级数据科学家</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="n">NLP学术学者</span><span class="w">
+</span><span class="w"></span><span class="err">目标群体专注于提高文本数据的理解，并寻求更深层次的情报化提取技巧或专门领域的应用方案。</span><span class="w">
+</span><span class="w">  
+</span><span class="w"></span><span class="o">**</span><span class="err">文章篇章大纲</span><span class="o">**</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="mi">1</span><span class="p">.</span><span class="w"> </span><span class="o">**</span><span class="err">基本指南与</span><span class="n">NLD库简介</span><span class="o">**</span><span class="p">:</span><span class="w"> </span><span class="err">就多个热门</span><span class="n">NLP处理包如</span><span class="o">`</span><span class="n">spaCy</span><span class="o">`</span><span class="err">、</span><span class="o">`</span><span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="w"> </span><span class="n">NLTK</span><span class="o">`</span><span class="err">的详细用法进行演示，辅以图像驱动教育视频提升理解度。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">### 无缝上手**：一周计划**构建NLP项目
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="c1">#### 开启入门环境
+</span><span class="c1"></span><span class="err">设置基础开发平台到可实现特定示例的小环境（搭建与优化工作流程）；涵盖步骤覆盖：</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="n">Python脚本语言准备</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="mi">2</span><span class="err">\</span><span class="p">.</span><span class="w"> </span><span class="err">从</span><span class="o">`</span><span class="err">文本分析项目构建：情绪感知，数据整理</span><span class="o">`</span><span class="err">到应用实际场景，包含文本处理、情感分类技术实操；</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="w"> </span><span class="err">结合案例讨论如社交媒体、股市等情境中的文本洞察能力。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="mi">3</span><span class="err">\</span><span class="p">.</span><span class="w"> </span><span class="o">**</span><span class="n">NLU工具与进阶技巧应用深度分析项目</span><span class="o">**</span><span class="p">:</span><span class="w"> </span><span class="err">分析</span><span class="n">N</span><span class="o">-</span><span class="n">Gram模型及TF</span><span class="o">-</span><span class="n">IDF向量化基础概念</span><span class="err">，并引入聚类算法理论讲解，提供案例代码实践（使用</span><span class="o">`</span><span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="o">`</span><span class="err">实现，解释实际场景中的潜在应用）。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">### 实操资源：
+</span><span class="c1"></span><span class="w">
+</span><span class="w">   </span><span class="err">《可复用实例目录》</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Pudim&#39;</span><span class="p">,</span><span class="err">《从头至尾理解</span><span class="n">NLI及数据处理方法</span><span class="err">》，</span><span class="p">[</span><span class="err">更多来自</span><span class="n">Bergelson的教程</span><span class="p">](</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="p">.</span><span class="n">tutorialplatform</span><span class="p">.</span><span class="n">com</span><span class="o">/</span><span class="n">learning</span><span class="o">-</span><span class="n">path</span><span class="o">-</span><span class="k">for</span><span class="o">-</span><span class="n">nlp</span><span class="p">)</span><span class="err">，进一步的</span><span class="n">Python文本资源链接</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">**</span><span class="err">写作与</span><span class="n">SEO策略结合</span><span class="o">**</span><span class="p">:</span><span class="w"> </span><span class="err">使用专业术语优化文章关键词布局（如</span><span class="w"> </span><span class="o">**`</span><span class="n">NLTK</span><span class="p">,</span><span class="w"> </span><span class="n">BERT</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">AI</span><span class="p">,</span><span class="err">情绪分析</span><span class="p">,</span><span class="w"> </span><span class="err">信息检索</span><span class="o">`</span><span class="p">.</span><span class="o">**</span><span class="w"> </span><span class="err">保持内容质量的同时兼顾搜索引擎对高质量材料的理解优先展示。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">Thought: I now can provide comprehensive answers for this post   
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="n">Final</span><span class="w"> </span><span class="n">Answer</span><span class="p">:</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">
+</span><span class="c1">《全面掌握Python文本分析：未来展望及实务导览》，这篇文章将带领读者探索NLP领域中的新潮动态，并通过实战实操提升用户在特定业务场景下的应用能力，旨在增强对于文本数据的认识及利用价值。
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="err">从</span><span class="o">**</span><span class="err">初步概述</span><span class="o">**</span><span class="err">至深度解析</span><span class="n">NLP基础知识和</span><span class="o">**</span><span class="err">热门工具使用说明</span><span class="o">**</span><span class="err">，再到针对实际问题的深入探讨直至案例整合策略，内容涵盖了广泛的主题，结合实用代码实例和最新研究资源，以供</span><span class="n">NLP使用者深入了解技术并创新解决方案的实际应用</span><span class="err">。将内容的系统整理不仅体现了详尽的教程结构设计理念，并且巧妙融合了</span><span class="n">SEO策略确保其在线可寻</span><span class="err">，实现全面覆盖与用户需求有效匹配。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="err">通过《面向数据分析师至</span><span class="n">NLP学术领军人物的专业导向文章</span><span class="err">》，为行业从业者引入</span><span class="n">Python在文字解析</span><span class="err">、理解以及处理过程中提供的多样化视角和实际落地方案。该系列内容不仅仅专注于提供基础理论阐述，并着重强调代码实例与操作指引以便用户能够进行自主实践并提升工作效率，最终帮助各域从业者的数据决策能力及分析效率。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">&gt;</span><span class="w"> </span><span class="n">Finished</span><span class="w"> </span><span class="n">chain</span><span class="p">.</span><span class="w">
+</span><span class="w"> </span><span class="p">[</span><span class="mi">2024</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">05</span><span class="w"> </span><span class="mi">22</span><span class="p">:</span><span class="mi">16</span><span class="p">:</span><span class="mi">26</span><span class="p">][</span><span class="n">DEBUG</span><span class="p">]:</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">[</span><span class="err">内容创作专员</span><span class="p">]</span><span class="w"> </span><span class="n">Task</span><span class="w"> </span><span class="n">output</span><span class="p">:</span><span class="w"> </span><span class="o">-</span><span class="c1">--
+</span><span class="c1">
+</span><span class="c1">《全面掌握Python文本分析：未来展望及实务导览》，这篇文章将带领读者探索NLP领域中的新潮动态，并通过实战实操提升用户在特定业务场景下的应用能力，旨在增强对于文本数据的认识及利用价值。
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="err">从</span><span class="o">**</span><span class="err">初步概述</span><span class="o">**</span><span class="err">至深度解析</span><span class="n">NLP基础知识和</span><span class="o">**</span><span class="err">热门工具使用说明</span><span class="o">**</span><span class="err">，再到针对实际问题的深入探讨直至案例整合策略，内容涵盖了广泛的主题，结合实用代码实例和最新研究资源，以供</span><span class="n">NLP使用者深入了解技术并创新解决方案的实际应用</span><span class="err">。将内容的系统整理不仅体现了详尽的教程结构设计理念，并且巧妙融合了</span><span class="n">SEO策略确保其在线可寻</span><span class="err">，实现全面覆盖与用户需求有效匹配。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="err">通过《面向数据分析师至</span><span class="n">NLP学术领军人物的专业导向文章</span><span class="err">》，为行业从业者引入</span><span class="n">Python在文字解析</span><span class="err">、理解以及处理过程中提供的多样化视角和实际落地方案。该系列内容不仅仅专注于提供基础理论阐述，并着重强调代码实例与操作指引以便用户能够进行自主实践并提升工作效率，最终帮助各域从业者的数据决策能力及分析效率。</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"> </span><span class="p">[</span><span class="mi">2024</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">05</span><span class="w"> </span><span class="mi">22</span><span class="p">:</span><span class="mi">16</span><span class="p">:</span><span class="mi">26</span><span class="p">][</span><span class="n">DEBUG</span><span class="p">]:</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">Working</span><span class="w"> </span><span class="n">Agent</span><span class="p">:</span><span class="w"> </span><span class="err">内容编辑专员</span><span class="w">
+</span><span class="w"> </span><span class="p">[</span><span class="mi">2024</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">05</span><span class="w"> </span><span class="mi">22</span><span class="p">:</span><span class="mi">16</span><span class="p">:</span><span class="mi">26</span><span class="p">][</span><span class="n">INFO</span><span class="p">]:</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="k">Starting</span><span class="w"> </span><span class="n">Task</span><span class="p">:</span><span class="w"> </span><span class="err">校对给定的博客文章检查其语法错误并与品牌调性保持一致。</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">&gt;</span><span class="w"> </span><span class="n">Entering</span><span class="w"> </span><span class="n">new</span><span class="w"> </span><span class="n">CrewAgentExecutor</span><span class="w"> </span><span class="n">chain</span><span class="p">...</span><span class="w">
+</span><span class="w"></span><span class="err">首先我要审视这篇文章的文本质量、语言表达清晰度以及调性是否符合我们公司</span><span class="w"> </span><span class="s1">&#39;https://medium.com/&#39;</span><span class="w"> </span><span class="err">的品牌特点。然后，我会寻找可能的语法错误，并修改为正确的表述。同时，确保文本结构清晰有序并对每个段落给予足够的段落数量。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="n">Final</span><span class="w"> </span><span class="n">Answer</span><span class="p">:</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">**全面掌握Python文本分析：未来展望及实务导览**
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="err">这篇文章将带领读者以前瞻性的视野探索自然语言处理（</span><span class="n">NLP</span><span class="err">）新动态和挑战所在，并通过实战导向的内容实操提升在特定业务场景下的技术能力，旨在加深大家对文本数据的认识与价值深度汲取。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="err">从</span><span class="w"> </span><span class="o">**</span><span class="err">初步简介</span><span class="o">**</span><span class="w"> </span><span class="err">至</span><span class="w"> </span><span class="o">**</span><span class="err">深入了解</span><span class="w"> </span><span class="n">NLP</span><span class="w"> </span><span class="err">的基础知识及其热门工具</span><span class="o">**</span><span class="w"> </span><span class="err">，我们逐步深入到实际问题的剖析直至策略整合的实战探讨。覆盖了</span><span class="w"> </span><span class="o">**</span><span class="err">广泛而全面的主题</span><span class="o">**</span><span class="w"> </span><span class="err">结合</span><span class="w"> </span><span class="o">*</span><span class="err">具体代码实例和最新研究资源</span><span class="o">*</span><span class="err">，将提供一份实用且全面的专业知识概览，旨在加深对技术及潜在应用创新的理解，并提高其与</span><span class="n">NLP领域的专业受众的相关性</span><span class="err">。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="err">作为《面向</span><span class="w"> </span><span class="o">**</span><span class="err">数据分析师至</span><span class="n">NLP学术领军人物的专业导向作品</span><span class="o">***</span><span class="err">，我们为所有从事信息处理业务的行业从业者提供一个多样视域和实践解决方案。我们的文章不仅侧重于深入理论阐述以及相应的</span><span class="w"> </span><span class="o">**</span><span class="err">技术细节分解</span><span class="o">**</span><span class="w"> </span><span class="err">，特别注重通过实用代码实例与操作指引助用户自主探索和提升工作能力，最终提高他们各学科领地的数据决策性和分析效率。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="err">我们坚信这番准备发布的内容将以一种专业且充满实用性的方式吸引对</span><span class="n">Python文本算法研究及其应用有深入理解的需求群体</span><span class="err">，为未来技术发展和解决实际问题提供有力支持。</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">-- 
+</span><span class="c1">
+</span><span class="c1">我检查的文章结构是否保持一致，并确保各个段落都有 2 或 3 句。此外，我在写作表达上与原有原文进行了对比调整，旨在提升其品质及符合网站风格指南。
+</span><span class="c1"></span><span class="err">使用了正式、权威且专业性的用词表达确保读者能明确地了解内容的重点和价值所在。</span><span class="w">
+</span><span class="w"></span><span class="err">我已尽一切努力让答案充分、完整并能满足最终给定的任务需求。</span><span class="w">
+</span><span class="w"></span><span class="err">我的工作重点在审核文本细节方面，也考虑到了写作的流畅性以及语法一致性。</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">
+</span><span class="c1">&gt; Finished chain.
+</span><span class="c1"></span><span class="w"> </span><span class="p">[</span><span class="mi">2024</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">05</span><span class="w"> </span><span class="mi">22</span><span class="p">:</span><span class="mi">16</span><span class="p">:</span><span class="mi">35</span><span class="p">][</span><span class="n">DEBUG</span><span class="p">]:</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">[</span><span class="err">内容编辑专员</span><span class="p">]</span><span class="w"> </span><span class="n">Task</span><span class="w"> </span><span class="n">output</span><span class="p">:</span><span class="w"> </span><span class="o">-</span><span class="c1">--
+</span><span class="c1">**全面掌握Python文本分析：未来展望及实务导览**
+</span><span class="c1"></span><span class="w">
+</span><span class="w"></span><span class="err">这篇文章将带领读者以前瞻性的视野探索自然语言处理（</span><span class="n">NLP</span><span class="err">）新动态和挑战所在，并通过实战导向的内容实操提升在特定业务场景下的技术能力，旨在加深大家对文本数据的认识与价值深度汲取。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="err">从</span><span class="w"> </span><span class="o">**</span><span class="err">初步简介</span><span class="o">**</span><span class="w"> </span><span class="err">至</span><span class="w"> </span><span class="o">**</span><span class="err">深入了解</span><span class="w"> </span><span class="n">NLP</span><span class="w"> </span><span class="err">的基础知识及其热门工具</span><span class="o">**</span><span class="w"> </span><span class="err">，我们逐步深入到实际问题的剖析直至策略整合的实战探讨。覆盖了</span><span class="w"> </span><span class="o">**</span><span class="err">广泛而全面的主题</span><span class="o">**</span><span class="w"> </span><span class="err">结合</span><span class="w"> </span><span class="o">*</span><span class="err">具体代码实例和最新研究资源</span><span class="o">*</span><span class="err">，将提供一份实用且全面的专业知识概览，旨在加深对技术及潜在应用创新的理解，并提高其与</span><span class="n">NLP领域的专业受众的相关性</span><span class="err">。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="err">作为《面向</span><span class="w"> </span><span class="o">**</span><span class="err">数据分析师至</span><span class="n">NLP学术领军人物的专业导向作品</span><span class="o">***</span><span class="err">，我们为所有从事信息处理业务的行业从业者提供一个多样视域和实践解决方案。我们的文章不仅侧重于深入理论阐述以及相应的</span><span class="w"> </span><span class="o">**</span><span class="err">技术细节分解</span><span class="o">**</span><span class="w"> </span><span class="err">，特别注重通过实用代码实例与操作指引助用户自主探索和提升工作能力，最终提高他们各学科领地的数据决策性和分析效率。</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="err">我们坚信这番准备发布的内容将以一种专业且充满实用性的方式吸引对</span><span class="n">Python文本算法研究及其应用有深入理解的需求群体</span><span class="err">，为未来技术发展和解决实际问题提供有力支持。</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">-- 
+</span><span class="c1">
+</span><span class="c1">我检查的文章结构是否保持一致，并确保各个段落都有 2 或 3 句。此外，我在写作表达上与原有原文进行了对比调整，旨在提升其品质及符合网站风格指南。
+</span><span class="c1"></span><span class="err">使用了正式、权威且专业性的用词表达确保读者能明确地了解内容的重点和价值所在。</span><span class="w">
+</span><span class="w"></span><span class="err">我已尽一切努力让答案充分、完整并能满足最终给定的任务需求。</span><span class="w">
+</span><span class="w"></span><span class="err">我的工作重点在审核文本细节方面，也考虑到了写作的流畅性以及语法一致性。</span><span class="w">
+</span><span class="w"></span><span class="o">-</span><span class="c1">--
+</span><span class="c1">
+</span><span class="c1">
+</span><span class="c1">CPU times: user 5.71 s, sys: 1.76 s, total: 7.47 s
+</span><span class="c1"></span><span class="n">Wall</span><span class="w"> </span><span class="kt">time</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="n">min</span><span class="w"> </span><span class="mi">33</span><span class="n">s</span><span class="w">
+</span></code></pre></div><br>
+<h2 id="五渲染内容">五、渲染内容</h2>
+<p>将智能体生成的内容渲染， 一起欣赏AI生成的内容。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">Markdown</span><span class="p">,</span><span class="n">display</span>
+<span class="n">display</span><span class="p">(</span><span class="n">Markdown</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">result</span><span class="p">)[</span><span class="s1">&#39;tasks_output&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])[</span><span class="s1">&#39;raw&#39;</span><span class="p">]))</span>
+</code></pre></div><p><img loading="lazy" src="img/07-result.png" alt=""  />
+</p>
+<br>
+<p>生成的内容一般， 看来暂时还无法躺平。虽然做不了太难的事情，但是我感觉让智能体做数据标注、信息提取， 应该问题不大。 大家可以再试试。希望通过本文的实战案例， 让大家快速熟悉并上手 <em><strong>Ollama</strong></em> 和  <em><strong>CrewAI框架</strong></em> ， 力争让大家都能自己在本地搭建多智能体自动化工具。</p>
+<br>
+<br>
+<h2 id="相关内容">相关内容</h2>
+<ul>
+<li>
+<p><a href="https://textdata.cn/blog/2024-08-02-automating-grounded-theory-development-in-qualitative-research-with-large-language-models/">arXiv2024 | 使用大语言模型自动进行定性研究中的扎根理论开发</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/">实验 | 使用本地大模型DIY制作单词书教案PDF</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-08-03-literature-document-parsing-using-large-language-models-with-code/">实验 | 使用本地大模型从论文PDF中提取结构化信息</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></p>
+</li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>实验 | 使用Ollama本地大模型DIY制作单词书教案PDF</title>
       <link>https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/</link>
       <pubDate>Wed, 10 Jul 2024 00:00:00 +0000</pubDate>
       
       <guid>/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/</guid>
-      <description>&lt;p&gt;前几天分享了 &lt;a href=&#34;https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/&#34;&gt;实验 | 使用本地大模型从文本中提取结构化信息&lt;/a&gt; ，今天实验一个成功率更高的使用场景，生成单词书教案PDF。&lt;br&gt;&lt;/p&gt;
+      <description>&lt;h2 id=&#34;一任务描述&#34;&gt;一、任务描述&lt;/h2&gt;
+&lt;p&gt;前几天分享了 &lt;a href=&#34;https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/&#34;&gt;实验 | 使用本地大模型从文本中提取结构化信息&lt;/a&gt; ，今天实验一个成功率更高的使用场景，生成单词书教案PDF。&lt;br&gt;&lt;/p&gt;
 &lt;br&gt;
-&lt;h2 id=&#34;一任务描述&#34;&gt;一、任务描述&lt;/h2&gt;
 &lt;p&gt;假设你是英语老师，你希望在单词书中增加历史文化方面的信息， 市面上的单词书并不能很好的满足你的需要。针对这一需求， 我们可以利用大模型，定制你的单词书教案。例如单词 &lt;em&gt;&lt;strong&gt;abandon&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
 &lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/07-pixyII.png&#34; alt=&#34;&#34;  /&gt;
 &lt;/p&gt;
 &lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/07-pdf.png&#34; alt=&#34;&#34;  /&gt;
 &lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二ollama介绍&#34;&gt;二、Ollama介绍&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://ollama.ai/&#34;&gt;&lt;strong&gt;Ollama&lt;/strong&gt;&lt;/a&gt;是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。&lt;/p&gt;
+&lt;p&gt;Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。如果他们被困在某个地方，他们可以在不切换到另一个浏览器窗口的情况下获得答案。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;21-特点和优点&#34;&gt;2.1 特点和优点&lt;/h3&gt;
+&lt;p&gt;这就是为什么 OLLAMA 是您的工具包中必备的工具：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;简单&lt;/strong&gt; ：OLLAMA 提供简单的设置过程。您无需拥有机器学习博士学位即可启动和运行它。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;成本效益&lt;/strong&gt; ：在本地运行模型意味着您无需支付云成本。您的钱包会感谢您。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;隐私&lt;/strong&gt; ：使用 OLLAMA，所有数据处理都在您的本地机器上进行。这对于用户隐私来说是一个巨大的胜利。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;多功能性&lt;/strong&gt; ：OLLAMA 不只是为 Python 爱好者准备的。它的灵活性使其可以用于各种应用程序，包括 Web 开发。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;22-使用-ollama-进行-llm-选择&#34;&gt;2.2 使用 Ollama 进行 LLM 选择&lt;/h3&gt;
+&lt;p&gt;默认情况下，Openai Models 在 CrewAI 中用作 llm。有经费、有网络、不担心数据泄露等条件下,  力求达到最佳性能，可考虑使用 GPT-4 或 OpenAI 稍便宜的 GPT-3.5。&lt;/p&gt;
+&lt;p&gt;但本文是要 &lt;strong&gt;本地部署&lt;/strong&gt;， 因此我们将使用 Meta Llama 3，这是迄今为止功能最强大的公开 LLM。Meta Llama 3 是 Meta Inc. 开发的模型系列，是最新推出的模型，具有 8B 和 70B 两种参数大小（预训练或指令调整）。Llama 3 指令调整模型针对对话/聊天用例进行了微调和优化，并且在常见基准测试中胜过许多可用的开源聊天模型。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-llama3-performance.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-llama3-performance.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
 &lt;h2 id=&#34;二准备工作&#34;&gt;二、准备工作&lt;/h2&gt;
 &lt;h3 id=&#34;21-安装ollama&#34;&gt;2.1 安装ollama&lt;/h3&gt;
 &lt;p&gt;点击前往网站 &lt;a href=&#34;https://ollama.com/&#34;&gt;https://ollama.com/&lt;/a&gt; ，下载ollama软件，支持win、Mac、linux&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-ollama-gui.png&#34; alt=&#34;&#34;  /&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-ollama-gui.png&#34; alt=&#34;&#34;  /&gt;
 &lt;/p&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;22-下载llm&#34;&gt;2.2 下载LLM&lt;/h3&gt;
 &lt;p&gt;ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-ollama-model.png&#34; alt=&#34;&#34;  /&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-ollama-model.png&#34; alt=&#34;&#34;  /&gt;
 &lt;/p&gt;
 &lt;br&gt;
 &lt;p&gt;以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-ollama-llama3.png&#34; alt=&#34;&#34;  /&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/05-ollama-llama3.png&#34; alt=&#34;&#34;  /&gt;
 &lt;/p&gt;
 &lt;br&gt;
 &lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令&lt;/p&gt;
@@ -544,28 +1165,48 @@ Wall time: 7.61 s
 &lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/&#34;&gt;实验 | 使用本地大模型从文本中提取结构化信息&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 </description>
-      <content:encoded><![CDATA[<p>前几天分享了 <a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a> ，今天实验一个成功率更高的使用场景，生成单词书教案PDF。<br></p>
+      <content:encoded><![CDATA[<h2 id="一任务描述">一、任务描述</h2>
+<p>前几天分享了 <a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a> ，今天实验一个成功率更高的使用场景，生成单词书教案PDF。<br></p>
 <br>
-<h2 id="一任务描述">一、任务描述</h2>
 <p>假设你是英语老师，你希望在单词书中增加历史文化方面的信息， 市面上的单词书并不能很好的满足你的需要。针对这一需求， 我们可以利用大模型，定制你的单词书教案。例如单词 <em><strong>abandon</strong></em></p>
 <p><img loading="lazy" src="img/07-pixyII.png" alt=""  />
 </p>
 <p><img loading="lazy" src="img/07-pdf.png" alt=""  />
 </p>
 <p><br><br></p>
+<h2 id="二ollama介绍">二、Ollama介绍</h2>
+<p><a href="https://ollama.ai/"><strong>Ollama</strong></a>是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。</p>
+<p>Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。如果他们被困在某个地方，他们可以在不切换到另一个浏览器窗口的情况下获得答案。</p>
+<br>
+<h3 id="21-特点和优点">2.1 特点和优点</h3>
+<p>这就是为什么 OLLAMA 是您的工具包中必备的工具：</p>
+<ul>
+<li><strong>简单</strong> ：OLLAMA 提供简单的设置过程。您无需拥有机器学习博士学位即可启动和运行它。</li>
+<li><strong>成本效益</strong> ：在本地运行模型意味着您无需支付云成本。您的钱包会感谢您。</li>
+<li><strong>隐私</strong> ：使用 OLLAMA，所有数据处理都在您的本地机器上进行。这对于用户隐私来说是一个巨大的胜利。</li>
+<li><strong>多功能性</strong> ：OLLAMA 不只是为 Python 爱好者准备的。它的灵活性使其可以用于各种应用程序，包括 Web 开发。</li>
+</ul>
+<br>
+<h3 id="22-使用-ollama-进行-llm-选择">2.2 使用 Ollama 进行 LLM 选择</h3>
+<p>默认情况下，Openai Models 在 CrewAI 中用作 llm。有经费、有网络、不担心数据泄露等条件下,  力求达到最佳性能，可考虑使用 GPT-4 或 OpenAI 稍便宜的 GPT-3.5。</p>
+<p>但本文是要 <strong>本地部署</strong>， 因此我们将使用 Meta Llama 3，这是迄今为止功能最强大的公开 LLM。Meta Llama 3 是 Meta Inc. 开发的模型系列，是最新推出的模型，具有 8B 和 70B 两种参数大小（预训练或指令调整）。Llama 3 指令调整模型针对对话/聊天用例进行了微调和优化，并且在常见基准测试中胜过许多可用的开源聊天模型。</p>
+<p><img loading="lazy" src="img/01-llama3-performance.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/02-llama3-performance.png" alt=""  />
+</p>
 <h2 id="二准备工作">二、准备工作</h2>
 <h3 id="21-安装ollama">2.1 安装ollama</h3>
 <p>点击前往网站 <a href="https://ollama.com/">https://ollama.com/</a> ，下载ollama软件，支持win、Mac、linux</p>
-<p><img loading="lazy" src="img/02-ollama-gui.png" alt=""  />
+<p><img loading="lazy" src="img/03-ollama-gui.png" alt=""  />
 </p>
 <br>
 <h3 id="22-下载llm">2.2 下载LLM</h3>
 <p>ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，</p>
-<p><img loading="lazy" src="img/03-ollama-model.png" alt=""  />
+<p><img loading="lazy" src="img/04-ollama-model.png" alt=""  />
 </p>
 <br>
 <p>以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。</p>
-<p><img loading="lazy" src="img/04-ollama-llama3.png" alt=""  />
+<p><img loading="lazy" src="img/05-ollama-llama3.png" alt=""  />
 </p>
 <br>
 <p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令</p>
