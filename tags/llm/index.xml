@@ -6,7 +6,7 @@
     <description>Recent content in LLM on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Mon, 05 Aug 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 06 Aug 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>实验 | 使用本地大模型从论文PDF中提取结构化信息</title>
       <link>https://textdata.cn/blog/2024-08-03-literature-document-parsing-using-large-language-models-with-code/</link>
@@ -319,6 +319,458 @@ Wall time: 24.6 s
     </item>
     
     <item>
+      <title>实验 | 使用本地大模型预测在线评论情感类别</title>
+      <link>https://textdata.cn/blog/2024-08-06-using-the-ollama-local-large-model-to-predict-the-sentiment-category-of-online-comments/</link>
+      <pubDate>Tue, 06 Aug 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-08-06-using-the-ollama-local-large-model-to-predict-the-sentiment-category-of-online-comments/</guid>
+      <description>&lt;p&gt;情感分析是分析文本以确定消息的情绪基调是积极、消极还是中性的过程。通过情感分析，我们可以了解文本是否表现出快乐、悲伤、愤怒等情绪。主要的计算方法有语义词典法、机器学习法、混合方法、其他方法。 随着chatGPT这类大语言模型的出现， 它们增强了文本理解能力，使我们能够更精准的把握文本中的语义和情绪，也因此大型语言模型 (LLM) 一出场就有实现情感分析功能。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/Sentiment-Analysis-methods.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;一任务描述&#34;&gt;一、任务描述&lt;/h2&gt;
+&lt;p&gt;大邓准备了200条外卖评论数据(下图蓝色框)， 已进行标注, 其中负面110条，正面90条。&lt;/p&gt;
+&lt;p&gt;现在想设计一个Prompt， 使用中文大模型对 &lt;em&gt;&lt;strong&gt;review&lt;/strong&gt;&lt;/em&gt; 文本进行情感类别(pos/neg)的预测(红色框)， 最终会计算大模型预测的准确率。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/00-purpose.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;先提前剧透一下， 模型预测的准确率89.5%。这种准确率，用到经管社科研究中， 应该没啥问题。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二传统模式-vs-大语言模型&#34;&gt;二、传统模式 VS 大语言模型&lt;/h2&gt;
+&lt;p&gt;大语言模型 (LLM) 因其在理解和生成人类语言方面的熟练程度而在情绪分析方面表现出色。通过对各种数据和算法进行训练，LLM 可以检测文本中的细微差别，从而增强其在社交媒体、新闻文章和客户评论等平台上掌握人们情绪和观点的能力。它们捕捉上下文和情感线索的能力提高了情绪分析的准确性和深度。&lt;/p&gt;
+&lt;p&gt;情感分析领域，传统模式与大语言模型 (LLM) 的比较&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;传统的内容分析方法可能难以准确捕捉细微的情绪。&lt;/li&gt;
+&lt;li&gt;LLM 使用深度学习和迁移学习等先进技术，擅长理解不同的语言表达。&lt;/li&gt;
+&lt;li&gt;LLM 在跨文本源（包括社交媒体帖子和新闻文章）的情感分析方面具有卓越的准确性和效率。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三ollama&#34;&gt;三、Ollama&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://ollama.ai/&#34;&gt;&lt;strong&gt;Ollama&lt;/strong&gt;&lt;/a&gt;是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。&lt;/p&gt;
+&lt;p&gt;Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。Ollama的安装、配置、使用的详细教程可阅读  &lt;a href=&#34;https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/&#34;&gt;&lt;strong&gt;教程 | 如何使用 Ollama 下载 &amp;amp; 使用本地大语言模型&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;31-安装模型&#34;&gt;3.1 安装模型&lt;/h3&gt;
+&lt;p&gt;假设电脑中已安装了Ollama软件， 现在安装需要的大模型。 这里我们安装&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;qwen2:7b&lt;/strong&gt;&lt;/em&gt;： 阿里的通义千问大模型， 主要适用于中文场景， 英文也可。&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;llama3:8b&lt;/strong&gt;&lt;/em&gt;：Meta发布的LLama大模型，主要适用于英文场景， 中文也可。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pull&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;qwen2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;7&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;b&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pull&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;llama3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;8&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;b&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-安装python包&#34;&gt;3.2 安装python包&lt;/h3&gt;
+&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install ollama
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;33-启动ollama服务&#34;&gt;3.3 启动ollama服务&lt;/h3&gt;
+&lt;p&gt;在电脑中找到软件Ollama， 双击打开，即可开启Ollama服务。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四实验&#34;&gt;四、实验&lt;/h2&gt;
+&lt;h3 id=&#34;41-代码结构&#34;&gt;4.1 代码结构&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;project
+  - code.ipynb  #代码
+  - data.csv   #在线评论数据
+  - result.csv #预测结果
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;42-读取数据&#34;&gt;4.2 读取数据&lt;/h3&gt;
+&lt;p&gt;&lt;em&gt;&lt;strong&gt;data.csv&lt;/strong&gt;&lt;/em&gt; 内存储着200条外卖评论，均已标注(1正面， 0负面)&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/06-df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;字段的数据类型&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dtypes&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;label&lt;/span&gt;         &lt;span class=&#34;n&#34;&gt;int64&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;review&lt;/span&gt;       &lt;span class=&#34;nb&#34;&gt;object&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;dtype&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;object&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;label数值的分布&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;label&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;value_counts&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;label
+0    110
+1     90
+Name: count, dtype: int64
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;43-设计提示&#34;&gt;4.3 设计提示&lt;/h3&gt;
+&lt;p&gt;需要根据单词，生成单词、音标、语义、例句、历史文化、相关单词等信息， 提示如下，&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;PROMPT = &amp;#34;&amp;#34;&amp;#34;
+您的任务是分析淘宝店铺中买家评论的情感类型(neg、pos)。
+
+&amp;lt;comment_content&amp;gt;
+{{COMMENT_CONTENT}}
+&amp;lt;/comment_content&amp;gt;
+
+请根据以下准则分析此评论的情感：
+
+&amp;#34;neg&amp;#34;：评论文本中包含强烈的负面情绪、沮丧或不满。
+
+&amp;#34;pos&amp;#34;：评论文本表达了满意、感激或积极情绪
+
+
+分析后，请以以下 JSON 格式提供最终结果：
+
+&amp;lt;answer&amp;gt;
+{
+&amp;#34;sentiment&amp;#34;: &amp;#34;[neg/pos]&amp;#34;,
+}
+&amp;lt;/answer&amp;gt;
+&amp;#34;&amp;#34;&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;44-小实验&#34;&gt;4.4 小实验&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;COMMENT_CONTENT&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;11点14订餐，13点20饭才到，2个小时才把我的午饭送到，而且还是打了2次客服电话，1次投诉电话才给送来，要是不打电话都不知道几点能吃上午饭？&amp;#34;&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;qwen2:7b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+          &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;system&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;PROMPT&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+          &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;COMMENT_CONTENT&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+        &lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;answer&amp;gt;
+{
+&amp;#34;sentiment&amp;#34;: &amp;#34;neg&amp;#34;
+}
+&amp;lt;/answer&amp;gt;
+CPU times: user 3.85 ms, sys: 2.5 ms, total: 6.35 ms
+Wall time: 1.42 s
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;运行一条评论耗时1.42s， 需要注意，返回结果的格式不唯一也不确定，这是我发现的别的格式&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;{
+&amp;#34;sentiment&amp;#34;: &amp;#34;neg&amp;#34;
+}
+CPU times: user 1.94 ms, sys: 1.33 ms, total: 3.27 ms
+Wall time: 329 ms
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;据此，设计了如下的代码&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;pos&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;senti&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;pos&amp;#39;&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;elif&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;neg&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;senti&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;neg&amp;#39;&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;senti&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;NA&amp;#39;&lt;/span&gt;
+    
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;senti&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;neg
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;五-批量运算&#34;&gt;五、 批量运算&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;tqdm&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;tqdm&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;PROMPT&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&amp;#34;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;您的任务是分析淘宝店铺中买家评论的情绪和类型。您的目标是确定评论情感(neg、pos)。
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;lt;comment_content&amp;gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;{{COMMENT_CONTENT}}
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;lt;/comment_content&amp;gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;请根据以下准则分析此评论的情感：
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;neg&amp;#34;：评论文本中包含强烈的负面情绪、沮丧或不满。
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;pos&amp;#34;：评论文本表达了满意、感激或积极情绪
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;分析后，请以以下 JSON 格式提供最终结果：
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;lt;answer&amp;gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;{
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;sentiment&amp;#34;: &amp;#34;[neg/pos]&amp;#34;,
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;}
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;lt;/answer&amp;gt;
+&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+
+
+&lt;span class=&#34;c1&#34;&gt;#考虑到大模型回答的随机性，很容易报错。&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#使用tryexcept增强代码的鲁棒性&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;sentiment_analysis&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;comment_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;qwen2:7b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                               &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+                                       &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;system&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;PROMPT&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+                                       &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;comment_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+                                   &lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;pos&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;senti&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;pos&amp;#39;&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;elif&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;neg&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;senti&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;neg&amp;#39;&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;senti&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;NA&amp;#39;&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;senti&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;NA&amp;#39;&lt;/span&gt;
+
+    
+
+&lt;span class=&#34;n&#34;&gt;sentis&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#读取数据&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;review&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;tqdm&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;review&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;senti&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sentiment_analysis&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;review&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;sentis&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;senti&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;sentiment&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sentis&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#保存结果&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;to_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;result.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;index&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;False&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/07-df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;六检查准确率&#34;&gt;六、检查准确率&lt;/h2&gt;
+&lt;p&gt;假设label为1时， sentiment为pos(或label为0时， sentiment为neg)， 大模型判断正确。反之，判断失误。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;expression&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;(label == 1) &amp;amp; (sentiment == &amp;#39;pos&amp;#39;) | (label == 0) &amp;amp; (sentiment == &amp;#39;neg&amp;#39;)&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;correct_ratio&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;query&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;expression&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;/&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;准确率: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;correct_ratio&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;100&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;%&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;准确率: 89.5%
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;今天使用的国产大模型（qwen2:8b) 预测情感分类的表现还不错， 准确率高达89.5% 。这种准确率，用到经管社科研究中， 应该没啥问题。&lt;/p&gt;
+&lt;br&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;精选内容&#34;&gt;精选内容&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/datasets_available_for_management_science/&#34;&gt;LIST | 可供社科(经管)领域使用的数据集汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/the_text_analysis_list_about_ms/&#34;&gt;LIST | 社科(经管)数据挖掘文献资料汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-06-16-scrapegraph-ai/&#34;&gt;网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/&#34;&gt;推荐 | 文本分析库cntext2.x使用手册&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/&#34;&gt;实验 | 使用本地大模型从文本中提取结构化信息&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<p>情感分析是分析文本以确定消息的情绪基调是积极、消极还是中性的过程。通过情感分析，我们可以了解文本是否表现出快乐、悲伤、愤怒等情绪。主要的计算方法有语义词典法、机器学习法、混合方法、其他方法。 随着chatGPT这类大语言模型的出现， 它们增强了文本理解能力，使我们能够更精准的把握文本中的语义和情绪，也因此大型语言模型 (LLM) 一出场就有实现情感分析功能。</p>
+<p><img loading="lazy" src="img/Sentiment-Analysis-methods.png" alt=""  />
+</p>
+<h2 id="一任务描述">一、任务描述</h2>
+<p>大邓准备了200条外卖评论数据(下图蓝色框)， 已进行标注, 其中负面110条，正面90条。</p>
+<p>现在想设计一个Prompt， 使用中文大模型对 <em><strong>review</strong></em> 文本进行情感类别(pos/neg)的预测(红色框)， 最终会计算大模型预测的准确率。</p>
+<p><img loading="lazy" src="img/00-purpose.png" alt=""  />
+</p>
+<p>先提前剧透一下， 模型预测的准确率89.5%。这种准确率，用到经管社科研究中， 应该没啥问题。</p>
+<p><br><br></p>
+<h2 id="二传统模式-vs-大语言模型">二、传统模式 VS 大语言模型</h2>
+<p>大语言模型 (LLM) 因其在理解和生成人类语言方面的熟练程度而在情绪分析方面表现出色。通过对各种数据和算法进行训练，LLM 可以检测文本中的细微差别，从而增强其在社交媒体、新闻文章和客户评论等平台上掌握人们情绪和观点的能力。它们捕捉上下文和情感线索的能力提高了情绪分析的准确性和深度。</p>
+<p>情感分析领域，传统模式与大语言模型 (LLM) 的比较</p>
+<ul>
+<li>传统的内容分析方法可能难以准确捕捉细微的情绪。</li>
+<li>LLM 使用深度学习和迁移学习等先进技术，擅长理解不同的语言表达。</li>
+<li>LLM 在跨文本源（包括社交媒体帖子和新闻文章）的情感分析方面具有卓越的准确性和效率。</li>
+</ul>
+<p><br><br></p>
+<h2 id="三ollama">三、Ollama</h2>
+<p><a href="https://ollama.ai/"><strong>Ollama</strong></a>是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。</p>
+<p>Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。Ollama的安装、配置、使用的详细教程可阅读  <a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/"><strong>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</strong></a></p>
+<br>
+<h3 id="31-安装模型">3.1 安装模型</h3>
+<p>假设电脑中已安装了Ollama软件， 现在安装需要的大模型。 这里我们安装</p>
+<ul>
+<li><em><strong>qwen2:7b</strong></em>： 阿里的通义千问大模型， 主要适用于中文场景， 英文也可。</li>
+<li><em><strong>llama3:8b</strong></em>：Meta发布的LLama大模型，主要适用于英文场景， 中文也可。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ollama</span> <span class="n">pull</span> <span class="n">qwen2</span><span class="p">:</span><span class="mi">7</span><span class="n">b</span>
+<span class="n">ollama</span> <span class="n">pull</span> <span class="n">llama3</span><span class="p">:</span><span class="mi">8</span><span class="n">b</span>
+</code></pre></div><br>
+<h3 id="32-安装python包">3.2 安装python包</h3>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install ollama
+</code></pre></div><br>
+<h3 id="33-启动ollama服务">3.3 启动ollama服务</h3>
+<p>在电脑中找到软件Ollama， 双击打开，即可开启Ollama服务。</p>
+<p><br><br></p>
+<h2 id="四实验">四、实验</h2>
+<h3 id="41-代码结构">4.1 代码结构</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">project
+  - code.ipynb  #代码
+  - data.csv   #在线评论数据
+  - result.csv #预测结果
+</code></pre></div><br>
+<h3 id="42-读取数据">4.2 读取数据</h3>
+<p><em><strong>data.csv</strong></em> 内存储着200条外卖评论，均已标注(1正面， 0负面)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/06-df.png" alt=""  />
+</p>
+<br>
+<p>字段的数据类型</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">label</span>         <span class="n">int64</span>
+<span class="n">review</span>       <span class="nb">object</span>
+<span class="n">dtype</span><span class="p">:</span> <span class="nb">object</span>
+</code></pre></div><br>
+<p>label数值的分布</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">label
+0    110
+1     90
+Name: count, dtype: int64
+</code></pre></div><br>
+<h3 id="43-设计提示">4.3 设计提示</h3>
+<p>需要根据单词，生成单词、音标、语义、例句、历史文化、相关单词等信息， 提示如下，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">PROMPT = &#34;&#34;&#34;
+您的任务是分析淘宝店铺中买家评论的情感类型(neg、pos)。
+
+&lt;comment_content&gt;
+{{COMMENT_CONTENT}}
+&lt;/comment_content&gt;
+
+请根据以下准则分析此评论的情感：
+
+&#34;neg&#34;：评论文本中包含强烈的负面情绪、沮丧或不满。
+
+&#34;pos&#34;：评论文本表达了满意、感激或积极情绪
+
+
+分析后，请以以下 JSON 格式提供最终结果：
+
+&lt;answer&gt;
+{
+&#34;sentiment&#34;: &#34;[neg/pos]&#34;,
+}
+&lt;/answer&gt;
+&#34;&#34;&#34;
+</code></pre></div><br>
+<h3 id="44-小实验">4.4 小实验</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">ollama</span>
+
+<span class="n">COMMENT_CONTENT</span> <span class="o">=</span> <span class="s2">&#34;11点14订餐，13点20饭才到，2个小时才把我的午饭送到，而且还是打了2次客服电话，1次投诉电话才给送来，要是不打电话都不知道几点能吃上午饭？&#34;</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;qwen2:7b&#39;</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+          <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">PROMPT</span><span class="p">},</span>
+          <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">COMMENT_CONTENT</span><span class="p">},</span>
+        <span class="p">])</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&lt;answer&gt;
+{
+&#34;sentiment&#34;: &#34;neg&#34;
+}
+&lt;/answer&gt;
+CPU times: user 3.85 ms, sys: 2.5 ms, total: 6.35 ms
+Wall time: 1.42 s
+</code></pre></div><p>运行一条评论耗时1.42s， 需要注意，返回结果的格式不唯一也不确定，这是我发现的别的格式</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{
+&#34;sentiment&#34;: &#34;neg&#34;
+}
+CPU times: user 1.94 ms, sys: 1.33 ms, total: 3.27 ms
+Wall time: 329 ms
+</code></pre></div><br>
+<p>据此，设计了如下的代码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">if</span> <span class="s1">&#39;pos&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+    <span class="n">senti</span> <span class="o">=</span> <span class="s1">&#39;pos&#39;</span>
+<span class="k">elif</span> <span class="s1">&#39;neg&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+    <span class="n">senti</span> <span class="o">=</span> <span class="s1">&#39;neg&#39;</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">senti</span> <span class="o">=</span> <span class="s1">&#39;NA&#39;</span>
+    
+<span class="nb">print</span><span class="p">(</span><span class="n">senti</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">neg
+</code></pre></div><br>
+<br>
+<h2 id="五-批量运算">五、 批量运算</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">ollama</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="n">PROMPT</span> <span class="o">=</span> <span class="s2">&#34;&#34;&#34;
+</span><span class="s2">您的任务是分析淘宝店铺中买家评论的情绪和类型。您的目标是确定评论情感(neg、pos)。
+</span><span class="s2">
+</span><span class="s2">&lt;comment_content&gt;
+</span><span class="s2">{{COMMENT_CONTENT}}
+</span><span class="s2">&lt;/comment_content&gt;
+</span><span class="s2">
+</span><span class="s2">请根据以下准则分析此评论的情感：
+</span><span class="s2">
+</span><span class="s2">&#34;neg&#34;：评论文本中包含强烈的负面情绪、沮丧或不满。
+</span><span class="s2">
+</span><span class="s2">&#34;pos&#34;：评论文本表达了满意、感激或积极情绪
+</span><span class="s2">
+</span><span class="s2">
+</span><span class="s2">分析后，请以以下 JSON 格式提供最终结果：
+</span><span class="s2">
+</span><span class="s2">&lt;answer&gt;
+</span><span class="s2">{
+</span><span class="s2">&#34;sentiment&#34;: &#34;[neg/pos]&#34;,
+</span><span class="s2">}
+</span><span class="s2">&lt;/answer&gt;
+</span><span class="s2">&#34;&#34;&#34;</span>
+
+
+<span class="c1">#考虑到大模型回答的随机性，很容易报错。</span>
+<span class="c1">#使用tryexcept增强代码的鲁棒性</span>
+<span class="k">def</span> <span class="nf">sentiment_analysis</span><span class="p">(</span><span class="n">comment_text</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s1">&#39;qwen2:7b&#39;</span><span class="p">,</span> 
+                               <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+                                       <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">PROMPT</span><span class="p">},</span>
+                                       <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">comment_text</span><span class="p">}</span>
+                                   <span class="p">])</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;pos&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">senti</span> <span class="o">=</span> <span class="s1">&#39;pos&#39;</span>
+        <span class="k">elif</span> <span class="s1">&#39;neg&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">senti</span> <span class="o">=</span> <span class="s1">&#39;neg&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">senti</span> <span class="o">=</span> <span class="s1">&#39;NA&#39;</span>
+        <span class="k">return</span> <span class="n">senti</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;NA&#39;</span>
+
+    
+
+<span class="n">sentis</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1">#读取数据</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data.csv&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">review</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;review&#39;</span><span class="p">]):</span>
+    <span class="n">senti</span> <span class="o">=</span> <span class="n">sentiment_analysis</span><span class="p">(</span><span class="n">review</span><span class="p">)</span>
+    <span class="n">sentis</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">senti</span><span class="p">)</span>
+    
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;sentiment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sentis</span>
+<span class="c1">#保存结果</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;result.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/07-df.png" alt=""  />
+</p>
+<br>
+<h2 id="六检查准确率">六、检查准确率</h2>
+<p>假设label为1时， sentiment为pos(或label为0时， sentiment为neg)， 大模型判断正确。反之，判断失误。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">expression</span> <span class="o">=</span> <span class="s2">&#34;(label == 1) &amp; (sentiment == &#39;pos&#39;) | (label == 0) &amp; (sentiment == &#39;neg&#39;)&#34;</span>
+<span class="n">correct_ratio</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">expression</span><span class="p">))</span><span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;准确率: </span><span class="si">{</span><span class="n">correct_ratio</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">准确率: 89.5%
+</code></pre></div><p>今天使用的国产大模型（qwen2:8b) 预测情感分类的表现还不错， 准确率高达89.5% 。这种准确率，用到经管社科研究中， 应该没啥问题。</p>
+<br>
+<br>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>实验 | 使用 Crewai 和 Ollama 构建智能体(AI Agent)帮我撰写博客文章</title>
       <link>https://textdata.cn/blog/2024-08-05-create-a-blog-writer-multi-agent-system-using-crewai-and-ollama/</link>
       <pubDate>Mon, 05 Aug 2024 00:00:00 +0000</pubDate>
@@ -339,6 +791,8 @@ Wall time: 24.6 s
 <li><strong>专业化</strong>：智能体可以专门用于特定任务或领域。例如，某些智能体可能专为网页浏览而设计，而其他智能体则可能处理数据库交互、执行复杂计算或生成图像。</li>
 <li><strong>目标导向</strong>：智能体通常被设定有特定的目标或目的。它们通过一系列动作和决策来实现这些目标。</li>
 </ol>
+<p><img loading="lazy" src="img/landscape-latest.png" alt=""  />
+</p>
 <p>总之，智能体是强大的工具，可以自动化和增强广泛的活动，从简单的重复任务到复杂的问题解决场景，这使得它们在各种应用和行业中具有无价的价值。</p>
 <p>想象一下，将上述所有概念整合在一起，共同朝着预先确定的目标努力，实现预期结果。这些任务可以按顺序或分层流程执行，所有智能体都像一个协调的团队一样工作。这种强大的协作可以彻底改变我们处理复杂问题的方式，使流程更高效，结果更有效。这就是 <em><strong>CrewAI框架</strong></em>发挥作用的地方。</p>
 <p><br><br></p>
@@ -1878,31 +2332,51 @@ Processing chunks: 100%|██████████████████�
     &amp;#34;备注&amp;#34;: &amp;#34;230106163474406331&amp;#34;
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;二准备工作&#34;&gt;二、准备工作&lt;/h2&gt;
-&lt;h3 id=&#34;21-安装ollama&#34;&gt;2.1 安装ollama&lt;/h3&gt;
-&lt;p&gt;点击前往网站 &lt;a href=&#34;https://ollama.com/&#34;&gt;https://ollama.com/&lt;/a&gt; ，下载ollama软件，支持win、Mac、linux&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-ollama-gui.png&#34; alt=&#34;&#34;  /&gt;
+&lt;h2 id=&#34;二ollama介绍&#34;&gt;二、Ollama介绍&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://ollama.ai/&#34;&gt;&lt;strong&gt;Ollama&lt;/strong&gt;&lt;/a&gt;是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。&lt;/p&gt;
+&lt;p&gt;Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。如果他们被困在某个地方，他们可以在不切换到另一个浏览器窗口的情况下获得答案。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;21-特点和优点&#34;&gt;2.1 特点和优点&lt;/h3&gt;
+&lt;p&gt;这就是为什么 OLLAMA 是您的工具包中必备的工具：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;简单&lt;/strong&gt; ：OLLAMA 提供简单的设置过程。您无需拥有机器学习博士学位即可启动和运行它。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;成本效益&lt;/strong&gt; ：在本地运行模型意味着您无需支付云成本。您的钱包会感谢您。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;隐私&lt;/strong&gt; ：使用 OLLAMA，所有数据处理都在您的本地机器上进行。这对于用户隐私来说是一个巨大的胜利。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;多功能性&lt;/strong&gt; ：OLLAMA 不只是为 Python 爱好者准备的。它的灵活性使其可以用于各种应用程序，包括 Web 开发。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;22-使用-ollama-进行-llm-选择&#34;&gt;2.2 使用 Ollama 进行 LLM 选择&lt;/h3&gt;
+&lt;p&gt;默认情况下，Openai Models 在 CrewAI 中用作 llm。有经费、有网络、不担心数据泄露等条件下,  力求达到最佳性能，可考虑使用 GPT-4 或 OpenAI 稍便宜的 GPT-3.5。&lt;/p&gt;
+&lt;p&gt;但本文是要 &lt;strong&gt;本地部署&lt;/strong&gt;， 因此我们将使用 Meta Llama 3，这是迄今为止功能最强大的公开 LLM。Meta Llama 3 是 Meta Inc. 开发的模型系列，是最新推出的模型，具有 8B 和 70B 两种参数大小（预训练或指令调整）。Llama 3 指令调整模型针对对话/聊天用例进行了微调和优化，并且在常见基准测试中胜过许多可用的开源聊天模型。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-llama3-performance.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-llama3-performance.png&#34; alt=&#34;&#34;  /&gt;
 &lt;/p&gt;
 &lt;br&gt;
-&lt;h3 id=&#34;22-下载llm&#34;&gt;2.2 下载LLM&lt;/h3&gt;
-&lt;p&gt;ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-ollama-model.png&#34; alt=&#34;&#34;  /&gt;
+&lt;h3 id=&#34;23-安装ollama&#34;&gt;2.3 安装ollama&lt;/h3&gt;
+&lt;p&gt;点击前往网站 &lt;a href=&#34;https://ollama.com/&#34;&gt;https://ollama.com/&lt;/a&gt; ，下载ollama软件，支持win、Mac、linux&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-ollama-gui.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;24-下载llm&#34;&gt;2.4 下载LLM&lt;/h3&gt;
+&lt;p&gt;ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3、llama3.1)，&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/05-ollama-model.png&#34; alt=&#34;&#34;  /&gt;
 &lt;/p&gt;
 &lt;br&gt;
 &lt;p&gt;以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-ollama-llama3.png&#34; alt=&#34;&#34;  /&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/06-ollama-llama3.png&#34; alt=&#34;&#34;  /&gt;
 &lt;/p&gt;
 &lt;br&gt;
 &lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama pull llama3
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;等待 &lt;strong&gt;llama3:8b&lt;/strong&gt; 下载完成。&lt;/p&gt;
 &lt;br&gt;
-&lt;h3 id=&#34;23-安装python包&#34;&gt;2.3 安装python包&lt;/h3&gt;
+&lt;h3 id=&#34;25-安装python包&#34;&gt;2.5 安装python包&lt;/h3&gt;
 &lt;p&gt;在python中调用ollama服务，需要ollama包。&lt;/p&gt;
 &lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install ollama
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;24-启动ollama服务&#34;&gt;2.4 启动ollama服务&lt;/h3&gt;
+&lt;h3 id=&#34;26-启动ollama服务&#34;&gt;2.6 启动ollama服务&lt;/h3&gt;
 &lt;p&gt;在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama serve
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
@@ -2097,31 +2571,51 @@ Wall time: 3.8 s
     &#34;备注&#34;: &#34;230106163474406331&#34;
 }
 </code></pre></div><p><br><br></p>
-<h2 id="二准备工作">二、准备工作</h2>
-<h3 id="21-安装ollama">2.1 安装ollama</h3>
-<p>点击前往网站 <a href="https://ollama.com/">https://ollama.com/</a> ，下载ollama软件，支持win、Mac、linux</p>
-<p><img loading="lazy" src="img/02-ollama-gui.png" alt=""  />
+<h2 id="二ollama介绍">二、Ollama介绍</h2>
+<p><a href="https://ollama.ai/"><strong>Ollama</strong></a>是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。</p>
+<p>Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。如果他们被困在某个地方，他们可以在不切换到另一个浏览器窗口的情况下获得答案。</p>
+<br>
+<h3 id="21-特点和优点">2.1 特点和优点</h3>
+<p>这就是为什么 OLLAMA 是您的工具包中必备的工具：</p>
+<ul>
+<li><strong>简单</strong> ：OLLAMA 提供简单的设置过程。您无需拥有机器学习博士学位即可启动和运行它。</li>
+<li><strong>成本效益</strong> ：在本地运行模型意味着您无需支付云成本。您的钱包会感谢您。</li>
+<li><strong>隐私</strong> ：使用 OLLAMA，所有数据处理都在您的本地机器上进行。这对于用户隐私来说是一个巨大的胜利。</li>
+<li><strong>多功能性</strong> ：OLLAMA 不只是为 Python 爱好者准备的。它的灵活性使其可以用于各种应用程序，包括 Web 开发。</li>
+</ul>
+<br>
+<h3 id="22-使用-ollama-进行-llm-选择">2.2 使用 Ollama 进行 LLM 选择</h3>
+<p>默认情况下，Openai Models 在 CrewAI 中用作 llm。有经费、有网络、不担心数据泄露等条件下,  力求达到最佳性能，可考虑使用 GPT-4 或 OpenAI 稍便宜的 GPT-3.5。</p>
+<p>但本文是要 <strong>本地部署</strong>， 因此我们将使用 Meta Llama 3，这是迄今为止功能最强大的公开 LLM。Meta Llama 3 是 Meta Inc. 开发的模型系列，是最新推出的模型，具有 8B 和 70B 两种参数大小（预训练或指令调整）。Llama 3 指令调整模型针对对话/聊天用例进行了微调和优化，并且在常见基准测试中胜过许多可用的开源聊天模型。</p>
+<p><img loading="lazy" src="img/02-llama3-performance.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/03-llama3-performance.png" alt=""  />
 </p>
 <br>
-<h3 id="22-下载llm">2.2 下载LLM</h3>
-<p>ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3)，</p>
-<p><img loading="lazy" src="img/03-ollama-model.png" alt=""  />
+<h3 id="23-安装ollama">2.3 安装ollama</h3>
+<p>点击前往网站 <a href="https://ollama.com/">https://ollama.com/</a> ，下载ollama软件，支持win、Mac、linux</p>
+<p><img loading="lazy" src="img/04-ollama-gui.png" alt=""  />
+</p>
+<br>
+<h3 id="24-下载llm">2.4 下载LLM</h3>
+<p>ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3、llama3.1)，</p>
+<p><img loading="lazy" src="img/05-ollama-model.png" alt=""  />
 </p>
 <br>
 <p>以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。</p>
-<p><img loading="lazy" src="img/04-ollama-llama3.png" alt=""  />
+<p><img loading="lazy" src="img/06-ollama-llama3.png" alt=""  />
 </p>
 <br>
 <p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama pull llama3
 </code></pre></div><p>等待 <strong>llama3:8b</strong> 下载完成。</p>
 <br>
-<h3 id="23-安装python包">2.3 安装python包</h3>
+<h3 id="25-安装python包">2.5 安装python包</h3>
 <p>在python中调用ollama服务，需要ollama包。</p>
 <p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install ollama
 </code></pre></div><br>
-<h3 id="24-启动ollama服务">2.4 启动ollama服务</h3>
+<h3 id="26-启动ollama服务">2.6 启动ollama服务</h3>
 <p>在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama serve
 </code></pre></div><p>Run</p>
@@ -2299,6 +2793,544 @@ Wall time: 3.8 s
 <li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
 <li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
 <li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</title>
+      <link>https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/</link>
+      <pubDate>Fri, 14 Jun 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-06-14-how-to-download-large-language-model-with-ollama/</guid>
+      <description>&lt;h2 id=&#34;一ollama&#34;&gt;一、Ollama&lt;/h2&gt;
+&lt;h3 id=&#34;11-ollama介绍&#34;&gt;1.1 Ollama介绍&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://ollama.ai/&#34;&gt;&lt;strong&gt;Ollama&lt;/strong&gt;&lt;/a&gt;是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。&lt;/p&gt;
+&lt;p&gt;Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。如果他们被困在某个地方，他们可以在不切换到另一个浏览器窗口的情况下获得答案。&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;这就是为什么 OLLAMA 是您的工具包中必备的工具：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;简单&lt;/strong&gt; ：OLLAMA 提供简单的设置过程。您无需拥有机器学习博士学位即可启动和运行它。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;成本效益&lt;/strong&gt; ：在本地运行模型意味着您无需支付云成本。您的钱包会感谢您。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;隐私&lt;/strong&gt; ：使用 OLLAMA，所有数据处理都在您的本地机器上进行。这对于用户隐私来说是一个巨大的胜利。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;多功能性&lt;/strong&gt; ：OLLAMA 不只是为 Python 爱好者准备的。它的灵活性使其可以用于各种应用程序，包括 Web 开发。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;12-安装ollama&#34;&gt;1.2 安装ollama&lt;/h3&gt;
+&lt;p&gt;点击前往网站 &lt;a href=&#34;https://ollama.com/&#34;&gt;https://ollama.com/&lt;/a&gt; ，下载ollama软件，支持win、Mac、linux&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-ollama-gui.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二ollama操作&#34;&gt;二、Ollama操作&lt;/h2&gt;
+&lt;h3 id=&#34;21-选择模型&#34;&gt;2.1 选择模型&lt;/h3&gt;
+&lt;p&gt;ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3、llama3.1) 等。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-ollama-model.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;默认情况下，Openai Models 在 CrewAI 中用作 llm。有经费、有网络、不担心数据泄露等条件下,  力求达到最佳性能，可考虑使用 GPT-4 或 OpenAI 稍便宜的 GPT-3.5。&lt;/p&gt;
+&lt;p&gt;但本文是要 &lt;strong&gt;本地部署&lt;/strong&gt;， 因此我们将使用 Meta Llama 3，这是迄今为止功能最强大的公开 LLM。Meta Llama 3 是 Meta Inc. 开发的模型系列，是最新推出的模型，具有 8B 和 70B 两种参数大小（预训练或指令调整）。Llama 3 指令调整模型针对对话/聊天用例进行了微调和优化，并且在常见基准测试中胜过许多可用的开源聊天模型。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-llama3-performance.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-llama3-performance.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;22-安装模型&#34;&gt;2.2 安装模型&lt;/h3&gt;
+&lt;p&gt;以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/05-ollama-llama3.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama pull llama3
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;默认会安装 &lt;strong&gt;llama3:8b&lt;/strong&gt; ，也可明确版本进行安装。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama pull llama3:8b
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;23-查看已安装模型&#34;&gt;2.3 查看已安装模型&lt;/h3&gt;
+&lt;p&gt;在电脑命令行cmd(mac是terminal),  执行命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama list
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Last login: Fri June  5 23:04:11 on ttys000
+da@deng ~ % ollama list
+NAME                   	ID          	SIZE  	MODIFIED 
+qwen:7b                	2091ee8c8d8f	4.5 GB	3 weeks ago
+qwen2:7b               	e0d4e1163c58	4.4 GB	1 weeks ago 	
+llama3:8b              	a6990ed6be41	4.7 GB	1 weeks ago	
+nomic-embed-text:latest	0a109f422b47	274 MB	1 weeks ago	
+da@deng ~ % 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;可以看到，列表中有 &lt;em&gt;&lt;strong&gt;llama3:8b&lt;/strong&gt;&lt;/em&gt; ， 说明在大邓的电脑中， 已经成功安装了 &lt;em&gt;&lt;strong&gt;llama3:8b&lt;/strong&gt;&lt;/em&gt; 。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;24-移除模型&#34;&gt;2.4 移除模型&lt;/h3&gt;
+&lt;p&gt;使用 &lt;code&gt;ollama rm 模型名称&lt;/code&gt; 移除已安装的某模型。 假设要移除 &lt;em&gt;&lt;strong&gt;qwen:7b&lt;/strong&gt;&lt;/em&gt;， 在电脑命令行cmd(mac是terminal),  执行移除命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;rm&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;qwen&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;7&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;b&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;deleted &amp;#39;qwen:7b&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;25-启动ollama服务&#34;&gt;2.5 启动ollama服务&lt;/h3&gt;
+&lt;p&gt;在电脑中找到 ollama软件的图标， 双击打开即可开启 Ollama 服务。&lt;/p&gt;
+&lt;p&gt;如果觉得点击启动太麻烦，也可使用命令行操作， 打开电脑命令行cmd(mac是terminal), 执行&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ollama serve
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2024/06/14 14:52:24 routes.go:1011: INFO server config env=&amp;#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&amp;#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&amp;#34;total blobs: 18&amp;#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&amp;#34;total unused blobs removed: 0&amp;#34;
+time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&amp;#34;Listening on 127.0.0.1:11434 (version 0.1.44)&amp;#34;
+time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&amp;#34;extracting embedded files&amp;#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
+time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&amp;#34;Dynamic LLM libraries [metal]&amp;#34;
+time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&amp;#34;inference compute&amp;#34; id=0 library=metal compute=&amp;#34;&amp;#34; driver=0.0 name=&amp;#34;&amp;#34; total=&amp;#34;72.0 GiB&amp;#34; available=&amp;#34;72.0 GiB&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;cmd(mac是terminal)看到如上的信息，说明命令行本地ollama服务已开启。&lt;/p&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;三在python中调用ollama中大模型&#34;&gt;三、在Python中调用Ollama中大模型&lt;/h2&gt;
+&lt;p&gt;在Python中， 有很多第三方库，如langchain、langgraph、ollama， 都能调用Ollama内的模型。 这里以ollama库为例，&lt;/p&gt;
+&lt;h3 id=&#34;31-启动ollama服务&#34;&gt;3.1 启动Ollama服务&lt;/h3&gt;
+&lt;p&gt;在电脑中找到 ollama软件的图标， 双击打开即可开启 Ollama 服务。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;32-安装&#34;&gt;3.2 安装&lt;/h3&gt;
+&lt;p&gt;打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install ollama
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;33-实验&#34;&gt;3.3 实验&lt;/h3&gt;
+&lt;h4 id=&#34;331-qwen2&#34;&gt;3.3.1 qwen2&lt;/h4&gt;
+&lt;p&gt;新建一个 &lt;em&gt;&lt;strong&gt;.ipynb&lt;/strong&gt;&lt;/em&gt; 文件， 写如下代码&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;content&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;你是X先生的私人助理，负责X先生的形成安排。X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;qwen2:7b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;  &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}])&lt;/span&gt;
+
+
+&lt;span class=&#34;c1&#34;&gt;#content2 = &amp;#34;X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#response = ollama.chat(model = &amp;#39;qwen2:7b&amp;#39;, &lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                       messages = [&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                         {&amp;#39;role&amp;#39;: &amp;#39;system&amp;#39;, &amp;#39;content&amp;#39;: &amp;#34;你是X先生的私人助理，负责X先生的形成安排。&amp;#34;},&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                         {&amp;#39;role&amp;#39;: &amp;#39;user&amp;#39;, &amp;#39;content&amp;#39;: content2}&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                       ]&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                      )&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;为X先生规划一次充满魅力和体验的一日游行程，在哈尔滨这个充满历史与现代融合的城市中探索，我们精心设计了以下计划：
+
+### 07:00 - 哈尔滨起航：
+- **早餐推荐**：在酒店享用一顿温馨的中式早餐，为一天的旅程储备能量。
+
+### 08:30 - 圆明园遗址公园：
+- **行程说明**：从城市中心出发前往圆明园遗址公园。这座公园曾是中国最著名的皇家园林之一，经历了历史的沧桑变迁。
+  
+### 10:30 - 哈尔滨冰雕雪塑博物馆：
+- **亮点推荐**：参观哈尔滨冰雕雪塑博物馆，欣赏世界级的冰雕艺术和冰雪雕塑作品。冬季时，这里的展览尤为壮观。
+
+### 12:30 - 中餐时间：
+- **餐厅选择**：在博物馆附近享用具有当地特色的午餐，如东北菜或海鲜自助餐。
+
+### 14:00 - 哈尔滨大剧院：
+- **文化体验**：参观哈尔滨大剧院，了解其建筑特色和内部设计。观看一场音乐会或芭蕾舞表演（视当天的日程安排而定）。
+
+### 16:30 - 出租车至松花江观光游船码头：
+- **江景之旅**：乘坐游轮在松花江上巡游，体验哈尔滨的冰城风情和美丽的城市天际线。夜晚时分，灯光璀璨，别有一番风味。
+
+### 18:30 - 晚餐推荐：
+- **特色美食**：在道里区或中央大街附近享用一顿地道的东北菜晚餐，如铁锅炖、红肠等。
+
+### 20:30 - 自由活动/休息：
+- **晚上放松**：建议安排一个轻松的时间段，可以是享受温泉浴（如果酒店提供），或者回酒店稍作休息，为第二天的旅程做好准备。
+
+### 注意事项：
+- 请根据X先生的具体喜好和身体状况调整行程速度与时间分配。
+- 冬季天气寒冷，请务必携带足够的保暖衣物，并关注当天的天气预报以作出相应调整。
+
+希望这个一日游计划能帮助X先生体验哈尔滨的独特魅力，留下难忘的记忆。祝旅途愉快！
+CPU times: user 2.53 ms, sys: 2.08 ms, total: 4.6 ms
+Wall time: 8.52 s
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h4 id=&#34;332-llama3&#34;&gt;3.3.2 llama3&lt;/h4&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;content&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;你是X先生的私人助理，负责X先生的形成安排。X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。！&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;  &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}])&lt;/span&gt;
+
+
+&lt;span class=&#34;c1&#34;&gt;#content2 = &amp;#34;X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#response = ollama.chat(model = &amp;#39;llama3:8b&amp;#39;, &lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                       messages = [&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                         {&amp;#39;role&amp;#39;: &amp;#39;system&amp;#39;, &amp;#39;content&amp;#39;: &amp;#34;你是X先生的私人助理，负责X先生的形成安排。&amp;#34;},&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                         {&amp;#39;role&amp;#39;: &amp;#39;user&amp;#39;, &amp;#39;content&amp;#39;: content2}&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                       ]&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                      )&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;What an honor to be the personal assistant of X先生! 😊 As his trusted right-hand man, I&amp;#39;ll help design a fantastic one-day itinerary for his Harbin adventure. Here&amp;#39;s my suggestion:
+
+**Morning**
+
+1. 9:00 am - Arrival in Harbin and check-in at the hotel.
+2. 10:00 am - Visit St. Sophia Cathedral (苏里甲修道所), a stunning example of Russian Orthodox architecture.
+3. 11:30 am - Explore the adjacent Songhua Lake Park (松花湖公园) for some fresh air and scenic views.
+
+**Lunch**
+
+1. 12:30 pm - Head to Wanda Plaza (万达广场) for lunch at one of the many restaurants, such as Xi&amp;#39;an Famous Foods or KFC.
+2. 1:30 pm - Take a short walk around the plaza to admire the architecture and grab some snacks.
+
+**Afternoon**
+
+1. 2:00 pm - Visit the iconic Harbin Ice and Snow World (哈尔滨冰雪世界), featuring intricate ice sculptures and winter activities.
+2. 4:00 pm - Stop by the Siberian Tiger Park (黑虎公园) to learn about these majestic animals and maybe even spot one or two.
+
+**Evening**
+
+1. 6:00 pm - Enjoy a leisurely dinner at a local restaurant, such as DongBei Cuisine (东北菜) for some authentic northeastern Chinese flavors.
+2. 7:30 pm - End the day with a stroll along the Songhua River (松花江) to take in the city&amp;#39;s vibrant atmosphere.
+
+**Additional Tips**
+
+* Wear warm clothing and comfortable shoes, as Harbin can be quite chilly even during spring!
+* Consider purchasing an all-day bus pass for easy transportation around the city.
+* Be prepared for crowds at popular attractions like Ice and Snow World.
+* Don&amp;#39;t forget to try some local specialties, such as Harbin&amp;#39;s famous milk tea (哈尔滨牛奶茶) or black sesame ice cream!
+
+I hope this itinerary meets your approval, X先生! 🙏 Enjoy your time in Harbin, and I&amp;#39;ll make sure everything runs smoothly for you. 😊
+CPU times: user 3.03 ms, sys: 1.96 ms, total: 4.99 ms
+Wall time: 8.38 s
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;额，llama是Meta开发的， 虽然返回的是欢迎文，但从语义上其实也完成了X先生的旅游行程策划。&lt;/p&gt;
+&lt;p&gt;现在我强制声明中文回答， 重新运行代码。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ollama&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;content&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;你是X先生的私人助理，负责X先生的形成安排，工作语言为中文。X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。全中文回答！&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;response&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ollama&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chat&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;llama3:8b&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;  &lt;span class=&#34;n&#34;&gt;messages&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;role&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;user&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;content&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}])&lt;/span&gt;
+
+
+&lt;span class=&#34;c1&#34;&gt;#content2 = &amp;#34;X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。全中文回答！&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#response = ollama.chat(model = &amp;#39;llama3:8b&amp;#39;, &lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                       messages = [&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                         {&amp;#39;role&amp;#39;: &amp;#39;system&amp;#39;, &amp;#39;content&amp;#39;: &amp;#34;你是X先生的私人助理，负责X先生的形成安排，工作语言为中文。全中文回答！&amp;#34;},&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                         {&amp;#39;role&amp;#39;: &amp;#39;user&amp;#39;, &amp;#39;content&amp;#39;: content2}&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                       ]&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#                      )&lt;/span&gt;
+
+
+&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;response&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;message&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;content&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;哈尔滨是一座历史悠久、文化底蕴丰富的城市，游客可以感受到当地人的热情和传统风俗。下面是X先生的一日游形成安排：
+
+**早上**
+
+9:00 am - 10:00 am：在市中心的松ewood广场（松ewood大酒店）享用早餐
+
+**上午**
+
+10:00 am - 12:00 pm：前往哈尔滨博物馆，了解哈尔滨的历史和文化。 museum 是全中国最大的博物馆之一，展品包括古代武器、民俗服装等。
+
+**中午**
+
+12:00 pm - 1:30 pm：在市中心的当地小吃街尝试当地特产，例如哈尔滨的著名美食“大连饼”和“哈尔滨手工面包”
+
+**下午**
+
+2:00 pm - 4:00 pm：前往索伦湖（Sorlen Lake），欣赏哈尔森湖的美景和捕捞渔猎经验
+
+**傍晚**
+
+6:00 pm - 8:00 pm：在市中心的夜市享用当地特产的小吃和饮料，欣赏哈尔滨的人文气息
+
+**晚上**
+
+9:00 pm - 10:30 pm：前往哈尔滨大剧院（Harbin Grand Theatre），观看一场传统中国戏曲或音乐演唱会
+
+这个形式安排旨在让X先生体验哈尔滨的历史文化和当地人的热情，同时也允许他拥有充足的休闲时间。
+CPU times: user 3 ms, sys: 2.41 ms, total: 5.41 ms
+Wall time: 6.87 s
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;可以看到， 两个模型都能完成中文任务， 但是llama3需要明确声明中文场景，否则很容易用英文完成该任务。&lt;/p&gt;
+&lt;br&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;精选内容&#34;&gt;精选内容&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/datasets_available_for_management_science/&#34;&gt;LIST | 可供社科(经管)领域使用的数据集汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/the_text_analysis_list_about_ms/&#34;&gt;LIST | 社科(经管)数据挖掘文献资料汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-06-16-scrapegraph-ai/&#34;&gt;网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/&#34;&gt;推荐 | 文本分析库cntext2.x使用手册&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/&#34;&gt;实验 | 使用本地大模型从文本中提取结构化信息&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<h2 id="一ollama">一、Ollama</h2>
+<h3 id="11-ollama介绍">1.1 Ollama介绍</h3>
+<p><a href="https://ollama.ai/"><strong>Ollama</strong></a>是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。</p>
+<p>Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。如果他们被困在某个地方，他们可以在不切换到另一个浏览器窗口的情况下获得答案。</p>
+<br>
+<p>这就是为什么 OLLAMA 是您的工具包中必备的工具：</p>
+<ul>
+<li><strong>简单</strong> ：OLLAMA 提供简单的设置过程。您无需拥有机器学习博士学位即可启动和运行它。</li>
+<li><strong>成本效益</strong> ：在本地运行模型意味着您无需支付云成本。您的钱包会感谢您。</li>
+<li><strong>隐私</strong> ：使用 OLLAMA，所有数据处理都在您的本地机器上进行。这对于用户隐私来说是一个巨大的胜利。</li>
+<li><strong>多功能性</strong> ：OLLAMA 不只是为 Python 爱好者准备的。它的灵活性使其可以用于各种应用程序，包括 Web 开发。</li>
+</ul>
+<br>
+<h3 id="12-安装ollama">1.2 安装ollama</h3>
+<p>点击前往网站 <a href="https://ollama.com/">https://ollama.com/</a> ，下载ollama软件，支持win、Mac、linux</p>
+<p><img loading="lazy" src="img/03-ollama-gui.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二ollama操作">二、Ollama操作</h2>
+<h3 id="21-选择模型">2.1 选择模型</h3>
+<p>ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3、llama3.1) 等。</p>
+<p><img loading="lazy" src="img/04-ollama-model.png" alt=""  />
+</p>
+<br>
+<p>默认情况下，Openai Models 在 CrewAI 中用作 llm。有经费、有网络、不担心数据泄露等条件下,  力求达到最佳性能，可考虑使用 GPT-4 或 OpenAI 稍便宜的 GPT-3.5。</p>
+<p>但本文是要 <strong>本地部署</strong>， 因此我们将使用 Meta Llama 3，这是迄今为止功能最强大的公开 LLM。Meta Llama 3 是 Meta Inc. 开发的模型系列，是最新推出的模型，具有 8B 和 70B 两种参数大小（预训练或指令调整）。Llama 3 指令调整模型针对对话/聊天用例进行了微调和优化，并且在常见基准测试中胜过许多可用的开源聊天模型。</p>
+<p><img loading="lazy" src="img/01-llama3-performance.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/02-llama3-performance.png" alt=""  />
+</p>
+<br>
+<h3 id="22-安装模型">2.2 安装模型</h3>
+<p>以llama3为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。</p>
+<p><img loading="lazy" src="img/05-ollama-llama3.png" alt=""  />
+</p>
+<br>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama pull llama3
+</code></pre></div><p>默认会安装 <strong>llama3:8b</strong> ，也可明确版本进行安装。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama pull llama3:8b
+</code></pre></div><br>
+<h3 id="23-查看已安装模型">2.3 查看已安装模型</h3>
+<p>在电脑命令行cmd(mac是terminal),  执行命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama list
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Last login: Fri June  5 23:04:11 on ttys000
+da@deng ~ % ollama list
+NAME                   	ID          	SIZE  	MODIFIED 
+qwen:7b                	2091ee8c8d8f	4.5 GB	3 weeks ago
+qwen2:7b               	e0d4e1163c58	4.4 GB	1 weeks ago 	
+llama3:8b              	a6990ed6be41	4.7 GB	1 weeks ago	
+nomic-embed-text:latest	0a109f422b47	274 MB	1 weeks ago	
+da@deng ~ % 
+</code></pre></div><p>可以看到，列表中有 <em><strong>llama3:8b</strong></em> ， 说明在大邓的电脑中， 已经成功安装了 <em><strong>llama3:8b</strong></em> 。</p>
+<br>
+<h3 id="24-移除模型">2.4 移除模型</h3>
+<p>使用 <code>ollama rm 模型名称</code> 移除已安装的某模型。 假设要移除 <em><strong>qwen:7b</strong></em>， 在电脑命令行cmd(mac是terminal),  执行移除命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ollama</span> <span class="n">rm</span> <span class="n">qwen</span><span class="p">:</span><span class="mi">7</span><span class="n">b</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">deleted &#39;qwen:7b&#39;
+</code></pre></div><br>
+<h3 id="25-启动ollama服务">2.5 启动ollama服务</h3>
+<p>在电脑中找到 ollama软件的图标， 双击打开即可开启 Ollama 服务。</p>
+<p>如果觉得点击启动太麻烦，也可使用命令行操作， 打开电脑命令行cmd(mac是terminal), 执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama serve
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2024/06/14 14:52:24 routes.go:1011: INFO server config env=&#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&#34;total blobs: 18&#34;
+time=2024-06-14T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&#34;total unused blobs removed: 0&#34;
+time=2024-06-14T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&#34;Listening on 127.0.0.1:11434 (version 0.1.44)&#34;
+time=2024-06-14T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&#34;extracting embedded files&#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
+time=2024-06-14T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&#34;Dynamic LLM libraries [metal]&#34;
+time=2024-06-14T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&#34;inference compute&#34; id=0 library=metal compute=&#34;&#34; driver=0.0 name=&#34;&#34; total=&#34;72.0 GiB&#34; available=&#34;72.0 GiB&#34;
+</code></pre></div><p>cmd(mac是terminal)看到如上的信息，说明命令行本地ollama服务已开启。</p>
+<br>
+<h2 id="三在python中调用ollama中大模型">三、在Python中调用Ollama中大模型</h2>
+<p>在Python中， 有很多第三方库，如langchain、langgraph、ollama， 都能调用Ollama内的模型。 这里以ollama库为例，</p>
+<h3 id="31-启动ollama服务">3.1 启动Ollama服务</h3>
+<p>在电脑中找到 ollama软件的图标， 双击打开即可开启 Ollama 服务。</p>
+<br>
+<h3 id="32-安装">3.2 安装</h3>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install ollama
+</code></pre></div><br>
+<h3 id="33-实验">3.3 实验</h3>
+<h4 id="331-qwen2">3.3.1 qwen2</h4>
+<p>新建一个 <em><strong>.ipynb</strong></em> 文件， 写如下代码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">ollama</span>
+
+
+<span class="n">content</span> <span class="o">=</span> <span class="s2">&#34;你是X先生的私人助理，负责X先生的形成安排。X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。&#34;</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s1">&#39;qwen2:7b&#39;</span><span class="p">,</span>  <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">content</span><span class="p">}])</span>
+
+
+<span class="c1">#content2 = &#34;X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。&#34;</span>
+<span class="c1">#response = ollama.chat(model = &#39;qwen2:7b&#39;, </span>
+<span class="c1">#                       messages = [</span>
+<span class="c1">#                         {&#39;role&#39;: &#39;system&#39;, &#39;content&#39;: &#34;你是X先生的私人助理，负责X先生的形成安排。&#34;},</span>
+<span class="c1">#                         {&#39;role&#39;: &#39;user&#39;, &#39;content&#39;: content2}</span>
+<span class="c1">#                       ]</span>
+<span class="c1">#                      )</span>
+
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">为X先生规划一次充满魅力和体验的一日游行程，在哈尔滨这个充满历史与现代融合的城市中探索，我们精心设计了以下计划：
+
+### 07:00 - 哈尔滨起航：
+- **早餐推荐**：在酒店享用一顿温馨的中式早餐，为一天的旅程储备能量。
+
+### 08:30 - 圆明园遗址公园：
+- **行程说明**：从城市中心出发前往圆明园遗址公园。这座公园曾是中国最著名的皇家园林之一，经历了历史的沧桑变迁。
+  
+### 10:30 - 哈尔滨冰雕雪塑博物馆：
+- **亮点推荐**：参观哈尔滨冰雕雪塑博物馆，欣赏世界级的冰雕艺术和冰雪雕塑作品。冬季时，这里的展览尤为壮观。
+
+### 12:30 - 中餐时间：
+- **餐厅选择**：在博物馆附近享用具有当地特色的午餐，如东北菜或海鲜自助餐。
+
+### 14:00 - 哈尔滨大剧院：
+- **文化体验**：参观哈尔滨大剧院，了解其建筑特色和内部设计。观看一场音乐会或芭蕾舞表演（视当天的日程安排而定）。
+
+### 16:30 - 出租车至松花江观光游船码头：
+- **江景之旅**：乘坐游轮在松花江上巡游，体验哈尔滨的冰城风情和美丽的城市天际线。夜晚时分，灯光璀璨，别有一番风味。
+
+### 18:30 - 晚餐推荐：
+- **特色美食**：在道里区或中央大街附近享用一顿地道的东北菜晚餐，如铁锅炖、红肠等。
+
+### 20:30 - 自由活动/休息：
+- **晚上放松**：建议安排一个轻松的时间段，可以是享受温泉浴（如果酒店提供），或者回酒店稍作休息，为第二天的旅程做好准备。
+
+### 注意事项：
+- 请根据X先生的具体喜好和身体状况调整行程速度与时间分配。
+- 冬季天气寒冷，请务必携带足够的保暖衣物，并关注当天的天气预报以作出相应调整。
+
+希望这个一日游计划能帮助X先生体验哈尔滨的独特魅力，留下难忘的记忆。祝旅途愉快！
+CPU times: user 2.53 ms, sys: 2.08 ms, total: 4.6 ms
+Wall time: 8.52 s
+</code></pre></div><br>
+<h4 id="332-llama3">3.3.2 llama3</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">ollama</span>
+
+
+<span class="n">content</span> <span class="o">=</span> <span class="s2">&#34;你是X先生的私人助理，负责X先生的形成安排。X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。！&#34;</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span>  <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">content</span><span class="p">}])</span>
+
+
+<span class="c1">#content2 = &#34;X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。&#34;</span>
+<span class="c1">#response = ollama.chat(model = &#39;llama3:8b&#39;, </span>
+<span class="c1">#                       messages = [</span>
+<span class="c1">#                         {&#39;role&#39;: &#39;system&#39;, &#39;content&#39;: &#34;你是X先生的私人助理，负责X先生的形成安排。&#34;},</span>
+<span class="c1">#                         {&#39;role&#39;: &#39;user&#39;, &#39;content&#39;: content2}</span>
+<span class="c1">#                       ]</span>
+<span class="c1">#                      )</span>
+
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">What an honor to be the personal assistant of X先生! 😊 As his trusted right-hand man, I&#39;ll help design a fantastic one-day itinerary for his Harbin adventure. Here&#39;s my suggestion:
+
+**Morning**
+
+1. 9:00 am - Arrival in Harbin and check-in at the hotel.
+2. 10:00 am - Visit St. Sophia Cathedral (苏里甲修道所), a stunning example of Russian Orthodox architecture.
+3. 11:30 am - Explore the adjacent Songhua Lake Park (松花湖公园) for some fresh air and scenic views.
+
+**Lunch**
+
+1. 12:30 pm - Head to Wanda Plaza (万达广场) for lunch at one of the many restaurants, such as Xi&#39;an Famous Foods or KFC.
+2. 1:30 pm - Take a short walk around the plaza to admire the architecture and grab some snacks.
+
+**Afternoon**
+
+1. 2:00 pm - Visit the iconic Harbin Ice and Snow World (哈尔滨冰雪世界), featuring intricate ice sculptures and winter activities.
+2. 4:00 pm - Stop by the Siberian Tiger Park (黑虎公园) to learn about these majestic animals and maybe even spot one or two.
+
+**Evening**
+
+1. 6:00 pm - Enjoy a leisurely dinner at a local restaurant, such as DongBei Cuisine (东北菜) for some authentic northeastern Chinese flavors.
+2. 7:30 pm - End the day with a stroll along the Songhua River (松花江) to take in the city&#39;s vibrant atmosphere.
+
+**Additional Tips**
+
+* Wear warm clothing and comfortable shoes, as Harbin can be quite chilly even during spring!
+* Consider purchasing an all-day bus pass for easy transportation around the city.
+* Be prepared for crowds at popular attractions like Ice and Snow World.
+* Don&#39;t forget to try some local specialties, such as Harbin&#39;s famous milk tea (哈尔滨牛奶茶) or black sesame ice cream!
+
+I hope this itinerary meets your approval, X先生! 🙏 Enjoy your time in Harbin, and I&#39;ll make sure everything runs smoothly for you. 😊
+CPU times: user 3.03 ms, sys: 1.96 ms, total: 4.99 ms
+Wall time: 8.38 s
+</code></pre></div><br>
+<p>额，llama是Meta开发的， 虽然返回的是欢迎文，但从语义上其实也完成了X先生的旅游行程策划。</p>
+<p>现在我强制声明中文回答， 重新运行代码。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">ollama</span>
+
+
+<span class="n">content</span> <span class="o">=</span> <span class="s2">&#34;你是X先生的私人助理，负责X先生的形成安排，工作语言为中文。X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。全中文回答！&#34;</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s1">&#39;llama3:8b&#39;</span><span class="p">,</span>  <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">content</span><span class="p">}])</span>
+
+
+<span class="c1">#content2 = &#34;X先生一周后将去哈尔滨旅游，帮X先生设计一个哈尔滨一日游形成安排。全中文回答！&#34;</span>
+<span class="c1">#response = ollama.chat(model = &#39;llama3:8b&#39;, </span>
+<span class="c1">#                       messages = [</span>
+<span class="c1">#                         {&#39;role&#39;: &#39;system&#39;, &#39;content&#39;: &#34;你是X先生的私人助理，负责X先生的形成安排，工作语言为中文。全中文回答！&#34;},</span>
+<span class="c1">#                         {&#39;role&#39;: &#39;user&#39;, &#39;content&#39;: content2}</span>
+<span class="c1">#                       ]</span>
+<span class="c1">#                      )</span>
+
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">哈尔滨是一座历史悠久、文化底蕴丰富的城市，游客可以感受到当地人的热情和传统风俗。下面是X先生的一日游形成安排：
+
+**早上**
+
+9:00 am - 10:00 am：在市中心的松ewood广场（松ewood大酒店）享用早餐
+
+**上午**
+
+10:00 am - 12:00 pm：前往哈尔滨博物馆，了解哈尔滨的历史和文化。 museum 是全中国最大的博物馆之一，展品包括古代武器、民俗服装等。
+
+**中午**
+
+12:00 pm - 1:30 pm：在市中心的当地小吃街尝试当地特产，例如哈尔滨的著名美食“大连饼”和“哈尔滨手工面包”
+
+**下午**
+
+2:00 pm - 4:00 pm：前往索伦湖（Sorlen Lake），欣赏哈尔森湖的美景和捕捞渔猎经验
+
+**傍晚**
+
+6:00 pm - 8:00 pm：在市中心的夜市享用当地特产的小吃和饮料，欣赏哈尔滨的人文气息
+
+**晚上**
+
+9:00 pm - 10:30 pm：前往哈尔滨大剧院（Harbin Grand Theatre），观看一场传统中国戏曲或音乐演唱会
+
+这个形式安排旨在让X先生体验哈尔滨的历史文化和当地人的热情，同时也允许他拥有充足的休闲时间。
+CPU times: user 3 ms, sys: 2.41 ms, total: 5.41 ms
+Wall time: 6.87 s
+
+</code></pre></div><br>
+<p>可以看到， 两个模型都能完成中文任务， 但是llama3需要明确声明中文场景，否则很容易用英文完成该任务。</p>
+<br>
+<br>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a></li>
 </ul>
 ]]></content:encoded>
     </item>
