@@ -6,7 +6,7 @@
     <description>Recent content in LLM on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Tue, 06 Aug 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 07 Aug 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>实验 | 使用本地大模型从论文PDF中提取结构化信息</title>
       <link>https://textdata.cn/blog/2024-08-03-literature-document-parsing-using-large-language-models-with-code/</link>
@@ -314,6 +314,158 @@ Wall time: 24.6 s
 <li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
 <li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
 <li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>实验 | 如何使 Ollama 结构化输出 JSON 样式的结果</title>
+      <link>https://textdata.cn/blog/2024-08-07-structured-outputs-with-ollama/</link>
+      <pubDate>Wed, 07 Aug 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-08-07-structured-outputs-with-ollama/</guid>
+      <description>开源 LLMS 越来越受欢迎，Ollama 的 OpenAI 兼容性后来发布了，这使得使用 JSON 模式获取结构化输出成为可能。在本篇博文的结尾，您将了解如何有效地利用 Instructor 和 ollama。但在继续之前，让我们先探讨一下修补的概念。Open-source LLMS are gaining popularity, and the release of Ollama&amp;#39;s OpenAI compatibility later it has made it possible to obtain structured outputs using JSON schema.By the end of this blog post, you will learn how to effectively utilize instructor with ollama. But before we proceed, let&amp;#39;s first explore the concept of patching.</description>
+      <content:encoded><![CDATA[<h2 id="一问题">一、问题</h2>
+<p>我们希望LLM的回答的结果具有格式，最好是JSON格式(Python字典)， 这样有利于后续的调用。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#普通格式</span>
+<span class="n">姓名</span> <span class="n">张三</span>
+<span class="n">年龄</span> <span class="mi">34</span>
+<span class="n">兴趣</span> <span class="n">打篮球</span><span class="err">、</span><span class="n">踢足球</span><span class="err">、</span><span class="n">游泳</span><span class="err">、</span><span class="n">打游戏</span>
+
+
+<span class="c1">#JSON格式</span>
+<span class="p">{</span>
+  <span class="s2">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;张三&#34;</span><span class="p">,</span>
+  <span class="s2">&#34;age&#34;</span><span class="p">:</span> <span class="mi">34</span><span class="p">,</span>
+  <span class="s2">&#34;hobby&#34;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&#34;打篮球&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;踢足球&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;游泳&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;打游戏&#34;</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div><p>如何从 「普通格式」转为 结构化的「JSON格式」？这里就用到 <em><strong>Instructor库</strong></em> 。</p>
+<p><br><br></p>
+<h2 id="二instructor介绍">二、Instructor介绍</h2>
+<p><em><strong>Instructor</strong></em> 是一个 Python 库，它使处理大型语言模型 (LLM) 的结构化输出变得轻而易举。它建立在 Pydantic 之上，提供了一个简单、透明且用户友好的 API 来管理验证、重试和流式响应。</p>
+<br>
+<h3 id="21-instructor的主要特征">2.1 Instructor的主要特征</h3>
+<ul>
+<li><strong>定义输出样式</strong>：指定 Pydantic 模型来定义 LLM 输出的结构</li>
+<li><strong>失败重试管理</strong>：轻松配置请求失败的重试次数</li>
+<li><strong>样式验证</strong>：使用 Pydantic 验证确保 LLM 响应符合您的期望</li>
+<li><strong>灵活的后端</strong>：与 OpenAI 之外的各种 LLM 提供商无缝集成</li>
+</ul>
+<br>
+<h3 id="22-安装">2.2 安装</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip install instructor
+</code></pre></div><br>
+<h3 id="23-样例">2.3 样例</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">instructor</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">openai</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+
+
+<span class="c1"># Define your desired output structure</span>
+<span class="k">class</span> <span class="nc">UserInfo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="c1"># Patch the OpenAI client</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">instructor</span><span class="o">.</span><span class="n">from_openai</span><span class="p">(</span><span class="n">OpenAI</span><span class="p">())</span>
+
+<span class="c1"># Extract structured data from natural language</span>
+<span class="n">user_info</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&#34;gpt-3.5-turbo&#34;</span><span class="p">,</span>
+    <span class="n">response_model</span><span class="o">=</span><span class="n">UserInfo</span><span class="p">,</span>
+    <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;user&#34;</span><span class="p">,</span> <span class="s2">&#34;content&#34;</span><span class="p">:</span> <span class="s2">&#34;John Doe is 30 years old.&#34;</span><span class="p">}],</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">user_info</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<span class="c1">#&gt; John Doe</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user_info</span><span class="o">.</span><span class="n">age</span><span class="p">)</span>
+<span class="c1">#&gt; 30</span>
+</code></pre></div><p>注意，本部分的样例仅供观看，因为chatGPT 限制中国大陆用户使用，所以不论是你还是大邓，运行此代码会失败。但文章末尾会提供本地电脑可运行的实验代码。</p>
+<p><br><br></p>
+<h2 id="三结构化输出实验">三、结构化输出实验</h2>
+<h3 id="31-环境配置">3.1 环境配置</h3>
+<p>假设已在本地安装Ollama软件， 也使用ollama安装了相应的大语言模型(如qwen2:7b、llama3.1:8b等)。 如果之前没有进行这些操作， 请阅读 <a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/"><strong>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</strong></a></p>
+<br>
+<h3 id="32-代码">3.2 代码</h3>
+<p>只要完成2.2、3.1，本章节的代码是可以运行出结果的。  不做过多解释，直接上代码，大家看运行结果。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">openai</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">instructor</span>
+
+
+
+<span class="c1">#结构化输出</span>
+<span class="k">class</span> <span class="nc">UserDetail</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">hobby</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    
+
+<span class="c1">#Prompt提示</span>
+<span class="n">PROMPT_TEXT</span> <span class="o">=</span> <span class="s2">&#34;根据自我介绍文本内容，从中提取出姓名、年龄、兴趣&#34;</span>
+
+<span class="c1">#实验数据</span>
+<span class="n">introduction_text</span> <span class="o">=</span> <span class="s1">&#39;我是张三，今年34岁， 来自黑龙江省， 我的兴趣爱好有打篮球、踢足球、游泳、打游戏。&#39;</span>
+
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">instructor</span><span class="o">.</span><span class="n">from_openai</span><span class="p">(</span>
+    <span class="n">OpenAI</span><span class="p">(</span>
+        <span class="n">base_url</span><span class="o">=</span><span class="s2">&#34;http://localhost:11434/v1&#34;</span><span class="p">,</span>
+        <span class="n">api_key</span><span class="o">=</span><span class="s2">&#34;NA&#34;</span><span class="p">,</span>  <span class="c1"># required, but unused</span>
+    <span class="p">),</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">instructor</span><span class="o">.</span><span class="n">Mode</span><span class="o">.</span><span class="n">JSON</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="s2">&#34;qwen2:7b&#34;</span><span class="p">,</span>
+    <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">{</span><span class="s2">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;system&#34;</span><span class="p">,</span> <span class="s2">&#34;content&#34;</span><span class="p">:</span> <span class="n">PROMPT_TEXT</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;user&#34;</span><span class="p">,</span> <span class="s2">&#34;content&#34;</span><span class="p">:</span> <span class="n">introduction_text</span><span class="p">}</span>
+    <span class="p">],</span>
+    <span class="n">response_model</span> <span class="o">=</span> <span class="n">UserDetail</span><span class="p">,</span>
+    <span class="n">max_retries</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{
+  &#34;name&#34;: &#34;张三&#34;,
+  &#34;age&#34;: 34,
+  &#34;hobby&#34;: [
+    &#34;打篮球&#34;,
+    &#34;踢足球&#34;,
+    &#34;游泳&#34;,
+    &#34;打游戏&#34;
+  ]
+}
+</code></pre></div><p>resp的数据类型为UserDetail， 是代码中是我们定义的 <em><strong>UserDetail</strong></em> 类。该类具有一些方法，也可直接 <em><strong>resp.dict()</strong></em> 转化为dict</p>
+<br>
+<p>查看 resp 的数据类型</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">dict</span><span class="p">()))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;name&#39;: &#39;张三&#39;, &#39;age&#39;: 34, &#39;hobby&#39;: [&#39;打篮球&#39;, &#39;踢足球&#39;, &#39;游泳&#39;, &#39;打游戏&#39;]}
+&lt;class &#39;dict&#39;&gt;
+</code></pre></div><br>
+<br>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a></li>
 </ul>
 ]]></content:encoded>
     </item>
