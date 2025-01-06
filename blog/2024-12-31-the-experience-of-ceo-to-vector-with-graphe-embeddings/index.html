@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="大数据, 图嵌入, 词向量, 嵌入, 高管职业经历, node2vec" />
+<meta name="description" content="管理的本质是一种实践，在某些情形下，阅历比简历更重要，丰富的职业经历有助于企业高管形成多元化的思维结构、广阔的管理视野、丰富的社会资源和过人的胆识。因此，对于企业而言，了解高管的职业经历非常重要，这可以帮助企业更好地了解高管的背景和潜力，从而更好地为企业的发展提供支持。而研究高管的个人特质，已有的研究，主要从年龄、性别、学历等类别型变量开展研究，即使从从职业经历研究，也是作为离散变量，没有充分挖掘职业经历的信息。">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings/" />
+<meta name="baidu-site-verification" content="codeva-TJUe6nOmGr" />
+<meta name="360-site-verification" content="6b9b733ec558a1bb12cee8aa82f2529e" />
+<meta name="sogou-site-verification" content="dZHPIorOhK" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历" />
+<meta property="og:description" content="管理的本质是一种实践，在某些情形下，阅历比简历更重要，丰富的职业经历有助于企业高管形成多元化的思维结构、广阔的管理视野、丰富的社会资源和过人的胆识。因此，对于企业而言，了解高管的职业经历非常重要，这可以帮助企业更好地了解高管的背景和潜力，从而更好地为企业的发展提供支持。而研究高管的个人特质，已有的研究，主要从年龄、性别、学历等类别型变量开展研究，即使从从职业经历研究，也是作为离散变量，没有充分挖掘职业经历的信息。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings/" />
+<meta property="og:image" content="/images/blog/node2vec.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2024-12-31T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2024-12-31T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/node2vec.png" />
+<meta name="twitter:title" content="如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历"/>
+<meta name="twitter:description" content="管理的本质是一种实践，在某些情形下，阅历比简历更重要，丰富的职业经历有助于企业高管形成多元化的思维结构、广阔的管理视野、丰富的社会资源和过人的胆识。因此，对于企业而言，了解高管的职业经历非常重要，这可以帮助企业更好地了解高管的背景和潜力，从而更好地为企业的发展提供支持。而研究高管的个人特质，已有的研究，主要从年龄、性别、学历等类别型变量开展研究，即使从从职业经历研究，也是作为离散变量，没有充分挖掘职业经历的信息。"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历",
+      "item": "/blog/2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历",
+  "name": "如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历",
+  "description": "管理的本质是一种实践，在某些情形下，阅历比简历更重要，丰富的职业经历有助于企业高管形成多元化的思维结构、广阔的管理视野、丰富的社会资源和过人的胆识。因此，对于企业而言，了解高管的职业经历非常重要，这可以帮助企业更好地了解高管的背景和潜力，从而更好地为企业的发展提供支持。而研究高管的个人特质，已有的研究，主要从年龄、性别、学历等类别型变量开展研究，即使从从职业经历研究，也是作为离散变量，没有充分挖掘职业经历的信息。",
+  "keywords": [
+    "大数据", "图嵌入", "词向量", "嵌入", "高管职业经历", "node2vec"
+  ],
+  "articleBody": "今天分享的内容主要是 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历。\n\n一、高管职业经历 管理的本质是一种实践，在某些情形下，阅历比简历更重要，丰富的职业经历有助于企业高管形成多元化的思维结构、广阔的管理视野、丰富的社会资源和过人的胆识。因此，对于企业而言，了解高管的职业经历非常重要，这可以帮助企业更好地了解高管的背景和潜力，从而更好地为企业的发展提供支持。\n而研究高管的个人特质，已有的研究，主要从年龄、性别、学历等类别型变量开展研究，即使从从职业经历研究，也是作为离散变量，没有充分挖掘职业经历的信息。\n今天分享的内容主要是 如何用网络思维和嵌入思维表征企业，表征高管的职业经历。\n本技术文的创新价值\n  网络思维;\n节点、边。 企业是节点，高管一般有多个企业就职经历，可以在任意2个企业构件一个边。   嵌入思维;   把企业网络中的节点转化为向量表示，企业是n维向量，高管也是同样的n维向量。类似于阴阳五行思维表征世间万物完事。\n 向量计算；\n事物都用N维向量表征，那么不同类别的事物，我们就可以对高管和企业之间就可以进行向量计算。\nKmeans聚类;\n将很多企业向量或高管职业经历向量进行聚类，可能得到理想的\"分类\"标签(人工解读后的cluster数字就是很好的分类标签)。\n相似度计算 招聘来的高管对于该企业是否带来更多的异质性、或者带来更多的相似性。某企业的高管团队的异质性可以度量出一个准确的数字。招聘新的高管，也可以测量给改企业带来多少的相似性或者异质性。\n   \n二、职业经历聚类算法步骤 首先，我们需要构建一个企业的网络图，其中每个节点代表一个企业，每条边代表两个企业之间的关系，比如同城市、同行业， 而高管职业经历中的任意两家企业天然也是一个边。然后，我们使用node2vec算法对这个网络图进行嵌入，得到每个企业的向量表示。\n接着我们需要对每个高管的职业经历进行处理。一般来说，一个高管的职业经历可能涉及多个企业，因此我们需要将这些企业的向量求平均，得到一个高管的职业经历向量。这个向量可以代表高管的职业经历背景，可以用于后续的各类分析，比如聚类。\n最后我们可以使用聚类算法（比如k-means算法）对高管职业经历向量进行聚类分析， 具有相似职业经历的高管分为一组。\n\n三、数据导入 高管中的职业经历信息一般存在于没有规律的个人简历中，提取起来是比较复杂，这里可能需要用到正则表达式、命名实体识别等将处于简介中的企业名识别出来。\n高管职业经历信息一般存在于个人简历中，而个人简历中的职业经历信息往往不太规律，多个企业名也没有明显的分隔符，因此需要用到一些技术手段来将企业名识别出来，以便后续的处理和分析。\n首先，我们可以使用正则表达式来匹配企业名。正则表达式是一种用于匹配文本的工具，可以根据一定的规则来匹配出所需要的信息。在这里，我们可以使用正则表达式来匹配一些常见的企业名词，比如“有限公司”、“股份有限公司”等。这样可以一定程度上识别出企业名，但对于一些特殊的企业名还需要进行进一步处理。\n其次，我们可以使用命名实体识别（NER）技术来识别企业名。命名实体识别是自然语言处理的一项任务，旨在识别文本中的命名实体，比如人名、地名、组织名等。在这里，我们可以使用NER技术来识别文本中的企业名，从而更准确地提取出高管的职业经历信息。\n最后，我们需要对提取出的企业名进行去重和整理。在提取出的企业名中，有一些是重复的，有一些是不必要的，需要将它们去掉。同时，对于每个高管的职业经历信息，我们需要将提取出的企业名整理成一个有序的序列，方便后续的处理和分析。\n总之，对于高管职业经历信息的提取，需要用到一些技术手段，包括正则表达式、命名实体识别等。这些技术手段可以帮助我们更准确地提取出高管的职业经历信息，为后续的分析和处理提供基础。但限于篇幅和主题，今天使用虚构的50条高管记录数据做实验。\nimport pandas as pd df = pd.read_csv('high_executives.csv') df.head()  .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  姓名 性别 出生年份 学历 职业经历     0 高管1 女 2000 本科 华为-CFO,Facebook-CFO,Facebook-CEO   1 高管2 女 1989 本科 百度-CEO,阿里巴巴-CFO,亚马逊-COO   2 高管3 女 1992 博士 谷歌-CTO,腾讯-COO,百度-COO   3 高管4 女 1989 本科 IBM-COO,苹果-CFO,微软-COO   4 高管5 男 1960 本科 谷歌-COO,苹果-CFO,百度-COO     #记录数 len(df) 50  四、训练Node2Vec模型 4.1 node2vec算法 Node2Vec是一种基于深度学习的图嵌入算法，旨在将图中的节点映射到低维向量空间中，从而方便后续的分析和处理。具体来说，Node2Vec算法可以将节点的局部邻域结构转化为向量表示，同时保留节点之间的全局结构信息。如果熟悉Wordc2Vec的同学，理解起来会比较容易，Node2Vec是基于word2vec算法开发出来的，将职业经历中每个企业看做词语，训练得到企业向量表示。\n在Node2Vec算法中，每个节点的向量表示由两个部分组成：一个是节点自身的特征向量，另一个是节点在不同邻域结构下的向量表示。算法的核心思想是通过两个步骤来生成节点的向量表示：\n 随机游走：对于每个节点，从它的邻居节点中随机选择一个节点进行访问，然后在这个节点的邻居中进行同样的随机选择。这个过程可以生成一系列的节点序列，其中每个序列都代表了一个从起始节点出发的随机游走路径。 Skip-gram模型：基于这些随机游走路径，使用Skip-gram模型进行向量表示的学习。Skip-gram模型是一种常见的自然语言处理模型，用于学习词向量。在Node2Vec算法中，可以将节点序列看作“句子”，将每个节点看作“词”，然后使用Skip-gram模型来学习节点向量的表示。  Node2Vec算法通过随机游走和Skip-gram模型的结合，可以生成具有丰富语义信息的节点向量，同时保留了节点之间的全局结构信息。这种算法可以应用于各种不同的图结构，包括社交网络、知识图谱、生物信息学等领域，具有广泛的应用前景。\n在高管职业经历数据的应用中，我们可以将每个企业看作图中的一个节点，然后使用Node2Vec算法来训练企业向量模型。这样可以将企业的职业经历信息转化为向量表示，方便后续的分析和处理。\nimport re import networkx as nx from node2vec import Node2Vec # 读取CSV文件并提取职业经历中的公司名列表 companies = ['IBM', '谷歌', 'Facebook', '苹果', '微软', '亚马逊', '阿里巴巴', '腾讯', '百度', '华为'] companies_regex = r'|'.join(companies) df['companies'] = df['职业经历'].apply(lambda x: re.findall(companies_regex, x)) # 构建公司名之间的边 G = nx.Graph() for companies in df['companies']: for i, company1 in enumerate(companies): for company2 in companies[i+1:]: G.add_edge(company1, company2) # 使用node2vec库生成公司名向量 # 企业向量维度 16 node2vec = Node2Vec(G, dimensions=16, walk_length=10, num_walks=100) model = node2vec.fit(window=10, min_count=1) # model.wv[company] 查询某个企业的向量 vectors = [model.wv[company] for company in G.nodes()] Computing transition probabilities: 0%| | 0/10 [00:00\n4.2 理解嵌入 本文嵌入的维度是16维， 其实这里用任意 N 维都可以嵌入表示任意一个事物。这里理解起来比较难，咱们用熟悉的事情来假装理解嵌入维度的设定。 在中国传统文化中，经常使用n维来刻画、描述、表征任意事物。例如\n 2维， 阴阳思维去描述事物的阴阳 5维， 五行，金木水火土描述事物  而在本技术中， Node2Vec(G, dimensions=16, walk_length=10, num_walks=100) dimensions=16 即用16维表征每个企业，得到16维的企业向量。 需要注意的是， 我们可能都无法理解 16维的任意一个维度的含义。如果设置成2维、5维或者其他维，我们也是无法理解对应的维度含义。因为中国传统文化，已经定义了每个维度的含义，然后再去表征事物。但是我们是先定义了维度数，所以维度的含义是未知的。\n\n五、计算高管职业经历向量 定义一个 companys2vec(companys) 函数 ，该函数可以把多家企业就职的经历转为 「职业经历向量」。\n将高管的职业经历转化为向量，每家企业是一个 16 维向量，最简单粗暴的办法是求平多个就职企业向量的均值，均值向量也是 16 维。\nimport numpy as np def companys2vec(companys): cvs = [] for company in companys: try: cvs.append(model.wv[company]) except: pass return np.mean(np.array(cvs), axis=0) companys2vec(companys=['华为', 'Facebook', 'Facebook']) array([-0.03054439, 0.28417936, 0.23475488, 0.36075735, -0.16633254, -0.06266979, 0.74403137, 0.16226356, 0.01991086, -0.15565623, 0.34757233, 0.3079434 , 0.19876878, 0.01175458, -0.55069256, 0.01623819], dtype=float32)  #批量计算，得到高管的职业经历向量 career_vec df['career_vec'] = df['companies'].apply(companys2vec) df.head()  .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  姓名 性别 出生年份 学历 职业经历 companies career_vec     0 高管1 女 2000 本科 华为-CFO,Facebook-CFO,Facebook-CEO [华为, Facebook, Facebook] [-0.03054439, 0.28417936, 0.23475488, 0.360757...   1 高管2 女 1989 本科 百度-CEO,阿里巴巴-CFO,亚马逊-COO [百度, 阿里巴巴, 亚马逊] [-0.007476224, 0.2823672, 0.20479268, 0.281800...   2 高管3 女 1992 博士 谷歌-CTO,腾讯-COO,百度-COO [谷歌, 腾讯, 百度] [-0.040801946, 0.27067217, 0.20773596, 0.34468...   3 高管4 女 1989 本科 IBM-COO,苹果-CFO,微软-COO [IBM, 苹果, 微软] [-0.022640707, 0.31426176, 0.1841877, 0.323161...   4 高管5 男 1960 本科 谷歌-COO,苹果-CFO,百度-COO [谷歌, 苹果, 百度] [-0.030689942, 0.25639233, 0.19499178, 0.33937...     \n六、高管职业经历聚类Kmeans Kmeans是一种常见的聚类算法，旨在将相似的数据点分组为同一类别，从而发现数据的内在结构。Kmeans算法的优点是简单易实现，对于大型数据集也具有较高的效率。它可以适用于各种类型的数据，包括数值型、文本型和图像型等数据。同时，Kmeans算法可以通过调整簇的个数来控制聚类结果的细粒度程度，比如选择较大的簇个数可以得到更细致的聚类结果。\nKmeans算法的缺点是需要指定簇的个数k，这个参数选择较大或者较小都可能导致聚类结果不理想。同时，Kmeans算法对于离群点比较敏感，可能会导致簇中心偏离聚类的本质结构。如果对数据不了解，需要使用手肘法则等方式确定K。 这里假设我们对数据很了解，那么可以指定K=5。\nfrom sklearn.cluster import KMeans # 对高管的职业经历向量进行聚类分析 kmeans = KMeans(n_clusters=5, random_state=0) kmeans.fit(np.array(df['career_vec'].to_list())) df['cluster'] = kmeans.labels_ # 保存结果为CSV文件 df.to_csv('high_executives_with_clusters.csv', index=False, encoding='utf-8-sig') \n最后， 结果呈现 注意cluster是没有意义的数字，不同的数字代表着丰富的信息，例如职能、行业、地域、晋升路径等， 需要需要我们「人工解读」理解每个数字对应的含义。 这里摘抄一下 何瑛,于文蕾,戴逸驰,王砚羽.高管职业经历与企业创新[J].管理世界,2019,35(11):174-192. 内的内容，该文章没有使用向量表示，但是可以提供理解cluster的角度。\n在 CEO 职业经历的分类上，现有文献的研究视角各有不同。 - 在「职能方面」，比较受认可的是 Hambrick 和 Mason（1984）所提出的 3 部门分类法，即产出型职能（营销与研发）、生产型职能（过程管理、设备管理与会计） 和外围型职能（法律与融资），之后 Abebe 等（2010）较多学者沿用这种分类； - 在「行业方面」，Crossland 等（2014）将 其区分为能源、材料、工业、非必需消费品、日用消费品、保健、金融、信息技术、电信服务和公用设施等 10 种类 型；在组织机构方面，Hu 和 Liu（2015）分为生产性组织（如企业）、非生产性组织（如大学）以及行政或政府组织 3 类； - 在「地域类型」方面，Schmid 和 Wurster（2017）根据是否具有国际工作经历分为两类； - 在「工作背景」方面，Fan 等 （2007）和 Benmelech 和 Frydman（2015）分别根据是否具有从政经历和从军经历进行区分； - 另外在「晋升路径」上， Brockman 等（2019）则区分了内部提拔与外部聘请两种类型。 总的来说，上述有关管理者职业经历的文献大多 集中于研究管理者职业经历的某一方面，对复合型职业经历进行整合研究的文献十分罕见。 事实上，不同方面的职业经历之间往往存在某种联系，相互作用最终塑造了独特的管理风格（Kaplan et al.，2008）。 \nimport pandas as pd df2 = pd.read_csv('high_executives_with_clusters.csv') df2.head()  .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  姓名 性别 出生年份 学历 职业经历 companies career_vec cluster     0 高管1 女 2000 本科 华为-CFO,Facebook-CFO,Facebook-CEO ['华为', 'Facebook', 'Facebook'] [-0.03054439 0.28417936 0.23475488 0.360757... 0   1 高管2 女 1989 本科 百度-CEO,阿里巴巴-CFO,亚马逊-COO ['百度', '阿里巴巴', '亚马逊'] [-0.00747622 0.2823672 0.20479268 0.281800... 1   2 高管3 女 1992 博士 谷歌-CTO,腾讯-COO,百度-COO ['谷歌', '腾讯', '百度'] [-0.04080195 0.27067217 0.20773596 0.344685... 3   3 高管4 女 1989 本科 IBM-COO,苹果-CFO,微软-COO ['IBM', '苹果', '微软'] [-2.2640707e-02 3.1426176e-01 1.8418770e-01 ... 2   4 高管5 男 1960 本科 谷歌-COO,苹果-CFO,百度-COO ['谷歌', '苹果', '百度'] [-0.03068994 0.25639233 0.19499178 0.339379... 3     df2.cluster.value_counts() 2 14 3 13 4 9 0 7 1 7 Name: cluster, dtype: int64  \n代码获取 链接: https://pan.baidu.com/s/1pZQj5_s2sv5LYZ-EerJD1Q 提取码: 6m7v\n\n广而告之  长期征稿 长期招募小伙伴 支持开票 | Python实证指标构建与文本分析  ",
+  "wordCount" : "587",
+  "inLanguage": "en",
+  "image":"/images/blog/node2vec.png","datePublished": "2024-12-31T00:00:00Z",
+  "dateModified": "2024-12-31T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGQCREQ9X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGQCREQ9X');
+</script>
+
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif" rel="stylesheet">
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/management_python_course/" title="课程" target="_blank">
+                    <span>课程</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/the_text_analysis_list_about_ms/" title="文献" target="_blank">
+                    <span>文献</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/datasets_available_for_management_science/" title="数据" target="_blank">
+                    <span>数据</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/2024-04-27-cntext2x-usage-tutorial/" title="cntext2.x" target="_blank">
+                    <span>cntext2.x</span>
+                </a>
+            </li>
+            <li>
+                <a href="/index.xml" title="RSS" target="_blank">
+                    <span>RSS</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历
+    </h1>
+    <div class="post-meta"><span title='2024-12-31 00:00:00 +0000 UTC'>2024-12-31</span>&nbsp;·&nbsp;3 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/node2vec.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/node2vec.png" alt=""></a>
+        
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86&amp;url=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f&amp;hashtags=%e5%ad%a6%e6%9c%af%e5%ba%94%e7%94%a8%2c%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e8%af%8d%e5%90%91%e9%87%8f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f&amp;title=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86&amp;summary=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86&amp;source=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f&title=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86%20-%20%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on telegram"
+        href="https://telegram.me/share/url?text=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86&amp;url=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e4%b8%80%e9%ab%98%e7%ae%a1%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86" aria-label="一、高管职业经历">一、高管职业经历</a></li>
+                    <li>
+                        <a href="#%e4%ba%8c%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86%e8%81%9a%e7%b1%bb%e7%ae%97%e6%b3%95%e6%ad%a5%e9%aa%a4" aria-label="二、职业经历聚类算法步骤">二、职业经历聚类算法步骤</a></li>
+                    <li>
+                        <a href="#%e4%b8%89%e6%95%b0%e6%8d%ae%e5%af%bc%e5%85%a5" aria-label="三、数据导入">三、数据导入</a></li>
+                    <li>
+                        <a href="#%e5%9b%9b%e8%ae%ad%e7%bb%83node2vec%e6%a8%a1%e5%9e%8b" aria-label="四、训练Node2Vec模型">四、训练Node2Vec模型</a><ul>
+                            
+                    <li>
+                        <a href="#41-node2vec%e7%ae%97%e6%b3%95" aria-label="4.1 node2vec算法">4.1 node2vec算法</a></li>
+                    <li>
+                        <a href="#42-%e7%90%86%e8%a7%a3%e5%b5%8c%e5%85%a5" aria-label="4.2 理解嵌入">4.2 理解嵌入</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e4%ba%94%e8%ae%a1%e7%ae%97%e9%ab%98%e7%ae%a1%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86%e5%90%91%e9%87%8f" aria-label="五、计算高管职业经历向量">五、计算高管职业经历向量</a></li>
+                    <li>
+                        <a href="#%e5%85%ad%e9%ab%98%e7%ae%a1%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86%e8%81%9a%e7%b1%bbkmeans" aria-label="六、高管职业经历聚类Kmeans">六、高管职业经历聚类Kmeans</a></li>
+                    <li>
+                        <a href="#%e6%9c%80%e5%90%8e-%e7%bb%93%e6%9e%9c%e5%91%88%e7%8e%b0" aria-label="最后， 结果呈现">最后， 结果呈现</a></li>
+                    <li>
+                        <a href="#%e4%bb%a3%e7%a0%81%e8%8e%b7%e5%8f%96" aria-label="代码获取">代码获取</a></li>
+                    <li>
+                        <a href="#%e5%b9%bf%e8%80%8c%e5%91%8a%e4%b9%8b" aria-label="广而告之">广而告之</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><p>今天分享的内容主要是 <strong>如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历</strong>。</p>
+<p><br><br></p>
+<h2 id="一高管职业经历">一、高管职业经历<a hidden class="anchor" aria-hidden="true" href="#一高管职业经历">#</a></h2>
+<p>管理的本质是一种实践，在某些情形下，阅历比简历更重要，丰富的职业经历有助于企业高管形成多元化的思维结构、广阔的管理视野、丰富的社会资源和过人的胆识。因此，对于企业而言，了解高管的职业经历非常重要，这可以帮助企业更好地了解高管的背景和潜力，从而更好地为企业的发展提供支持。</p>
+<p>而研究高管的个人特质，已有的研究，主要从年龄、性别、学历等类别型变量开展研究，即使从从职业经历研究，也是作为离散变量，没有充分挖掘职业经历的信息。</p>
+<p>今天分享的内容主要是 <strong>如何用网络思维和嵌入思维表征企业，表征高管的职业经历</strong>。</p>
+<p><img loading="lazy" src="img/graph-embeddings-numerical.jpg" alt=""  />
+</p>
+<p>本技术文的创新价值</p>
+<blockquote>
+<ol>
+<li><strong>网络思维</strong>;<br>
+节点、边。 企业是节点，高管一般有多个企业就职经历，可以在任意2个企业构件一个边。</li>
+</ol>
+</blockquote>
+<ol start="2">
+<li><strong>嵌入思维</strong>;</li>
+</ol>
+<blockquote>
+<p>把企业网络中的节点转化为向量表示，企业是n维向量，高管也是同样的n维向量。类似于阴阳五行思维表征世间万物完事。</p>
+<ol start="3">
+<li>
+<p><strong>向量计算</strong>；</p>
+<p>事物都用N维向量表征，那么不同类别的事物，我们就可以对高管和企业之间就可以进行向量计算。</p>
+<p><strong>Kmeans聚类</strong>;<br>
+将很多企业向量或高管职业经历向量进行聚类，可能得到理想的&quot;分类&quot;标签(人工解读后的cluster数字就是很好的分类标签)。</p>
+<p><strong>相似度计算</strong>
+招聘来的高管对于该企业是否带来更多的异质性、或者带来更多的相似性。某企业的高管团队的异质性可以度量出一个准确的数字。招聘新的高管，也可以测量给改企业带来多少的相似性或者异质性。</p>
+</li>
+</ol>
+</blockquote>
+<p><img loading="lazy" src="img/vector_similarity.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二职业经历聚类算法步骤">二、职业经历聚类算法步骤<a hidden class="anchor" aria-hidden="true" href="#二职业经历聚类算法步骤">#</a></h2>
+<p>首先，我们需要构建一个企业的网络图，其中每个节点代表一个企业，每条边代表两个企业之间的关系，比如同城市、同行业， 而<strong>高管职业经历中的任意两家企业天然也是一个边</strong>。然后，我们使用node2vec算法对这个网络图进行嵌入，得到每个企业的向量表示。</p>
+<p>接着我们需要对每个高管的职业经历进行处理。一般来说，一个高管的职业经历可能涉及多个企业，因此我们需要将这些企业的向量求平均，得到一个高管的职业经历向量。这个向量可以代表高管的职业经历背景，可以用于后续的各类分析，比如聚类。</p>
+<p>最后我们可以使用聚类算法（比如k-means算法）对高管职业经历向量进行聚类分析， 具有相似职业经历的高管分为一组。</p>
+<p><br><br></p>
+<h2 id="三数据导入">三、数据导入<a hidden class="anchor" aria-hidden="true" href="#三数据导入">#</a></h2>
+<p>高管中的职业经历信息一般存在于没有规律的个人简历中，提取起来是比较复杂，这里可能需要用到正则表达式、命名实体识别等将处于简介中的企业名识别出来。</p>
+<p>高管职业经历信息一般存在于个人简历中，而个人简历中的职业经历信息往往不太规律，多个企业名也没有明显的分隔符，因此需要用到一些技术手段来将企业名识别出来，以便后续的处理和分析。</p>
+<p><strong>首先，我们可以使用正则表达式来匹配企业名</strong>。正则表达式是一种用于匹配文本的工具，可以根据一定的规则来匹配出所需要的信息。在这里，我们可以使用正则表达式来匹配一些常见的企业名词，比如“有限公司”、“股份有限公司”等。这样可以一定程度上识别出企业名，但对于一些特殊的企业名还需要进行进一步处理。</p>
+<p><strong>其次，我们可以使用命名实体识别（NER）技术来识别企业名</strong>。命名实体识别是自然语言处理的一项任务，旨在识别文本中的命名实体，比如人名、地名、组织名等。在这里，我们可以使用NER技术来识别文本中的企业名，从而更准确地提取出高管的职业经历信息。</p>
+<p><strong>最后，我们需要对提取出的企业名进行去重和整理</strong>。在提取出的企业名中，有一些是重复的，有一些是不必要的，需要将它们去掉。同时，对于每个高管的职业经历信息，我们需要将提取出的企业名整理成一个有序的序列，方便后续的处理和分析。</p>
+<p>总之，对于高管职业经历信息的提取，需要用到一些技术手段，包括正则表达式、命名实体识别等。这些技术手段可以帮助我们更准确地提取出高管的职业经历信息，为后续的分析和处理提供基础。<strong>但限于篇幅和主题，今天使用虚构的50条高管记录数据做实验。</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;high_executives.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+<p></style></p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>姓名</th>
+      <th>性别</th>
+      <th>出生年份</th>
+      <th>学历</th>
+      <th>职业经历</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>高管1</td>
+      <td>女</td>
+      <td>2000</td>
+      <td>本科</td>
+      <td>华为-CFO,Facebook-CFO,Facebook-CEO</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>高管2</td>
+      <td>女</td>
+      <td>1989</td>
+      <td>本科</td>
+      <td>百度-CEO,阿里巴巴-CFO,亚马逊-COO</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>高管3</td>
+      <td>女</td>
+      <td>1992</td>
+      <td>博士</td>
+      <td>谷歌-CTO,腾讯-COO,百度-COO</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>高管4</td>
+      <td>女</td>
+      <td>1989</td>
+      <td>本科</td>
+      <td>IBM-COO,苹果-CFO,微软-COO</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>高管5</td>
+      <td>男</td>
+      <td>1960</td>
+      <td>本科</td>
+      <td>谷歌-COO,苹果-CFO,百度-COO</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#记录数</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div><pre><code>50
+</code></pre>
+<br>
+<br>
+<h2 id="四训练node2vec模型">四、训练Node2Vec模型<a hidden class="anchor" aria-hidden="true" href="#四训练node2vec模型">#</a></h2>
+<h3 id="41-node2vec算法">4.1 node2vec算法<a hidden class="anchor" aria-hidden="true" href="#41-node2vec算法">#</a></h3>
+<p>Node2Vec是一种基于深度学习的图嵌入算法，旨在将图中的节点映射到低维向量空间中，从而方便后续的分析和处理。具体来说，Node2Vec算法可以将节点的局部邻域结构转化为向量表示，同时保留节点之间的全局结构信息。如果熟悉Wordc2Vec的同学，理解起来会比较容易，Node2Vec是基于word2vec算法开发出来的，将职业经历中每个企业看做词语，训练得到企业向量表示。</p>
+<p><img loading="lazy" src="img/node2vec.png" alt=""  />
+</p>
+<p>在Node2Vec算法中，每个节点的向量表示由两个部分组成：一个是节点自身的特征向量，另一个是节点在不同邻域结构下的向量表示。算法的核心思想是通过两个步骤来生成节点的向量表示：</p>
+<ul>
+<li>随机游走：对于每个节点，从它的邻居节点中随机选择一个节点进行访问，然后在这个节点的邻居中进行同样的随机选择。这个过程可以生成一系列的节点序列，其中每个序列都代表了一个从起始节点出发的随机游走路径。</li>
+<li>Skip-gram模型：基于这些随机游走路径，使用Skip-gram模型进行向量表示的学习。Skip-gram模型是一种常见的自然语言处理模型，用于学习词向量。在Node2Vec算法中，可以将节点序列看作“句子”，将每个节点看作“词”，然后使用Skip-gram模型来学习节点向量的表示。</li>
+</ul>
+<p>Node2Vec算法通过随机游走和Skip-gram模型的结合，可以生成具有丰富语义信息的节点向量，同时保留了节点之间的全局结构信息。这种算法可以应用于各种不同的图结构，包括社交网络、知识图谱、生物信息学等领域，具有广泛的应用前景。</p>
+<p><strong>在高管职业经历数据的应用中，我们可以将每个企业看作图中的一个节点，然后使用Node2Vec算法来训练企业向量模型</strong>。这样可以将企业的职业经历信息转化为向量表示，方便后续的分析和处理。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">from</span> <span class="nn">node2vec</span> <span class="kn">import</span> <span class="n">Node2Vec</span>
+
+
+<span class="c1"># 读取CSV文件并提取职业经历中的公司名列表</span>
+<span class="n">companies</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;IBM&#39;</span><span class="p">,</span> <span class="s1">&#39;谷歌&#39;</span><span class="p">,</span> <span class="s1">&#39;Facebook&#39;</span><span class="p">,</span> <span class="s1">&#39;苹果&#39;</span><span class="p">,</span> <span class="s1">&#39;微软&#39;</span><span class="p">,</span> <span class="s1">&#39;亚马逊&#39;</span><span class="p">,</span> <span class="s1">&#39;阿里巴巴&#39;</span><span class="p">,</span> <span class="s1">&#39;腾讯&#39;</span><span class="p">,</span> <span class="s1">&#39;百度&#39;</span><span class="p">,</span> <span class="s1">&#39;华为&#39;</span><span class="p">]</span>
+<span class="n">companies_regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">companies</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;companies&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;职业经历&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">companies_regex</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+
+<span class="c1"># 构建公司名之间的边</span>
+<span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">companies</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;companies&#39;</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">company1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">companies</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">company2</span> <span class="ow">in</span> <span class="n">companies</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">company1</span><span class="p">,</span> <span class="n">company2</span><span class="p">)</span>
+
+<span class="c1"># 使用node2vec库生成公司名向量</span>
+<span class="c1"># 企业向量维度 16</span>
+<span class="n">node2vec</span> <span class="o">=</span> <span class="n">Node2Vec</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">dimensions</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">walk_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_walks</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">node2vec</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">min_count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1"># model.wv[company] 查询某个企业的向量</span>
+<span class="n">vectors</span> <span class="o">=</span> <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">wv</span><span class="p">[</span><span class="n">company</span><span class="p">]</span> <span class="k">for</span> <span class="n">company</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()]</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">    Computing transition probabilities:   0%|          | 0/10 [00:00&lt;?, ?it/s]
+    Generating walks (CPU: 1): 100%|████████████| 100/100 [00:00&lt;00:00, 3920.94it/s]
+</code></pre></div><br>
+<h3 id="42-理解嵌入">4.2 理解嵌入<a hidden class="anchor" aria-hidden="true" href="#42-理解嵌入">#</a></h3>
+<p>本文嵌入的维度是16维， 其实这里用任意 N 维都可以嵌入表示任意一个事物。这里理解起来比较难，咱们用熟悉的事情来假装理解嵌入维度的设定。
+在中国传统文化中，经常使用n维来刻画、描述、表征任意事物。例如</p>
+<ul>
+<li>2维， 阴阳思维去描述事物的阴阳</li>
+<li>5维， 五行，金木水火土描述事物</li>
+</ul>
+<p>而在本技术中， <code>Node2Vec(G, dimensions=16, walk_length=10, num_walks=100)</code> dimensions=16 即用16维表征每个企业，得到16维的企业向量。 需要注意的是， 我们可能都无法理解 16维的任意一个维度的含义。如果设置成2维、5维或者其他维，我们也是无法理解对应的维度含义。因为中国传统文化，已经定义了每个维度的含义，然后再去表征事物。但是我们是先定义了维度数，所以维度的含义是未知的。</p>
+<p><br><br></p>
+<h2 id="五计算高管职业经历向量">五、计算高管职业经历向量<a hidden class="anchor" aria-hidden="true" href="#五计算高管职业经历向量">#</a></h2>
+<p>定义一个 <strong>companys2vec(companys)</strong> 函数 ，该函数可以把多家企业就职的经历转为 「职业经历向量」。</p>
+<p>将高管的职业经历转化为向量，每家企业是一个 16 维向量，最简单粗暴的办法是求平多个就职企业向量的均值，均值向量也是 16 维。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">companys2vec</span><span class="p">(</span><span class="n">companys</span><span class="p">):</span>
+    <span class="n">cvs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">company</span> <span class="ow">in</span> <span class="n">companys</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cvs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">wv</span><span class="p">[</span><span class="n">company</span><span class="p">])</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cvs</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="n">companys2vec</span><span class="p">(</span><span class="n">companys</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;华为&#39;</span><span class="p">,</span> <span class="s1">&#39;Facebook&#39;</span><span class="p">,</span> <span class="s1">&#39;Facebook&#39;</span><span class="p">])</span>
+</code></pre></div><pre><code>array([-0.03054439,  0.28417936,  0.23475488,  0.36075735, -0.16633254,
+       -0.06266979,  0.74403137,  0.16226356,  0.01991086, -0.15565623,
+        0.34757233,  0.3079434 ,  0.19876878,  0.01175458, -0.55069256,
+        0.01623819], dtype=float32)
+</code></pre>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#批量计算，得到高管的职业经历向量 career_vec</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;career_vec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;companies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">companys2vec</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+<p></style></p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>姓名</th>
+      <th>性别</th>
+      <th>出生年份</th>
+      <th>学历</th>
+      <th>职业经历</th>
+      <th>companies</th>
+      <th>career_vec</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>高管1</td>
+      <td>女</td>
+      <td>2000</td>
+      <td>本科</td>
+      <td>华为-CFO,Facebook-CFO,Facebook-CEO</td>
+      <td>[华为, Facebook, Facebook]</td>
+      <td>[-0.03054439, 0.28417936, 0.23475488, 0.360757...</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>高管2</td>
+      <td>女</td>
+      <td>1989</td>
+      <td>本科</td>
+      <td>百度-CEO,阿里巴巴-CFO,亚马逊-COO</td>
+      <td>[百度, 阿里巴巴, 亚马逊]</td>
+      <td>[-0.007476224, 0.2823672, 0.20479268, 0.281800...</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>高管3</td>
+      <td>女</td>
+      <td>1992</td>
+      <td>博士</td>
+      <td>谷歌-CTO,腾讯-COO,百度-COO</td>
+      <td>[谷歌, 腾讯, 百度]</td>
+      <td>[-0.040801946, 0.27067217, 0.20773596, 0.34468...</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>高管4</td>
+      <td>女</td>
+      <td>1989</td>
+      <td>本科</td>
+      <td>IBM-COO,苹果-CFO,微软-COO</td>
+      <td>[IBM, 苹果, 微软]</td>
+      <td>[-0.022640707, 0.31426176, 0.1841877, 0.323161...</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>高管5</td>
+      <td>男</td>
+      <td>1960</td>
+      <td>本科</td>
+      <td>谷歌-COO,苹果-CFO,百度-COO</td>
+      <td>[谷歌, 苹果, 百度]</td>
+      <td>[-0.030689942, 0.25639233, 0.19499178, 0.33937...</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p><br><br></p>
+<h2 id="六高管职业经历聚类kmeans">六、高管职业经历聚类Kmeans<a hidden class="anchor" aria-hidden="true" href="#六高管职业经历聚类kmeans">#</a></h2>
+<p>Kmeans是一种常见的聚类算法，旨在将相似的数据点分组为同一类别，从而发现数据的内在结构。Kmeans算法的优点是简单易实现，对于大型数据集也具有较高的效率。它可以适用于各种类型的数据，包括数值型、文本型和图像型等数据。同时，Kmeans算法可以通过调整簇的个数来控制聚类结果的细粒度程度，比如选择较大的簇个数可以得到更细致的聚类结果。</p>
+<p><img loading="lazy" src="img/kmeans.png" alt=""  />
+</p>
+<p><strong>Kmeans算法的缺点是需要指定簇的个数k，这个参数选择较大或者较小都可能导致聚类结果不理想</strong>。同时，Kmeans算法对于离群点比较敏感，可能会导致簇中心偏离聚类的本质结构。如果对数据不了解，需要使用手肘法则等方式确定K。 <strong>这里假设我们对数据很了解，那么可以指定K=5</strong>。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">sklearn.cluster</span> <span class="kn">import</span> <span class="n">KMeans</span>
+
+<span class="c1"># 对高管的职业经历向量进行聚类分析</span>
+<span class="n">kmeans</span> <span class="o">=</span> <span class="n">KMeans</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">kmeans</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;career_vec&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()))</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;cluster&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kmeans</span><span class="o">.</span><span class="n">labels_</span>
+
+<span class="c1"># 保存结果为CSV文件</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;high_executives_with_clusters.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8-sig&#39;</span><span class="p">)</span>
+</code></pre></div><p><br><br></p>
+<h2 id="最后-结果呈现">最后， 结果呈现<a hidden class="anchor" aria-hidden="true" href="#最后-结果呈现">#</a></h2>
+<p><strong>注意cluster是没有意义的数字，不同的数字代表着丰富的信息，例如职能、行业、地域、晋升路径等， 需要需要我们「人工解读」理解每个数字对应的含义</strong>。 这里摘抄一下 <strong>何瑛,于文蕾,戴逸驰,王砚羽.高管职业经历与企业创新[J].管理世界,2019,35(11):174-192.</strong> 内的内容，该文章没有使用向量表示，但是可以提供理解cluster的角度。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">在 CEO 职业经历的分类上，现有文献的研究视角各有不同。 
+
+- 在「职能方面」，比较受认可的是 Hambrick 和 Mason（1984）所提出的 3 部门分类法，即产出型职能（营销与研发）、生产型职能（过程管理、设备管理与会计） 和外围型职能（法律与融资），之后 Abebe 等（2010）较多学者沿用这种分类；
+
+- 在「行业方面」，Crossland 等（2014）将 其区分为能源、材料、工业、非必需消费品、日用消费品、保健、金融、信息技术、电信服务和公用设施等 10 种类 型；在组织机构方面，Hu 和 Liu（2015）分为生产性组织（如企业）、非生产性组织（如大学）以及行政或政府组织 3 类；
+
+- 在「地域类型」方面，Schmid 和 Wurster（2017）根据是否具有国际工作经历分为两类；
+
+- 在「工作背景」方面，Fan 等 （2007）和 Benmelech 和 Frydman（2015）分别根据是否具有从政经历和从军经历进行区分；
+
+- 另外在「晋升路径」上， Brockman 等（2019）则区分了内部提拔与外部聘请两种类型。 
+
+总的来说，上述有关管理者职业经历的文献大多 集中于研究管理者职业经历的某一方面，对复合型职业经历进行整合研究的文献十分罕见。 事实上，不同方面的职业经历之间往往存在某种联系，相互作用最终塑造了独特的管理风格（Kaplan et al.，2008）。
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;high_executives_with_clusters.csv&#39;</span><span class="p">)</span>
+<span class="n">df2</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+<p></style></p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>姓名</th>
+      <th>性别</th>
+      <th>出生年份</th>
+      <th>学历</th>
+      <th>职业经历</th>
+      <th>companies</th>
+      <th>career_vec</th>
+      <th>cluster</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>高管1</td>
+      <td>女</td>
+      <td>2000</td>
+      <td>本科</td>
+      <td>华为-CFO,Facebook-CFO,Facebook-CEO</td>
+      <td>['华为', 'Facebook', 'Facebook']</td>
+      <td>[-0.03054439  0.28417936  0.23475488  0.360757...</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>高管2</td>
+      <td>女</td>
+      <td>1989</td>
+      <td>本科</td>
+      <td>百度-CEO,阿里巴巴-CFO,亚马逊-COO</td>
+      <td>['百度', '阿里巴巴', '亚马逊']</td>
+      <td>[-0.00747622  0.2823672   0.20479268  0.281800...</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>高管3</td>
+      <td>女</td>
+      <td>1992</td>
+      <td>博士</td>
+      <td>谷歌-CTO,腾讯-COO,百度-COO</td>
+      <td>['谷歌', '腾讯', '百度']</td>
+      <td>[-0.04080195  0.27067217  0.20773596  0.344685...</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>高管4</td>
+      <td>女</td>
+      <td>1989</td>
+      <td>本科</td>
+      <td>IBM-COO,苹果-CFO,微软-COO</td>
+      <td>['IBM', '苹果', '微软']</td>
+      <td>[-2.2640707e-02  3.1426176e-01  1.8418770e-01 ...</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>高管5</td>
+      <td>男</td>
+      <td>1960</td>
+      <td>本科</td>
+      <td>谷歌-COO,苹果-CFO,百度-COO</td>
+      <td>['谷歌', '苹果', '百度']</td>
+      <td>[-0.03068994  0.25639233  0.19499178  0.339379...</td>
+      <td>3</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df2</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</code></pre></div><pre><code>2    14
+3    13
+4     9
+0     7
+1     7
+Name: cluster, dtype: int64
+</code></pre>
+<p><br><br></p>
+<h2 id="代码获取">代码获取<a hidden class="anchor" aria-hidden="true" href="#代码获取">#</a></h2>
+<p>链接: <a href="https://pan.baidu.com/s/1pZQj5_s2sv5LYZ-EerJD1Q">https://pan.baidu.com/s/1pZQj5_s2sv5LYZ-EerJD1Q</a> 提取码: 6m7v</p>
+<p><br><br></p>
+<h2 id="广而告之">广而告之<a hidden class="anchor" aria-hidden="true" href="#广而告之">#</a></h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">支持开票 | Python实证指标构建与文本分析</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/%E5%AD%A6%E6%9C%AF%E5%BA%94%E7%94%A8/" target='_blank'>学术应用</a></li>
+        <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/" target='_blank'>文本分析</a></li>
+        <li><a href="/tags/%E8%AF%8D%E5%90%91%E9%87%8F/" target='_blank'>词向量</a></li>
+      </ul>
+
+
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86&amp;url=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f&amp;hashtags=%e5%ad%a6%e6%9c%af%e5%ba%94%e7%94%a8%2c%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e8%af%8d%e5%90%91%e9%87%8f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f&amp;title=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86&amp;summary=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86&amp;source=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f&title=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86%20-%20%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 如何用图嵌入(网络思维和嵌入思维)表征企业，表征高管的职业经历 on telegram"
+        href="https://telegram.me/share/url?text=%e5%a6%82%e4%bd%95%e7%94%a8%e5%9b%be%e5%b5%8c%e5%85%a5%28%e7%bd%91%e7%bb%9c%e6%80%9d%e7%bb%b4%e5%92%8c%e5%b5%8c%e5%85%a5%e6%80%9d%e7%bb%b4%29%e8%a1%a8%e5%be%81%e4%bc%81%e4%b8%9a%ef%bc%8c%e8%a1%a8%e5%be%81%e9%ab%98%e7%ae%a1%e7%9a%84%e8%81%8c%e4%b8%9a%e7%bb%8f%e5%8e%86&amp;url=%2fblog%2f2024-12-31-the-experience-of-ceo-to-vector-with-graphe-embeddings%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2025 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'Copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+
+
+    
+    
+</body>
+
+</html>

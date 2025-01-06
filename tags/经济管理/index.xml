@@ -6,7 +6,7 @@
     <description>Recent content in 经济管理 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 04 Aug 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 31 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BB%8F%E6%B5%8E%E7%AE%A1%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>2023 | 文本分析在经管研究中的应用</title>
       <link>https://textdata.cn/blog/2023-11-05-xjtu-text-mining-in-ms/</link>
@@ -336,6 +336,228 @@
 <li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
 <li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
 <li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>使用 Word2Vec 和 TF-IDF 计算五类企业文化</title>
+      <link>https://textdata.cn/blog/2024-12-31-measure-corporate-culture-using-word2vec/</link>
+      <pubDate>Tue, 31 Dec 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-12-31-measure-corporate-culture-using-word2vec/</guid>
+      <description>我们使用最新的机器学习技术——**词嵌入模型**——和209,480份盈利电话会议记录创建了一本文化词典。我们对2001年至2018年期间的62,664个公司年度观察数据的**五个公司文化价值——创新、诚信、质量、尊重和团队合作**进行评分。结果表明，创新文化比公司创新的通常衡量标准——研发支出和专利数量——更广泛。此外，我们还表明，企业文化与业务结果相关，包括运营效率、风险承担、盈利管理、高管薪酬设计、企业价值和交易等，并且文化-绩效联系在困难时期更加显著。最后，我们提供了初步证据，表明企业文化受到重大公司事件（如合并和收购）的影响。</description>
+      <content:encoded><![CDATA[<p><img loading="lazy" src="img/cover.png" alt=""  />
+</p>
+<p>Kai Li, Feng Mai, Rui Shen, Xinyan Yan, <strong>Measuring Corporate Culture Using Machine Learning</strong>, The Review of Financial Studies, 2020</p>
+<p>摘要: 我们使用最新的机器学习技术——<strong>词嵌入模型</strong>——和209,480份盈利电话会议记录创建了一本文化词典。我们对2001年至2018年期间的62,664个公司年度观察数据的<strong>五个公司文化价值——创新、诚信、质量、尊重和团队合作</strong>进行评分。结果表明，创新文化比公司创新的通常衡量标准——研发支出和专利数量——更广泛。此外，我们还表明，企业文化与业务结果相关，包括运营效率、风险承担、盈利管理、高管薪酬设计、企业价值和交易等，并且文化-绩效联系在困难时期更加显著。最后，我们提供了初步证据，表明企业文化受到重大公司事件（如合并和收购）的影响。</p>
+<h2 id="内容概况">内容概况</h2>
+<p>今天分享的内容主要包括两部分， 即</p>
+<ul>
+<li>使用word2vec扩展得到五大类企业文化词典</li>
+<li>使用TFIDF算法，结合五类文化词典对公司进行评分</li>
+</ul>
+<br>
+<h2 id="算法步骤">算法步骤</h2>
+<ol>
+<li>构建种子词； 人工构建五类企业文化的种子词典， 每类词典人工准备5-10个词</li>
+<li>word2vec扩充； 使用word2vec扩充五类企业文化词典的词汇量</li>
+<li>tf-idf；将文本数据转为tf-idf格式</li>
+<li>计算五类企业文化得分； 筛选含有文化词的列，按不同企业文化类别，分别求和得到得分。</li>
+</ol>
+<p><br><br></p>
+<h2 id="一人工构建种子词典">一、人工构建种子词典</h2>
+<p>词向量法程序会挖掘出原始数据中的所有词的词向量，这时候如果给词向量模型传入种子词，会根据语义空间的距离远近识别出多个近义词。</p>
+<p>手工构建了五大类企业文化词典，存放在txt中，即</p>
+<ul>
+<li>data/w2v_seeds/innovation.txt</li>
+<li>data/w2v_seeds/integrity.txt</li>
+<li>data/w2v_seeds/quality.txt</li>
+<li>data/w2v_seeds/respect.txt</li>
+<li>data/w2v_seeds/teamwork.txt</li>
+</ul>
+<p>注意，在txt中，每行一个词语。原始语料</p>
+<ul>
+<li>data/w2v_corpus.txt</li>
+</ul>
+<p><br><br></p>
+<h2 id="二-词向量法扩展词典">二、 词向量法扩展词典</h2>
+<p>论文使用gensim的word2vec算法扩充企业文化词典。但代码太复杂，对初学Python的小白而言，代码的调试难度较大。大邓在这里将代码进行压缩和封装，只需要几行就能原作者几十行才能实现的词向量扩充的功能。需要安装gensim库和cntext库</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#安装需要的包</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">gensim</span><span class="o">==</span><span class="mf">4.2.0</span>
+<span class="err">!</span><span class="n">pip3</span> <span class="n">install</span> <span class="n">cntext</span> <span class="o">--</span><span class="n">upgrade</span>
+</code></pre></div><p><img loading="lazy" src="img/nltk.png" alt=""  />
+</p>
+<p>注意，下方代码运行可能会出现nltk_data问题，解决办法参考视频  <a href="https://www.bilibili.com/video/BV14A411i7DB/">https://www.bilibili.com/video/BV14A411i7DB/</a></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1">#初始化模型,需要设置lang参数。</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">W2VModels</span><span class="p">(</span><span class="n">cwd</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> 
+                     <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;english&#39;</span><span class="p">)</span>  <span class="c1">#语料数据 w2v_corpus.txt</span>
+
+<span class="c1">#训练词向量模型</span>
+<span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">input_txt_file</span><span class="o">=</span><span class="s1">&#39;data/w2v_corpus.txt&#39;</span><span class="p">)</span>
+
+
+<span class="c1">#根据种子词和训练好的词向量模型，筛选出没类词最相近的前100个词</span>
+<span class="n">model</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">seedword_txt_file</span><span class="o">=</span><span class="s1">&#39;data/w2v_seeds/integrity.txt&#39;</span><span class="p">,</span> 
+           <span class="n">topn</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">seedword_txt_file</span><span class="o">=</span><span class="s1">&#39;data/w2v_seeds/innovation.txt&#39;</span><span class="p">,</span> 
+           <span class="n">topn</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">seedword_txt_file</span><span class="o">=</span><span class="s1">&#39;data/w2v_seeds/quality.txt&#39;</span><span class="p">,</span> 
+           <span class="n">topn</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">seedword_txt_file</span><span class="o">=</span><span class="s1">&#39;data/w2v_seeds/respect.txt&#39;</span><span class="p">,</span> 
+           <span class="n">topn</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">seedword_txt_file</span><span class="o">=</span><span class="s1">&#39;data/w2v_seeds/teamwork.txt&#39;</span><span class="p">,</span> 
+           <span class="n">topn</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</code></pre></div><pre><code>Step 1/4:...Preprocess   corpus ...
+Step 2/4:...Train  word2vec model
+            used   42 s
+Step 3/4:...Prepare similar candidates for each seed word in the word2vec model...
+Step 4/4 Finish! Used 46 s
+Step 3/4:...Prepare similar candidates for each seed word in the word2vec model...
+Step 4/4 Finish! Used 46 s
+Step 3/4:...Prepare similar candidates for each seed word in the word2vec model...
+Step 4/4 Finish! Used 46 s
+Step 3/4:...Prepare similar candidates for each seed word in the word2vec model...
+Step 4/4 Finish! Used 46 s
+Step 3/4:...Prepare similar candidates for each seed word in the word2vec model...
+Step 4/4 Finish! Used 46 s
+</code></pre>
+<p><br><br></p>
+<h2 id="三-使用tf-idf有权重计算情感词典">三、 使用TF-IDF有权重计算情感词典</h2>
+<p>一般的情感分析是无权重算法，即每个词语的权重都是1，只需要统计文本中<strong>某类概念词</strong>出现的多寡，就能确定<strong>该概念的得分</strong></p>
+<p><img loading="lazy" src="img/tf.png" alt=""  />
+
+<img loading="lazy" src="img/idf.png" alt=""  />
+
+<img loading="lazy" src="img/tfidf.png" alt=""  />
+</p>
+<p>这篇论文使用的tf-idf， 我们可以将tf简单的理解为某词在文本出现的次数， idf是该词的稀奇程度(少见多怪程度)。一般我们认为一个词语出现的次数越多，信息量越大。但有时候，稀缺性也是一种很重要的信息量。例如以下两类词</p>
+<ul>
+<li>A 的、它、呢、了&hellip;&hellip;</li>
+<li>B 核能、战争、死&hellip;&hellip;</li>
+</ul>
+<p>A类词，几乎出现在中文所有的句子中，我们可以忽略掉这类词，不影响对句子语义的理解。而B类词很少出现在我们日常文本句子中，但一旦出现，直接影响句子的语义。所以只考虑TF词频的大小还不全面，我们还需要纳入稀缺性信息IDF。</p>
+<h3 id="31-读入数据">3.1 读入数据</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 读企业文本数据</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">corporate_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;data/corporate_culture.xlsx&#39;</span><span class="p">)</span>
+<span class="n">corporate_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>idx</th>
+      <th>text</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0</td>
+      <td>Thank you sir. Ladies and gentlemen, at this t...</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1</td>
+      <td>[OPERATOR INSTRUCTIONS]. Our first question is...</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2</td>
+      <td>Thank you, Mr. Gallagher. [Caller instructions...</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>3</td>
+      <td>(OPERATOR INSTRUCTIONS.)  Ann Gillen, Lehman B...</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>4</td>
+      <td>(OPERATOR INSTRUCTIONS) John Harmon.    I have...</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#查看记录数(企业文本数）</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">corporate_df</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<pre><code>105
+</code></pre>
+<br>
+<h3 id="32-读词典">3.2 读词典</h3>
+<p>word2vec扩展后的企业文化五大类，需要人工检查，剔除不符合词典含义的词，留下可用的词语。<strong>这里我们假装已经人工检查过了</strong>。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">read_dict</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="n">w</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">words</span>
+
+<span class="n">innovation_words</span> <span class="o">=</span> <span class="n">read_dict</span><span class="p">(</span><span class="s1">&#39;output/w2v_candi_words/innovation.txt&#39;</span><span class="p">)</span>
+<span class="n">integrity_words</span> <span class="o">=</span> <span class="n">read_dict</span><span class="p">(</span><span class="s1">&#39;output/w2v_candi_words/integrity.txt&#39;</span><span class="p">)</span>
+<span class="n">quality_words</span> <span class="o">=</span> <span class="n">read_dict</span><span class="p">(</span><span class="s1">&#39;output/w2v_candi_words/quality.txt&#39;</span><span class="p">)</span>
+<span class="n">respect_words</span> <span class="o">=</span> <span class="n">read_dict</span><span class="p">(</span><span class="s1">&#39;output/w2v_candi_words/respect.txt&#39;</span><span class="p">)</span>
+<span class="n">teamwork_words</span> <span class="o">=</span> <span class="n">read_dict</span><span class="p">(</span><span class="s1">&#39;output/w2v_candi_words/teamwork.txt&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">respect_words</span><span class="p">)</span>
+</code></pre></div><pre><code>['respectful', 'talent', 'talented', 'employee', 'dignity', 'empowerment', 'empower', 'skills', 'ibos', 'hr', 'salespeople', 'designers', 'creative', 'organizations', 'dedicated', 'backbone', 'abilities', 'missions', 'engine', 'tools', 'training', 'tackling', 'resource', 'adapting', 'interface', 'selecting', 'functions', 'expertise', 'cryocooler', 'sdk', 'affiliated', 'computers', 'departments', 'awareness', 'logistical', 'in-house', 'associate', 'optimization', 'functioning', 'outsource', 'organized', 'dedicate', 'outbound', 'pride', 'organization', 'referral', 'contacts', 'culture', 'motor', 'coordination', 'financially', 'onsite', 'web-based', 'functionality', 'wholesalers', 'provider', 'telesales', 'professionally', 'dealers', 'managers', 'involves', 'backhaul', 'crm', 'beefing', 'rf', 'computer', 'outreach', 'branding', 'appealing', 'networks', 'knowledge', 'electrical', 'industry-leading', 'providers', 'desires', 'guests', 'managerial', 'enhanced', 'assigned', 'railroad', 'durability', 'individuals', 'co2', 'believes', 'long-standing', 'high-quality', 'third-party', 'systems', 'groups', 'party', 'connecting', 'community', 'complementary', 'practices', 'reputation', 'processes', 'merchandising', 'next-generation', 'bundles', 'refocus', 'infrastructure', 'physician', 'transportation', 'aircraft', 'responsiveness', 'trained', 'full-time']
+</code></pre>
+<br>
+<h3 id="33-生成每条记录的tfidf值">3.3 生成每条记录的tfidf值</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="kn">import</span> <span class="n">TfidfVectorizer</span>
+
+
+<span class="k">def</span> <span class="nf">createDTM</span><span class="p">(</span><span class="n">corpus</span><span class="p">):</span>
+    <span class="s2">&#34;&#34;&#34;构建文档词语矩阵&#34;&#34;&#34;</span>
+    <span class="n">vectorize</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">()</span>
+    <span class="c1">#注意fit_transform相当于fit之后又transform。</span>
+    <span class="n">dtm</span> <span class="o">=</span> <span class="n">vectorize</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">corpus</span><span class="p">)</span>
+    <span class="c1">#vectorize.fit(corpus)</span>
+    <span class="c1">#dtm  = vectorize.transform(corpus) </span>
+    <span class="c1">#打印dtm</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dtm</span><span class="o">.</span><span class="n">toarray</span><span class="p">(),</span> 
+                        <span class="n">columns</span><span class="o">=</span><span class="n">vectorize</span><span class="o">.</span><span class="n">get_feature_names_out</span><span class="p">())</span> 
+
+<span class="n">corporate_tfidf_df</span> <span class="o">=</span> <span class="n">createDTM</span><span class="p">(</span><span class="n">corporate_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">])</span>
+<span class="n">corporate_tfidf_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/tfidf-df5.png" alt=""  />
+</p>
+<br>
+<h3 id="34-更新五大类词典">3.4 更新五大类词典</h3>
+<p>企业文化词典中的词，并不是都出现在corporate_tfidf_df中的列里， 为避免列操作出错。 需要重新更新文化词典。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">Innovation_words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">innovation_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">corporate_tfidf_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+<span class="n">Integrity_words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">integrity_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">corporate_tfidf_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+<span class="n">Quality_words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">quality_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">corporate_tfidf_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+<span class="n">Respect_words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">respect_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">corporate_tfidf_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+<span class="n">Teamwork_words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">teamwork_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">corporate_tfidf_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+</code></pre></div><br>
+<h3 id="35-计算不同类别得分">3.5 计算不同类别得分</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">corporate_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;Innovation&#39;</span><span class="p">:</span> <span class="n">corporate_tfidf_df</span><span class="p">[</span><span class="n">Innovation_words</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s1">&#39;Integrity&#39;</span><span class="p">:</span><span class="n">corporate_tfidf_df</span><span class="p">[</span><span class="n">Integrity_words</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s1">&#39;Quality&#39;</span><span class="p">:</span><span class="n">corporate_tfidf_df</span><span class="p">[</span><span class="n">Quality_words</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s1">&#39;Respect&#39;</span><span class="p">:</span><span class="n">corporate_tfidf_df</span><span class="p">[</span><span class="n">Respect_words</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s1">&#39;Teamwork&#39;</span><span class="p">:</span><span class="n">corporate_tfidf_df</span><span class="p">[</span><span class="n">Teamwork_words</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="p">}</span>
+
+<span class="n">CultureResultDf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="n">CultureResultDf</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/output.png" alt=""  />
+</p>
+<br>
+<h3 id="36-保存结果">3.6 保存结果</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">CultureResultDf</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;output/企业五大类文化tfidf有权重计算.csv&#39;</span><span class="p">)</span>
+</code></pre></div><br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://hidadeng.github.io/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://hidadeng.github.io/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://hidadeng.github.io/blog/management_python_course/">支持开票 | Python实证指标构建与文本分析</a></li>
 </ul>
 ]]></content:encoded>
     </item>
