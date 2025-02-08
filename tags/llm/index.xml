@@ -462,8 +462,14 @@ Wall time: 1 s
 </code></pre></div><p>运行一条评论耗时 1 s， 该评论为 <em><strong>负面neg</strong></em>,  情感分 <em><strong>-0.65</strong></em>。</p>
 <br>
 <br>
-<h2 id="五-批量运算">五、 批量运算</h2>
-<h3 id="51-完整代码">5.1 完整代码</h3>
+<h2 id="五-完整代码">五、 完整代码</h2>
+<p>由于大模型速度非常缓慢，一次提问耗时几秒， 如果大规模使用大模型对数据进行数据标注， 速度慢的令人抓狂。 这时候写代码就有同步代码和异步代码之分。</p>
+<ul>
+<li>同步代码按照顺序执行，每个任务必须等待前一个任务完成后才能开始。适用于处理少量数据或不需要高并发性能的情况。</li>
+<li>异步代码允许并发执行多个任务，适合处理大量数据时提高效率。使用<code>asyncio</code>库来实现异步操作。</li>
+</ul>
+<p>本章节是情感分析实验代码的收官章节， 设计了同步代码和异步代码两个版本， 并在本章末进行了任务耗时(速度)对比。</p>
+<h3 id="51-同步代码">5.1 同步代码</h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
@@ -527,16 +533,83 @@ Wall time: 1 s
 </code></pre></div><p><img loading="lazy" src="img/07-df.png" alt=""  />
 </p>
 <br>
-<h3 id="52-准确率计算方法">5.2 准确率计算方法</h3>
-<p>假设label为1时， <em><strong>SentiLabel</strong></em> 为pos(或label为0时， SentiLabel为neg)， 大模型判断正确。反之，判断失误。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">expression</span> <span class="o">=</span> <span class="s2">&#34;(label == 1) &amp; (sentiment == &#39;pos&#39;) | (label == 0) &amp; (sentiment == &#39;neg&#39;)&#34;</span>
-<span class="n">correct_ratio</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">expression</span><span class="p">))</span><span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;准确率: </span><span class="si">{</span><span class="n">correct_ratio</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">准确率: 86%
-</code></pre></div><p><br><br></p>
+<h3 id="52-异步代码">5.2 异步代码</h3>
+<p>相比 <em><strong>5.1普通代码</strong></em> ， 异步代码运行速度更快。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">tqdm.asyncio</span> <span class="kn">import</span> <span class="n">tqdm_asyncio</span>
+<span class="c1"># 使用AsyncOpenAI代替OpenAI以支持异步操作</span>
+<span class="kn">from</span> <span class="nn">openai</span> <span class="kn">import</span> <span class="n">AsyncOpenAI</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">instructor</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+
+<span class="c1"># 结构化输出</span>
+<span class="k">class</span> <span class="nc">Sentiment</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">senti_label</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">senti_score</span><span class="p">:</span> <span class="nb">float</span>
+
+<span class="c1"># Prompt提示</span>
+<span class="n">PROMPT_TEXT</span> <span class="o">=</span> <span class="s2">&#34;根据评论内容，返回文本的情感类别(pos、neg)和情感得分(取值范围 -1~1)&#34;</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">instructor</span><span class="o">.</span><span class="n">from_openai</span><span class="p">(</span>
+    <span class="n">AsyncOpenAI</span><span class="p">(</span>
+        <span class="n">base_url</span><span class="o">=</span><span class="s2">&#34;http://localhost:11434/v1&#34;</span><span class="p">,</span>
+        <span class="n">api_key</span><span class="o">=</span><span class="s2">&#34;NA&#34;</span><span class="p">,</span>  <span class="c1"># required, but unused</span>
+    <span class="p">),</span>
+    <span class="n">mode</span><span class="o">=</span><span class="n">instructor</span><span class="o">.</span><span class="n">Mode</span><span class="o">.</span><span class="n">JSON</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">analyze_review</span><span class="p">(</span><span class="n">review</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="s1">&#39;qwen2.5:7b&#39;</span><span class="p">,</span>  <span class="c1"># 选择模型。 3b、7b等</span>
+            <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">{</span><span class="s2">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;system&#34;</span><span class="p">,</span> <span class="s2">&#34;content&#34;</span><span class="p">:</span> <span class="n">PROMPT_TEXT</span><span class="p">},</span>  <span class="c1"># 提示</span>
+                <span class="p">{</span><span class="s2">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;user&#34;</span><span class="p">,</span> <span class="s2">&#34;content&#34;</span><span class="p">:</span> <span class="n">review</span><span class="p">}</span>  <span class="c1"># 评论文本</span>
+            <span class="p">],</span>
+            <span class="n">response_model</span><span class="o">=</span><span class="n">Sentiment</span><span class="p">,</span>
+            <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span>  <span class="c1"># 最大(失败）的重试次数。</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">senti_label</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">senti_score</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Error processing review: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;NA&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># 读取数据</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data.csv&#39;</span><span class="p">)</span>
+    <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">analyze_review</span><span class="p">(</span><span class="n">review</span><span class="p">)</span> <span class="k">for</span> <span class="n">review</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;review&#39;</span><span class="p">]]</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">tqdm_asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span>
+    
+    <span class="n">labels</span><span class="p">,</span> <span class="n">scores</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">results</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;SentiLabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;SentiScore&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span>
+    
+    <span class="c1"># 保存结果</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;async-qwen2.5-7b-result.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># 检查是否已经在运行的事件循环中</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span>
+    <span class="c1"># 如果在交互模式下运行，直接调度main()而不使用asyncio.run</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+<span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+    <span class="c1"># 如果没有正在运行的事件循环，使用asyncio.run(main())</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</code></pre></div><br>
+<h3 id="53-速度对比">5.3 速度对比</h3>
+<p>以<em><strong>qwen2.5:7b</strong></em>为例， 对本文 <em><strong>data.csv</strong></em> 在线评论数据进行情感分析，</p>
+<ul>
+<li><strong>普通代码</strong> 运行耗时 <strong>160</strong> 秒</li>
+<li><strong>异步代码</strong> 运行耗时 <strong>90</strong> 秒</li>
+</ul>
+<br>
+<p><br><br></p>
 <h2 id="六评价模型">六、评价模型</h2>
-<p>本文分别对0.5b、1.5b、3b、7b进行实验， 记录了200条外卖评论的任务耗时和准确率， 结果如下</p>
+<p>本文分别对0.5b、1.5b、3b、7b进行实验， 记录了200条外卖评论的任务耗时(以同步代码为例）和准确率， 结果如下</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">|  模型  | 模型参数 | 任务耗时(秒) | 准确率 |
 | ----- | ------  |  --------  | ----- |
 |qwen2.5|   0.5b  |     260s   | 1.5%  |
@@ -544,7 +617,14 @@ Wall time: 1 s
 |qwen2.5|    3b   |     140s   |  86%  |
 |qwen2.5|    7b   |     160s   |  87.5% |
 </code></pre></div><p>综合任务耗时和准确率， 建议使用 <em><strong>qwen2.5:3b</strong></em> 和 <em><strong>qwen2.5:7b</strong></em> 。如果电脑性能很好，直接上  <em><strong>qwen2.5:7b</strong></em>  甚至更大参数的模型。</p>
-<p><br><br></p>
+<h3 id="tips准确率计算方法">Tips:准确率计算方法</h3>
+<p>假设label为1时， <em><strong>SentiLabel</strong></em> 为pos(或label为0时， SentiLabel为neg)， 大模型判断正确。反之，判断失误。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">expression</span> <span class="o">=</span> <span class="s2">&#34;(label == 1) &amp; (sentiment == &#39;pos&#39;) | (label == 0) &amp; (sentiment == &#39;neg&#39;)&#34;</span>
+<span class="n">correct_ratio</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">expression</span><span class="p">))</span><span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;准确率: </span><span class="si">{</span><span class="n">correct_ratio</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">准确率: 86%
+</code></pre></div><p><br><br></p>
 <h2 id="精选内容">精选内容</h2>
 <ul>
 <li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
