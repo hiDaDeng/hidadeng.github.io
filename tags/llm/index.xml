@@ -6,307 +6,206 @@
     <description>Recent content in LLM on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Fri, 07 Feb 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 14 Feb 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>实验 | 使用本地大模型从论文PDF中提取结构化信息</title>
-      <link>https://textdata.cn/blog/2024-08-03-literature-document-parsing-using-large-language-models-with-code/</link>
-      <pubDate>Sat, 03 Aug 2024 00:00:00 +0000</pubDate>
+      <title>教程 | 使用大模型API将文本数据转化为结构化数据</title>
+      <link>https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/</link>
+      <pubDate>Fri, 14 Feb 2025 00:00:00 +0000</pubDate>
       
-      <guid>/blog/2024-08-03-literature-document-parsing-using-large-language-models-with-code/</guid>
-      <description>非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了从非结构提取结构化信息的能力，谁就拥有科研上的数据优势。正则表达式是一种强大的文档解析工具，但它们常常难以应对现实世界文档的复杂性和多变性。而随着chatGPT这类LLM的出现，为我们提供了更强大、更灵活的方法来处理多种类型的文档结构和内容类型。For many years, regular expressions have been my go-to tool for parsing documents, and I am sure it has been the same for many other technical folks and industries.Even though regular expressions are powerful and successful in some case, they often struggle with the complexity and variability of real-world documents.Large language models on the other end provide a more powerful, and flexible approach to handle many types of document structures and content types.</description>
-      <content:encoded><![CDATA[<p>非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了<em><strong>从非结构提取结构化信息的能力</strong></em>，谁就拥有科研上的数据优势。正则表达式是一种强大的文档解析工具，但它们常常难以应对现实世界文档的复杂性和多变性。而随着chatGPT这类LLM的出现，为我们提供了更强大、更灵活的方法来处理多种类型的文档结构和内容类型。</p>
-<ul>
-<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">代码 | 使用本地大模型从文本中提取结构化信息</a></li>
-<li><a href="https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/">实验 | 使用本地大模型DIY制作单词书教案PDF</a></li>
-</ul>
-<p>为方便理解和实验，今天再新增一个案例，即论文处理的场景为例</p>
+      <guid>/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/</guid>
+      <description>实验数据为外卖评论， 今天咱们做个有难度的文本分析任务，从不同维度(味道、速度、服务)对外卖评论进行打分(-1.0~1.0)文本分析（也称为文本挖掘或自然语言处理，NLP）是指使用计算机算法和技术从大量文本数据中提取有价值信息的过程。文本分析的目标是从非结构化的文本数据中识别模式、提取关键信息、理解语义，并将其转化为结构化数据以便进一步分析和应用。</description>
+      <content:encoded><![CDATA[<p>实验数据为外卖评论， 今天咱们做个有难度的文本分析任务，从不同维度(味道、速度、服务)对外卖评论进行打分(-1.0~1.0)。</p>
+<p><img loading="lazy" src="img/06-df.png" alt=""  />
+</p>
 <p><br><br></p>
-<h2 id="一任务">一、任务</h2>
-<p>从海量的论文pdf文件中批量提取出</p>
+<h2 id="一文本分析">一、文本分析</h2>
+<p><strong>文本分析</strong>（也称为<strong>文本挖掘</strong>或<strong>自然语言处理</strong>，NLP）是指使用计算机算法和技术从大量文本数据中提取有价值信息的过程。文本分析的目标是从非结构化的文本数据中识别模式、提取关键信息、理解语义，并将其转化为结构化数据以便进一步分析和应用。 常用的文本分析方法有:</p>
 <ul>
-<li>论文标题</li>
-<li>出版年份</li>
-<li>作者</li>
-<li>联系作者</li>
-<li>抽象的</li>
-<li>摘要</li>
+<li>词频统计</li>
+<li>情感分析</li>
+<li>文本分类</li>
+<li>话题分析</li>
+<li>&hellip;</li>
 </ul>
-<br>
-<h3 id="11-为何选择llm而不是正则表达式">1.1 为何选择LLM，而不是正则表达式</h3>
-<p>在灵活性、上下文理解能力、维护和可扩展性三方面， 我们对比一下LLM和正则表达式</p>
-<table>
-<thead>
-<tr>
-<th>方面</th>
-<th>LLM</th>
-<th>正则表达式</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>灵活性</td>
-<td>能够自动理解和适应各种文档结构，并且无论位于文档的什么位置，都能够识别相关信息。</td>
-<td>需要每个文档结构都有特定的模式，当给定的文档偏离预期的格式时就会失败。</td>
-</tr>
-<tr>
-<td>上下文理解</td>
-<td>对每个文档的含义有细致的理解，从而可以更准确地提取相关信息。</td>
-<td>无需理解上下文或含义即可匹配模式。</td>
-</tr>
-<tr>
-<td>维护和可扩展性</td>
-<td>可以轻松适应新的文档类型，只需在初始提示中进行最少的更改，从而使其更具可扩展性。</td>
-<td>需要随着文档格式的变化而不断更新。添加对新类型信息的支持需要编写一个全新的正则表达式。</td>
-</tr>
-</tbody>
-</table>
-<p>综上， 选择LLM更适合做「从论文PDF中提取信息」这一任务。</p>
-<br>
-<h3 id="12-工作流程">1.2 工作流程</h3>
-<p>为了方便实验，让我们以论文处理的场景为例，下图是使用LLM批量提取论文中元信息的工作流程。</p>
-<p><img loading="lazy" src="img/00-document-parsing.png" alt=""  />
+<p><img loading="lazy" src="img/text-2-structured-data.png" alt=""  />
 </p>
-<p>工作流程总体上有三个主要组成部分：输入、处理和输出。</p>
+<p><br><br></p>
+<h2 id="二大模型云服务商">二、大模型云服务商</h2>
+<p>随着chatGPT、deepseek、通义千问这类大语言模型(<em><strong>LLM</strong></em>,  large language model)的出现， 它们增强了文本理解能力，能够更精准的把握文本中的语义和情绪等信息，使得文本分析任务实现难度大大降低。</p>
+<p>一般大模型服务提供商，有免费开源和封闭付费两种服务。</p>
 <ul>
-<li>首先，提交文件（在本例中为PDF格式的科研论文）进行处理。</li>
-<li>处理组件的第一个模块从每个 PDF 中提取原始数据，并将其与包含大型语言模型指令的提示相结合，以有效地提取数据。</li>
-<li>然后，大型语言模型使用提示来提取所有元数据。</li>
-<li>对于每个PDF，最终结果以JSON格式保存，可用于进一步分析。</li>
+<li>免费模型， 可通过 <strong>Ollama</strong> 本地部署。部署教程可参考 <a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/"><strong>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</strong></a></li>
+<li>付费模型， 账户有钱的情况下， 通过联网调用大模型厂商的API接口。</li>
 </ul>
-<br>
-<br>
-<h2 id="二准备工作">二、准备工作</h2>
-<h3 id="21-安装ollama">2.1 安装ollama</h3>
-<p>点击前往网站 <a href="https://ollama.com/">https://ollama.com/</a> ，下载ollama软件，支持win、Mac、linux</p>
-<p><img loading="lazy" src="img/02-ollama-gui.png" alt=""  />
-</p>
-<br>
-<h3 id="22-下载llm">2.2 下载LLM</h3>
-<p>ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3、llama3.1)，  本文选择最近新出的模型 llama3.1</p>
-<p><img loading="lazy" src="img/03-ollama-model.png" alt=""  />
-</p>
-<br>
-<p>以llama3.1为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。</p>
-<p><img loading="lazy" src="img/04-ollama-llama3.png" alt=""  />
-</p>
-<br>
-<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama pull llama3.1
-</code></pre></div><p>等待 <strong>llama3.1:8b</strong> 下载完成。</p>
-<br>
-<h3 id="23-安装python包">2.3 安装python包</h3>
-<p>在python中调用ollama服务，需要ollama包。</p>
-<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install ollama
-</code></pre></div><br>
-<h3 id="24-启动ollama服务">2.4 启动ollama服务</h3>
-<p>在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama serve
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2024/08/03 14:52:24 routes.go:1011: INFO server config env=&#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&#34;
-time=2024-08-03T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&#34;total blobs: 18&#34;
-time=2024-08-03T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&#34;total unused blobs removed: 0&#34;
-time=2024-08-03T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&#34;Listening on 127.0.0.1:11434 (version 0.1.44)&#34;
-time=2024-08-03T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&#34;extracting embedded files&#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
-time=2024-08-03T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&#34;Dynamic LLM libraries [metal]&#34;
-time=2024-08-03T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&#34;inference compute&#34; id=0 library=metal compute=&#34;&#34; driver=0.0 name=&#34;&#34; total=&#34;72.0 GiB&#34; available=&#34;72.0 GiB&#34;
-</code></pre></div><p>cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。</p>
-<br>
-<br>
-<h2 id="三实验">三、实验</h2>
-<h3 id="31-代码结构">3.1 代码结构</h3>
-<p>点击下载本文 <a href="project.zip">实验代码</a></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">project
-   |
-  - Extract_Metadata_With_Large_Language_Models.ipynb
-  - prompts
-       |--- scientific_papers_prompt.txt
-  - data
-      |--- 1706.03762v7.pdf
-      |--- 2301.09056v1.pdf
-  - extracted_metadata/
-</code></pre></div><br>
+<p>使用Python代码， 联网调用大模型的API，我们首先需要确定三个</p>
 <ul>
-<li><em><strong>project文件夹</strong></em> 是根文件夹，包含 <em><strong>ipynb代码文件</strong></em>、 <em><strong>prompts文件夹</strong></em>、<em><strong>data文件夹</strong></em>、<em><strong>extracted_metadata文件夹</strong></em></li>
-<li><em><strong>prompts文件夹</strong></em> 有txt文件格式的提示信息</li>
-<li><em><strong>data文件夹</strong></em> 存储着实验论文pdf数据</li>
-<li><em><strong>extracted_metadata文件夹</strong></em> 目前为空，将存储从论文pdf中提取的元信息，以 json 文件格式存储</li>
+<li><em><strong>BASE_URL</strong></em>  服务提供商运行大模型的网址。 如果是本地离线， BASE_URL = ''</li>
+<li><em><strong>API_KEY</strong></em> 调用服务所需密钥，类似于钥匙</li>
+<li><em><strong>MODEL_NAME</strong></em> 调用哪种模型(名字)</li>
 </ul>
+<p>阿里云不需要注册，支付宝扫码登录，即可调用市面上常见的大模型，如<em><strong>通义千问qwen</strong></em>、<em><strong>Llama</strong></em>、<em><strong>deepseek</strong></em>、<em><strong>chatGLM</strong></em>等。现在我们以阿里云服务商为例， 依次获取<em><strong>BASE_URL</strong></em>、<em><strong>API_KEY</strong></em>、<em><strong>MODEL_NAME</strong></em>。</p>
 <br>
-<h3 id="32-提示工程">3.2 提示工程</h3>
-<p>我们需要从论文pdf中提取</p>
-<ul>
-<li>论文标题</li>
-<li>出版年份</li>
-<li>作者</li>
-<li>联系作者</li>
-<li>抽象的</li>
-<li>摘要</li>
-</ul>
-<p>这是我设计的提示， 该提示存储在 <em><strong>prompts/scientific_papers_prompt.txt</strong></em> 中。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">科学研究论文</span><span class="err">：</span>
-<span class="o">---</span> 
-<span class="p">{</span><span class="n">document</span><span class="p">}</span> 
-<span class="o">---</span>
-
-<span class="n">您是分析科学研究论文的专家</span><span class="err">。</span> <span class="n">请仔细阅读上面提供的研究论文</span><span class="err">，</span><span class="n">并提取以下关键信息</span><span class="err">：</span>
-
-<span class="n">从研究论文中提取以下六</span> <span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="n">个属性</span><span class="err">：</span>
-<span class="o">-</span> <span class="n">论文标题</span><span class="err">：</span><span class="n">研究论文的全名</span>
-<span class="o">-</span> <span class="n">出版年份</span><span class="err">：</span><span class="n">论文发表的年份</span>
-<span class="o">-</span> <span class="n">作者</span><span class="err">：</span><span class="n">论文所有作者的全名</span>
-<span class="o">-</span> <span class="n">作者联系方式</span><span class="err">：</span><span class="n">字典列表</span><span class="err">，</span><span class="n">其中每个字典包含每个作者的以下键</span><span class="err">：</span>
-  <span class="o">-</span> <span class="n">姓名</span><span class="err">：</span><span class="n">作者的全名</span>
-  <span class="o">-</span> <span class="n">机构</span><span class="err">：</span><span class="n">作者的机构隶属关系</span>
-  <span class="o">-</span> <span class="n">电子邮件</span><span class="err">：</span><span class="n">作者的电子邮件地址</span><span class="err">（</span><span class="n">如果提供</span><span class="err">）</span>
-<span class="o">-</span> <span class="n">摘要</span><span class="err">：</span><span class="n">论文摘要的全文</span>
-<span class="o">-</span> <span class="n">摘要总结</span><span class="err">：</span><span class="n">用</span> <span class="mi">2</span><span class="o">-</span><span class="mi">3</span> <span class="n">句话简洁地总结摘要</span><span class="err">，</span><span class="n">突出重点</span>
-
-<span class="n">指南</span><span class="err">：</span>
-<span class="o">-</span> <span class="n">提取的信息应属实</span><span class="err">，</span><span class="n">并准确无误</span><span class="err">。</span>
-<span class="o">-</span> <span class="n">除摘要外</span><span class="err">，</span><span class="n">应极其简洁</span><span class="err">，</span><span class="n">摘要应完整复制</span><span class="err">。</span>
-<span class="o">-</span> <span class="n">提取的实体应该是独立的</span><span class="err">，</span><span class="n">并且不需要论文的其余部分就能轻松理解</span><span class="err">。</span>
-<span class="o">-</span> <span class="n">如果论文中缺少任何属性</span><span class="err">，</span><span class="n">请将该字段留空</span><span class="err">，</span><span class="n">而不是猜测</span><span class="err">。</span>
-<span class="o">-</span> <span class="n">对于摘要总结</span><span class="err">，</span><span class="n">重点介绍研究的主要目标</span><span class="err">、</span><span class="n">方法和主要发现</span><span class="err">。</span>
-<span class="o">-</span> <span class="n">对于作者联系方式</span><span class="err">，</span><span class="n">请为每个作者创建一个条目</span><span class="err">，</span><span class="n">即使缺少一些信息</span><span class="err">。</span><span class="n">如果没有提供作者的电子邮件或机构</span><span class="err">，</span><span class="n">请在字典中将该字段留空</span><span class="err">。</span>
-
-<span class="n">以</span> <span class="n">JSON</span> <span class="n">格式回答</span><span class="err">。</span> <span class="n">JSON</span> <span class="n">应包含</span> <span class="mi">6</span> <span class="n">个键</span><span class="err">：</span><span class="s2">&#34;PaperTitle&#34;</span><span class="p">,</span> <span class="s2">&#34;PublicationYear&#34;</span><span class="p">,</span> <span class="s2">&#34;Authors&#34;</span><span class="p">,</span> <span class="s2">&#34;AuthorContact&#34;</span><span class="p">,</span> <span class="s2">&#34;Abstract&#34;</span><span class="p">,</span> <span class="s2">&#34;SummaryAbstract&#34;</span><span class="err">。</span> <span class="s2">&#34;AuthorContact&#34;</span><span class="n">字段应该是字典列表格式</span><span class="err">。</span>
-</code></pre></div><br>
-<h3 id="32-提取信息">3.2 提取信息</h3>
-<p>读取 <em><strong>data/1706.03762v7.pdf</strong></em>， 提取该论文首页中感兴趣的6个信息，如</p>
-<p><img loading="lazy" src="img/6-paper.png" alt=""  />
+<h3 id="21-base_url">2.1 BASE_URL</h3>
+<p>阿里云运行大模型的网址 <em><strong>BASE_URL</strong></em> 为 <code>https://dashscope.aliyuncs.com/compatible-mode/v1</code></p>
+<br>
+<h3 id="22-api_key">2.2 API_KEY</h3>
+<p>点击 <a href="https://bailian.console.aliyun.com/">阿里云百炼https://bailian.console.aliyun.com/</a>，打开后点击右上角<img loading="lazy" src="https://help-static-aliyun-doc.aliyuncs.com/assets/img/zh-CN/0278981271/p824758.png" alt="image"  />
+图标，在下拉菜单中单击<strong>API-KEY</strong>。</p>
+<p><img loading="lazy" src="img/01-bai-lian.png" alt=""  />
 </p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<br>
+<p>在左侧导航栏，选择 <strong>全部API-KEY</strong> 或 <strong>我的API-KEY</strong> ，然后<strong>创建</strong>（图中位置①）或<strong>查看</strong>（图中位置②）<em><strong>API Key</strong></em>。</p>
+<p><img loading="lazy" src="img/02-api-key.png" alt=""  />
+</p>
+<br>
+<p><strong>注意:</strong> 请不要将 <em><strong>API Key</strong></em> 以任何方式公开，避免因未经授权的使用造成安全风险或资金损失。</p>
+<br>
+<h3 id="23-model_name">2.3 MODEL_NAME</h3>
+<p><a href="https://help.aliyun.com/zh/model-studio/getting-started/models">通义千问的模型列表https://help.aliyun.com/zh/model-studio/getting-started/models</a>， 根据任务需要，选择适合的模型。</p>
+<p><img loading="lazy" src="img/03-model-name.png" alt=""  />
+</p>
+<p>上图仅展示了阿里云服务提供的部分大模型， 以通义千问旗舰模型为例， <em><strong>MODEL_NAME</strong></em>模型名分别为<em><strong>qwen-max</strong></em>、<em><strong>qwen-plus</strong></em>、<em><strong>qwen-turbo</strong></em>、<em><strong>qwen-long</strong></em>。</p>
+<br>
+<h2 id="三环境配置">三、环境配置</h2>
+<p>在Python中调用大模型， 不论是本地离线API还是云服务API， 先要配置好相应的环境。 本文使用<em><strong>Ollama+cntext2.x</strong></em></p>
+<h3 id="31-安装软件ollama">3.1 安装软件Ollama</h3>
+<p><a href="https://ollama.ai/"><strong>Ollama</strong></a>是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。</p>
+<p>Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。Ollama的安装、配置、使用的详细教程可阅读  <a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/"><strong>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</strong></a></p>
+<p><img loading="lazy" src="img/04-ollama-gui.png" alt=""  />
+</p>
+<br>
+<h3 id="32-安装cntext2x">3.2 安装cntext2.x</h3>
+<p><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">cntext2.x</a>是大邓开发的文本分析库， 内置了丰富的文本分析函数， 如词频统计、词典法情感分析、经济政策不确定性epu等， 大大降低了文本分析难度。 以本文大模型文本分析为例， Python源代码需要 <strong>80+</strong> 行， 经过大邓封装， 使用cntext2.x内置函数 <em><strong>analysis_by_llm</strong></em> 仅需要不到 <strong>5</strong> 行代码。</p>
+<p><em><strong>安装包cntext-2.1.4-py3-none-any.whl</strong></em>  是付费内容(100元)， 如需使用<strong>加微信: 372335839</strong>，备注**「姓名-学校-专业-cntext」**</p>
+<p>所有 <em><strong>cntext2.x</strong></em> 安装方法类似， 以目前 <em><strong>cntext2.1.4</strong></em> 为例，将 <em><strong>cntext-2.1.4-py3-none-any.whl</strong></em> 放置于桌面，打开 <em><strong>cmd</strong></em> (苹果电脑打开terminal)， 输入 <em><strong>cd desktop</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+</code></pre></div><p>之后在 <em><strong>cmd</strong></em> (苹果电脑打开terminal) 中使用 <em><strong>pip3</strong></em> 安装</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install cntext-2.1.4-py3-none-any.whl
+</code></pre></div><p>需要注意， <strong>cntext2.x使用环境为Python3.8及以上版本</strong>； 文章开头和文章末都有 <em><strong>cntext-2.1.4-py3-none-any.whl</strong></em> 获取方式说明。</p>
+<p><br><br></p>
+<h2 id="四实验代码">四、实验代码</h2>
+<p><strong>实验数据为外卖评论， 今天咱们做个有难度的任务，从不同维度(味道、速度、服务)对外卖评论进行打分(-1.0~1.0)</strong>。</p>
+<br>
+<h3 id="41-读取数据">4.1 读取数据</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="kn">import</span> <span class="nn">ollama</span>
-<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>  
-<span class="c1">#cntext版本为2.1.2，非开源， #需联系大邓372335839获取</span>
+<span class="c1">#构造实验数据</span>
+<span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;速度非常快，口味非常好， 服务非常棒！&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;送餐时间还是比较久&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;送单很快，菜也不错赞&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;太难吃了&#39;</span><span class="p">]</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;comment&#39;</span><span class="p">])</span>
 
-<span class="c1">#我们感兴趣的信息在论文的第一页，所以这里粗糙的选择前4000个字符。</span>
-<span class="n">paper_content</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/1706.03762v7.pdf&#39;</span><span class="p">)[:</span><span class="mi">4000</span><span class="p">]</span>
-<span class="n">prompt_content</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompts/scientific_papers_prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="c1">#假设有外卖评论数据集data.csv， 文件内有字段comment， 直接读取数据。</span>
+<span class="c1">#df = pd.read_csv(&#39;data.csv&#39;)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/05-df.png" alt=""  />
+</p>
+<br>
+<h3 id="42-小实验">4.2 小实验</h3>
+<h4 id="421-本地模型">4.2.1 本地模型</h4>
+<p>使用 <em><strong>cntext2.x</strong></em> 调用本地电脑安装的大模型进行文本分析，不需要设置<em><strong>BASE_URL</strong></em>、<em><strong>API_KEY这两个</strong></em>参数。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 
-<span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3.1:8b&#39;</span><span class="p">,</span> 
-                       <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
-                           <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt_content</span><span class="p">},</span>
-                           <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">paper_content</span><span class="p">}</span>
-                       <span class="p">])</span>
+<span class="n">PROMPT</span> <span class="o">=</span> <span class="s1">&#39;从口味taste、速度speed、服务service三个维度， 对外卖评论内容进行文本分析， 分别返回不同维度的分值(分值范围-1.0 ~ 1.0)&#39;</span>
+<span class="n">MODEL_NAME</span> <span class="o">=</span> <span class="s1">&#39;qwen2.5:7b&#39;</span>
 
-<span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
-<span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+<span class="c1">#味道、速度、服务</span>
+<span class="n">OUTPUT_FORMAT</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;taste&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;speed&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;service&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">}</span>
+
+<span class="n">COMMENT_CONTENT</span> <span class="o">=</span> <span class="s1">&#39;太难吃了&#39;</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">analysis_by_llm</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">COMMENT_CONTENT</span><span class="p">,</span> 
+                            <span class="n">prompt</span><span class="o">=</span><span class="n">PROMPT</span><span class="p">,</span>
+                            <span class="n">model_name</span><span class="o">=</span><span class="n">MODEL_NAME</span><span class="p">,</span> 
+                            <span class="n">output_format</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;taste&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;speed&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;service&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">},</span> 
+                            <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  
+                            <span class="n">return_df</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
 <span class="n">result</span>
 </code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 3.5 ms, sys: 2.13 ms, total: 5.63 ms
-Wall time: 11.8 s
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;taste&#39;: -1.0, &#39;speed&#39;: 0.0, &#39;service&#39;: 0.0}
+</code></pre></div><br>
+<h4 id="422-云服务商api">4.2.2 云服务商API</h4>
+<p>使用 <em><strong>cntext2.x</strong></em> 调用云服务商大模型进行文本分析，需要设置<em><strong>BASE_URL</strong></em>、<em><strong>API_KEY</strong></em>等参数。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 
+<span class="n">PROMPT</span> <span class="o">=</span> <span class="s1">&#39;从口味taste、速度speed、服务service三个维度， 对外卖评论内容进行文本分析， 分别返回不同维度的分值(分值范围-1.0 ~ 1.0)&#39;</span>
+<span class="n">BASE_URL</span> <span class="o">=</span> <span class="s1">&#39;https://dashscope.aliyuncs.com/compatible-mode/v1&#39;</span>
+<span class="n">API_KEY</span> <span class="o">=</span> <span class="s1">&#39;你的API-KEY&#39;</span>
+<span class="n">MODEL_NAME</span> <span class="o">=</span> <span class="s1">&#39;qwen-max&#39;</span>
 
-{&#39;PaperTitle&#39;: &#39;Attention Is All You Need&#39;,
- &#39;PublicationYear&#39;: 2017,
- &#39;Authors&#39;: [&#39;Ashish Vaswani&#39;,
-  &#39;Noam Shazeer&#39;,
-  &#39;Niki Parmar&#39;,
-  &#39;Jakob Uszkoreit&#39;,
-  &#39;Llion Jones&#39;,
-  &#39;Aidan N. Gomez&#39;,
-  &#39;Łukasz Kaiser&#39;,
-  &#39;Illia Polosukhin&#39;],
- &#39;AuthorContact&#39;: [{&#39;Name&#39;: &#39;Ashish Vaswani&#39;,
-   &#39;Institution&#39;: &#39;Google Brain&#39;,
-   &#39;Email&#39;: &#39;avaswani@google.com&#39;},
-  {&#39;Name&#39;: &#39;Noam Shazeer&#39;,
-   &#39;Institution&#39;: &#39;Google Brain&#39;,
-   &#39;Email&#39;: &#39;noam@google.com&#39;},
-  {&#39;Name&#39;: &#39;Niki Parmar&#39;,
-   &#39;Institution&#39;: &#39;Google Research&#39;,
-   &#39;Email&#39;: &#39;nikip@google.com&#39;},
-  {&#39;Name&#39;: &#39;Jakob Uszkoreit&#39;,
-   &#39;Institution&#39;: &#39;Google Research&#39;,
-   &#39;Email&#39;: &#39;usz@google.com&#39;},
-  {&#39;Name&#39;: &#39;Llion Jones&#39;,
-   &#39;Institution&#39;: &#39;Google Research&#39;,
-   &#39;Email&#39;: &#39;llion@google.com&#39;},
-  {&#39;Name&#39;: &#39;Aidan N. Gomez&#39;,
-   &#39;Institution&#39;: &#39;University of Toronto&#39;,
-   &#39;Email&#39;: &#39;aidan@cs.toronto.edu&#39;},
-  {&#39;Name&#39;: &#39;Łukasz Kaiser&#39;,
-   &#39;Institution&#39;: &#39;Google Brain&#39;,
-   &#39;Email&#39;: &#39;lukaszkaiser@google.com&#39;},
-  {&#39;Name&#39;: &#39;Illia Polosukhin&#39;,
-   &#39;Institution&#39;: &#39;&#39;,
-   &#39;Email&#39;: &#39;illia.polosukhin@gmail.com&#39;}],
- &#39;Abstract&#39;: &#39;The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.&#39;,
- &#39;SummaryAbstract&#39;: &#39;本文提出了一种新的Transformer模型，基于注意力机制，抛弃了递归和卷积等复杂方法。该模型在机器翻译任务上表现出优异的效果，并且可以更好地并行化和训练。&#39;}
-</code></pre></div><p>从运行结果看， 摘要<em><strong>Abstract</strong></em> 的提取不够准确，有一定的遗漏。</p>
-<br>
-<h3 id="33-封装成函数extract_info">3.3 封装成函数extract_info</h3>
-<p>实验成功，我们将其封装为函数<em><strong>extract_info</strong></em> ，因为LLM返回的内容的格式存在不确定性， 所以为了保证函数尽可能的成功的运行出结果，这里我设置了异常处理机制。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">ollama</span>
-<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>  
-<span class="c1">#cntext版本为2.1.2，非开源， #需联系大邓372335839获取</span>
+<span class="c1">#味道、速度、服务</span>
+<span class="n">OUTPUT_FORMAT</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;taste&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;speed&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;service&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">}</span>
 
+<span class="n">COMMENT_CONTENT</span> <span class="o">=</span> <span class="s1">&#39;太难吃了&#39;</span>
 
-<span class="k">def</span> <span class="nf">extract_info</span><span class="p">(</span><span class="n">paper_content</span><span class="p">,</span> <span class="n">prompt_content</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span>
-                <span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3.1:8b&#39;</span><span class="p">,</span>
-                <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
-                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt_content</span><span class="p">},</span>
-                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">paper_content</span><span class="p">}</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">analysis_by_llm</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">COMMENT_CONTENT</span><span class="p">,</span> 
+                            <span class="n">prompt</span><span class="o">=</span><span class="n">PROMPT</span><span class="p">,</span>
+                            <span class="n">base_url</span><span class="o">=</span><span class="n">BASE_URL</span><span class="p">,</span> 
+                            <span class="n">api_key</span><span class="o">=</span><span class="n">API_KEY</span><span class="p">,</span> 
+                            <span class="n">model_name</span><span class="o">=</span><span class="n">MODEL_NAME</span><span class="p">,</span> 
+                            <span class="n">output_format</span><span class="o">=</span><span class="n">OUTPUT_FORMAT</span><span class="p">,</span> 
+                            <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  
+                            <span class="n">return_df</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-            <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="k">return</span> <span class="n">result</span>
-        
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_retries</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;An error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Retrying (</span><span class="si">{</span><span class="n">attempt</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">)...&#34;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">e</span>
-
-
-<span class="c1">#我们感兴趣的信息在论文的第一页，所以这里粗糙的选择前4000个字符。</span>
-<span class="n">paper_content</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/1706.03762v7.pdf&#39;</span><span class="p">)[:</span><span class="mi">4000</span><span class="p">]</span>
-<span class="n">prompt_content</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompts/scientific_papers_prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-
-<span class="n">result</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">paper_content</span><span class="p">,</span> <span class="n">prompt_content</span><span class="p">)</span>
 <span class="n">result</span>
-</code></pre></div><p>运行结果与之前无异，为节约板面空间，这里就不展示result了。</p>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;taste&#39;: -1.0, &#39;speed&#39;: 0.0, &#39;service&#39;: 0.0}
+</code></pre></div><p>小实验成功，现在设计分析函数， 对所有的评论进行分析，输出dataframe格式，保存到csv中。</p>
 <br>
-<h3 id="34-批量提取">3.4 批量提取</h3>
-<p>假设data文件夹内有成百上千的发票(实际上只有一张发票)， 对data文件夹进行批量信息提取，结果存储为csv。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
-
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="c1">#cntext版本为2.1.3，非开源，需联系大邓372335839获取</span>
-<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<h3 id="43-设计分析函数">4.3 设计分析函数</h3>
+<p>使用 <strong>cntext2.x</strong> 中的大模型文本分析函数 <em><strong>analysis_by_llm(text, prompt, base_url, api_key, model_name, output_format, max_retries, return_df)</strong></em></p>
+<ul>
+<li><em><strong>text</strong></em>: 待分析的文本</li>
+<li><em><strong>prompt</strong></em> 提示Prompt, 默认 prompt=&ldquo;根据评论内容，返回文本的情感类别(pos、neg)&rdquo;, 可判断文本pos或neg</li>
+<li><em><strong>base_url</strong></em>: 大模型API接口， 默认base_url=''， 默认使用的本地Ollama搭建服务的API接口；</li>
+<li><em><strong>api_key</strong></em>: 大模型API对应的KEY， 默认api_key='' 表示使用的本地Ollama搭建服务</li>
+<li><em><strong>model_name</strong></em>: 模型名；默认使用 model_name=&ldquo;qwen2.5:3b&rdquo;</li>
+<li><em><strong>output_format</strong></em>: 设置分析结果的输出格式; 默认output_format = {&lsquo;label&rsquo;: str, &lsquo;score&rsquo;: float},   输出结果为字典， 含字段类别字段label和数值字段score</li>
+<li><em><strong>max_retries</strong></em>: 最大失败次数， 默认max_retries=3</li>
+<li><em><strong>return_df</strong></em>: 返回结果是否为dataframe， 默认False</li>
+</ul>
+<p>以调用云服务商大模型为例， 设计<em><strong>llm_analysis</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">jsonlines</span>
 
-<span class="c1">#当前代码所在的代码文件与data文件夹处于同一个文件夹内</span>
-<span class="c1">#获取data内所有pdf的路径</span>
-<span class="n">pdf_files</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;data/</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.pdf&#39;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">]</span>
-<span class="n">prompt_content</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompts/scientific_papers_prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="c1">#分析函数</span>
+<span class="k">def</span> <span class="nf">llm_analysis</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">analysis_by_llm</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> 
+                                <span class="n">prompt</span><span class="o">=</span> <span class="s1">&#39;从口味taste、速度speed、服务service三个维度， 对外卖评论内容进行文本分析， 分别返回不同维度的分值(分值范围-1.0 ~ 1.0)&#39;</span><span class="p">,</span>
+                                <span class="n">base_url</span><span class="o">=</span><span class="s1">&#39;https://dashscope.aliyuncs.com/compatible-mode/v1&#39;</span><span class="p">,</span> 
+                                <span class="n">api_key</span><span class="o">=</span><span class="s1">&#39;你的API-KEY&#39;</span><span class="p">,</span> 
+                                <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;qwen-max&#39;</span><span class="p">,</span> 
+                                <span class="n">output_format</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;taste&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;speed&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;service&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">}</span>
+                               <span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    
 
-<span class="k">for</span> <span class="n">pdf_file</span> <span class="ow">in</span> <span class="n">pdf_files</span><span class="p">:</span>
-    <span class="n">paper_content</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">)[:</span><span class="mi">4000</span><span class="p">]</span>
-    <span class="n">dict_data</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">paper_content</span><span class="p">,</span> <span class="n">prompt_content</span><span class="p">)</span>
-    <span class="n">jsonf</span> <span class="o">=</span> <span class="n">pdf_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;extracted_metadata&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="s1">&#39;jsonl&#39;</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">jsonlines</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">jsonf</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">jf</span><span class="p">:</span>
-        <span class="n">jf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">dict_data</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 919 ms, sys: 14.8 ms, total: 933 ms
-Wall time: 24.6 s
-</code></pre></div><p><img loading="lazy" src="img/05-2result-json.png" alt=""  />
+<span class="c1">#批量运算</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;comment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">llm_analysis</span><span class="p">)</span>
+<span class="n">res_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">df2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1">#保存分析结果</span>
+<span class="n">res_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;result.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">res_df</span>
+</code></pre></div><p><img loading="lazy" src="img/06-df.png" alt=""  />
 </p>
+<br>
+<br>
+<h2 id="五获取cntext2x">五、获取cntext2.x</h2>
+<p>安装包<em><strong>cntext-2.1.4-py3-none-any.whl</strong></em>  是付费内容(<em><strong>100元</strong></em>)， 如需使用<strong>加微信: 372335839</strong>，备注**「姓名-学校-专业-cntext」**</p>
 <p><br><br></p>
-<h2 id="四讨论">四、讨论</h2>
-<p>本文简要概述了 LLM 在从复杂文档中提取元数据方面的应用，提取的 json 数据可以存储在非关系数据库中以供进一步分析。</p>
-<p>LLM 和 Regex 在内容提取方面各有优缺点，应根据用例明智地应用每种方法。希望本简短教程能帮助您获得新技能。</p>
-<br>
-<br>
+<h2 id="相关内容">相关内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/"><strong>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-06-using-the-ollama-local-large-model-to-predict-the-sentiment-category-of-online-comments/"><strong>实验 | 使用本地大模型预测在线评论情感类别和分值</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-07-structured-outputs-with-ollama/"><strong>实验 | 如何使 Ollama 结构化输出 JSON 样式的结果</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/"><strong>推荐 | 文本分析库cntext2.x使用手册</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/"><strong>实验 | 使用本地大模型从文本中提取结构化信息</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/">实验 | 使用Ollama本地大模型DIY制作单词书教案PDF</a></li>
+<li><a href="https://textdata.cn/blog/2024-08-05-create-a-blog-writer-multi-agent-system-using-crewai-and-ollama/">实验 | 使用 Crewai 和 Ollama 构建智能体(AI Agent)帮我撰写博客文章</a></li>
+</ul>
+<p><br><br></p>
 <h2 id="精选内容">精选内容</h2>
 <ul>
 <li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
@@ -314,6 +213,7 @@ Wall time: 24.6 s
 <li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
 <li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
 <li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a></li>
 </ul>
 ]]></content:encoded>
     </item>
@@ -629,6 +529,16 @@ Wall time: 1 s
 <h2 id="七获取代码">七、获取代码</h2>
 <p><a href="project.zip"><strong>点击下载本文代码</strong></a></p>
 <p><br><br></p>
+<h2 id="相关内容">相关内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/"><strong>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-07-structured-outputs-with-ollama/"><strong>实验 | 如何使 Ollama 结构化输出 JSON 样式的结果</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/"><strong>推荐 | 文本分析库cntext2.x使用手册</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/"><strong>实验 | 使用本地大模型从文本中提取结构化信息</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/">实验 | 使用Ollama本地大模型DIY制作单词书教案PDF</a></li>
+<li><a href="https://textdata.cn/blog/2024-08-05-create-a-blog-writer-multi-agent-system-using-crewai-and-ollama/">实验 | 使用 Crewai 和 Ollama 构建智能体(AI Agent)帮我撰写博客文章</a></li>
+</ul>
+<p><br><br></p>
 <h2 id="精选内容">精选内容</h2>
 <ul>
 <li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
@@ -785,6 +695,17 @@ Wall time: 412 ms
 &lt;class &#39;dict&#39;&gt;
 </code></pre></div><br>
 <br>
+<h2 id="相关内容">相关内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/"><strong>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-06-using-the-ollama-local-large-model-to-predict-the-sentiment-category-of-online-comments/"><strong>实验 | 使用本地大模型预测在线评论情感类别和分值</strong></a></li>
+<li><a href="https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/"><strong>教程 | 使用大模型API将文本数据转化为结构化数据</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/"><strong>推荐 | 文本分析库cntext2.x使用手册</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/"><strong>实验 | 使用本地大模型从文本中提取结构化信息</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/">实验 | 使用Ollama本地大模型DIY制作单词书教案PDF</a></li>
+<li><a href="https://textdata.cn/blog/2024-08-05-create-a-blog-writer-multi-agent-system-using-crewai-and-ollama/">实验 | 使用 Crewai 和 Ollama 构建智能体(AI Agent)帮我撰写博客文章</a></li>
+</ul>
+<p><br><br></p>
 <h2 id="精选内容">精选内容</h2>
 <ul>
 <li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
@@ -804,7 +725,8 @@ Wall time: 412 ms
       
       <guid>/blog/2024-06-14-how-to-download-large-language-model-with-ollama/</guid>
       <description>Ollama是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。如果他们被困在某个地方，他们可以在不切换到另一个浏览器窗口的情况下获得答案。Ollama is an open source application that allows you to run, create, and share large language models locally using a command line interface on MacOS, Linux, and Windows. Ollama can access a variety of LLMs directly from its library and can be downloaded with just one command. Once downloaded, it only takes one command to get started. This is very helpful for users whose workload revolves around a terminal window. If they are stuck somewhere, they can get the answer without switching to another browser window.</description>
-      <content:encoded><![CDATA[<h2 id="一ollama">一、Ollama</h2>
+      <content:encoded><![CDATA[<br>
+<h2 id="一ollama">一、Ollama</h2>
 <h3 id="11-ollama介绍">1.1 Ollama介绍</h3>
 <p><a href="https://ollama.ai/"><strong>Ollama</strong></a>是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。</p>
 <p>Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。如果他们被困在某个地方，他们可以在不切换到另一个浏览器窗口的情况下获得答案。</p>
@@ -1044,6 +966,19 @@ time=2025-02-07T16:00:18.577+08:00 level=INFO source=types.go:131 msg=&#34;infer
 <p>各位可以结合自己任务， 电脑性能， 速度等不同需求， 选择对自己最合适的模型。</p>
 <br>
 <br>
+<h2 id="相关内容">相关内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/"><strong>教程 | 使用大模型API将文本数据转化为结构化数据</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-06-using-the-ollama-local-large-model-to-predict-the-sentiment-category-of-online-comments/"><strong>实验 | 使用本地大模型预测在线评论情感类别和分值</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-07-structured-outputs-with-ollama/"><strong>实验 | 如何使 Ollama 结构化输出 JSON 样式的结果</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-03-literature-document-parsing-using-large-language-models-with-code/"><strong>实验 | 使用本地大模型从论文PDF中提取结构化信息</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/"><strong>推荐 | 文本分析库cntext2.x使用手册</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/"><strong>实验 | 使用本地大模型从文本中提取结构化信息</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/">实验 | 使用Ollama本地大模型DIY制作单词书教案PDF</a></li>
+<li><a href="https://textdata.cn/blog/2024-08-05-create-a-blog-writer-multi-agent-system-using-crewai-and-ollama/">实验 | 使用 Crewai 和 Ollama 构建智能体(AI Agent)帮我撰写博客文章</a></li>
+</ul>
+<br>
+<br>
 <h2 id="精选内容">精选内容</h2>
 <ul>
 <li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
@@ -1083,6 +1018,7 @@ time=2025-02-07T16:00:18.577+08:00 level=INFO source=types.go:131 msg=&#34;infer
 <p>想象一下，将上述所有概念整合在一起，共同朝着预先确定的目标努力，实现预期结果。这些任务可以按顺序或分层流程执行，所有智能体都像一个协调的团队一样工作。这种强大的协作可以彻底改变我们处理复杂问题的方式，使流程更高效，结果更有效。这就是 <em><strong>CrewAI框架</strong></em>发挥作用的地方。</p>
 <p><br><br></p>
 <h2 id="二ollama介绍配置">二、Ollama介绍&amp;配置</h2>
+<p><a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/">教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</a></p>
 <p><a href="https://ollama.ai/"><strong>Ollama</strong></a>是一款开源应用程序，可让您使用 MacOS、Linux 和 Windows 上的命令行界面在本地运行、创建和共享大型语言模型。</p>
 <p>Ollama 可以直接从其库中访问各种 LLM，只需一个命令即可下载。下载后，只需执行一个命令即可开始使用。这对于工作量围绕终端窗口的用户非常有帮助。如果他们被困在某个地方，他们可以在不切换到另一个浏览器窗口的情况下获得答案。</p>
 <br>
@@ -1632,6 +1568,32 @@ pip3 install langchain_openai
 <h2 id="相关内容">相关内容</h2>
 <ul>
 <li>
+<p><a href="https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/"><strong>教程 | 使用大模型API将文本数据转化为结构化数据</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-08-06-using-the-ollama-local-large-model-to-predict-the-sentiment-category-of-online-comments/"><strong>实验 | 使用本地大模型预测在线评论情感类别和分值</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-08-07-structured-outputs-with-ollama/"><strong>实验 | 如何使 Ollama 结构化输出 JSON 样式的结果</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-08-03-literature-document-parsing-using-large-language-models-with-code/"><strong>实验 | 使用本地大模型从论文PDF中提取结构化信息</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/"><strong>推荐 | 文本分析库cntext2.x使用手册</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/"><strong>实验 | 使用本地大模型从文本中提取结构化信息</strong></a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/">实验 | 使用Ollama本地大模型DIY制作单词书教案PDF</a></p>
+</li>
+</ul>
+<br>
+<br>
+<h2 id="相关内容-1">相关内容</h2>
+<ul>
+<li>
 <p><a href="https://textdata.cn/blog/2024-08-02-automating-grounded-theory-development-in-qualitative-research-with-large-language-models/">arXiv2024 | 使用大语言模型自动进行定性研究中的扎根理论开发</a></p>
 </li>
 <li>
@@ -1655,6 +1617,330 @@ pip3 install langchain_openai
 <li>
 <p><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></p>
 </li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>实验 | 使用本地大模型从论文PDF中提取结构化信息</title>
+      <link>https://textdata.cn/blog/2024-08-03-literature-document-parsing-using-large-language-models-with-code/</link>
+      <pubDate>Sat, 03 Aug 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-08-03-literature-document-parsing-using-large-language-models-with-code/</guid>
+      <description>非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了从非结构提取结构化信息的能力，谁就拥有科研上的数据优势。正则表达式是一种强大的文档解析工具，但它们常常难以应对现实世界文档的复杂性和多变性。而随着chatGPT这类LLM的出现，为我们提供了更强大、更灵活的方法来处理多种类型的文档结构和内容类型。For many years, regular expressions have been my go-to tool for parsing documents, and I am sure it has been the same for many other technical folks and industries.Even though regular expressions are powerful and successful in some case, they often struggle with the complexity and variability of real-world documents.Large language models on the other end provide a more powerful, and flexible approach to handle many types of document structures and content types.</description>
+      <content:encoded><![CDATA[<p>非结构文本、图片、视频等数据是待挖掘的数据矿藏， 在经管、社科等研究领域中谁拥有了<em><strong>从非结构提取结构化信息的能力</strong></em>，谁就拥有科研上的数据优势。正则表达式是一种强大的文档解析工具，但它们常常难以应对现实世界文档的复杂性和多变性。而随着chatGPT这类LLM的出现，为我们提供了更强大、更灵活的方法来处理多种类型的文档结构和内容类型。</p>
+<ul>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">代码 | 使用本地大模型从文本中提取结构化信息</a></li>
+<li><a href="https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/">实验 | 使用本地大模型DIY制作单词书教案PDF</a></li>
+</ul>
+<p>为方便理解和实验，今天再新增一个案例，即论文处理的场景为例</p>
+<p><br><br></p>
+<h2 id="一任务">一、任务</h2>
+<p>从海量的论文pdf文件中批量提取出</p>
+<ul>
+<li>论文标题</li>
+<li>出版年份</li>
+<li>作者</li>
+<li>联系作者</li>
+<li>抽象的</li>
+<li>摘要</li>
+</ul>
+<br>
+<h3 id="11-为何选择llm而不是正则表达式">1.1 为何选择LLM，而不是正则表达式</h3>
+<p>在灵活性、上下文理解能力、维护和可扩展性三方面， 我们对比一下LLM和正则表达式</p>
+<table>
+<thead>
+<tr>
+<th>方面</th>
+<th>LLM</th>
+<th>正则表达式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>灵活性</td>
+<td>能够自动理解和适应各种文档结构，并且无论位于文档的什么位置，都能够识别相关信息。</td>
+<td>需要每个文档结构都有特定的模式，当给定的文档偏离预期的格式时就会失败。</td>
+</tr>
+<tr>
+<td>上下文理解</td>
+<td>对每个文档的含义有细致的理解，从而可以更准确地提取相关信息。</td>
+<td>无需理解上下文或含义即可匹配模式。</td>
+</tr>
+<tr>
+<td>维护和可扩展性</td>
+<td>可以轻松适应新的文档类型，只需在初始提示中进行最少的更改，从而使其更具可扩展性。</td>
+<td>需要随着文档格式的变化而不断更新。添加对新类型信息的支持需要编写一个全新的正则表达式。</td>
+</tr>
+</tbody>
+</table>
+<p>综上， 选择LLM更适合做「从论文PDF中提取信息」这一任务。</p>
+<br>
+<h3 id="12-工作流程">1.2 工作流程</h3>
+<p>为了方便实验，让我们以论文处理的场景为例，下图是使用LLM批量提取论文中元信息的工作流程。</p>
+<p><img loading="lazy" src="img/00-document-parsing.png" alt=""  />
+</p>
+<p>工作流程总体上有三个主要组成部分：输入、处理和输出。</p>
+<ul>
+<li>首先，提交文件（在本例中为PDF格式的科研论文）进行处理。</li>
+<li>处理组件的第一个模块从每个 PDF 中提取原始数据，并将其与包含大型语言模型指令的提示相结合，以有效地提取数据。</li>
+<li>然后，大型语言模型使用提示来提取所有元数据。</li>
+<li>对于每个PDF，最终结果以JSON格式保存，可用于进一步分析。</li>
+</ul>
+<br>
+<br>
+<h2 id="二准备工作">二、准备工作</h2>
+<h3 id="21-安装ollama">2.1 安装ollama</h3>
+<p>点击前往网站 <a href="https://ollama.com/">https://ollama.com/</a> ，下载ollama软件，支持win、Mac、linux</p>
+<p><img loading="lazy" src="img/02-ollama-gui.png" alt=""  />
+</p>
+<br>
+<h3 id="22-下载llm">2.2 下载LLM</h3>
+<p>ollama软件目前支持多种大模型， 如阿里的（qwen、qwen2）、meta的(llama3、llama3.1)，  本文选择最近新出的模型 llama3.1</p>
+<p><img loading="lazy" src="img/03-ollama-model.png" alt=""  />
+</p>
+<br>
+<p>以llama3.1为例，根据自己电脑显存性能， 选择适宜的版本。如果不知道选什么，那就试着安装，不合适不能用再删除即可。</p>
+<p><img loading="lazy" src="img/04-ollama-llama3.png" alt=""  />
+</p>
+<br>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行模型下载(安装)命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama pull llama3.1
+</code></pre></div><p>等待 <strong>llama3.1:8b</strong> 下载完成。</p>
+<br>
+<h3 id="23-安装python包">2.3 安装python包</h3>
+<p>在python中调用ollama服务，需要ollama包。</p>
+<p>打开电脑命令行cmd(mac是terminal),  网络是连网状态，执行安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install ollama
+</code></pre></div><br>
+<h3 id="24-启动ollama服务">2.4 启动ollama服务</h3>
+<p>在Python中调用本地ollama服务，需要先启动本地ollama服务， 打开电脑命令行cmd(mac是terminal), 执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ollama serve
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2024/08/03 14:52:24 routes.go:1011: INFO server config env=&#34;map[OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_KEEP_ALIVE: OLLAMA_LLM_LIBRARY: OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_VRAM:0 OLLAMA_MODELS:/Users/deng/.ollama/models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:1 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://*] OLLAMA_RUNNERS_DIR: OLLAMA_TMPDIR:]&#34;
+time=2024-08-03T14:52:24.742+08:00 level=INFO source=images.go:725 msg=&#34;total blobs: 18&#34;
+time=2024-08-03T14:52:24.742+08:00 level=INFO source=images.go:732 msg=&#34;total unused blobs removed: 0&#34;
+time=2024-08-03T14:52:24.743+08:00 level=INFO source=routes.go:1057 msg=&#34;Listening on 127.0.0.1:11434 (version 0.1.44)&#34;
+time=2024-08-03T14:52:24.744+08:00 level=INFO source=payload.go:30 msg=&#34;extracting embedded files&#34; dir=/var/folders/y0/4gqxky0s2t94x1c1qhlwr6100000gn/T/ollama4239159529/runners
+time=2024-08-03T14:52:24.772+08:00 level=INFO source=payload.go:44 msg=&#34;Dynamic LLM libraries [metal]&#34;
+time=2024-08-03T14:52:24.796+08:00 level=INFO source=types.go:71 msg=&#34;inference compute&#34; id=0 library=metal compute=&#34;&#34; driver=0.0 name=&#34;&#34; total=&#34;72.0 GiB&#34; available=&#34;72.0 GiB&#34;
+</code></pre></div><p>cmd(mac是terminal)看到如上的信息，说明本地ollama服务已开启。</p>
+<br>
+<br>
+<h2 id="三实验">三、实验</h2>
+<h3 id="31-代码结构">3.1 代码结构</h3>
+<p>点击下载本文 <a href="project.zip">实验代码</a></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">project
+   |
+  - Extract_Metadata_With_Large_Language_Models.ipynb
+  - prompts
+       |--- scientific_papers_prompt.txt
+  - data
+      |--- 1706.03762v7.pdf
+      |--- 2301.09056v1.pdf
+  - extracted_metadata/
+</code></pre></div><br>
+<ul>
+<li><em><strong>project文件夹</strong></em> 是根文件夹，包含 <em><strong>ipynb代码文件</strong></em>、 <em><strong>prompts文件夹</strong></em>、<em><strong>data文件夹</strong></em>、<em><strong>extracted_metadata文件夹</strong></em></li>
+<li><em><strong>prompts文件夹</strong></em> 有txt文件格式的提示信息</li>
+<li><em><strong>data文件夹</strong></em> 存储着实验论文pdf数据</li>
+<li><em><strong>extracted_metadata文件夹</strong></em> 目前为空，将存储从论文pdf中提取的元信息，以 json 文件格式存储</li>
+</ul>
+<br>
+<h3 id="32-提示工程">3.2 提示工程</h3>
+<p>我们需要从论文pdf中提取</p>
+<ul>
+<li>论文标题</li>
+<li>出版年份</li>
+<li>作者</li>
+<li>联系作者</li>
+<li>抽象的</li>
+<li>摘要</li>
+</ul>
+<p>这是我设计的提示， 该提示存储在 <em><strong>prompts/scientific_papers_prompt.txt</strong></em> 中。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">科学研究论文</span><span class="err">：</span>
+<span class="o">---</span> 
+<span class="p">{</span><span class="n">document</span><span class="p">}</span> 
+<span class="o">---</span>
+
+<span class="n">您是分析科学研究论文的专家</span><span class="err">。</span> <span class="n">请仔细阅读上面提供的研究论文</span><span class="err">，</span><span class="n">并提取以下关键信息</span><span class="err">：</span>
+
+<span class="n">从研究论文中提取以下六</span> <span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="n">个属性</span><span class="err">：</span>
+<span class="o">-</span> <span class="n">论文标题</span><span class="err">：</span><span class="n">研究论文的全名</span>
+<span class="o">-</span> <span class="n">出版年份</span><span class="err">：</span><span class="n">论文发表的年份</span>
+<span class="o">-</span> <span class="n">作者</span><span class="err">：</span><span class="n">论文所有作者的全名</span>
+<span class="o">-</span> <span class="n">作者联系方式</span><span class="err">：</span><span class="n">字典列表</span><span class="err">，</span><span class="n">其中每个字典包含每个作者的以下键</span><span class="err">：</span>
+  <span class="o">-</span> <span class="n">姓名</span><span class="err">：</span><span class="n">作者的全名</span>
+  <span class="o">-</span> <span class="n">机构</span><span class="err">：</span><span class="n">作者的机构隶属关系</span>
+  <span class="o">-</span> <span class="n">电子邮件</span><span class="err">：</span><span class="n">作者的电子邮件地址</span><span class="err">（</span><span class="n">如果提供</span><span class="err">）</span>
+<span class="o">-</span> <span class="n">摘要</span><span class="err">：</span><span class="n">论文摘要的全文</span>
+<span class="o">-</span> <span class="n">摘要总结</span><span class="err">：</span><span class="n">用</span> <span class="mi">2</span><span class="o">-</span><span class="mi">3</span> <span class="n">句话简洁地总结摘要</span><span class="err">，</span><span class="n">突出重点</span>
+
+<span class="n">指南</span><span class="err">：</span>
+<span class="o">-</span> <span class="n">提取的信息应属实</span><span class="err">，</span><span class="n">并准确无误</span><span class="err">。</span>
+<span class="o">-</span> <span class="n">除摘要外</span><span class="err">，</span><span class="n">应极其简洁</span><span class="err">，</span><span class="n">摘要应完整复制</span><span class="err">。</span>
+<span class="o">-</span> <span class="n">提取的实体应该是独立的</span><span class="err">，</span><span class="n">并且不需要论文的其余部分就能轻松理解</span><span class="err">。</span>
+<span class="o">-</span> <span class="n">如果论文中缺少任何属性</span><span class="err">，</span><span class="n">请将该字段留空</span><span class="err">，</span><span class="n">而不是猜测</span><span class="err">。</span>
+<span class="o">-</span> <span class="n">对于摘要总结</span><span class="err">，</span><span class="n">重点介绍研究的主要目标</span><span class="err">、</span><span class="n">方法和主要发现</span><span class="err">。</span>
+<span class="o">-</span> <span class="n">对于作者联系方式</span><span class="err">，</span><span class="n">请为每个作者创建一个条目</span><span class="err">，</span><span class="n">即使缺少一些信息</span><span class="err">。</span><span class="n">如果没有提供作者的电子邮件或机构</span><span class="err">，</span><span class="n">请在字典中将该字段留空</span><span class="err">。</span>
+
+<span class="n">以</span> <span class="n">JSON</span> <span class="n">格式回答</span><span class="err">。</span> <span class="n">JSON</span> <span class="n">应包含</span> <span class="mi">6</span> <span class="n">个键</span><span class="err">：</span><span class="s2">&#34;PaperTitle&#34;</span><span class="p">,</span> <span class="s2">&#34;PublicationYear&#34;</span><span class="p">,</span> <span class="s2">&#34;Authors&#34;</span><span class="p">,</span> <span class="s2">&#34;AuthorContact&#34;</span><span class="p">,</span> <span class="s2">&#34;Abstract&#34;</span><span class="p">,</span> <span class="s2">&#34;SummaryAbstract&#34;</span><span class="err">。</span> <span class="s2">&#34;AuthorContact&#34;</span><span class="n">字段应该是字典列表格式</span><span class="err">。</span>
+</code></pre></div><br>
+<h3 id="32-提取信息">3.2 提取信息</h3>
+<p>读取 <em><strong>data/1706.03762v7.pdf</strong></em>， 提取该论文首页中感兴趣的6个信息，如</p>
+<p><img loading="lazy" src="img/6-paper.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">ollama</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>  
+<span class="c1">#cntext版本为2.1.2，非开源， #需联系大邓372335839获取</span>
+
+<span class="c1">#我们感兴趣的信息在论文的第一页，所以这里粗糙的选择前4000个字符。</span>
+<span class="n">paper_content</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/1706.03762v7.pdf&#39;</span><span class="p">)[:</span><span class="mi">4000</span><span class="p">]</span>
+<span class="n">prompt_content</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompts/scientific_papers_prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3.1:8b&#39;</span><span class="p">,</span> 
+                       <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+                           <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt_content</span><span class="p">},</span>
+                           <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">paper_content</span><span class="p">}</span>
+                       <span class="p">])</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+<span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">result</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 3.5 ms, sys: 2.13 ms, total: 5.63 ms
+Wall time: 11.8 s
+
+
+{&#39;PaperTitle&#39;: &#39;Attention Is All You Need&#39;,
+ &#39;PublicationYear&#39;: 2017,
+ &#39;Authors&#39;: [&#39;Ashish Vaswani&#39;,
+  &#39;Noam Shazeer&#39;,
+  &#39;Niki Parmar&#39;,
+  &#39;Jakob Uszkoreit&#39;,
+  &#39;Llion Jones&#39;,
+  &#39;Aidan N. Gomez&#39;,
+  &#39;Łukasz Kaiser&#39;,
+  &#39;Illia Polosukhin&#39;],
+ &#39;AuthorContact&#39;: [{&#39;Name&#39;: &#39;Ashish Vaswani&#39;,
+   &#39;Institution&#39;: &#39;Google Brain&#39;,
+   &#39;Email&#39;: &#39;avaswani@google.com&#39;},
+  {&#39;Name&#39;: &#39;Noam Shazeer&#39;,
+   &#39;Institution&#39;: &#39;Google Brain&#39;,
+   &#39;Email&#39;: &#39;noam@google.com&#39;},
+  {&#39;Name&#39;: &#39;Niki Parmar&#39;,
+   &#39;Institution&#39;: &#39;Google Research&#39;,
+   &#39;Email&#39;: &#39;nikip@google.com&#39;},
+  {&#39;Name&#39;: &#39;Jakob Uszkoreit&#39;,
+   &#39;Institution&#39;: &#39;Google Research&#39;,
+   &#39;Email&#39;: &#39;usz@google.com&#39;},
+  {&#39;Name&#39;: &#39;Llion Jones&#39;,
+   &#39;Institution&#39;: &#39;Google Research&#39;,
+   &#39;Email&#39;: &#39;llion@google.com&#39;},
+  {&#39;Name&#39;: &#39;Aidan N. Gomez&#39;,
+   &#39;Institution&#39;: &#39;University of Toronto&#39;,
+   &#39;Email&#39;: &#39;aidan@cs.toronto.edu&#39;},
+  {&#39;Name&#39;: &#39;Łukasz Kaiser&#39;,
+   &#39;Institution&#39;: &#39;Google Brain&#39;,
+   &#39;Email&#39;: &#39;lukaszkaiser@google.com&#39;},
+  {&#39;Name&#39;: &#39;Illia Polosukhin&#39;,
+   &#39;Institution&#39;: &#39;&#39;,
+   &#39;Email&#39;: &#39;illia.polosukhin@gmail.com&#39;}],
+ &#39;Abstract&#39;: &#39;The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.&#39;,
+ &#39;SummaryAbstract&#39;: &#39;本文提出了一种新的Transformer模型，基于注意力机制，抛弃了递归和卷积等复杂方法。该模型在机器翻译任务上表现出优异的效果，并且可以更好地并行化和训练。&#39;}
+</code></pre></div><p>从运行结果看， 摘要<em><strong>Abstract</strong></em> 的提取不够准确，有一定的遗漏。</p>
+<br>
+<h3 id="33-封装成函数extract_info">3.3 封装成函数extract_info</h3>
+<p>实验成功，我们将其封装为函数<em><strong>extract_info</strong></em> ，因为LLM返回的内容的格式存在不确定性， 所以为了保证函数尽可能的成功的运行出结果，这里我设置了异常处理机制。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">ollama</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>  
+<span class="c1">#cntext版本为2.1.2，非开源， #需联系大邓372335839获取</span>
+
+
+<span class="k">def</span> <span class="nf">extract_info</span><span class="p">(</span><span class="n">paper_content</span><span class="p">,</span> <span class="n">prompt_content</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">ollama</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="s1">&#39;llama3.1:8b&#39;</span><span class="p">,</span>
+                <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">prompt_content</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">paper_content</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;```</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">```&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">result</span>
+        
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_retries</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;An error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Retrying (</span><span class="si">{</span><span class="n">attempt</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">)...&#34;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>
+
+
+<span class="c1">#我们感兴趣的信息在论文的第一页，所以这里粗糙的选择前4000个字符。</span>
+<span class="n">paper_content</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/1706.03762v7.pdf&#39;</span><span class="p">)[:</span><span class="mi">4000</span><span class="p">]</span>
+<span class="n">prompt_content</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompts/scientific_papers_prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">paper_content</span><span class="p">,</span> <span class="n">prompt_content</span><span class="p">)</span>
+<span class="n">result</span>
+</code></pre></div><p>运行结果与之前无异，为节约板面空间，这里就不展示result了。</p>
+<br>
+<h3 id="34-批量提取">3.4 批量提取</h3>
+<p>假设data文件夹内有成百上千的发票(实际上只有一张发票)， 对data文件夹进行批量信息提取，结果存储为csv。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="c1">#cntext版本为2.1.3，非开源，需联系大邓372335839获取</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">jsonlines</span>
+
+<span class="c1">#当前代码所在的代码文件与data文件夹处于同一个文件夹内</span>
+<span class="c1">#获取data内所有pdf的路径</span>
+<span class="n">pdf_files</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;data/</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.pdf&#39;</span> <span class="ow">in</span> <span class="n">file</span><span class="p">]</span>
+<span class="n">prompt_content</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;prompts/scientific_papers_prompt.txt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">pdf_file</span> <span class="ow">in</span> <span class="n">pdf_files</span><span class="p">:</span>
+    <span class="n">paper_content</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">)[:</span><span class="mi">4000</span><span class="p">]</span>
+    <span class="n">dict_data</span> <span class="o">=</span> <span class="n">extract_info</span><span class="p">(</span><span class="n">paper_content</span><span class="p">,</span> <span class="n">prompt_content</span><span class="p">)</span>
+    <span class="n">jsonf</span> <span class="o">=</span> <span class="n">pdf_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;extracted_metadata&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="s1">&#39;jsonl&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">jsonlines</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">jsonf</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">jf</span><span class="p">:</span>
+        <span class="n">jf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">dict_data</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 919 ms, sys: 14.8 ms, total: 933 ms
+Wall time: 24.6 s
+</code></pre></div><p><img loading="lazy" src="img/05-2result-json.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="四讨论">四、讨论</h2>
+<p>本文简要概述了 LLM 在从复杂文档中提取元数据方面的应用，提取的 json 数据可以存储在非关系数据库中以供进一步分析。</p>
+<p>LLM 和 Regex 在内容提取方面各有优缺点，应根据用例明智地应用每种方法。希望本简短教程能帮助您获得新技能。</p>
+<br>
+<br>
+<h2 id="相关内容">相关内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/"><strong>教程 | 使用大模型API将文本数据转化为结构化数据</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/"><strong>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-06-using-the-ollama-local-large-model-to-predict-the-sentiment-category-of-online-comments/"><strong>实验 | 使用本地大模型预测在线评论情感类别和分值</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-07-structured-outputs-with-ollama/"><strong>实验 | 如何使 Ollama 结构化输出 JSON 样式的结果</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/"><strong>推荐 | 文本分析库cntext2.x使用手册</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/"><strong>实验 | 使用本地大模型从文本中提取结构化信息</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/">实验 | 使用Ollama本地大模型DIY制作单词书教案PDF</a></li>
+<li><a href="https://textdata.cn/blog/2024-08-05-create-a-blog-writer-multi-agent-system-using-crewai-and-ollama/">实验 | 使用 Crewai 和 Ollama 构建智能体(AI Agent)帮我撰写博客文章</a></li>
+</ul>
+<br>
+<br>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
 </ul>
 ]]></content:encoded>
     </item>
