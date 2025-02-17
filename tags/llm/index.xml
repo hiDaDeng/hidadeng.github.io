@@ -81,7 +81,7 @@
 <br>
 <h3 id="32-安装cntext2x">3.2 安装cntext2.x</h3>
 <p><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">cntext2.x</a>是大邓开发的文本分析库， 内置了丰富的文本分析函数， 如词频统计、词典法情感分析、经济政策不确定性epu等， 大大降低了文本分析难度。 以本文大模型文本分析为例， Python源代码需要 <strong>80+</strong> 行， 经过大邓封装， 使用cntext2.x内置函数 <em><strong>analysis_by_llm</strong></em> 仅需要不到 <strong>5</strong> 行代码。</p>
-<p><em><strong>安装包cntext-2.1.4-py3-none-any.whl</strong></em>  是付费内容(100元)， 如需使用<strong>加微信: 372335839</strong>，备注**「姓名-学校-专业-cntext」**</p>
+<p><em><strong>安装包cntext-2.1.4-py3-none-any.whl</strong></em>  是付费内容(100元)， 如需使用<strong>加微信: 372335839</strong>，备注「<strong>姓名-学校-专业-cntext</strong>」</p>
 <p>所有 <em><strong>cntext2.x</strong></em> 安装方法类似， 以目前 <em><strong>cntext2.1.4</strong></em> 为例，将 <em><strong>cntext-2.1.4-py3-none-any.whl</strong></em> 放置于桌面，打开 <em><strong>cmd</strong></em> (苹果电脑打开terminal)， 输入 <em><strong>cd desktop</strong></em></p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
 </code></pre></div><p>之后在 <em><strong>cmd</strong></em> (苹果电脑打开terminal) 中使用 <em><strong>pip3</strong></em> 安装</p>
@@ -192,13 +192,20 @@ time=2025-02-14T16:00:18.577+08:00 level=INFO source=types.go:131 msg=&#34;infer
 </code></pre></div><p>小实验成功，现在设计分析函数， 对所有的评论进行分析，输出dataframe格式，保存到csv中。</p>
 <br>
 <h3 id="43-设计分析函数">4.3 设计分析函数</h3>
-<p>使用 <strong>cntext2.x</strong> 中的大模型文本分析函数 <em><strong>analysis_by_llm(text, prompt, base_url, api_key, model_name, output_format, max_retries, return_df)</strong></em></p>
+<p>使用 <strong>cntext2.x</strong> 中的大模型文本分析函数 <em><strong>analysis_by_llm(text, prompt, base_url, api_key, model_name, temperature, output_format, max_retries, return_df)</strong></em></p>
 <ul>
 <li><em><strong>text</strong></em>: 待分析的文本</li>
 <li><em><strong>prompt</strong></em> 提示Prompt, 默认 prompt=&ldquo;根据评论内容，返回文本的情感类别(pos、neg)&rdquo;, 可判断文本pos或neg</li>
 <li><em><strong>base_url</strong></em>: 大模型API接口， 默认base_url=''， 默认使用的本地Ollama搭建服务的API接口；</li>
 <li><em><strong>api_key</strong></em>: 大模型API对应的KEY， 默认api_key='' 表示使用的本地Ollama搭建服务</li>
 <li><em><strong>model_name</strong></em>: 模型名；默认使用 model_name=&ldquo;qwen2.5:3b&rdquo;</li>
+<li><em><strong>temperature</strong></em>:  控制模型输出结果的随机性，默认temperature=0； 取值范围0到无穷, 常用的范围[0, 1]。虽然理论上可以设置大于 1 的值，但这样会导致输出过于随机，通常不推荐这样做。需要结合任务确定取值
+<ul>
+<li>高准确性一致性任务，如情感分析、文本分类、事实性回答， 建议temperature=0</li>
+<li>高创造性和多样性任务， 如故事写作、头脑风暴等， 建议temperature=0.7</li>
+<li>实验性或探索性任务，较高的 <code>temperature</code> 值（如 1.0 以上，但一般不推荐超过 2.0）</li>
+</ul>
+</li>
 <li><em><strong>output_format</strong></em>: 设置分析结果的输出格式; 默认output_format = {&lsquo;label&rsquo;: str, &lsquo;score&rsquo;: float},   输出结果为字典， 含字段类别字段label和数值字段score</li>
 <li><em><strong>max_retries</strong></em>: 最大失败次数， 默认max_retries=3</li>
 <li><em><strong>return_df</strong></em>: 返回结果是否为dataframe， 默认False</li>
@@ -214,6 +221,7 @@ time=2025-02-14T16:00:18.577+08:00 level=INFO source=types.go:131 msg=&#34;infer
                                 <span class="n">base_url</span><span class="o">=</span><span class="s1">&#39;https://dashscope.aliyuncs.com/compatible-mode/v1&#39;</span><span class="p">,</span> 
                                 <span class="n">api_key</span><span class="o">=</span><span class="s1">&#39;你的API-KEY&#39;</span><span class="p">,</span> 
                                 <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;qwen-max&#39;</span><span class="p">,</span> 
+                                <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                                 <span class="n">output_format</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;taste&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;speed&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;service&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">}</span>
                                <span class="p">)</span>
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
