@@ -328,6 +328,28 @@ class Config {
 			},
 
 			{
+				site: '沉浸式翻译',
+				icon: 'immersivetranslate',
+				url: 'https://app.immersivetranslate.com/',
+				category: 'Academic Tools'
+			},
+
+			{
+				site: 'Qwen',
+				icon: 'qwen',
+				url: 'https://tongyi.aliyun.com/qianwen/',
+				category: 'Academic Tools'
+			},
+
+			{
+				site: '腾讯元宝',
+				icon: 'yuanbao',
+				url: 'https://yuanbao.tencent.com/chat/',
+				category: 'Academic Tools'
+			},
+
+
+			{
 				site: 'Aoogle Scholar',
 				icon: 'google-scholar',
 				url: 'https://scholar.google.com/',
@@ -373,6 +395,14 @@ class Config {
 				url: 'https://www.annualreviews.org/',
 				category: 'Academic Search Engine'
 			},
+
+			{
+				site: 'Consensus',
+				icon: 'consensus',
+				url: 'https://consensus.app/',
+				category: 'Academic Search Engine'
+			},
+
 
 			{
 				site: 'SAGE',
@@ -680,25 +710,45 @@ class Config {
 				icon: 'google-scholar',
 				url: 'https://scholar.google.com/'
 			},
+
 			{
-				site: 'Reddit',
-				icon: 'reddit',
-				url: 'https://reddit.com/'
+				site: 'Consensus',
+				icon: 'consensus',
+				url: 'https://consensus.app/'
 			},
+
+			{
+				site: 'Qwen',
+				icon: 'qwen',
+				url: 'https://tongyi.aliyun.com/qianwen/'
+			},
+			{
+				site: '腾讯元宝',
+				icon: 'yuanbao',
+				url: 'https://yuanbao.tencent.com/chat/'
+			},
+			{
+				site: '文心一言',
+				icon: 'wenxinyiyan',
+				url: 'https://yiyan.baidu.com/'
+			},
+
+			{
+				site: '沉浸式翻译',
+				icon: 'immersivetranslate',
+				url: 'https://app.immersivetranslate.com/'
+			},
+
 			{
 				site: 'Github',
 				icon: 'github',
 				url: 'https://github.com/'
 			},
+
 			{
 				site: 'QQmail',
 				icon: 'gmail',
 				url: 'https://mail.qq.com/'
-			},
-			{
-				site: 'ResearchGate',
-				icon: 'researchgate',
-				url: 'https://www.researchgate.net/'
 			},
 			{
 				site: 'Mediun',
