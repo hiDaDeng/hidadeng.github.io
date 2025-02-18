@@ -341,6 +341,14 @@ class Config {
 				category: 'Academic Tools'
 			},
 
+
+			{
+				site: '豆包',
+				icon: 'doubao',
+				url: 'https://www.doubao.com/chat/',
+				category: 'Academic Tools'
+			},
+
 			{
 				site: '腾讯元宝',
 				icon: 'yuanbao',
@@ -726,6 +734,11 @@ class Config {
 				site: '腾讯元宝',
 				icon: 'yuanbao',
 				url: 'https://yuanbao.tencent.com/chat/'
+			},
+			{
+				site: '豆包',
+				icon: 'doubao',
+				url: 'https://www.doubao.com/chat/'
 			},
 			{
 				site: '文心一言',
