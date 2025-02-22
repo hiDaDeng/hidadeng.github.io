@@ -185,7 +185,7 @@ class Config {
 			{
 				site: '知网',
 				icon: 'zhiwang',
-				url: 'https://www.cnki.net/',
+				url: 'http://www-cnki-net-s.ivpn.hit.edu.cn:1080/',
 				category: 'Academic Search Engine'
 			},
 			{
@@ -243,8 +243,12 @@ class Config {
 				url: 'https://zenodo.org/',
 				category: 'Academic Search Engine'
 			},
-
-			
+			{
+				site: '哈工大图书馆',
+				icon: 'hit',
+				url: 'http://lib-hit-edu-cn.ivpn.hit.edu.cn:1080/',
+				category: 'Academic Search Engine'
+			},
 			
 			{
 				site: '谷歌翻译',
@@ -297,6 +301,8 @@ class Config {
 				url: 'https://mail.qq.com/',
 				category: 'Academic Tools'
 			},
+
+
 
 
 			{
@@ -441,7 +447,7 @@ class Config {
 			{
 				site: 'Web of Science',
 				icon: 'wos',
-				url: 'https://www.webofscience.com/wos/alldb/basic-search',
+				url: 'http://webofscience-clarivate-cn-s.ivpn.hit.edu.cn:1080/wos/alldb/basic-search',
 				category: 'Academic Tools'
 			},
 			{
@@ -725,32 +731,6 @@ class Config {
 				url: 'https://consensus.app/'
 			},
 
-			{
-				site: 'Qwen',
-				icon: 'qwen',
-				url: 'https://tongyi.aliyun.com/qianwen/'
-			},
-			{
-				site: '腾讯元宝',
-				icon: 'yuanbao',
-				url: 'https://yuanbao.tencent.com/chat/'
-			},
-			{
-				site: '豆包',
-				icon: 'doubao',
-				url: 'https://www.doubao.com/chat/'
-			},
-			{
-				site: '文心一言',
-				icon: 'wenxinyiyan',
-				url: 'https://yiyan.baidu.com/'
-			},
-
-			{
-				site: '沉浸式翻译',
-				icon: 'immersivetranslate',
-				url: 'https://app.immersivetranslate.com/'
-			},
 
 			{
 				site: 'Github',
@@ -764,10 +744,11 @@ class Config {
 				url: 'https://mail.qq.com/'
 			},
 			{
-				site: 'Mediun',
-				icon: 'medium',
-				url: 'https://medium.com/'
+				site: '哈工大图书馆',
+				icon: 'hit',
+				url: 'http://lib-hit-edu-cn.ivpn.hit.edu.cn:1080/'
 			},
+
 
 		];
 
