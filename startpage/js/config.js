@@ -85,12 +85,18 @@ class Config {
 				prefix: 'https://yandex.com/search/?text=',
 				icon: 'yandex'
 			},
-
+			
 			'Scholar': {
 				name: 'Google Scholar',
 				prefix: 'https://scholar.google.com/scholar?q=',
 				icon: 'google-scholar'
-			}
+			},
+
+			'Metaso': {
+				name: 'Metaso',
+				prefix: 'https://metaso.cn/?q=',
+				icon: 'metaso'
+			},
 			
 		};
 
@@ -107,6 +113,31 @@ class Config {
 				url: 'https://www.36kr.com/',
 				category: 'cNews'
 			},
+			{
+				site: 'IndieHackers',
+				icon: 'indie-hackers',
+				url: 'https://www.indiehackers.com/',
+				category: 'cNews'
+			},
+			{
+				site: 'HackersNews中文',
+				icon: 'hackernews',
+				url: 'https://hackernews.cc/',
+				category: 'cNews'
+			},
+			{
+				site: 'HackersNews',
+				icon: 'hackernews',
+				url: 'https://news.ycombinator.com/',
+				category: 'cNews'
+			},
+			{
+				site: 'Product-Hunt',
+				icon: 'product-hunt',
+				url: 'https://www.producthunt.com/',
+				category: 'cNews'
+			},
+			
 			{
 				site: '小红书',
 				icon: 'xiaohongshu',
@@ -160,6 +191,12 @@ class Config {
 				url: 'https://www.letpub.com.cn/index.php?page=journalapp&view=search',
 				category: 'Academic Tools'
 			},
+			{
+				site: 'Sci-Space',
+				icon: 'scispace',
+				url: 'https://scispace.com/search',
+				category: 'Academic Tools'
+			},
 
 			{
 				site: 'OSF HOME',
@@ -172,6 +209,12 @@ class Config {
 				site: 'ChatGPT',
 				icon: 'chatgpt',
 				url: 'https://chat.openai.com/',
+				category: 'Academic Tools'
+			},
+			{
+				site: '秘塔',
+				icon: 'metaso',
+				url: 'https://metaso.cn/',
 				category: 'Academic Tools'
 			},
 
@@ -225,6 +268,13 @@ class Config {
 				url: 'https://www.connectedpapers.com/',
 				category: 'Academic Search Engine'
 			},
+			{
+				site: '秘塔',
+				icon: 'metaso',
+				url: 'https://metaso.cn/',
+				category: 'Academic Search Engine'
+			},
+
 			{
 				site: 'Semantic Scholar',
 				icon: 'semantic',
@@ -343,7 +393,7 @@ class Config {
 			{
 				site: 'Qwen',
 				icon: 'qwen',
-				url: 'https://tongyi.aliyun.com/qianwen/',
+				url: 'https://chat.qwen.ai/',
 				category: 'Academic Tools'
 			},
 
@@ -729,6 +779,18 @@ class Config {
 				site: 'Consensus',
 				icon: 'consensus',
 				url: 'https://consensus.app/'
+			},
+
+			{
+				site: '秘塔',
+				icon: 'metaso',
+				url: 'https://metaso.cn/',
+			},
+
+			{
+				site: 'Sci-Space',
+				icon: 'scispace',
+				url: 'https://scispace.com/search',
 			},
 
 
