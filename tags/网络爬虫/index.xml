@@ -6,7 +6,365 @@
     <description>Recent content in 网络爬虫 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 16 Jun 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 04 Mar 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>爬虫代码 | 使用Python采集黑猫投诉数据</title>
+      <link>https://textdata.cn/blog/2025-03-05-scrape-consumer-complaint-data-with-python/</link>
+      <pubDate>Tue, 04 Mar 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2025-03-05-scrape-consumer-complaint-data-with-python/</guid>
+      <description>python爬虫, 黑猫投诉tousu.sina.com.cn</description>
+      <content:encoded><![CDATA[<p>采集黑猫投诉数据如下， 该爬虫代码如何写？</p>
+<p><img loading="lazy" src="img/06-df.jpg" alt=""  />
+</p>
+<br>
+<h2 id="撰写写爬虫的步骤">撰写写爬虫的步骤</h2>
+<ol>
+<li>寻找网址规律<em><strong>urls</strong></em> ；</li>
+<li>任选一个<em><strong>url</strong></em>， 对其发起访问<em><strong>requests</strong></em>，得到响应数据<em><strong>response</strong></em></li>
+<li>从响应数据<em><strong>response</strong></em>中提取自己感兴趣的字段<em><strong>field</strong></em>， 将数据字段存入数据文件(如csv、xlsx等)</li>
+<li>使用 <em><strong>for循环</strong></em> 重复 <strong>2~3</strong>， 将所有的网址 <em><strong>urls</strong></em>  均依次进行访问、提取、存储，爬虫结束</li>
+</ol>
+<p>五个步骤中 <em><strong>1. 寻找网址规律</strong></em>  是最难的一步， 搞定这一步，后面的都很简单。本文将详细分享第一步的操作细节， 其余步骤一笔带过。</p>
+<p><br><br></p>
+<h2 id="一寻找网址规律">一、寻找网址规律</h2>
+<h3 id="11-初步分析">1.1 初步分析</h3>
+<p>网站的网址规律分为静态和动态两种类型， 今天分享的 <strong>黑猫投诉网</strong> 是动态的， 即切换网页时，如最热投诉、最新投诉、已回复、已完成， 网址栏的网址始终不变  <a href="https://tousu.sina.com.cn/">https://tousu.sina.com.cn/</a></p>
+<p><img loading="lazy" src="img/01-tousu.jpg" alt=""  />
+</p>
+<br>
+<h3 id="12-开发者分析">1.2 开发者分析</h3>
+<p>确定 <strong>黑猫投诉网</strong>的网址规律 是动态型， 我以<strong>最新投诉</strong>为例， 我们需要依次进行如下操作</p>
+<ol>
+<li>打开 <strong>浏览器开发者工具</strong>，</li>
+<li>选择 <strong>Network面板</strong> ，刷新网页或向下滚动页面</li>
+<li>注意 <strong>Network面板</strong> 中出现很多网址， 依次查看每个链接， 寻找网址规律的线索</li>
+</ol>
+<p>下面截图是大邓的操作截图， 最终找到 <strong>黑猫投诉·最新投诉</strong> 对应的网址规律目标template，template中可变参数有：</p>
+<ul>
+<li><em><strong>page(页面数)</strong></em></li>
+<li><em><strong>ts(未知)</strong></em>、 <em><strong>rs(未知)</strong></em>、<em><strong>signature(未知)</strong></em> ；</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">template = f&#39;https://tousu.sina.cn/api/index/feed?ts={ts}&amp;rs={rs}&amp;signature={signature}&amp;type=2&amp;page_size=10&amp;page={page}&#39;
+</code></pre></div><p><img loading="lazy" src="img/02-url-pattern.jpg" alt=""  />
+</p>
+<br>
+<h3 id="13-借助网络力量">1.3 借助网络力量</h3>
+<p>ts、rs、signature 这三个参数太难，一般情况大邓会放弃写这个爬虫，花钱找技术达人接手这个数据采集任务。</p>
+<p>现在做这一步，希望网络中有高人(前人)解决这三参数构造，这样咱们可以爬到数据(还能省点钱)</p>
+<p>念咒语(嘛哩嘛哩哄)， 借助网络的力量:</p>
+<ol>
+<li>打开github， 搜 <strong>黑猫投诉</strong>， 语言选择 <strong>Python</strong></li>
+<li>依次查看搜索结果，把黑猫投诉相关仓库代码都浏览一遍， 寻找代码中是否出现 <em><strong>ts</strong></em>、 <em><strong>rs</strong></em>、<em><strong>signature</strong></em> 等字眼。</li>
+<li>最终在 <code>https://github.com/yeyeye777/toususina/blob/main/demo.py</code> 中找到三参数构造法，且实验后发现算法依然可行。</li>
+</ol>
+<p><img loading="lazy" src="img/03-github.png" alt=""  />
+</p>
+<p><img loading="lazy" src="img/04-github-method.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">gen_rs_ts_signature</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+    <span class="kn">import</span> <span class="nn">random</span>
+    <span class="kn">import</span> <span class="nn">hashlib</span>
+    <span class="kn">import</span> <span class="nn">json</span>
+    <span class="n">sha256</span><span class="o">=</span><span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">()</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">))</span>   <span class="c1">#13位时间戳</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;0&#34;</span><span class="p">,</span> <span class="s2">&#34;1&#34;</span><span class="p">,</span> <span class="s2">&#34;2&#34;</span><span class="p">,</span> <span class="s2">&#34;3&#34;</span><span class="p">,</span> <span class="s2">&#34;4&#34;</span><span class="p">,</span> <span class="s2">&#34;5&#34;</span><span class="p">,</span> <span class="s2">&#34;6&#34;</span><span class="p">,</span> <span class="s2">&#34;7&#34;</span><span class="p">,</span> <span class="s2">&#34;8&#34;</span><span class="p">,</span> <span class="s2">&#34;9&#34;</span><span class="p">,</span> <span class="s2">&#34;a&#34;</span><span class="p">,</span> <span class="s2">&#34;b&#34;</span><span class="p">,</span> <span class="s2">&#34;c&#34;</span><span class="p">,</span> <span class="s2">&#34;d&#34;</span><span class="p">,</span> <span class="s2">&#34;e&#34;</span><span class="p">,</span> <span class="s2">&#34;f&#34;</span><span class="p">,</span> <span class="s2">&#34;g&#34;</span><span class="p">,</span> <span class="s2">&#34;h&#34;</span><span class="p">,</span> <span class="s2">&#34;i&#34;</span><span class="p">,</span> <span class="s2">&#34;j&#34;</span><span class="p">,</span> <span class="s2">&#34;k&#34;</span><span class="p">,</span> <span class="s2">&#34;l&#34;</span><span class="p">,</span> <span class="s2">&#34;m&#34;</span><span class="p">,</span> <span class="s2">&#34;n&#34;</span><span class="p">,</span> <span class="s2">&#34;o&#34;</span><span class="p">,</span> <span class="s2">&#34;p&#34;</span><span class="p">,</span> <span class="s2">&#34;q&#34;</span><span class="p">,</span> <span class="s2">&#34;r&#34;</span><span class="p">,</span> <span class="s2">&#34;s&#34;</span><span class="p">,</span> <span class="s2">&#34;t&#34;</span><span class="p">,</span> <span class="s2">&#34;u&#34;</span><span class="p">,</span> <span class="s2">&#34;v&#34;</span><span class="p">,</span> <span class="s2">&#34;w&#34;</span><span class="p">,</span> <span class="s2">&#34;x&#34;</span><span class="p">,</span> <span class="s2">&#34;y&#34;</span><span class="p">,</span> <span class="s2">&#34;z&#34;</span><span class="p">,</span> <span class="s2">&#34;A&#34;</span><span class="p">,</span> <span class="s2">&#34;B&#34;</span><span class="p">,</span> <span class="s2">&#34;C&#34;</span><span class="p">,</span> <span class="s2">&#34;D&#34;</span><span class="p">,</span> <span class="s2">&#34;E&#34;</span><span class="p">,</span> <span class="s2">&#34;F&#34;</span><span class="p">,</span> <span class="s2">&#34;G&#34;</span><span class="p">,</span> <span class="s2">&#34;H&#34;</span><span class="p">,</span> <span class="s2">&#34;I&#34;</span><span class="p">,</span> <span class="s2">&#34;J&#34;</span><span class="p">,</span> <span class="s2">&#34;K&#34;</span><span class="p">,</span> <span class="s2">&#34;L&#34;</span><span class="p">,</span> <span class="s2">&#34;M&#34;</span><span class="p">,</span> <span class="s2">&#34;N&#34;</span><span class="p">,</span> <span class="s2">&#34;O&#34;</span><span class="p">,</span> <span class="s2">&#34;P&#34;</span><span class="p">,</span> <span class="s2">&#34;Q&#34;</span><span class="p">,</span> <span class="s2">&#34;R&#34;</span><span class="p">,</span> <span class="s2">&#34;S&#34;</span><span class="p">,</span> <span class="s2">&#34;T&#34;</span><span class="p">,</span> <span class="s2">&#34;U&#34;</span><span class="p">,</span> <span class="s2">&#34;V&#34;</span><span class="p">,</span> <span class="s2">&#34;W&#34;</span><span class="p">,</span> <span class="s2">&#34;X&#34;</span><span class="p">,</span> <span class="s2">&#34;Y&#34;</span><span class="p">,</span> <span class="s2">&#34;Z&#34;</span><span class="p">]</span>
+    <span class="n">h</span> <span class="o">=</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">))</span>   <span class="c1">#随机16个字符</span>
+    <span class="n">d</span> <span class="o">=</span><span class="s1">&#39;$d6eb7ff91ee257475%&#39;</span>   <span class="c1">#默认值</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span>       <span class="c1">#最新信息为2</span>
+    <span class="n">u</span> <span class="o">=</span><span class="s1">&#39;10&#39;</span>      <span class="c1">#每页数量</span>
+    <span class="n">page</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>   <span class="c1">#页码</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">c</span>
+    <span class="n">rs</span> <span class="o">=</span> <span class="n">h</span>
+    <span class="n">bb</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">,</span><span class="n">u</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">e</span><span class="p">,</span><span class="n">page</span><span class="p">,</span><span class="n">h</span><span class="p">]</span>
+    <span class="n">bb</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">signature</span><span class="o">=</span><span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bb</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ts</span><span class="p">,</span><span class="n">rs</span><span class="p">,</span><span class="n">signature</span>
+
+
+
+<span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">):</span>
+    <span class="n">ts</span><span class="p">,</span><span class="n">rs</span><span class="p">,</span><span class="n">signature</span> <span class="o">=</span> <span class="n">gen_rs_ts_signature</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">)</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;https://tousu.sina.cn/api/index/feed?ts=</span><span class="si">{</span><span class="n">ts</span><span class="si">}</span><span class="s1">&amp;rs=</span><span class="si">{</span><span class="n">rs</span><span class="si">}</span><span class="s1">&amp;signature=</span><span class="si">{</span><span class="n">signature</span><span class="si">}</span><span class="s1">&amp;type=2&amp;page_size=10&amp;page=</span><span class="si">{</span><span class="n">page</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1 https://tousu.sina.cn/api/index/feed?ts=1741183219941&amp;rs=mqMovDIpI7FxhiiW&amp;signature=007812aaec720c655748db472bb15fbaa7b026546ddfa9b520edaffe370d507d&amp;type=2&amp;page_size=10&amp;page=1
+2 https://tousu.sina.cn/api/index/feed?ts=1741183219941&amp;rs=XjOZVfZiJ9o6NEHH&amp;signature=282f5a6c30d4720b3d653dfa13bf1d6c31a4bb5b7baccc5c0e3b5445d67821bc&amp;type=2&amp;page_size=10&amp;page=2
+3 https://tousu.sina.cn/api/index/feed?ts=1741183219941&amp;rs=N1eBlKMeQTnLQ26y&amp;signature=b2cad655fb7beac6ca5ae1b6abb72debd0309de6c1e79f21e68b6ae4c6663e8a&amp;type=2&amp;page_size=10&amp;page=3
+4 https://tousu.sina.cn/api/index/feed?ts=1741183219941&amp;rs=LVKITB2UrpLdIZIH&amp;signature=5de4b51e8fdec631e0de47a2a34e797a99ea77beb4ca21abe91ec8955523dbd8&amp;type=2&amp;page_size=10&amp;page=4
+5 https://tousu.sina.cn/api/index/feed?ts=1741183219941&amp;rs=FkUmQOXIFOzWrpfu&amp;signature=f571a16f3ac90dae121fa444dde637294358abf34cf97ac56ea0001d48312f19&amp;type=2&amp;page_size=10&amp;page=5
+</code></pre></div><p><br><br></p>
+<h2 id="二发起访问">二、发起访问</h2>
+<p>任选一个<em><strong>url</strong></em>（page=1)， 对其发起访问<em><strong>requests</strong></em>，得到响应数据<em><strong>response</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="c1">#避免网站反爬，使用伪装头</span>
+<span class="n">header</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;user-agent&#34;</span><span class="p">:</span> <span class="s2">&#34;Mozilla/5.0 (Macintosh; Intel Mac OS X 12_0_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36&#34;</span><span class="p">}</span>
+
+<span class="c1">#page=1的url</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://tousu.sina.cn/api/index/feed?ts=1741183219941&amp;rs=mqMovDIpI7FxhiiW&amp;signature=007812aaec720c655748db472bb15fbaa7b026546ddfa9b520edaffe370d507d&amp;type=2&amp;page_size=10&amp;page=1&#39;</span>
+
+<span class="c1">#发起访问</span>
+<span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span><span class="n">headers</span> <span class="o">=</span> <span class="n">header</span><span class="p">)</span>
+<span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;result&#39;: {&#39;status&#39;: {&#39;code&#39;: 0, &#39;msg&#39;: &#39;ok&#39;},
+  &#39;timestamp&#39;: &#39;Wed Mar 05 22:03:08 +0800 2025&#39;,
+  
+  &#39;data&#39;: {&#39;lists&#39;: [
+      {&#39;main&#39;: {&#39;id&#39;: &#39;33181177&#39;,
+      &#39;sn&#39;: &#39;17380385543&#39;,
+      &#39;title&#39;: &#39;中国移动流量异常使用消耗&#39;,
+      &#39;couid&#39;: &#39;1991428685&#39;,
+      &#39;cotitle&#39;: &#39;中国移动10086&#39;,
+      &#39;appeal&#39;: &#39;改善服务,赔偿解释&#39;,
+      &#39;issue&#39;: &#39;流量消耗问题&#39;,
+      &#39;comment_id&#39;: &#39;tousu_complaint_33181177&#39;,
+      &#39;timestamp&#39;: &#39;1740577724&#39;,
+      &#39;status&#39;: 6,
+      &#39;upvote_amount&#39;: 0,
+      &#39;share_amount&#39;: 0,
+      &#39;summary&#39;: &#39;我于2024年12月20日在淘宝平台上购买了一张中国移动的流量电话卡，于今日遇到流量消耗异常的问题。我的手机上都有流量消耗的记录，快手是30g的流量消耗。可是中国移动中的套餐定向流量包含着快手，但是只消耗了15个g，剩余的15个g被通用流量消耗。询问客服，客服说他们的定向流量没有问题，然后让他们给出我的通用流量的...&#39;,
+      &#39;url&#39;: &#39;//tousu.sina.cn/complaint/view/17380385543/?sld=ec54e136b3aaaae3b5e6ac7a929271ec&#39;,
+      &#39;evaluate_u&#39;: None,
+      &#39;ext_src&#39;: &#39;0&#39;,
+      &#39;field&#39;: &#39;55&#39;,
+      &#39;cost&#39;: &#39;50&#39;,
+      &#39;tpl&#39;: &#39;0&#39;,
+      &#39;comment_amount&#39;: 0,
+      &#39;has_jury&#39;: False,
+      &#39;is_upvote&#39;: False},
+     &#39;author&#39;: {&#39;title&#39;: &#39;机灵喵&#39;,
+      &#39;avatar&#39;: &#39;//n.sinaimg.cn/finance/235fa465/20230314/3.png&#39;}},
+      ...
+      ...
+      {&#39;main&#39;: {&#39;id&#39;: &#39;33396892&#39;,
+      &#39;sn&#39;: &#39;17380601258&#39;,
+      &#39;title&#39;: &#39;驰诚农机专营店微耕机已退货，不退款&#39;,
+      &#39;couid&#39;: &#39;6244211375&#39;,
+      &#39;cotitle&#39;: &#39;拼多多客户服务&#39;,
+      &#39;appeal&#39;: &#39;退货退款,作出处罚,道歉&#39;,
+      &#39;issue&#39;: &#39;退货不退款,机器无法正常运行工作,响应时间长,客服态度差&#39;,
+      &#39;comment_id&#39;: &#39;tousu_complaint_33396892&#39;,
+      &#39;timestamp&#39;: &#39;1741182983&#39;,
+      &#39;status&#39;: 4,
+      &#39;upvote_amount&#39;: 0,
+      &#39;share_amount&#39;: 0,
+      &#39;summary&#39;: &#39;我于2月20日在拼多多驰诚农机专营店买了一台微耕机，总价值为2150元，收到货后拼装组装好无法使用后退货退款，根据协商，拼多多开通退货退款窗口，商家收到货后一直不退款，平台客服也不处理，一直让等待，也没有处理方案，推皮球，要求尽快处理&#39;,
+      &#39;url&#39;: &#39;//tousu.sina.cn/complaint/view/17380601258/?sld=f0b469a54216a2335b2dc544cf97924f&#39;,
+      &#39;evaluate_u&#39;: None,
+      &#39;ext_src&#39;: &#39;0&#39;,
+      &#39;field&#39;: &#39;6&#39;,
+      &#39;cost&#39;: &#39;2150&#39;,
+      &#39;tpl&#39;: &#39;3&#39;,
+      &#39;comment_amount&#39;: 0,
+      &#39;has_jury&#39;: False,
+      &#39;is_upvote&#39;: False},
+     &#39;author&#39;: {&#39;title&#39;: &#39;机灵喵&#39;,
+      &#39;avatar&#39;: &#39;//n.sinaimg.cn/finance/235fa465/20230314/3.png&#39;}}],
+   
+   
+   &#39;pager&#39;: {&#39;current&#39;: 1,
+    &#39;next&#39;: 2,
+    &#39;page_amount&#39;: 11974,
+    &#39;page_size&#39;: 10,
+    &#39;item_count&#39;: 119734}}}}
+pd.to_datetime(&#39;1741169556&#39;, unit=&#39;s&#39;)
+
+</code></pre></div><p><br><br></p>
+<h2 id="三提取字段存储到csv">三、提取字段&amp;存储到csv</h2>
+<p><strong>黑猫投诉</strong>网站返回的响应数据是 <em><strong>json</strong></em> 格式，格式整洁，  非常容易进行字段筛选和提取。每个响应数据，会返 含10 个投诉的列表，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;result&#39;</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;lists&#39;</span><span class="p">]))</span>
+
+<span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;result&#39;</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;lists&#39;</span><span class="p">]</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">10
+
+[{&#39;main&#39;: {&#39;id&#39;: &#39;33172281&#39;,
+   &#39;sn&#39;: &#39;17380376647&#39;,
+   &#39;title&#39;: &#39;卖假鞋强买强卖&#39;,
+   &#39;couid&#39;: &#39;6020086612&#39;,
+   &#39;cotitle&#39;: &#39;抖音&#39;,
+   &#39;appeal&#39;: &#39;退货退款,下架产品,道歉&#39;,
+   &#39;issue&#39;: &#39;退货不退款,卖假货,客服态度差,强买强卖污蔑消费者&#39;,
+   &#39;comment_id&#39;: &#39;tousu_complaint_33172281&#39;,
+   &#39;timestamp&#39;: &#39;1740558656&#39;,
+   &#39;status&#39;: 6,
+   &#39;upvote_amount&#39;: 0,
+   &#39;share_amount&#39;: 0,
+   &#39;summary&#39;: &#39;我在2025年2月14日在抖音阿宝家小铺购买一双白色运动鞋，2月18日收到货后发现其是抄袭品牌smfk的鞋子，于是在2月18日里面申请了退货退款，但是其收到货后一口咬定我调换了他们家鞋子，并且无法提供完整的收发货视频。&#39;,
+   &#39;url&#39;: &#39;//tousu.sina.com.cn/complaint/view/17380376647/?sld=b965241622ff70025f17ad3fed955f76&#39;,
+   &#39;evaluate_u&#39;: None,
+   &#39;ext_src&#39;: &#39;0&#39;,
+   &#39;field&#39;: &#39;37&#39;,
+   &#39;cost&#39;: &#39;499&#39;,
+   &#39;tpl&#39;: &#39;3&#39;,
+   &#39;comment_amount&#39;: 0,
+   &#39;has_jury&#39;: False,
+   &#39;is_upvote&#39;: False},
+  &#39;author&#39;: {&#39;title&#39;: &#39;机灵喵&#39;,
+   &#39;avatar&#39;: &#39;//n.sinaimg.cn/finance/235fa465/20230314/3.png&#39;}},
+   ......
+   ......
+   {&#39;main&#39;: {&#39;id&#39;: &#39;33172911&#39;,
+   &#39;sn&#39;: &#39;17380377277&#39;,
+   &#39;title&#39;: &#39;一天八百个电话太吓人&#39;,
+   &#39;couid&#39;: &#39;7894766771&#39;,
+   &#39;cotitle&#39;: &#39;众利数字科技&#39;,
+   &#39;appeal&#39;: &#39;解释,作出处罚&#39;,
+   &#39;issue&#39;: &#39;暴力催收&#39;,
+   &#39;comment_id&#39;: &#39;tousu_complaint_33172911&#39;,
+   &#39;timestamp&#39;: &#39;1740559661&#39;,
+   &#39;status&#39;: 6,
+   &#39;upvote_amount&#39;: 0,
+   &#39;share_amount&#39;: 0,
+   &#39;summary&#39;: &#39;一天打八百个电话，每天每天打， 希望降低催收频率， 合规催收&#39;,
+   &#39;url&#39;: &#39;//tousu.sina.com.cn/complaint/view/17380377277/?sld=2a0c1176d0ce70a8654b4a716d05b1ff&#39;,
+   &#39;evaluate_u&#39;: None,
+   &#39;ext_src&#39;: &#39;0&#39;,
+   &#39;field&#39;: &#39;37&#39;,
+   &#39;cost&#39;: &#39;8400&#39;,
+   &#39;tpl&#39;: &#39;0&#39;,
+   &#39;comment_amount&#39;: 0,
+   &#39;has_jury&#39;: False,
+   &#39;is_upvote&#39;: False},
+  &#39;author&#39;: {&#39;title&#39;: &#39;洞察喵&#39;,
+   &#39;avatar&#39;: &#39;//n.sinaimg.cn/finance/235fa465/20230314/4.png&#39;}}]
+</code></pre></div><br>
+<p>假使我们要确定要提取的字段为 <em><strong>title</strong></em>、<em><strong>timestamp</strong></em>、<em><strong>summary</strong></em>、<em><strong>cotitle</strong></em>、<em><strong>appeal</strong></em>、<em><strong>issue</strong></em>、<em><strong>url</strong></em>。这里使用 <strong>for循环</strong>， 依次将数据保存到csv中。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1"># 确定CSV文件路径</span>
+<span class="n">csv_file_path</span> <span class="o">=</span> <span class="s1">&#39;黑猫投诉.csv&#39;</span>
+
+<span class="c1"># 创建一个标志变量，用于判断是否是第一次写入</span>
+<span class="n">first_write</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">csv_file_path</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">complaint_card</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;result&#39;</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;lists&#39;</span><span class="p">]:</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;title&#39;</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;summary&#39;</span><span class="p">]</span> <span class="o">=</span><span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;cotitle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;cotitle&#39;</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;appeal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;appeal&#39;</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;issue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;issue&#39;</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">data</span><span class="p">])</span>
+    
+    <span class="c1"># 写入DataFrame到CSV文件中</span>
+    <span class="k">if</span> <span class="n">first_write</span><span class="p">:</span>
+        <span class="c1"># 第一次写入时包含表头</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">csv_file_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8-sig&#39;</span><span class="p">)</span>
+        <span class="n">first_write</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># 修改标志变量为False，以便后续不再写入表头</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># 后续追加数据时不包含表头</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">csv_file_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8-sig&#39;</span><span class="p">)</span>
+</code></pre></div><br>
+<p>查看新生成的 <em><strong>黑猫投诉.csv</strong></em>，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pd.read_csv(&#39;黑猫投诉.csv&#39;)
+</code></pre></div><p><img loading="lazy" src="img/05-df.jpg" alt=""  />
+</p>
+<br>
+<h2 id="四最终完整代码">四、最终完整代码</h2>
+<p>黑猫投诉最大能翻看50页，即向下翻看更多时，最多能翻50次。结果存储 <em><strong>黑猫投诉.csv</strong></em> 。需要设置的参数</p>
+<ul>
+<li><em><strong>max_page=50</strong></em></li>
+<li><em><strong>csv_file_path = &lsquo;黑猫投诉.csv&rsquo;</strong></em></li>
+</ul>
+<p>本章节将汇总步骤一(网址规律)、步骤二(访问一个网页)、步骤三(提取&amp;保存)， 得到实践中完整的爬虫代码(<em><strong>tousu-spider.py</strong></em>)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="c1">#避免网站反爬，使用伪装头</span>
+<span class="n">header</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;user-agent&#34;</span><span class="p">:</span> <span class="s2">&#34;Mozilla/5.0 (Macintosh; Intel Mac OS X 12_0_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36&#34;</span><span class="p">}</span>
+
+<span class="k">def</span> <span class="nf">gen_rs_ts_signature</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">random</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+    <span class="kn">import</span> <span class="nn">hashlib</span>
+    <span class="kn">import</span> <span class="nn">json</span>
+    <span class="n">sha256</span><span class="o">=</span><span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">()</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">))</span>   <span class="c1">#13位时间戳</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;0&#34;</span><span class="p">,</span> <span class="s2">&#34;1&#34;</span><span class="p">,</span> <span class="s2">&#34;2&#34;</span><span class="p">,</span> <span class="s2">&#34;3&#34;</span><span class="p">,</span> <span class="s2">&#34;4&#34;</span><span class="p">,</span> <span class="s2">&#34;5&#34;</span><span class="p">,</span> <span class="s2">&#34;6&#34;</span><span class="p">,</span> <span class="s2">&#34;7&#34;</span><span class="p">,</span> <span class="s2">&#34;8&#34;</span><span class="p">,</span> <span class="s2">&#34;9&#34;</span><span class="p">,</span> <span class="s2">&#34;a&#34;</span><span class="p">,</span> <span class="s2">&#34;b&#34;</span><span class="p">,</span> <span class="s2">&#34;c&#34;</span><span class="p">,</span> <span class="s2">&#34;d&#34;</span><span class="p">,</span> <span class="s2">&#34;e&#34;</span><span class="p">,</span> <span class="s2">&#34;f&#34;</span><span class="p">,</span> <span class="s2">&#34;g&#34;</span><span class="p">,</span> <span class="s2">&#34;h&#34;</span><span class="p">,</span> <span class="s2">&#34;i&#34;</span><span class="p">,</span> <span class="s2">&#34;j&#34;</span><span class="p">,</span> <span class="s2">&#34;k&#34;</span><span class="p">,</span> <span class="s2">&#34;l&#34;</span><span class="p">,</span> <span class="s2">&#34;m&#34;</span><span class="p">,</span> <span class="s2">&#34;n&#34;</span><span class="p">,</span> <span class="s2">&#34;o&#34;</span><span class="p">,</span> <span class="s2">&#34;p&#34;</span><span class="p">,</span> <span class="s2">&#34;q&#34;</span><span class="p">,</span> <span class="s2">&#34;r&#34;</span><span class="p">,</span> <span class="s2">&#34;s&#34;</span><span class="p">,</span> <span class="s2">&#34;t&#34;</span><span class="p">,</span> <span class="s2">&#34;u&#34;</span><span class="p">,</span> <span class="s2">&#34;v&#34;</span><span class="p">,</span> <span class="s2">&#34;w&#34;</span><span class="p">,</span> <span class="s2">&#34;x&#34;</span><span class="p">,</span> <span class="s2">&#34;y&#34;</span><span class="p">,</span> <span class="s2">&#34;z&#34;</span><span class="p">,</span> <span class="s2">&#34;A&#34;</span><span class="p">,</span> <span class="s2">&#34;B&#34;</span><span class="p">,</span> <span class="s2">&#34;C&#34;</span><span class="p">,</span> <span class="s2">&#34;D&#34;</span><span class="p">,</span> <span class="s2">&#34;E&#34;</span><span class="p">,</span> <span class="s2">&#34;F&#34;</span><span class="p">,</span> <span class="s2">&#34;G&#34;</span><span class="p">,</span> <span class="s2">&#34;H&#34;</span><span class="p">,</span> <span class="s2">&#34;I&#34;</span><span class="p">,</span> <span class="s2">&#34;J&#34;</span><span class="p">,</span> <span class="s2">&#34;K&#34;</span><span class="p">,</span> <span class="s2">&#34;L&#34;</span><span class="p">,</span> <span class="s2">&#34;M&#34;</span><span class="p">,</span> <span class="s2">&#34;N&#34;</span><span class="p">,</span> <span class="s2">&#34;O&#34;</span><span class="p">,</span> <span class="s2">&#34;P&#34;</span><span class="p">,</span> <span class="s2">&#34;Q&#34;</span><span class="p">,</span> <span class="s2">&#34;R&#34;</span><span class="p">,</span> <span class="s2">&#34;S&#34;</span><span class="p">,</span> <span class="s2">&#34;T&#34;</span><span class="p">,</span> <span class="s2">&#34;U&#34;</span><span class="p">,</span> <span class="s2">&#34;V&#34;</span><span class="p">,</span> <span class="s2">&#34;W&#34;</span><span class="p">,</span> <span class="s2">&#34;X&#34;</span><span class="p">,</span> <span class="s2">&#34;Y&#34;</span><span class="p">,</span> <span class="s2">&#34;Z&#34;</span><span class="p">]</span>
+    <span class="n">h</span> <span class="o">=</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">))</span>   <span class="c1">#随机16个字符</span>
+    <span class="n">d</span> <span class="o">=</span><span class="s1">&#39;$d6eb7ff91ee257475%&#39;</span>   <span class="c1">#默认值</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span>       <span class="c1">#最新信息为2</span>
+    <span class="n">u</span> <span class="o">=</span><span class="s1">&#39;10&#39;</span>      <span class="c1">#每页数量</span>
+    <span class="n">page</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>   <span class="c1">#页码</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">c</span>
+    <span class="n">rs</span> <span class="o">=</span> <span class="n">h</span>
+    <span class="n">bb</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">,</span><span class="n">u</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">e</span><span class="p">,</span><span class="n">page</span><span class="p">,</span><span class="n">h</span><span class="p">]</span>
+    <span class="n">bb</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">signature</span><span class="o">=</span><span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bb</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ts</span><span class="p">,</span><span class="n">rs</span><span class="p">,</span><span class="n">signature</span>
+
+
+
+
+<span class="c1"># 确定CSV文件路径</span>
+<span class="n">csv_file_path</span> <span class="o">=</span> <span class="s1">&#39;黑猫投诉.csv&#39;</span>
+
+<span class="c1">#假设采集1-50页</span>
+<span class="n">max_page</span> <span class="o">=</span> <span class="mi">50</span>
+
+<span class="c1">#for循环， 遍历每个url，均进行访问、提取、保存</span>
+<span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_page</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="s1">&#39;采集进度&#39;</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ts</span><span class="p">,</span><span class="n">rs</span><span class="p">,</span><span class="n">signature</span> <span class="o">=</span> <span class="n">gen_rs_ts_signature</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">)</span>
+    <span class="n">page_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;https://tousu.sina.cn/api/index/feed?ts=</span><span class="si">{</span><span class="n">ts</span><span class="si">}</span><span class="s1">&amp;rs=</span><span class="si">{</span><span class="n">rs</span><span class="si">}</span><span class="s1">&amp;signature=</span><span class="si">{</span><span class="n">signature</span><span class="si">}</span><span class="s1">&amp;type=2&amp;page_size=10&amp;page=</span><span class="si">{</span><span class="n">page</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="n">page_resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">page_url</span><span class="p">,</span><span class="n">headers</span> <span class="o">=</span> <span class="n">header</span><span class="p">)</span>
+    
+
+    <span class="c1"># 创建一个标志变量，用于判断是否是第一次写入</span>
+    <span class="n">first_write</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">csv_file_path</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">complaint_card</span> <span class="ow">in</span> <span class="n">page_resp</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;result&#39;</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;lists&#39;</span><span class="p">]:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;title&#39;</span><span class="p">]</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;summary&#39;</span><span class="p">]</span> <span class="o">=</span><span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">]</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;cotitle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;cotitle&#39;</span><span class="p">]</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;appeal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;appeal&#39;</span><span class="p">]</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;issue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;issue&#39;</span><span class="p">]</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">complaint_card</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">]</span>
+        <span class="n">df_</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">data</span><span class="p">])</span>
+        
+        <span class="c1"># 写入DataFrame到CSV文件中</span>
+        <span class="k">if</span> <span class="n">first_write</span><span class="p">:</span>
+            <span class="c1"># 第一次写入时包含表头</span>
+            <span class="n">df_</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">csv_file_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="n">first_write</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># 修改标志变量为False，以便后续不再写入表头</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># 后续追加数据时不包含表头</span>
+            <span class="n">df_</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">csv_file_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+</code></pre></div><br>
+<p>代码运行结束后，我们查看下最终数据</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">final_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;黑猫投诉.csv&#39;</span><span class="p">)</span>
+<span class="n">final_df</span>
+</code></pre></div><p><img loading="lazy" src="img/06-df.jpg" alt=""  />
+</p>
+<br>
+<h2 id="下载代码">下载代码</h2>
+<p><a href="tousu-spider.py"><strong>点击下载tousu-spider.py</strong></a></p>
+<br>
+<br>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库cntext2.x使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+<li><a href="https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/">教程 | 使用大模型将文本数据转化为结构化数据</a></li>
+<li><a href="https://textdata.cn/blog/2025-03-05-consumer-complaint-dataset/">数据集| 1500w+消费者投诉数据集(2018 ~ 2024.8)</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据</title>
       <link>https://textdata.cn/blog/2024-06-16-scrapegraph-ai/</link>
