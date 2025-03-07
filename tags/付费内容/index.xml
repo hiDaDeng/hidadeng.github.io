@@ -6,7 +6,338 @@
     <description>Recent content in 付费内容 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Mon, 03 Mar 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E4%BB%98%E8%B4%B9%E5%86%85%E5%AE%B9/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 07 Mar 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E4%BB%98%E8%B4%B9%E5%86%85%E5%AE%B9/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>数据集 | 5112万条专利申请数据集(1985-2025)</title>
+      <link>https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/</link>
+      <pubDate>Fri, 07 Mar 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/</guid>
+      <description>5112万条专利申请数据集(1985-2025)</description>
+      <content:encoded><![CDATA[<h2 id="一数据介绍">一、数据介绍</h2>
+<h3 id="11-数据集概况">1.1 数据集概况</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 数据集名称：省份版知识产权局专利
+- 时间跨度：1985.1-2025.2
+- 记录条数: 5112w
+- 数据来源：『国家知识产权局』
+- 数据体积:  解压后整个文件夹大概 90 G+
+</code></pre></div><p><img loading="lazy" src="img/01-screen-datasets.png" alt=""  />
+</p>
+<br>
+<h3 id="12-字段">1.2 字段</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"> - 专利名称
+ - 专利类型
+ - 申请人
+ - 申请人类型
+ - 申请人地址
+ - 申请人国家
+ - 申请人省份
+ - 申请人城市
+ - 申请人区县
+ - 申请号
+ - 申请日
+ - 申请年份
+ - 公开公告号
+ - 公开公告日
+ - 公开公告年份
+ - 授权公告号
+ - 授权公告日
+ - 授权公告年份
+ - IPC分类号
+ - IPC主分类号
+ - 发明人
+ - 摘要文本
+ - 主权项内容
+ - 当前权利人
+ - 当前专利权人地址
+ - 专利权人类型
+ - 统一社会信用代码
+ - 引证次数
+ - 被引证次数
+ - 自引次数
+ - 他引次数
+ - 被自引次数
+ - 被他引次数
+ - 家族引证次数
+ - 家族被引证次数
+</code></pre></div><br>
+<h3 id="13-说明">1.3 说明</h3>
+<p>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-专利申请」。</p>
+<p><br><br></p>
+<h2 id="二实验代码">二、实验代码</h2>
+<h3 id="21-读取全库文件">2.1 读取全库文件</h3>
+<p>全库 <strong>中国专利数据库.csv.gz</strong> 体积 <strong>25.59G</strong>， 解压后 <em><strong>90G+</strong></em>。 大邓这里有一台内存 <em><strong>256 G</strong></em> 的服务器， 可以任性的试一试。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">mega_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;中国专利数据库.csv.gz&#39;</span><span class="p">,</span>  <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1">#mega_df = pd.read_feather(&#39;中国专利数据库.feather&#39;)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 56min 29s,
+Wall time: 1h 2min 47s
+</code></pre></div><br>
+<h3 id="22-读取技巧">2.2 读取技巧</h3>
+<p>但平常我们使用的电脑，内存大概16G~32G， 所以只能借助 pandas的一些方法巧妙的读取这个大文件， 详情可参考 <a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/"><strong>代码 | 如何用python处理超大csv文件</strong></a> 。为了后期绘制省份申请量和年度申请量这两个图，因此这里可以选择指定字段进行读取， 减少占用内存量。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;中国专利数据库.csv.gz&#39;</span><span class="p">,</span> 
+                 <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> 
+                 <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;申请人省份&#39;</span><span class="p">,</span> <span class="s1">&#39;申请日&#39;</span><span class="p">])</span>
+
+<span class="n">memory_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">/</span><span class="mi">1024</span><span class="o">/</span><span class="mi">1024</span><span class="o">/</span><span class="mi">1024</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;两字段占用内存: </span><span class="si">{</span><span class="n">memory_size</span><span class="si">}</span><span class="s1">G&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 6min 29s, sys: 13 s, total: 6min 42s
+Wall time: 6min 44s
+
+两字段占用内存: 6G
+</code></pre></div><p><img loading="lazy" src="img/02-alldf.png" alt=""  />
+</p>
+<br>
+<h3 id="23-读取省份文件">2.3 读取省份文件</h3>
+<p>数据集中的个别csv文件较大，例如 <strong>河北省.csv.gz</strong>体积528M , 解压得到的 <strong>河北省.csv</strong> 2G。 建议直接读取 <em><strong>.csv.gz</strong></em>，这样会提高数据读取的速度。 需要注意每次分析时不要开其他软件，如Word/PPT/Excel/WPS。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;河北省.csv.gz&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1">#df = pd.read_csv(&#39;河北省.csv&#39;, encoding=&#39;utf-8&#39;, low_memory=False)</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;河北省申请量: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">河北省申请量: 1048890
+</code></pre></div><p><img loading="lazy" src="img/03-df.png" alt=""  />
+</p>
+<br>
+<h3 id="24-覆盖日期">2.4 覆盖日期</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;覆盖日期: &#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">(),</span> <span class="s1">&#39;~&#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">())</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">覆盖日期:  1985-04-01 ~ 2025-01-22
+</code></pre></div><br>
+<h3 id="25-字段">2.5 字段</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Index([&#39;专利名称&#39;, &#39;专利类型&#39;, &#39;申请人&#39;, &#39;申请人类型&#39;, &#39;申请人地址&#39;, &#39;申请人国家&#39;, &#39;申请人省份&#39;, &#39;申请人城市&#39;,
+       &#39;申请人区县&#39;, &#39;申请号&#39;, &#39;申请日&#39;, &#39;申请年份&#39;, &#39;公开公告号&#39;, &#39;公开公告日&#39;, &#39;公开公告年份&#39;, &#39;授权公告号&#39;,
+       &#39;授权公告日&#39;, &#39;授权公告年份&#39;, &#39;IPC分类号&#39;, &#39;IPC主分类号&#39;, &#39;发明人&#39;, &#39;摘要文本&#39;, &#39;主权项内容&#39;, &#39;当前权利人&#39;,
+       &#39;当前专利权人地址&#39;, &#39;专利权人类型&#39;, &#39;统一社会信用代码&#39;, &#39;引证次数&#39;, &#39;被引证次数&#39;, &#39;自引次数&#39;, &#39;他引次数&#39;,
+       &#39;被自引次数&#39;, &#39;被他引次数&#39;, &#39;家族引证次数&#39;, &#39;家族被引证次数&#39;],
+      dtype=&#39;object&#39;)
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">专利类型
+实用新型    480822
+发明申请    319386
+外观设计    166560
+发明授权     82122
+Name: count, dtype: int64
+</code></pre></div><p><br><br></p>
+<h2 id="三字段详情">三、字段详情</h2>
+<h3 id="31-字段缺失程度">3.1 字段缺失程度</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">missingno</span> <span class="k">as</span> <span class="nn">ms</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+
+<span class="c1"># 根据操作系统设置字体</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;font.family&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;SimHei&#39;</span> <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;Windows&#39;</span> <span class="k">else</span> <span class="s1">&#39;Arial Unicode MS&#39;</span> <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;Darwin&#39;</span> <span class="k">else</span> <span class="s1">&#39;sans-serif&#39;</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.unicode_minus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># 解决负号显示问题</span>
+
+<span class="c1"># 绘制缺失值矩阵图</span>
+<span class="n">ms</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">dff</span><span class="p">)</span>
+
+<span class="c1"># 显示图表</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/04-nan.png" alt=""  />
+</p>
+<br>
+<h3 id="32-专利类型">3.2 专利类型</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df[&#39;专利类型&#39;].unique()
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([&#39;发明申请&#39;, &#39;实用新型&#39;, &#39;发明授权&#39;, &#39;外观设计&#39;], dtype=object)
+</code></pre></div><br>
+<h3 id="32-发明人">3.2 发明人</h3>
+<p>发明人一般是自然人，但是极少数情况也可以是法人。发明人可以是多个自然人，一般以  <code>; </code>间隔</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df[&#39;发明人&#39;]
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0                            柴秀芬
+1                            秋海滨
+2                            葛长虹
+3                       孙盛典; 申富德
+4                       马建维; 邢建军
+                   ...          
+1048885             何治东; 刘应梁; 王琴
+1048886                 邢维鹏; 王春良
+1048887                 张正东; 张宏彬
+1048888    张岩鑫; 韩静; 王宏建; 麻俐; 马东泽
+1048889        储焰平; 薛志涛; 袁晓峰; 黄博
+Name: 发明人, Length: 1048890, dtype: object
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#整个河北省，只有这2条记录是发明人是公司法人</span>
+<span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;发明人&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;公司&#39;</span><span class="p">)][[</span><span class="s1">&#39;申请号&#39;</span><span class="p">,</span> <span class="s1">&#39;专利名称&#39;</span><span class="p">,</span> <span class="s1">&#39;申请人类型&#39;</span><span class="p">,</span> <span class="s1">&#39;摘要文本&#39;</span><span class="p">,</span> <span class="s1">&#39;发明人&#39;</span><span class="p">,</span> <span class="s1">&#39;申请人&#39;</span><span class="p">]]</span>
+</code></pre></div><p><img loading="lazy" src="img/05-df.png" alt=""  />
+</p>
+<br>
+<h3 id="33-申请人">3.3 申请人</h3>
+<p>注意，申请人可以是自然人、法人、多个(自然人、法人),  一般以  <code>; </code>间隔。我们先直接看 <code>申请人</code></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请人&#39;</span><span class="p">]</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0                       柴秀芬
+1                       秋海滨
+2                       葛长虹
+3                  孙盛典; 申富德
+4                  马建维; 邢建军
+                 ...       
+1048885    昆明浩淼水利水电工程检测有限公司
+1048886      海南紫程众投生物科技有限公司
+1048887     泸西县宏达农业发展有限责任公司
+1048888       辽宁省德明环境检测有限公司
+1048889        中冶南方工程技术有限公司
+Name: 申请人, Length: 1048890, dtype: object
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#河北省，【申请人类型】大多数是企业</span>
+<span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请人&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;公司&#39;</span><span class="p">)][[</span><span class="s1">&#39;申请号&#39;</span><span class="p">,</span> <span class="s1">&#39;专利名称&#39;</span><span class="p">,</span> <span class="s1">&#39;申请人类型&#39;</span><span class="p">,</span> <span class="s1">&#39;摘要文本&#39;</span><span class="p">,</span> <span class="s1">&#39;发明人&#39;</span><span class="p">,</span> <span class="s1">&#39;申请人&#39;</span><span class="p">]]</span>
+</code></pre></div><p><img loading="lazy" src="img/06-df.png" alt=""  />
+</p>
+<br>
+<h3 id="34-ipc分类号">3.4 IPC分类号</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">dff[[&#39;专利名称&#39;, &#39;主权项内容&#39;, &#39;IPC主分类号&#39;, &#39;IPC分类号&#39;]]
+</code></pre></div><p><img loading="lazy" src="img/07-df.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="四可视化">四、可视化</h2>
+<h3 id="41-省份">4.1 省份</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">plotnine</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">matplotlib.font_manager</span> <span class="kn">import</span> <span class="n">FontProperties</span>
+
+<span class="n">font_prop</span> <span class="o">=</span> <span class="n">FontProperties</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s1">&#39;文泉驿微米黑.ttf&#39;</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;中国专利数据库.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;申请人省份&#39;</span><span class="p">])</span>
+<span class="n">prov_volumes_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;申请人省份&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;申请数量&#39;</span><span class="p">)</span>
+<span class="n">prov_volumes_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;申请数量&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="c1"># 转换为分类变量并保持原始顺序</span>
+<span class="n">prov_volumes_df</span><span class="p">[</span><span class="s1">&#39;申请人省份&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span>
+    <span class="n">prov_volumes_df</span><span class="p">[</span><span class="s1">&#39;申请人省份&#39;</span><span class="p">],</span>
+    <span class="n">categories</span><span class="o">=</span><span class="n">prov_volumes_df</span><span class="p">[</span><span class="s1">&#39;申请人省份&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">(),</span>
+    <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="p">(</span>
+    <span class="n">ggplot</span><span class="p">(</span><span class="n">prov_volumes_df</span><span class="p">,</span> <span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;申请人省份&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;申请数量&#39;</span><span class="p">))</span>
+    <span class="o">+</span><span class="n">geom_bar</span><span class="p">(</span><span class="n">stat</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">)</span>
+    <span class="o">+</span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;省份专利申请量(1985-2025)&#39;</span><span class="p">,</span>
+         <span class="n">x</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+         <span class="n">y</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="o">+</span><span class="n">geom_text</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;申请数量&#39;</span><span class="p">),</span>
+               <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span>
+               <span class="n">size</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span>
+               <span class="n">format_string</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="o">+</span> <span class="n">annotate</span><span class="p">(</span>
+        <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span> <span class="s1">&#39;新疆维吾尔自治区&#39;</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span> <span class="n">prov_volumes_df</span><span class="p">[</span><span class="s1">&#39;申请数量&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.05</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s1">&#39;公众号: 大邓和他的Python&#39;</span><span class="p">,</span>
+        <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+        <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">+</span><span class="n">theme</span><span class="p">(</span><span class="n">figure_size</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+           <span class="n">text</span><span class="o">=</span><span class="n">element_text</span><span class="p">(</span><span class="n">family</span><span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span> <span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+           <span class="n">plot_title</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+           <span class="n">axis_text_x</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">)</span>
+          <span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 8min 19s,
+Wall time: 8min 44s
+</code></pre></div><p><img loading="lazy" src="img/08-prov.png" alt=""  />
+</p>
+<br>
+<h3 id="42-年份">4.2 年份</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">plotnine</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">matplotlib.font_manager</span> <span class="kn">import</span> <span class="n">FontProperties</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="n">font_prop</span> <span class="o">=</span> <span class="n">FontProperties</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s1">&#39;文泉驿微米黑.ttf&#39;</span><span class="p">)</span>
+
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;中国专利数据库.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">])</span>
+
+<span class="n">date_df</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.0&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)))</span>
+    <span class="o">.</span><span class="n">size</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;申请日&#39;</span><span class="p">:</span> <span class="s1">&#39;year&#39;</span><span class="p">})</span>
+<span class="p">)</span>
+
+<span class="n">date_df</span> <span class="o">=</span> <span class="n">date_df</span><span class="p">[</span><span class="n">date_df</span><span class="o">.</span><span class="n">year</span><span class="o">!=</span><span class="s1">&#39;nan&#39;</span><span class="p">]</span>
+<span class="n">date_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># 转换为分类变量并保持原始顺序</span>
+<span class="n">date_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span>
+    <span class="n">date_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">],</span>
+    <span class="n">categories</span><span class="o">=</span><span class="n">yc_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">(),</span>
+    <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+
+
+<span class="p">(</span>
+    <span class="n">ggplot</span><span class="p">(</span><span class="n">date_df</span><span class="p">,</span> <span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">))</span>
+    <span class="o">+</span><span class="n">geom_bar</span><span class="p">(</span><span class="n">stat</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">)</span>
+    <span class="o">+</span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;专利年度申请量(1985-2025.1)&#39;</span><span class="p">,</span>
+         <span class="n">x</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+         <span class="n">y</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="o">+</span><span class="n">geom_text</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">),</span>
+               <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span>
+               <span class="n">size</span><span class="o">=</span><span class="mf">4.1</span><span class="p">,</span>
+               <span class="n">format_string</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="o">+</span> <span class="n">annotate</span><span class="p">(</span>
+        <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span> <span class="n">date_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span>
+        <span class="n">y</span><span class="o">=</span> <span class="n">date_df</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.05</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s1">&#39;公众号: 大邓和他的Python&#39;</span><span class="p">,</span>
+        <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+        <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">+</span><span class="n">theme</span><span class="p">(</span><span class="n">figure_size</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+           <span class="n">text</span><span class="o">=</span><span class="n">element_text</span><span class="p">(</span><span class="n">family</span><span class="o">=</span> <span class="n">font_prop</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span> <span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+           <span class="n">plot_title</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+           <span class="n">axis_text_x</span> <span class="o">=</span> <span class="n">element_text</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+          <span class="p">)</span>
+    <span class="c1"># 显式指定坐标轴顺序（可选但保险）</span>
+    <span class="o">+</span> <span class="n">scale_x_discrete</span><span class="p">(</span><span class="n">limits</span><span class="o">=</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1985</span><span class="p">,</span> <span class="mi">2026</span><span class="p">)])</span>
+<span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 7min 44s,
+Wall time: 8min 10s
+</code></pre></div><p><img loading="lazy" src="img/09-date.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="五相关文献">五、相关文献</h2>
+<p>使用专利数据做研究的文献</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[1]Bellstam, Gustaf, Sanjai Bhagat, and J. Anthony Cookson. &#34;A text-based analysis of corporate innovation.&#34; _Management Science_ 67, no. 7 (2021): 4004-4031.
+[2]Arts, Sam, Bruno Cassiman, and Jianan Hou. &#34;Position and Differentiation of Firms in Technology Space.&#34; Management Science (2023).
+</code></pre></div><p><br><br></p>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+<li><a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/">推荐 | 如何处理远超电脑内存的csv文件</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>数据集 | 4628w条全球手机蜂窝基站数据(2006~2024.5)</title>
       <link>https://textdata.cn/blog/2025-03-03-global-cell-towers-dataset/</link>
@@ -2981,377 +3312,6 @@ Name: 国际申请, Length: 357881, dtype: object
 <li>同主体不同时间段， 文本中蕴含的文化态度认知变迁，</li>
 <li>或同时间段，不同主体的大样本文本蕴含的差异性</li>
 </ul>
-<p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
-]]></content:encoded>
-    </item>
-    
-    <item>
-      <title>数据集 | 3571万条专利申请数据集(1985-2022年)</title>
-      <link>https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/</link>
-      <pubDate>Thu, 13 Apr 2023 00:00:00 +0000</pubDate>
-      
-      <guid>/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/</guid>
-      <description>3571万专利申请全量数据(1985-2022年)数据</description>
-      <content:encoded><![CDATA[<h2 id="一数据介绍">一、数据介绍</h2>
-<h3 id="11-数据集概况">1.1 数据集概况</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 数据集名称：省份版知识产权局专利
-- 时间跨度：1985.1-2022.5，专利申请总量约3571万
-- 数据来源：『国家知识产权局』
-- 解压后整个文件夹大概 20 G。 
-</code></pre></div><br>
-<h3 id="12-说明">1.2 说明</h3>
-<p>科研用途；需要的请加微信 372335839， 备注「姓名-学校-专业-专利申请」。</p>
-<p><img loading="lazy" src="img/screen-datasets2.png" alt=""  />
-</p>
-<h3 id="13-分省统计">1.3 分省统计</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">| 省份(区域)       |  专利数  |
-| :---------------| :------ |
-| 广东省           | 5728705 |
-| 江苏省           | 4879171 |
-| 浙江省           | 3706820 |
-| 山东省           | 2064446 |
-| 北京市           | 2069913 |
-| 四川省           | 1159551 |
-| 天津市           | 712932  |
-| 上海市           | 1548278 |
-| 贵州省           | 265512  |
-| 陕西省           | 655837  |
-| 吉林省           | 232264  |
-| 辽宁省           | 637853  |
-| 湖北省           | 966384  |
-| 山西省           | 233418  |
-| 宁夏回族自治区    | 66919   |
-| 西藏自治区        | 9911    |
-| 广西壮族自治区    | 377658  |
-| 江西省           | 519584  |
-| 湖南省           | 743828  |
-| 黑龙江省         | 357881  |
-| 海南省           | 59202   |
-| 福建省           | 1046473 |
-| 安徽省           | 1342364 |
-| 河北省           | 645420  |
-| 重庆市           | 592382  |
-| 内蒙古自治区      | 133277  |
-| 云南省           | 252407  |
-| 甘肃省           | 164274  |
-| 新疆维吾尔自治区   | 124734  |
-| 河南省           | 966477  |
-| 青海省           | 34127   |
-| 台湾省           | 401555  |
-| 香港特别行政区    | 61636   |
-| 澳门特别行政区    | 2010    |
-| 其他国家         | 2948557 |
-</code></pre></div><br>
-<h3 id="14-字段">1.4 字段</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"> -  专利公开号
- -  专利名称
- -  专利类型
- -  专利摘要
- -  申请人(自然人、法人；可以是多个主题并列，用;间隔申请人主体)
- -  专利申请号
- -  申请日
- -  申请公布日
- -  授权公布号
- -  授权公布日
- -  申请地址
- -  主权项
- -  发明人
- -  分类号
- -  主分类号
- -  代理机构
- -  分案原申请号
- -  优先权
- -  国际申请
- -  国际公布
- -  代理人
- -  省份或国家代码
- -  法律状态
- -  专利领域
- -  专利学科
- -  多次公布
-</code></pre></div><p><br><br></p>
-<h2 id="二实验代码">二、实验代码</h2>
-<h3 id="21-读取数据">2.1 读取数据</h3>
-<p>数据集中的个别csv文件较大，例如 <strong>广东省.csv.gz</strong>体积2.47 G , 解压得到的 <strong>广东省.csv</strong> 10G。 建议直接读取 <em><strong>.csv.gz</strong></em>，这样会节省内存消耗。需要注意每次分析时不要开其他软件，如Word/PPT/Excel/WPS。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;河北省.csv.gz&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="c1">#df = pd.read_csv(&#39;河北省.csv&#39;, encoding=&#39;utf-8&#39;, low_memory=False)</span>
-
-<span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">])</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p>Run
-<img loading="lazy" src="img/df.png" alt=""  />
-</p>
-<br>
-<h3 id="22-记录数">2.2 记录数</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;河北省: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">河北省: 645420
-</code></pre></div><br>
-<h3 id="2-3-覆盖日期">2. 3 覆盖日期</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1985-01-28 00:00:00
-2022-05-24 00:00:00
-</code></pre></div><br>
-<h3 id="24-字段">2.4 字段</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Index([&#39;专利公开号&#39;, &#39;专利名称&#39;, &#39;专利类型&#39;, &#39;专利摘要&#39;, 
-&#39;申请人&#39;, &#39;专利申请号&#39;, &#39;申请日&#39;, &#39;申请公布日&#39;, 
-&#39;授权公布号&#39;, &#39;授权公布日&#39;, &#39;申请地址&#39;, &#39;主权项&#39;, &#39;发明人&#39;,
-&#39;分类号&#39;, &#39;主分类号&#39;, &#39;代理机构&#39;, &#39;分案原申请号&#39;, &#39;优先权&#39;, 
-&#39;国际申请&#39;, &#39;国际公布&#39;, &#39;代理人&#39;, &#39;省份或国家代码&#39;,
-&#39;法律状态&#39;, &#39;专利领域&#39;, &#39;专利学科&#39;, &#39;多次公布&#39;],
-dtype=&#39;object&#39;)
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">实用新型 361832
-发明公开 155084
-外观设计 107905
-发明授权 20599
-</code></pre></div><p><br><br></p>
-<h2 id="三查看字段详情">三、查看字段详情</h2>
-<p>每个字段都含哪些信息</p>
-<h3 id="31-专利类型">3.1 专利类型</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df[&#39;专利类型&#39;].unique()
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([&#39;外观设计&#39;, &#39;实用新型&#39;, &#39;发明公开&#39;, &#39;发明授权&#39;], dtype=object)
-专利领域
-</code></pre></div><br>
-<h3 id="32-发明人">3.2 发明人</h3>
-<p>发明人一般是自然人，但是极少数情况也可以是法人。发明人可以是多个自然人，一般以  <code>; </code>间隔</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df[&#39;发明人&#39;]
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0                              温绍强
-1                              谭红建
-2                              梁京京
-3                              谭达兴
-4                         魏国兴; 陈定祥
-                    ...           
-5728700                        邓晓明
-5728701                        杨峰铭
-5728702    赵富荣; 彭新春; 秦何军; 黄领才; 陈立伟
-5728703                   周燕莉; 卢建兰
-5728704                        曾文华
-Name: 发明人, Length: 5728705, dtype: object
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#整个广东省，只有这几个专利是法人发明</span>
-<span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;发明人&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;公司&#39;</span><span class="p">)][[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">,</span> <span class="s1">&#39;发明人&#39;</span><span class="p">]]</span>
-</code></pre></div><p><img loading="lazy" src="img/df3.png" alt=""  />
-</p>
-<br>
-<h3 id="33-申请人">3.3 申请人</h3>
-<p>注意，申请人可以是自然人、法人、多个(自然人、法人),  一般以  <code>; </code>间隔。我们先直接看 <code>申请人</code></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请人&#39;</span><span class="p">]</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0                      温绍强
-1          台山市国际交通器材配件有限公司
-2            深圳市时代设计印务有限公司
-3           东莞高端精密电子股份有限公司
-4           东莞凤岗嘉安塑胶五金有限公司
-                ...       
-5728700     佛山肯富来安德里兹泵有限公司
-5728701        东莞全方位傢俱有限公司
-5728702        中航通飞研究院有限公司
-5728703         南方医科大学南方医院
-5728704    深圳市金键精密五金制品有限公司
-Name: 申请人, Length: 5728705, dtype: object
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;申请人&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)][[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">,</span> <span class="s1">&#39;申请人&#39;</span><span class="p">]]</span>
-</code></pre></div><p><img loading="lazy" src="img/df4.png" alt=""  />
-</p>
-<br>
-<h3 id="34-分类号">3.4 分类号</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;分类号&#39;</span><span class="p">]</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0                                                 08-06
-1                                                 12-16
-2                                              B65D6/14
-3                                   H01R13/40;H01R13/02
-4          B65C9/02;B65C9/40;B65C9/26;B07C5/34;B07C5/36
-                               ...                     
-5728700                                           15-02
-5728701                                           06-03
-5728702                                       B64C35/00
-5728703                                       A61G7/053
-5728704                               F16B5/00;F16B5/10
-Name: 分类号, Length: 5728705, dtype: object
-</code></pre></div><br>
-<h3 id="35-主分类号">3.5 主分类号</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df[&#39;主分类号&#39;]
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0              08-06
-1              12-16
-2           B65D6/14
-3          H01R13/40
-4           B65C9/02
-             ...    
-5728700        15-02
-5728701        06-03
-5728702    B64C35/00
-5728703    A61G7/053
-5728704     F16B5/00
-Name: 主分类号, Length: 5728705, dtype: object
-</code></pre></div><br>
-<h3 id="36-专利领域">3.6 专利领域</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df[&#39;专利领域&#39;]
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0                  工程科技Ⅰ辑
-1                  工程科技Ⅱ辑
-2                  工程科技Ⅱ辑
-3                  工程科技Ⅱ辑
-4                  工程科技Ⅱ辑
-                ...      
-5728700            工程科技Ⅱ辑
-5728701            工程科技Ⅰ辑
-5728702            工程科技Ⅱ辑
-5728703    医药卫生科技; 工程科技Ⅱ辑
-5728704            工程科技Ⅱ辑
-Name: 专利领域, Length: 5728705, dtype: object
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">df[&#39;专利领域&#39;].unique()
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([&#39;工程科技Ⅰ辑&#39;, &#39;工程科技Ⅱ辑&#39;, &#39;农业科技&#39;, &#39;医药卫生科技&#39;, &#39;医药卫生科技; 工程科技Ⅱ辑&#39;, &#39;信息科技&#39;,
-       &#39;工程科技Ⅱ辑; 信息科技&#39;, &#39;工程科技Ⅰ辑; 工程科技Ⅱ辑&#39;, &#39;工程科技Ⅱ辑; 工程科技Ⅰ辑&#39;,
-       &#39;工程科技Ⅱ辑; 医药卫生科技&#39;, &#39;基础科学&#39;, &#39;社会科学Ⅱ辑&#39;, &#39;基础科学; 信息科技&#39;, &#39;信息科技; 工程科技Ⅰ辑&#39;,
-       &#39;工程科技Ⅰ辑; 信息科技&#39;, &#39;基础科学; 工程科技Ⅰ辑&#39;, &#39;工程科技Ⅰ辑; 农业科技&#39;, &#39;工程科技Ⅰ辑; 医药卫生科技&#39;,
-       &#39;农业科技; 工程科技Ⅰ辑&#39;, &#39;工程科技Ⅱ辑; 哲学与人文科学&#39;], dtype=object)
-</code></pre></div><br>
-<h3 id="37-专利学科">3.7 专利学科</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利学科&#39;</span><span class="p">]</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0                                   轻工业手工业
-1                                     汽车工业
-2                                工业通用技术及设备
-3                                     电力工业
-4                                工业通用技术及设备
-                        ...               
-5728700                               机械工业
-5728701                             轻工业手工业
-5728702                          航空航天科学与工程
-5728703    医药卫生方针政策与法律法规研究; 生物医学工程; 仪器仪表工业
-5728704                               机械工业
-Name: 专利学科, Length: 5728705, dtype: object
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">array</span><span class="p">([</span><span class="s1">&#39;轻工业手工业&#39;</span><span class="p">,</span> <span class="s1">&#39;汽车工业&#39;</span><span class="p">,</span> <span class="s1">&#39;工业通用技术及设备&#39;</span><span class="p">,</span> <span class="s1">&#39;电力工业&#39;</span><span class="p">,</span> <span class="s1">&#39;园艺&#39;</span><span class="p">,</span> <span class="s1">&#39;机械工业&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;医药卫生方针政策与法律法规研究; 中医学&#39;</span><span class="p">,</span> <span class="s1">&#39;医药卫生方针政策与法律法规研究; 生物医学工程; 仪器仪表工业&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;金属学及金属工艺&#39;</span><span class="p">,</span> <span class="s1">&#39;电信技术&#39;</span><span class="p">,</span> <span class="s1">&#39;外科学&#39;</span><span class="p">,</span> <span class="s1">&#39;无线电电子学&#39;</span><span class="p">,</span> <span class="s1">&#39;建筑科学与工程&#39;</span><span class="p">,</span> <span class="s1">&#39;船舶工业&#39;</span><span class="p">,</span> <span class="s1">&#39;材料科学&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;仪器仪表工业&#39;</span><span class="p">,</span> <span class="s1">&#39;动力工程&#39;</span><span class="p">,</span> <span class="s1">&#39;生物医学工程&#39;</span><span class="p">,</span> <span class="s1">&#39;一般服务业&#39;</span><span class="p">,</span> <span class="s1">&#39;有机化工&#39;</span><span class="p">,</span> <span class="s1">&#39;水产和渔业&#39;</span><span class="p">,</span> <span class="s1">&#39;自动化技术&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;有机化工; 无机化工&#39;</span><span class="p">,</span> <span class="s1">&#39;武器工业与军事技术&#39;</span><span class="p">,</span> <span class="s1">&#39;计算机硬件技术&#39;</span><span class="p">,</span> <span class="s1">&#39;工业通用技术及设备; 电信技术&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;环境科学与资源利用&#39;</span><span class="p">,</span> <span class="s1">&#39;水利水电工程&#39;</span><span class="p">,</span> <span class="s1">&#39;一般化学工业&#39;</span><span class="p">,</span> <span class="s1">&#39;公路与水路运输&#39;</span><span class="p">,</span> <span class="s1">&#39;有机化工; 无机化工; 矿业工程&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;眼科与耳鼻咽喉科&#39;</span><span class="p">,</span> <span class="s1">&#39;口腔科学&#39;</span><span class="p">,</span> <span class="s1">&#39;园艺; 林业&#39;</span><span class="p">,</span> <span class="s1">&#39;新能源&#39;</span><span class="p">,</span> <span class="s1">&#39;无机化工&#39;</span><span class="p">,</span> <span class="s1">&#39;无机化工; 有机化工&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;临床医学; 生物医学工程&#39;</span><span class="p">,</span> <span class="s1">&#39;有机化工; 无机化工; 工业通用技术及设备&#39;</span><span class="p">,</span> <span class="s1">&#39;生物医学工程; 仪器仪表工业&#39;</span><span class="p">,</span> <span class="s1">&#39;化学&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;航空航天科学与工程&#39;</span><span class="p">,</span> <span class="s1">&#39;畜牧与动物医学&#39;</span><span class="p">,</span> <span class="s1">&#39;农业工程; 畜牧与动物医学&#39;</span><span class="p">,</span> <span class="s1">&#39;临床医学&#39;</span><span class="p">,</span> <span class="s1">&#39;轻工业手工业; 仪器仪表工业&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;计算机软件及计算机应用&#39;</span><span class="p">,</span> <span class="s1">&#39;蚕蜂与野生动物保护; 农业工程&#39;</span><span class="p">,</span> <span class="s1">&#39;农业工程&#39;</span><span class="p">,</span> <span class="s1">&#39;中医学&#39;</span><span class="p">,</span> <span class="s1">&#39;有机化工; 矿业工程&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;建筑科学与工程; 环境科学与资源利用&#39;</span><span class="p">,</span> <span class="s1">&#39;仪器仪表工业; 医药卫生方针政策与法律法规研究; 生物医学工程&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;建筑科学与工程; 公路与水路运输&#39;</span><span class="p">,</span> <span class="s1">&#39;矿业工程&#39;</span><span class="p">,</span> <span class="s1">&#39;药学&#39;</span><span class="p">,</span> <span class="s1">&#39;安全科学与灾害防治&#39;</span><span class="p">,</span> <span class="s1">&#39;农艺学&#39;</span><span class="p">,</span> <span class="s1">&#39;化学; 无机化工&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;冶金工业&#39;</span><span class="p">,</span> <span class="s1">&#39;核科学技术&#39;</span><span class="p">,</span> <span class="s1">&#39;铁路运输; 公路与水路运输&#39;</span><span class="p">,</span> <span class="s1">&#39;泌尿科学&#39;</span><span class="p">,</span> <span class="s1">&#39;外科学; 生物医学工程&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;蚕蜂与野生动物保护&#39;</span><span class="p">,</span> <span class="s1">&#39;医药卫生方针政策与法律法规研究&#39;</span><span class="p">,</span> <span class="s1">&#39;物理学&#39;</span><span class="p">,</span> <span class="s1">&#39;工业通用技术及设备; 机械工业&#39;</span><span class="p">,</span> <span class="s1">&#39;铁路运输&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;体育&#39;</span><span class="p">,</span> <span class="s1">&#39;预防医学与卫生学; 生物医学工程&#39;</span><span class="p">,</span> <span class="s1">&#39;物理学; 无线电电子学&#39;</span><span class="p">,</span> <span class="s1">&#39;预防医学与卫生学&#39;</span><span class="p">,</span> <span class="s1">&#39;植物保护&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;呼吸系统疾病&#39;</span><span class="p">,</span> <span class="s1">&#39;无线电电子学; 轻工业手工业&#39;</span><span class="p">,</span> <span class="s1">&#39;畜牧与动物医学; 水产和渔业&#39;</span><span class="p">,</span> <span class="s1">&#39;气象学&#39;</span><span class="p">,</span> <span class="s1">&#39;特种医学&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;消化系统疾病&#39;</span><span class="p">,</span> <span class="s1">&#39;无机化工; 有机化工; 工业通用技术及设备&#39;</span><span class="p">,</span> <span class="s1">&#39;农业基础科学&#39;</span><span class="p">,</span> <span class="s1">&#39;金属学及金属工艺; 轻工业手工业&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;水产和渔业; 畜牧与动物医学&#39;</span><span class="p">,</span> <span class="s1">&#39;燃料化工&#39;</span><span class="p">,</span> <span class="s1">&#39;林业&#39;</span><span class="p">,</span> <span class="s1">&#39;生物学&#39;</span><span class="p">,</span> <span class="s1">&#39;轻工业手工业; 出版&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;医药卫生方针政策与法律法规研究; 生物医学工程&#39;</span><span class="p">,</span> <span class="s1">&#39;有机化工; 轻工业手工业&#39;</span><span class="p">,</span> <span class="s1">&#39;公路与水路运输; 矿业工程&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;轻工业手工业; 计算机硬件技术&#39;</span><span class="p">,</span> <span class="s1">&#39;地质学&#39;</span><span class="p">,</span> <span class="s1">&#39;海洋学&#39;</span><span class="p">,</span> <span class="s1">&#39;地质学; 石油天然气工业&#39;</span><span class="p">,</span> <span class="s1">&#39;公路与水路运输; 铁路运输&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;有机化工; 化学&#39;</span><span class="p">,</span> <span class="s1">&#39;特种医学; 生物医学工程&#39;</span><span class="p">,</span> <span class="s1">&#39;自然地理学和测绘学&#39;</span><span class="p">,</span> <span class="s1">&#39;轻工业手工业; 林业&#39;</span><span class="p">,</span> <span class="s1">&#39;中药学&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;一般化学工业; 轻工业手工业&#39;</span><span class="p">,</span> <span class="s1">&#39;妇产科学&#39;</span><span class="p">,</span> <span class="s1">&#39;中西医结合&#39;</span><span class="p">,</span> <span class="s1">&#39;临床医学; 特种医学&#39;</span><span class="p">,</span> <span class="s1">&#39;燃料化工; 轻工业手工业&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;地球物理学&#39;</span><span class="p">,</span> <span class="s1">&#39;化学; 有机化工&#39;</span><span class="p">,</span> <span class="s1">&#39;公路与水路运输; 建筑科学与工程&#39;</span><span class="p">,</span> <span class="s1">&#39;轻工业手工业; 水产和渔业&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;石油天然气工业&#39;</span><span class="p">,</span> <span class="s1">&#39;眼科与耳鼻咽喉科; 口腔科学&#39;</span><span class="p">,</span> <span class="s1">&#39;肿瘤学&#39;</span><span class="p">,</span> <span class="s1">&#39;环境科学与资源利用; 建筑科学与工程&#39;</span><span class="p">,</span> <span class="s1">&#39;基础医学&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;急救医学&#39;</span><span class="p">,</span> <span class="s1">&#39;仪器仪表工业; 生物医学工程&#39;</span><span class="p">,</span> <span class="s1">&#39;心血管系统疾病&#39;</span><span class="p">,</span> <span class="s1">&#39;互联网技术&#39;</span><span class="p">,</span> <span class="s1">&#39;矿业工程; 公路与水路运输&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;农作物&#39;</span><span class="p">,</span> <span class="s1">&#39;公路与水路运输; 水利水电工程&#39;</span><span class="p">,</span> <span class="s1">&#39;水利水电工程; 电力工业&#39;</span><span class="p">,</span> <span class="s1">&#39;畜牧与动物医学; 农业工程&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;材料科学; 生物医学工程&#39;</span><span class="p">,</span> <span class="s1">&#39;安全科学与灾害防治; 建筑科学与工程&#39;</span><span class="p">,</span> <span class="s1">&#39;植物保护; 农艺学&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;轻工业手工业; 一般化学工业&#39;</span><span class="p">,</span> <span class="s1">&#39;消化系统疾病; 外科学&#39;</span><span class="p">,</span> <span class="s1">&#39;水产和渔业; 轻工业手工业&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;建筑科学与工程; 安全科学与灾害防治&#39;</span><span class="p">,</span> <span class="s1">&#39;农作物; 园艺&#39;</span><span class="p">,</span> <span class="s1">&#39;急救医学; 生物医学工程&#39;</span><span class="p">,</span> <span class="s1">&#39;水利水电工程; 公路与水路运输&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;皮肤病与性病&#39;</span><span class="p">,</span> <span class="s1">&#39;工业通用技术及设备; 戏剧电影与电视艺术&#39;</span><span class="p">,</span> <span class="s1">&#39;眼科与耳鼻咽喉科; 生物医学工程&#39;</span><span class="p">,</span> <span class="s1">&#39;人才学与劳动科学&#39;</span><span class="p">,</span>
-       <span class="s1">&#39;外科学; 口腔科学; 生物医学工程&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
-</code></pre></div><p><br><br></p>
-<h2 id="四可视化">四、可视化</h2>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="c1">#为减轻内存压力，可以选择需要的字段读取</span>
-<span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">,</span> <span class="s1">&#39;授权公布日&#39;</span><span class="p">]</span>
-
-<span class="c1">#读取数据</span>
-<span class="n">guangdong_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;广东省.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">jiangsu_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;江苏省.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">shandong_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;山东省.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">zhejiang_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;浙江省.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">beijing_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;北京市.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">shanghai_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;上海市.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-<span class="c1">#显示前5行</span>
-<span class="n">shanghai_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-</code></pre></div><p><img loading="lazy" src="img/df2.png" alt=""  />
-</p>
-<br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="kn">import</span> <span class="nn">matplotlib_inline</span>
-<span class="n">matplotlib_inline</span><span class="o">.</span><span class="n">backend_inline</span><span class="o">.</span><span class="n">set_matplotlib_formats</span><span class="p">(</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="s1">&#39;svg&#39;</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">scienceplots</span>
-<span class="kn">import</span> <span class="nn">platform</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">([</span><span class="s1">&#39;science&#39;</span><span class="p">,</span> <span class="s1">&#39;no-latex&#39;</span><span class="p">,</span> <span class="s1">&#39;cjk-sc-font&#39;</span><span class="p">])</span>
-<span class="n">system</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>  <span class="c1"># 获取操作系统类型</span>
-
-<span class="k">if</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Windows&#39;</span><span class="p">:</span>
-    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;SimHei&#39;</span><span class="p">}</span>
-<span class="k">elif</span> <span class="n">system</span> <span class="o">==</span> <span class="s1">&#39;Darwin&#39;</span><span class="p">:</span>
-    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;Arial Unicode MS&#39;</span><span class="p">}</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">font</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;sans-serif&#39;</span><span class="p">}</span>
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">font</span><span class="p">)</span>  <span class="c1"># 设置全局字体</span>
-    
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
-<span class="n">years</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">2020</span><span class="p">)]</span>
-
-
-<span class="n">guangdong_df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">years</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;广东&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">jiangsu_df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">years</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;江苏&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">zhejiang_df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">years</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;浙江&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">shandong_df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">years</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;山东&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">beijing_df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">years</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;北京&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">shanghai_df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">years</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;上海&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">hebei_df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">years</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;河北&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-
-
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;七省市专利申请量(2000年-2019年)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;年份(按申请日统计)&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;申请量&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>    
-</code></pre></div><p><img loading="lazy" src="img/output_7_0.png" alt=""  />
-</p>
-<ul>
-<li>
-<p>2012年， 申请量开始下降， 直至2014年，触底反弹。这个时期国内外宏观经济发生了什么？</p>
-</li>
-<li>
-<p>不考虑人口规模， 在专利申请量可以看出广东、江苏、浙江体量还是比北京、上海、河北要高的。</p>
-</li>
-<li>
-<p>2015年开始， 广东触底反弹后， 拉开了与江苏、浙江的体量。</p>
-</li>
-</ul>
-<p><br><br></p>
-<h2 id="五相关文献">五、相关文献</h2>
-<p>使用专利数据做研究的文献</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[1]Bellstam, Gustaf, Sanjai Bhagat, and J. Anthony Cookson. &#34;A text-based analysis of corporate innovation.&#34; _Management Science_ 67, no. 7 (2021): 4004-4031.
-[2]Arts, Sam, Bruno Cassiman, and Jianan Hou. &#34;Position and Differentiation of Firms in Technology Space.&#34; Management Science (2023).
-</code></pre></div><p><br><br></p>
-<h2 id="相关推文">相关推文</h2>
-<p><a href="https://textdata.cn/blog/2023-04-26-matching-listed-corporate-with-patent-dataset/">从3571w条专利数据集「匹配」上市公司的专利信息</a></p>
-<p><a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/">推荐 | 如何处理远超电脑内存的csv文件</a></p>
 <p><br><br></p>
 <h2 id="广而告之">广而告之</h2>
 <ul>

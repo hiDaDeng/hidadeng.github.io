@@ -340,6 +340,13 @@ class Config {
 				category: 'cNews'
 			},
 			{
+				site: 'PKMer',
+				icon: 'pkmer',
+				url: 'https://pkmer.cn/',
+				category: 'cNews'
+			},
+
+			{
 				site: 'PNAS',
 				icon: 'pnas',
 				url: 'https://www.pnas.org/',
