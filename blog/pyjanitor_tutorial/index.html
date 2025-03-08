@@ -64,8 +64,8 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/blog/pyjanitor_tutorial/" />
 <meta property="og:image" content="/images/blog/pyjanitor%E5%8C%85.png" /><meta property="article:section" content="blog" />
-<meta property="article:published_time" content="2021-11-25T23:10:10&#43;06:00" />
-<meta property="article:modified_time" content="2021-11-25T23:10:10&#43;06:00" />
+<meta property="article:published_time" content="2021-11-25T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2021-11-25T00:00:00&#43;00:00" />
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="/images/blog/pyjanitor%E5%8C%85.png" />
@@ -106,8 +106,8 @@
   "articleBody": "  official docs\n  github\n  pyjanitor是参照R语言janitor包语法，为Python量身定制的数据清洗包,即可清洗数据，又可让代码简洁干净。\n代码下载 click to download the code\n安装 !pip3 install pyjanitor \n为什么用janitor？ 数据预处理通常由一系列步骤组成，这些步骤涉及将原始数据转换为可理解/可用的格式。这一系列的步骤需要按照一定的顺序运行才能成功。我们以基础数据文件为起点，对其执行操作，例如删除空行/空行、用其他值替换它们、添加/重命名/删除数据列、过滤行等。更正式地说，这些步骤以及它们的关系和依赖关系通常被称为有向无环图 (DAG)。\npandas API 对 Python 数据科学生态系统非常宝贵，它实现了方法子集的方法链作为 API 的一部分。例如，重置索引 (.reset_index())、删除空值 (.dropna()) 等都是通过适当的 pd.DataFrame 方法调用来完成的。\n受 R 统计语言生态系统 dplyr 包的易用性和表达能力的启发，我们将 pyjanitor 开发为语法包，用于为 Pandas 用户表达数据处理 DAG。\n为了实现这一点，我们需要调用声明式的操作 替换为允许 逻辑顺序的方法链。让我们看看下面带注释的示例。首先，这里是数据清理路径的文字描述：\n 创建一个dataframe。 删除一列。 删除两个特定列中具有空值的行。 重命名另外两列。 添加一个新列。  让我们导入一些库并从本示例的一些示例数据开始：\n# Libraries import numpy as np import pandas as pd import janitor # Sample Data curated for this example company_sales = { 'SalesMonth': ['Jan', 'Feb', 'Mar', 'April'], 'Company1': [150.0, 200.0, 300.0, 400.0], 'Company2': [180.0, 250.0, np.nan, 500.0], 'Company3': [400.0, 500.0, 600.0, 675.0] } \n常见的Pandas实现方式 下面是传统的Pandas方式\n# The Pandas Way # 1. 创建一个dataframe df = pd.DataFrame(company_sales) # 2.删除一列。 Say 'Company1' del df['Company1'] # 3. 删除两个特定列中具有空值的行。 'Company2' and 'Company3' df = df.dropna(subset=['Company2', 'Company3']) # 4. 重命名另外两列。 将'Company2' 改为 'Amazon'； 将 'Company3' 改为 'Facebook' df = df.rename({'Company2': 'Amazon', 'Company3': 'Facebook'}, axis=1) # 5. 添加一个新列 'Google' df['Google'] = [450.0, 550.0, 800.0] df | | SalesMonth | Amazon | Facebook | Google | | ---: | :--------- | -----: | -------: | -----: | | 0 | Jan | 180 | 400 | 450 | | 1 | Feb | 250 | 500 | 550 | | 3 | April | 500 | 675 | 800 | \n稍微高级一点Pandas实现方式 稍微高级一点的用户可能会利用函数式 API：\ndf = ( pd.DataFrame(company_sales) .drop(columns=\"Company1\") .dropna(subset=[\"Company2\", \"Company3\"]) .rename(columns={\"Company2\": \"Amazon\", \"Company3\":\"Facebook\"}) .assign(Google=[450.0, 550.0, 800.0]) ) df | | SalesMonth | Amazon | Facebook | Google | | ---: | :--------- | -----: | -------: | -----: | | 0 | Jan | 180 | 400 | 450 | | 1 | Feb | 250 | 500 | 550 | | 3 | April | 500 | 675 | 800 | \nPyJanitor实现方式 借助pyjanitor库，我们可以使用方法名链式代码\ndf = ( pd.DataFrame(company_sales) .remove_columns(['Company1']) .dropna(subset=[\"Company2\", \"Company3\"]) .rename_column(\"Company2\", \"Amazon\") .rename_column(\"Company3\", \"Facebook\") .add_column(\"Google\", [450.0, 550.0, 800.0]) ) df | | SalesMonth | Amazon | Facebook | Google | | ---: | :--------- | -----: | -------: | -----: | | 0 | Jan | 180 | 400 | 450 | | 1 | Feb | 250 | 500 | 550 | | 3 | April | 500 | 675 | 800 | 因此，pyjanitor 的词源与“清洁度”有双重关系。 首先，它是关于使用方便的数据清理例程扩展 Pandas。 其次，它是关于为常见的 Pandas 例程提供更清晰、方法链接、基于动词的 API。\npyjanitor更多功能  清理列名（多索引是可能的！） 删除空行和列 识别重复条目 将列编码为分类 将数据拆分为特征和目标（用于机器学习） 添加、删除和重命名列 将多列合并为一列 日期转换（从 matlab、excel、unix）到 Python 日期时间格式 将具有分隔的分类值的单个列扩展为虚拟编码变量 基于分隔符连接和分离列 用于根据列上的查询过滤数据框的语法糖 金融、生物、化学、工程和 pyspark 的实验子模块  广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
   "wordCount" : "377",
   "inLanguage": "en",
-  "image":"/images/blog/pyjanitor%E5%8C%85.png","datePublished": "2021-11-25T23:10:10+06:00",
-  "dateModified": "2021-11-25T23:10:10+06:00",
+  "image":"/images/blog/pyjanitor%E5%8C%85.png","datePublished": "2021-11-25T00:00:00Z",
+  "dateModified": "2021-11-25T00:00:00Z",
   "author":{
     "@type": "Person",
     "name": "大邓"
@@ -249,7 +249,7 @@ onload="renderMathInElement(document.body);"></script>
     <h1 class="post-title">
       pyjanitor数据分析清洁包
     </h1>
-    <div class="post-meta"><span title='2021-11-25 23:10:10 +0600 +0600'>2021-11-25</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
+    <div class="post-meta"><span title='2021-11-25 00:00:00 +0000 UTC'>2021-11-25</span>&nbsp;·&nbsp;2 min&nbsp;·&nbsp;大邓
 
 </div>
   </header> 

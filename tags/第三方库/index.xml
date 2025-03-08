@@ -1280,6 +1280,200 @@ print(&#39;左侧-网络中的y节点的cdinex得分: {}, 节点y 为颠覆性�
     </item>
     
     <item>
+      <title>geopy库 | 地理编码计算距离</title>
+      <link>https://textdata.cn/blog/geopy_distance_calculate/</link>
+      <pubDate>Thu, 28 Apr 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/geopy_distance_calculate/</guid>
+      <description>地理信息数据分析，经纬度距离计算</description>
+      <content:encoded><![CDATA[<h1 id="geopy">geopy</h1>
+<p>geopy 是几个流行的地理编码网络服务的 Python 客户端。</p>
+<p>geopy 使 Python 开发人员可以使用第三方地理编码器和其他数据源轻松定位全球地址、城市、国家和地标的坐标。</p>
+<p>geopy 包括用于 <a href="https://nominatim.org/">OpenStreetMap Nominatim</a>、<a href="https://developers.google.com/maps/documentation/geocoding/">Google Geocoding API (V3)</a> 的地理编码器类和许多 其他地理编码服务。 完整列表可在 <a href="https://geopy.readthedocs.io/en/latest/#geocoders">Geocoders 文档部分</a> 上找到。 地理编码器类位于 <a href="https://github.com/geopy/geopy/tree/master/geopy/geocoders">geopy.geocoders</a>。</p>
+<p>geopy 针对 CPython（版本 3.5、3.6、3.7、3.8、3.9）和 PyPy3 进行了测试。 geopy 1.x 系列还支持 CPython 2.7、3.4 和 PyPy2。</p>
+<h2 id="安装">安装</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install geopy
+</code></pre></div><h2 id="geocoding">Geocoding</h2>
+<p>要将查询地理定位到地址和坐标：</p>
+<p>首先需要在https://www.openstreetmap.org/注册账号，注册一个app名。注册好的app名用于填充user_agent</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">geopy.geocoders</span> <span class="kn">import</span> <span class="n">Nominatim</span>
+
+<span class="n">geolocator</span> <span class="o">=</span> <span class="n">Nominatim</span><span class="p">(</span><span class="n">user_agent</span><span class="o">=</span><span class="s2">&#34;specify_your_app_name_here&#34;</span><span class="p">)</span>
+<span class="n">location</span> <span class="o">=</span> <span class="n">geolocator</span><span class="o">.</span><span class="n">geocode</span><span class="p">(</span><span class="s2">&#34;175 5th Avenue NYC&#34;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">((</span><span class="n">location</span><span class="o">.</span><span class="n">latitude</span><span class="p">,</span> <span class="n">location</span><span class="o">.</span><span class="n">longitude</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Flatiron Building, 175, 5th Avenue, Flatiron, New York, NYC, New York, ...
+(40.7410861, -73.9896297241625)
+{&#39;place_id&#39;: &#39;9167009604&#39;, &#39;type&#39;: &#39;attraction&#39;, ...}
+</code></pre></div><p><br><br></p>
+<p>为了找到地址对应的经纬度</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">geopy.geocoders</span> <span class="kn">import</span> <span class="n">Nominatim</span>
+
+<span class="n">geolocator</span> <span class="o">=</span> <span class="n">Nominatim</span><span class="p">(</span><span class="n">user_agent</span><span class="o">=</span><span class="s2">&#34;specify_your_app_name_here&#34;</span><span class="p">)</span>
+<span class="n">location</span> <span class="o">=</span> <span class="n">geolocator</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="s2">&#34;52.509669, 13.376294&#34;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">((</span><span class="n">location</span><span class="o">.</span><span class="n">latitude</span><span class="p">,</span> <span class="n">location</span><span class="o">.</span><span class="n">longitude</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Potsdamer Platz, Mitte, Berlin, 10117, Deutschland, European Union
+(52.5094982, 13.3765983)
+{&#39;place_id&#39;: &#39;654513&#39;, &#39;osm_type&#39;: &#39;node&#39;, ...}
+</code></pre></div><p><br><br></p>
+<h2 id="测量距离">测量距离</h2>
+<p>Geopy 可以使用 <a href="https://en.wikipedia.org/wiki/Geodesics_on_an_ellipsoid">geodesic distance</a> 或 <a href="https://en.wikipedia.org/wiki/">great-circle distance</a> 计算两点之间的测地线距离 Great-circle_distance），默认的测地线距离可用作函数 geopy.distance.distance。</p>
+<p>这是测地线距离的示例用法，采用一对 <code>(lat, lon)</code> 元组：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">geopy.distance</span> <span class="kn">import</span> <span class="n">geodesic</span>
+<span class="n">newport_ri</span> <span class="o">=</span> <span class="p">(</span><span class="mf">41.49008</span><span class="p">,</span> <span class="o">-</span><span class="mf">71.312796</span><span class="p">)</span>
+<span class="n">cleveland_oh</span> <span class="o">=</span> <span class="p">(</span><span class="mf">41.499498</span><span class="p">,</span> <span class="o">-</span><span class="mf">81.695391</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">geodesic</span><span class="p">(</span><span class="n">newport_ri</span><span class="p">,</span> <span class="n">cleveland_oh</span><span class="p">)</span><span class="o">.</span><span class="n">miles</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">538.390445368
+</code></pre></div><br>
+<p>使用great-cricle距离算法，同时采用一对 <code>(lat, lon)</code> 元组：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">geopy.distance</span> <span class="kn">import</span> <span class="n">great_circle</span>
+<span class="n">newport_ri</span> <span class="o">=</span> <span class="p">(</span><span class="mf">41.49008</span><span class="p">,</span> <span class="o">-</span><span class="mf">71.312796</span><span class="p">)</span>
+<span class="n">cleveland_oh</span> <span class="o">=</span> <span class="p">(</span><span class="mf">41.499498</span><span class="p">,</span> <span class="o">-</span><span class="mf">81.695391</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">great_circle</span><span class="p">(</span><span class="n">newport_ri</span><span class="p">,</span> <span class="n">cleveland_oh</span><span class="p">)</span><span class="o">.</span><span class="n">miles</span><span class="p">)</span>
+
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">536.997990696
+</code></pre></div><br>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>Bloxs包 | 可在notebook中使用的交互可视化包</title>
+      <link>https://textdata.cn/blog/bloxs_interactive_visualization/</link>
+      <pubDate>Fri, 01 Apr 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/bloxs_interactive_visualization/</guid>
+      <description>Bloxs是一个简单的 python 可交互的可视化包，可以帮助您以一种有吸引力的方式（以块形式）显示信息。 非常适合在笔记本中构建仪表板、报告和应用程序。</description>
+      <content:encoded><![CDATA[<p>Bloxs是一个简单的 python 可交互的可视化包，可以帮助您以一种有吸引力的方式（以块形式）显示信息。 非常适合在笔记本中构建仪表板、报告和应用程序。</p>
+<p>它适用于：Jupyter Notebook、Google Colab、Deepnote、Kaggle Notebook、<a href="https://github.com/mljar/mercury">Mercury</a>。</p>
+<p><img loading="lazy" src="img/bloxs_demo.gif" alt=""  />
+</p>
+<br>
+<h2 id="安装">安装</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install bloxs
+</code></pre></div><br>
+<h2 id="快速上手">快速上手</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">from bloxs import B
+B(1234, &#34;Bloxs in notebook!&#34;)
+</code></pre></div><p><img loading="lazy" src="img/test_bloxs.png" alt=""  />
+</p>
+<br>
+<h2 id="案例">案例</h2>
+<table>
+<thead>
+<tr>
+<th>Bloxs</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img loading="lazy" src="img/number.png" alt=""  />
+</td>
+<td><code>B(1234, &quot;Bloxs in notebook!&quot;)</code></td>
+</tr>
+<tr>
+<td><img loading="lazy" src="img/percent.png" alt=""  />
+</td>
+<td><code>B(1999, &quot;Percent change!&quot;, percent_change=10)</code></td>
+</tr>
+<tr>
+<td><img loading="lazy" src="img/emojis.png" alt=""  />
+</td>
+<td><code>B(&quot;🎉🎉🎉&quot;, &quot;Works with emojis&quot;)</code></td>
+</tr>
+<tr>
+<td><img loading="lazy" src="img/progress.png" alt=""  />
+</td>
+<td><code>B(&quot;68%&quot;, &quot;Loading progress&quot;, progress=68)</code></td>
+</tr>
+<tr>
+<td><img loading="lazy" src="img/progress_color.png" alt=""  />
+</td>
+<td><code>B(&quot;68%&quot;, &quot;Loading progress&quot;, progress=68, color=&quot;green&quot;)</code> 颜色color参数可以设为&quot;blue&quot;, &ldquo;red&rdquo;, &ldquo;green&rdquo; 或十六进制表示 (例如&quot;#fa33fa&quot;)</td>
+</tr>
+<tr>
+<td><img loading="lazy" src="img/line_chart.png" alt=""  />
+</td>
+<td><code>B(&quot;123&quot;, &quot;Display line chart&quot;, points=[1,4,2,3,5,6])</code></td>
+</tr>
+<tr>
+<td><img loading="lazy" src="img/line_chart_color.png" alt=""  />
+</td>
+<td><code>B(&quot;123&quot;, &quot;Display line chart&quot;, points=[1,4,2,3,5,6], color=&quot;red&quot;)</code></td>
+</tr>
+<tr>
+<td><img loading="lazy" src="img/stepped.png" alt=""  />
+</td>
+<td><code>B(&quot;123&quot;, &quot;Display stepped chart&quot;, points=[1,4,2,3,5,6], chart_type=&quot;stepped&quot;)</code></td>
+</tr>
+<tr>
+<td><img loading="lazy" src="img/bar_chart.png" alt=""  />
+</td>
+<td><code>B(&quot;123&quot;, &quot;Display bar chart&quot;, points=[1,4,2,3,5,6], chart_type=&quot;bar&quot;)</code></td>
+</tr>
+<tr>
+<td><img loading="lazy" src="img/bar_chart_color.png" alt=""  />
+</td>
+<td><code>B(&quot;123&quot;, &quot;Display bar chart&quot;, points=[1,4,2,3,5,6], chart_type=&quot;bar&quot;, color=&quot;green&quot;)</code></td>
+</tr>
+</tbody>
+</table>
+<br>
+<p>可以在一行内整合多个图</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">B([
+    B(1999, &#34;Percent change!&#34;, percent_change=10),
+    B(&#34;🎉🎉🎉&#34;, &#34;Works with emojis&#34;),
+    B(&#34;68%&#34;, &#34;Loading progress&#34;, progress=68),
+    B(1234, &#34;Bloxs in notebook!&#34;)
+])
+</code></pre></div><p><img loading="lazy" src="img/several_bloxs_2.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">B([
+    B(&#34;786&#34;, &#34;Display bar chart&#34;, points=[1,4,2,3,5,6], chart_type=&#34;bar&#34;, color=&#34;green&#34;),
+    B(&#34;123&#34;, &#34;Display line chart&#34;, points=[1,4,2,3,5,6], color=&#34;red&#34;),
+    B(&#34;123&#34;, &#34;Display stepped chart&#34;, points=[1,4,2,3,5,6], chart_type=&#34;stepped&#34;)
+])
+</code></pre></div><p><img loading="lazy" src="img/several_bloxs.png" alt=""  />
+</p>
+<br>
+<p>如果想在自己电脑中实验上述代码，可以点击 <a href="https://deepnote.com/project/bloxs-ZNGnsap0R7ea8LeZY0uarQ/%2Fnotebook.ipynb">notebook</a> 下载。</p>
+<br>
+<h2 id="结合mercury用bloxs">结合Mercury用Bloxs</h2>
+<p><a href="https://github.com/mljar/mercury">Mercury</a> 是一个用于将笔记本转换为交互式网络应用程序的框架。 它基于 YAML 配置将小部件添加到笔记本中。 下面展示了一个带有 bloxs 的笔记本，以及作为 Mercury 的 Web 应用程序的同一笔记本。</p>
+<p><img loading="lazy" src="img/bloxs_notebook.gif" alt=""  />
+</p>
+<br>
+<h2 id="mercury网页应用">Mercury网页应用</h2>
+<p><a href="https://mercury.mljar.com/app/5">Demo</a></p>
+<p><img loading="lazy" src="img/bloxs_mercury.gif" alt=""  />
+</p>
+<br>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>科研绘图SciencePlots库</title>
       <link>https://textdata.cn/blog/scienceplots/</link>
       <pubDate>Tue, 23 Nov 2021 18:40:10 +0600</pubDate>
