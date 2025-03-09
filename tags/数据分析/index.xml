@@ -6,7 +6,375 @@
     <description>Recent content in 数据分析 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 11 May 2024 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 08 Mar 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>代码 | 使用5112w专利申请数据集构造面板数据</title>
+      <link>https://textdata.cn/blog/2024-12-18-how-to-extract-data-from-patent-application-dataset/</link>
+      <pubDate>Sat, 08 Mar 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2024-12-18-how-to-extract-data-from-patent-application-dataset/</guid>
+      <description>使用5112w专利申请数据生成面板数据</description>
+      <content:encoded><![CDATA[<h2 id="相关代码">相关代码</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/">代码 | 使用jjrb/rmrb数据构造某类概念词频「面板数据」</a></li>
+<li><a href="https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/">代码 | 使用cctv新闻联播文稿构造面板数据</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="一任务">一、任务</h2>
+<p>设计筛选条件，将某类专利(如<strong>人工智能</strong>)申请信息， 按 <strong>省份、年度、专利申请数</strong> 构造面板数据。如下图</p>
+<p><img loading="lazy" src="img/03-df.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二专利数据集">二、专利数据集</h2>
+<p><a href="https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/">数据集 | 5112万条专利申请数据集(1985-2025年)</a></p>
+<br>
+<h3 id="21-概况">2.1 概况</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 数据集名称：中国专利申请数据集
+- 时间跨度：1985.1-2025.1，专利申请总量3571万
+- 数据来源：『国家知识产权局』
+- 数据来源：『国家知识产权局』
+- 数据体积:  解压后整个文件夹大概 90 G+
+</code></pre></div><p><img loading="lazy" src="img/screen-datasets.png" alt=""  />
+</p>
+<br>
+<h3 id="22-获取数据">2.2 获取数据</h3>
+<ul>
+<li>免费下载 <a href="%E4%B8%93%E5%88%A9%E9%9D%A2%E6%9D%BF%E6%95%B0%E6%8D%AE.ipynb">专利面板数据.ipynb</a></li>
+<li>免费下载 <a href="AI_panel.xlsx">AI_panel.xlsx</a></li>
+<li>免费下载 <a href="AI_details.csv.gz">AI_details.csv</a></li>
+</ul>
+<br>
+<p><a href="https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/">5112万条专利申请数据集(1985-2025.1年)</a></p>
+<p><br><br></p>
+<h2 id="三实验代码">三、实验代码</h2>
+<p>本实验代码文件目录结构</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">  |- 专利面板数据.ipynb
+  |- Word2Vec
+     |-1000w专利摘要文本.100.6.bin
+     |-1000w专利摘要文本.100.6.bin.syn1neg.npy
+     |-1000w专利摘要文本.100.6.bin.wv.vectors.npy
+  |5112万专利申请全量数据1985-2025年
+     |-广东省.csv.gz
+     |-...
+     |-西藏自治区.csv.gz
+  |-AI_details.xlsx
+  |-AI_panel.xlsx
+</code></pre></div><br>
+<h3 id="31-人工智能相关词">3.1 人工智能相关词</h3>
+<p>使用之前 <a href="https://textdata.cn/blog/2023-11-10-training-word2vec-model-using-china-3751w-patent-application-dataset/"><strong>词向量(付费) | 使用1985年-2025年专利申请摘要训练Word2Vec模型</strong></a>  来扩展 「大数据」相关关键词。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#2.1.4版cntext，未公开，需要私信372335839</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="c1">#查看版本</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+
+<span class="n">w2v_m</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;Word2Vec/1000w专利摘要文本.100.6.bin&#39;</span><span class="p">)</span>
+<span class="n">w2v_m</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2.1.4
+Loading word2vec model...
+&lt;gensim.models.word2vec.Word2Vec at 0x109a8c810&gt;
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#我能想到的AI技术就这四个词</span>
+<span class="n">w2v_m</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;人工智能&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;AI&#39;, 0.8372030854225159),
+ (&#39;人工智能技术&#39;, 0.7714870572090149),
+ (&#39;AI智能&#39;, 0.74532151222229),
+ (&#39;智能决策&#39;, 0.7404459714889526),
+ (&#39;AI人工智能&#39;, 0.7198485732078552),
+ (&#39;云计算&#39;, 0.7136917114257812),
+ (&#39;人工智能学习&#39;, 0.7058480381965637),
+ (&#39;深度学习&#39;, 0.6903414130210876),
+ (&#39;交互式&#39;, 0.6859808564186096),
+ (&#39;智慧校园&#39;, 0.6856474876403809),
+ (&#39;信息技术&#39;, 0.6841551661491394),
+ (&#39;智慧养老&#39;, 0.682081937789917),
+ (&#39;智慧旅游&#39;, 0.6777652502059937),
+ (&#39;智慧医疗&#39;, 0.6757360100746155),
+ (&#39;智能机器人&#39;, 0.6742302179336548),
+ (&#39;智慧&#39;, 0.6734717488288879),
+ (&#39;人工智能语音&#39;, 0.6727728247642517),
+ (&#39;物联网&#39;, 0.66999351978302),
+ (&#39;机器学习&#39;, 0.6683002710342407),
+ (&#39;健康管理&#39;, 0.6656192541122437),
+ (&#39;人工智能AI&#39;, 0.6648072600364685),
+ (&#39;AI视觉&#39;, 0.6609936356544495),
+ (&#39;智慧社区&#39;, 0.6581154465675354),
+ (&#39;自主学习&#39;, 0.6569625735282898),
+ (&#39;图像识别&#39;, 0.6551436185836792),
+ (&#39;健康管理系统&#39;, 0.6537778377532959),
+ (&#39;数据分析系统&#39;, 0.6528143882751465),
+ (&#39;教学系统&#39;, 0.6516135334968567),
+ (&#39;图形化编程&#39;, 0.6513208150863647),
+ (&#39;计算机技术&#39;, 0.6512178182601929)]
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v_m</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;人工智能&#39;</span><span class="p">,</span> <span class="s1">&#39;机器学习&#39;</span><span class="p">,</span> <span class="s1">&#39;AI&#39;</span><span class="p">,</span> <span class="s1">&#39;NLP&#39;</span><span class="p">,</span> <span class="s1">&#39;智能机器人&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;人工智能技术&#39;, 0.8236023783683777),
+ (&#39;人工智能学习&#39;, 0.7996466159820557),
+ (&#39;自然语言理解&#39;, 0.7942413687705994),
+ (&#39;深度学习&#39;, 0.7931050658226013),
+ (&#39;智能决策&#39;, 0.7848177552223206),
+ (&#39;上下文感知&#39;, 0.7765907049179077),
+ (&#39;自然语言处理&#39;, 0.7757146954536438),
+ (&#39;智能问答&#39;, 0.7602421641349792),
+ (&#39;自主学习&#39;, 0.7582942247390747),
+ (&#39;问答系统&#39;, 0.7564904093742371),
+ (&#39;在线学习&#39;, 0.7510443329811096),
+ (&#39;人工智能算法&#39;, 0.7500166296958923),
+ (&#39;数据挖掘&#39;, 0.7495553493499756),
+ (&#39;AI算法&#39;, 0.7419456839561462),
+ (&#39;自我学习&#39;, 0.7414599061012268),
+ (&#39;AI模型&#39;, 0.7412964105606079),
+ (&#39;人工智能AI&#39;, 0.7401654720306396),
+ (&#39;知识推理&#39;, 0.7398316860198975),
+ (&#39;语音语义&#39;, 0.7393308877944946),
+ (&#39;行为识别&#39;, 0.7342970967292786),
+ (&#39;人工智能语音&#39;, 0.7332825660705566),
+ (&#39;多任务&#39;, 0.7270201444625854),
+ (&#39;神经机器翻译&#39;, 0.7220420837402344),
+ (&#39;边云协同&#39;, 0.7219405174255371),
+ (&#39;图形化编程&#39;, 0.7205625772476196),
+ (&#39;云计算&#39;, 0.7199273109436035),
+ (&#39;众包&#39;, 0.7197409272193909),
+ (&#39;AI智能&#39;, 0.7154985666275024),
+ (&#39;NLU&#39;, 0.7152286767959595),
+ (&#39;AI人工智能&#39;, 0.7139929533004761)]
+</code></pre></div><br>
+<p>通过运行多次查询相似词，不断浓缩，得到人工智能技术相关技术词(不一定全，只是演示)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">AI_rela_words</span> <span class="o">=</span> <span class="s1">&#39;人工智能|机器学习|AI|NLP|智能问答|智能问答|神经机器翻译|NLU|增量学习&#39;</span>
+</code></pre></div><br>
+<h3 id="32-读取专利数据">3.2 读取专利数据</h3>
+<p>尝试读取一个文件
+写代码先局部后整体，先小后大。 能在局部小文件做实验成功，就可以for循环推广到所有的文件。这里我们选择 <em><strong>内蒙古自治区.csv.gz</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;5112万专利申请全量数据1985-2025年/内蒙古自治区.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#含有的字段</span>
+<span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Index([&#39;专利名称&#39;, &#39;专利类型&#39;, &#39;申请人&#39;, &#39;申请人类型&#39;, &#39;申请人地址&#39;, &#39;申请人国家&#39;, &#39;申请人省份&#39;, &#39;申请人城市&#39;,
+       &#39;申请人区县&#39;, &#39;申请号&#39;, &#39;申请日&#39;, &#39;申请年份&#39;, &#39;公开公告号&#39;, &#39;公开公告日&#39;, &#39;公开公告年份&#39;, &#39;授权公告号&#39;,
+       &#39;授权公告日&#39;, &#39;授权公告年份&#39;, &#39;IPC分类号&#39;, &#39;IPC主分类号&#39;, &#39;发明人&#39;, &#39;摘要文本&#39;, &#39;主权项内容&#39;, &#39;当前权利人&#39;,
+       &#39;当前专利权人地址&#39;, &#39;专利权人类型&#39;, &#39;统一社会信用代码&#39;, &#39;引证次数&#39;, &#39;被引证次数&#39;, &#39;自引次数&#39;, &#39;他引次数&#39;,
+       &#39;被自引次数&#39;, &#39;被他引次数&#39;, &#39;家族引证次数&#39;, &#39;家族被引证次数&#39;],
+      dtype=&#39;object&#39;)
+</code></pre></div><br>
+<h3 id="33-筛选专利">3.3 筛选专利</h3>
+<p>使用逻辑条件把 <em><strong>专利名称</strong></em> 、 <em><strong>摘要文本</strong></em> 、<em><strong>主权项内容</strong></em> 中含 <em><strong>人工智能</strong></em> 相关概念词的申请记录筛选出来。 注意， 筛选条件的严格程度根据自己需要调整，这里使用的最严格的条件，即 人工智能词同时出现在专利名称和专利摘要，才将该专利识别为人工智能专利。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">AI_rela_words</span> <span class="o">=</span> <span class="s1">&#39;人工智能|机器学习|AI|NLP|智能问答|智能问答|神经机器翻译|NLU|增量学习&#39;</span>
+
+<span class="n">mask1</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
+<span class="n">mask2</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;摘要文本&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
+<span class="n">mask3</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;主权项内容&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
+
+<span class="c1">#内容太多， 选择需要的字段进行展示</span>
+<span class="n">selected_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">,</span> <span class="s1">&#39;摘要文本&#39;</span><span class="p">,</span> <span class="s1">&#39;主权项内容&#39;</span><span class="p">,</span> <span class="s1">&#39;申请日&#39;</span><span class="p">,</span> <span class="s1">&#39;IPC分类号&#39;</span><span class="p">]</span>
+<span class="c1">#专利</span>
+<span class="n">ai_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">mask1</span> <span class="o">&amp;</span> <span class="n">mask2</span> <span class="o">&amp;</span> <span class="n">mask3</span><span class="p">][</span><span class="n">selected_fields</span><span class="p">]</span>
+<span class="n">ai_df</span>
+</code></pre></div><p><img loading="lazy" src="img/02-df.png" alt=""  />
+</p>
+<br>
+<p>筛选结果基本上都是人工智能相关专利技术。</p>
+<br>
+<h3 id="34-年度申请量">3.4 年度申请量</h3>
+<p>计算内蒙古自治区，人工智能相关专利年度申请量。 根据申请日， 先生成year字段</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ai_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_df</span><span class="p">[</span><span class="s2">&#34;申请日&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span><span class="n">d</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
+
+<span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">ai_year_df</span> <span class="ow">in</span> <span class="n">ai_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ai_year_df</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2014 2
+2016 2
+2017 13
+2018 25
+2019 38
+2020 65
+2021 83
+2022 123
+2023 4
+2024 75
+</code></pre></div><br>
+<h3 id="36-获取年度各种专利类型的数量">3.6 获取年度各种专利类型的数量</h3>
+<p>计算内蒙古自治区，人工智能领域各类型专利的年度申请量</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">ai_year_df</span> <span class="ow">in</span> <span class="n">ai_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">year</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;实用新型&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;实用新型&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明公开&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明公开&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;外观设计&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;外观设计&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明授权&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明授权&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;省份&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;内蒙古自治区&#39;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;年度&#39;: &#39;2014&#39;, &#39;实用新型&#39;: 0, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 1, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
+{&#39;年度&#39;: &#39;2016&#39;, &#39;实用新型&#39;: 0, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 1, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
+{&#39;年度&#39;: &#39;2017&#39;, &#39;实用新型&#39;: 1, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 3, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
+{&#39;年度&#39;: &#39;2018&#39;, &#39;实用新型&#39;: 1, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 6, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
+{&#39;年度&#39;: &#39;2019&#39;, &#39;实用新型&#39;: 5, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 9, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
+{&#39;年度&#39;: &#39;2020&#39;, &#39;实用新型&#39;: 12, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 14, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
+{&#39;年度&#39;: &#39;2021&#39;, &#39;实用新型&#39;: 7, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 11, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
+{&#39;年度&#39;: &#39;2022&#39;, &#39;实用新型&#39;: 14, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 14, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
+{&#39;年度&#39;: &#39;2023&#39;, &#39;实用新型&#39;: 0, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 0, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
+{&#39;年度&#39;: &#39;2024&#39;, &#39;实用新型&#39;: 2, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 1, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
+</code></pre></div><br>
+<h3 id="37-路径列表">3.7 路径列表</h3>
+<p>使用glob库查看专利申请数据集内的含 <em><strong>csv.gz</strong></em> 的所有文件路径</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">glob</span>
+
+<span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;5112万专利申请全量数据1985-2025年/*.csv.gz&#39;</span><span class="p">)</span>
+<span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">not_in</span><span class="p">]</span>
+<span class="n">files</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;5112万专利申请全量数据1985-2025年/北京市.csv.gz&#39;,
+ &#39;5112万专利申请全量数据1985-2025年/广西壮族自治区.csv.gz&#39;,
+ &#39;5112万专利申请全量数据1985-2025年/河北省.csv.gz&#39;,
+ &#39;5112万专利申请全量数据1985-2025年/海南省.csv.gz&#39;,
+ &#39;5112万专利申请全量数据1985-2025年/天津市.csv.gz&#39;,
+ ......
+ &#39;5112万专利申请全量数据1985-2025年/新疆维吾尔自治区.csv.gz&#39;,
+ &#39;5112万专利申请全量数据1985-2025年/辽宁省.csv.gz&#39;,
+ &#39;5112万专利申请全量数据1985-2025年/河南省.csv.gz&#39;,
+ &#39;5112万专利申请全量数据1985-2025年/宁夏回族自治区.csv.gz&#39;]
+</code></pre></div><br>
+<h3 id="38-批量运算">3.8 批量运算</h3>
+<p>现在对所有省市进行刚刚的操作， 筛选出的人工智能专利详细信息保存到 <em><strong>AI_details.csv</strong></em> , 同时汇总面板数据(年度、省份、专利数量), 得到 <em><strong>AI_panel.xlsx</strong></em> 。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="n">AI_rela_words</span> <span class="o">=</span> <span class="s1">&#39;人工智能|机器学习|AI|NLP|智能问答|智能问答|神经机器翻译|NLU|增量学习&#39;</span>
+<span class="n">AI_Relatives_Patents</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+<span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">prov</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.csv.gz&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> 
+                     <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> 
+                     <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">,</span> <span class="s1">&#39;摘要文本&#39;</span><span class="p">,</span> <span class="s1">&#39;主权项内容&#39;</span><span class="p">,</span> <span class="s1">&#39;申请日&#39;</span><span class="p">,</span> <span class="s1">&#39;专利类型&#39;</span><span class="p">]</span>
+                    <span class="p">)</span>
+    
+    <span class="n">mask1</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
+    <span class="n">mask2</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;摘要文本&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
+    <span class="n">mask3</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;主权项内容&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
+
+    <span class="n">ai_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">mask1</span> <span class="o">&amp;</span> <span class="n">mask2</span> <span class="o">&amp;</span> <span class="n">mask3</span><span class="p">]</span>
+    <span class="n">ai_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_df</span><span class="p">[</span><span class="s2">&#34;申请日&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span><span class="n">d</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
+    
+    <span class="c1">#保存全国AI专利详情信息</span>
+    <span class="n">ai_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;AI_details.csv&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">ai_year_df</span> <span class="ow">in</span> <span class="n">ai_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">year</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;实用新型&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;实用新型&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明公开&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明公开&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;外观设计&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;外观设计&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明授权&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明授权&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;省份&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prov</span>
+        <span class="n">AI_Relatives_Patents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+
+<span class="n">ai_panel_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">AI_Relatives_Patents</span><span class="p">)</span>
+<span class="n">ai_panel_df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s1">&#39;AI_panel.xlsx&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;记录数:&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ai_panel_df</span><span class="p">))</span>
+<span class="n">ai_panel_df</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">5112万专利申请全量数据1985-2025年/北京市.csv.gz
+5112万专利申请全量数据1985-2025年/广西壮族自治区.csv.gz
+......
+5112万专利申请全量数据1985-2025年/河南省.csv.gz
+5112万专利申请全量数据1985-2025年/宁夏回族自治区.csv.gz
+
+记录数: 523
+CPU times: user 15min 38s, sys: 46.4 s, total: 16min 24s
+Wall time: 16min 27s
+</code></pre></div><p><img loading="lazy" src="img/04-df.png" alt=""  />
+</p>
+<br>
+<h3 id="39-剔除重复">3.9 剔除重复</h3>
+<p>AI_details.csv 会有一些重复内容，可以剔除重复内容，删除旧文件，导出新的不重复的文件。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">AI_detail_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;AI_details.csv&#39;</span><span class="p">)</span>
+<span class="n">AI_detail_df</span> <span class="o">=</span> <span class="n">AI_detail_df</span><span class="p">[</span><span class="n">AI_detail_df</span><span class="p">[</span><span class="s1">&#39;专利公开号&#39;</span><span class="p">]</span><span class="o">!=</span><span class="s1">&#39;专利公开号&#39;</span><span class="p">]</span>
+<span class="n">AI_detail_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&#34;AI_details.csv&#34;</span><span class="p">)</span>
+<span class="n">AI_detail_df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s2">&#34;AI_details.xlsx&#34;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div><p><br><br></p>
+<h3 id="四汇总代码">四、汇总代码</h3>
+<p>本文全部代码汇总于此</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="nn">tqdm</span>
+
+<span class="n">AI_rela_words</span> <span class="o">=</span> <span class="s1">&#39;人工智能|机器学习|AI|NLP|智能问答|智能问答|神经机器翻译|NLU|增量学习&#39;</span>
+
+<span class="c1">#剔除港、澳、台、海外</span>
+<span class="n">not_in</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;5112万专利申请全量数据1985-2025年/台湾省.csv.gz&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;5112万专利申请全量数据1985-2025年/澳门特别行政区.csv.gz&#39;</span><span class="p">,</span> 
+          <span class="s1">&#39;5112万专利申请全量数据1985-2025年/香港特别行政区.csv.gz&#39;</span><span class="p">,</span> 
+          <span class="s1">&#39;5112万专利申请全量数据1985-2025年/其他国家.csv.gz&#39;</span><span class="p">]</span>
+<span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;5112万专利申请全量数据1985-2025年/*.csv.gz&#39;</span><span class="p">)</span>
+
+<span class="n">AI_Relatives_Patents</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">files</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">prov</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.csv.gz&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+    
+    <span class="c1">#筛选出AI专利</span>
+    <span class="n">mask1</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
+    <span class="n">mask2</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;摘要文本&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
+    <span class="n">mask3</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;主权项内容&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
+    <span class="n">ai_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">mask1</span> <span class="o">&amp;</span> <span class="n">mask2</span> <span class="o">&amp;</span> <span class="n">mask3</span><span class="p">]</span>
+    
+    <span class="c1">#保存全国AI专利详情信息</span>
+    <span class="n">ai_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;AI_details.csv&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+    <span class="n">ai_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_df</span><span class="p">[</span><span class="s2">&#34;申请日&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span><span class="n">d</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">ai_year_df</span> <span class="ow">in</span> <span class="n">ai_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">year</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;实用新型&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;实用新型&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明公开&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明公开&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;外观设计&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;外观设计&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明授权&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明授权&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;省份&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prov</span>
+        <span class="n">AI_Relatives_Patents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    
+
+<span class="n">china_ai_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">AI_Relatives_Patents</span><span class="p">)</span>
+<span class="n">china_ai_df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s1">&#39;AI_panel.xlsx&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="n">AI_detail_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;AI_details.csv&#39;</span><span class="p">)</span>
+<span class="n">AI_detail_df</span> <span class="o">=</span> <span class="n">AI_detail_df</span><span class="p">[</span><span class="n">AI_detail_df</span><span class="p">[</span><span class="s1">&#39;专利公开号&#39;</span><span class="p">]</span><span class="o">!=</span><span class="s1">&#39;专利公开号&#39;</span><span class="p">]</span>
+<span class="n">AI_detail_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&#34;AI_details.csv&#34;</span><span class="p">)</span>
+<span class="n">AI_detail_df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s2">&#34;AI_details.xlsx&#34;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div><br>
+<br>
+<p>更多数据集，可点击前往 <a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></p>
+<br>
+<br>
+<h2 id="广而告之">广而告之</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
+<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>代码 | 使用地方gov工作报告生成某类概念词词频「面板数据」</title>
       <link>https://textdata.cn/blog/2023-12-17-how-to-generate-panel-data-from-gov-report-dataset/</link>
@@ -2873,389 +3241,6 @@ df_csv
 <p>点击下载本文计算结果 <a href="282city-digitalization2003-2024.zip"><strong>282city-digitalization2003-2024.csv</strong></a></p>
 </li>
 </ul>
-<br>
-<br>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
-]]></content:encoded>
-    </item>
-    
-    <item>
-      <title>代码 | 使用3571w专利申请数据集构造面板数据</title>
-      <link>https://textdata.cn/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/</link>
-      <pubDate>Mon, 18 Dec 2023 00:00:00 +0000</pubDate>
-      
-      <guid>/blog/2028-12-18-how-to-extract-data-from-patent-application-dataset/</guid>
-      <description>使用3571w专利申请数据生成面板数据</description>
-      <content:encoded><![CDATA[<h2 id="相关代码">相关代码</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/2023-12-18-how-to-generate-panel-data-from-daily-news-dataset/">代码 | 使用jjrb/rmrb数据构造某类概念词频「面板数据」</a></li>
-<li><a href="https://textdata.cn/blog/2023-02-26-cctv1-xwlb-news-text-dataset/">代码 | 使用cctv新闻联播文稿构造面板数据</a></li>
-</ul>
-<p><br><br></p>
-<h2 id="一任务">一、任务</h2>
-<p>设计筛选条件，将某类专利(如<strong>人工智能</strong>)申请信息， 按 <strong>省份、年度、专利申请数</strong> 构造面板数据。如下图</p>
-<p><img loading="lazy" src="img/02-df.png" alt=""  />
-</p>
-<p><br><br></p>
-<h2 id="二专利数据集">二、专利数据集</h2>
-<p><a href="https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/">数据集 | 3571万条专利申请数据集(1985-2022年)</a></p>
-<br>
-<h3 id="21-概况">2.1 概况</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 数据集名称：省份版知识产权局专利
-- 时间跨度：1985.1-2022.5，专利申请总量3571万
-- 数据来源：『国家知识产权局』
-- 数据整理: 『公众号:大邓和他的Python』
-</code></pre></div><p>3571万专利申请全量数据(<strong>1985.01 ~ 2022.5</strong>)数据，解压后整个文件夹大概 20 G。</p>
-<p><img loading="lazy" src="img/screen-datasets2.png" alt=""  />
-</p>
-<br>
-<h3 id="22-获取数据">2.2 获取数据</h3>
-<ul>
-<li>免费下载 <a href="%E4%B8%93%E5%88%A9%E9%9D%A2%E6%9D%BF%E6%95%B0%E6%8D%AE.ipynb">专利面板数据.ipynb</a></li>
-<li>免费下载 <a href="AI_panel.xlsx">AI_panel.xlsx</a></li>
-<li>免费下载 <a href="AI_details.xlsx">AI_details.xlsx</a></li>
-</ul>
-<br>
-<p><a href="https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/">3571万条专利申请数据集(1985-2022年)</a>
-100元，需要的话， 加微信 372335839 ，备注【姓名-学校-专业】</p>
-<p><br><br></p>
-<h2 id="三实验代码">三、实验代码</h2>
-<p>本实验代码文件目录结构</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">  |- 专利面板数据.ipynb
-  |- Word2Vec
-     |-1000w专利摘要文本.100.6.bin
-     |-1000w专利摘要文本.100.6.bin.syn1neg.npy
-     |-1000w专利摘要文本.100.6.bin.wv.vectors.npy
-  |3571万专利申请全量数据1985-2022年
-     |-广东省.csv.gz
-     |-...
-     |-西藏自治区.csv.gz
-  |-AI_details.xlsx
-  |-AI_panel.xlsx
-</code></pre></div><br>
-<h3 id="31-人工智能相关词">3.1 人工智能相关词</h3>
-<p>使用之前 <a href="https://textdata.cn/blog/2023-11-20-word2vec-by-year-by-province/"><strong>词向量(付费) | 使用3751w专利申请数据集按年份(按省份)训练词向量</strong></a>  来扩展 「大数据」相关关键词。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#2.0.0版cntext，未公开，需要私信372335839</span>
-<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
-
-<span class="c1">#查看版本</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
-
-<span class="n">w2v_m</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;Word2Vec/1000w专利摘要文本.100.6.bin&#39;</span><span class="p">)</span>
-<span class="n">w2v_m</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2.0.0
-Loading word2vec model...
-&lt;gensim.models.word2vec.Word2Vec at 0x109a8c810&gt;
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#我能想到的AI技术就这四个词</span>
-<span class="n">w2v_m</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;人工智能&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;AI&#39;, 0.8372030854225159),
- (&#39;人工智能技术&#39;, 0.7714870572090149),
- (&#39;AI智能&#39;, 0.74532151222229),
- (&#39;智能决策&#39;, 0.7404459714889526),
- (&#39;AI人工智能&#39;, 0.7198485732078552),
- (&#39;云计算&#39;, 0.7136917114257812),
- (&#39;人工智能学习&#39;, 0.7058480381965637),
- (&#39;深度学习&#39;, 0.6903414130210876),
- (&#39;交互式&#39;, 0.6859808564186096),
- (&#39;智慧校园&#39;, 0.6856474876403809),
- (&#39;信息技术&#39;, 0.6841551661491394),
- (&#39;智慧养老&#39;, 0.682081937789917),
- (&#39;智慧旅游&#39;, 0.6777652502059937),
- (&#39;智慧医疗&#39;, 0.6757360100746155),
- (&#39;智能机器人&#39;, 0.6742302179336548),
- (&#39;智慧&#39;, 0.6734717488288879),
- (&#39;人工智能语音&#39;, 0.6727728247642517),
- (&#39;物联网&#39;, 0.66999351978302),
- (&#39;机器学习&#39;, 0.6683002710342407),
- (&#39;健康管理&#39;, 0.6656192541122437),
- (&#39;人工智能AI&#39;, 0.6648072600364685),
- (&#39;AI视觉&#39;, 0.6609936356544495),
- (&#39;智慧社区&#39;, 0.6581154465675354),
- (&#39;自主学习&#39;, 0.6569625735282898),
- (&#39;图像识别&#39;, 0.6551436185836792),
- (&#39;健康管理系统&#39;, 0.6537778377532959),
- (&#39;数据分析系统&#39;, 0.6528143882751465),
- (&#39;教学系统&#39;, 0.6516135334968567),
- (&#39;图形化编程&#39;, 0.6513208150863647),
- (&#39;计算机技术&#39;, 0.6512178182601929)]
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v_m</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;人工智能&#39;</span><span class="p">,</span> <span class="s1">&#39;机器学习&#39;</span><span class="p">,</span> <span class="s1">&#39;AI&#39;</span><span class="p">,</span> <span class="s1">&#39;NLP&#39;</span><span class="p">,</span> <span class="s1">&#39;智能机器人&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;人工智能技术&#39;, 0.8236023783683777),
- (&#39;人工智能学习&#39;, 0.7996466159820557),
- (&#39;自然语言理解&#39;, 0.7942413687705994),
- (&#39;深度学习&#39;, 0.7931050658226013),
- (&#39;智能决策&#39;, 0.7848177552223206),
- (&#39;上下文感知&#39;, 0.7765907049179077),
- (&#39;自然语言处理&#39;, 0.7757146954536438),
- (&#39;智能问答&#39;, 0.7602421641349792),
- (&#39;自主学习&#39;, 0.7582942247390747),
- (&#39;问答系统&#39;, 0.7564904093742371),
- (&#39;在线学习&#39;, 0.7510443329811096),
- (&#39;人工智能算法&#39;, 0.7500166296958923),
- (&#39;数据挖掘&#39;, 0.7495553493499756),
- (&#39;AI算法&#39;, 0.7419456839561462),
- (&#39;自我学习&#39;, 0.7414599061012268),
- (&#39;AI模型&#39;, 0.7412964105606079),
- (&#39;人工智能AI&#39;, 0.7401654720306396),
- (&#39;知识推理&#39;, 0.7398316860198975),
- (&#39;语音语义&#39;, 0.7393308877944946),
- (&#39;行为识别&#39;, 0.7342970967292786),
- (&#39;人工智能语音&#39;, 0.7332825660705566),
- (&#39;多任务&#39;, 0.7270201444625854),
- (&#39;神经机器翻译&#39;, 0.7220420837402344),
- (&#39;边云协同&#39;, 0.7219405174255371),
- (&#39;图形化编程&#39;, 0.7205625772476196),
- (&#39;云计算&#39;, 0.7199273109436035),
- (&#39;众包&#39;, 0.7197409272193909),
- (&#39;AI智能&#39;, 0.7154985666275024),
- (&#39;NLU&#39;, 0.7152286767959595),
- (&#39;AI人工智能&#39;, 0.7139929533004761)]
-</code></pre></div><br>
-<p>通过运行多次查询相似词，不断浓缩，得到人工智能技术相关技术词(不一定全，只是演示)</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">AI_rela_words</span> <span class="o">=</span> <span class="s1">&#39;人工智能|机器学习|AI|NLP|智能问答|智能问答|神经机器翻译|NLU|增量学习&#39;</span>
-</code></pre></div><br>
-<h3 id="32-读取专利数据">3.2 读取专利数据</h3>
-<p>尝试读取一个文件
-写代码先局部后整体，先小后大。 能在局部小文件做实验成功，就可以for循环推广到所有的文件。这里我们选择 <em><strong>内蒙古自治区.csv.gz</strong></em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;3571万专利申请全量数据1985-2022年/内蒙古自治区.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
-</p>
-<br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#含有的字段</span>
-<span class="n">df</span><span class="o">.</span><span class="n">columns</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Index([&#39;专利公开号&#39;, &#39;专利名称&#39;, &#39;专利类型&#39;, &#39;专利摘要&#39;, &#39;申请人&#39;, &#39;专利申请号&#39;, &#39;申请日&#39;, &#39;申请公布日&#39;,
-       &#39;授权公布号&#39;, &#39;授权公布日&#39;, &#39;申请地址&#39;, &#39;主权项&#39;, &#39;发明人&#39;, &#39;分类号&#39;, &#39;主分类号&#39;, &#39;代理机构&#39;, &#39;分案原申请号&#39;,
-       &#39;优先权&#39;, &#39;国际申请&#39;, &#39;国际公布&#39;, &#39;代理人&#39;, &#39;省份或国家代码&#39;, &#39;法律状态&#39;, &#39;专利领域&#39;, &#39;专利学科&#39;,
-       &#39;多次公布&#39;],
-      dtype=&#39;object&#39;)
-</code></pre></div><br>
-<h3 id="33-筛选专利">3.3 筛选专利</h3>
-<p>使用逻辑条件把 <em><strong>专利名称</strong></em> 和 <em><strong>专利摘要</strong></em> 中含 <em><strong>人工智能</strong></em> 相关概念词的申请记录筛选出来。 注意， 筛选条件的严格程度根据自己需要调整，这里使用的最严格的条件，即 人工智能词同时出现在专利名称和专利摘要，才将该专利识别为人工智能专利。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">AI_rela_words</span> <span class="o">=</span> <span class="s1">&#39;人工智能|机器学习|AI|NLP|智能问答|智能问答|神经机器翻译|NLU|增量学习&#39;</span>
-
-<span class="n">mask1</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
-<span class="n">mask2</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利摘要&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
-
-<span class="c1">#内容太多， 选择需要的字段进行展示</span>
-<span class="n">selected_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">,</span> <span class="s1">&#39;专利摘要&#39;</span><span class="p">,</span> <span class="s1">&#39;专利类型&#39;</span><span class="p">,</span> <span class="s1">&#39;申请日&#39;</span><span class="p">,</span> <span class="s1">&#39;专利学科&#39;</span><span class="p">,</span> <span class="s1">&#39;专利领域&#39;</span><span class="p">]</span>
-<span class="c1">#专利</span>
-<span class="n">ai_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">mask1</span> <span class="o">&amp;</span> <span class="n">mask2</span><span class="p">][</span><span class="n">selected_fields</span><span class="p">]</span>
-<span class="n">ai_df</span>
-</code></pre></div><p><img loading="lazy" src="img/03-df.png" alt=""  />
-</p>
-<br>
-<p>筛选结果基本上都是人工智能相关专利技术。</p>
-<br>
-<h3 id="34-专利类型分布">3.4 专利类型分布</h3>
-<p>内蒙古自治区， 人工智能相关专利的类型分布</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ai_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">专利类型
-发明公开    52
-实用新型    18
-外观设计     5
-发明授权     4
-Name: count, dtype: int64
-</code></pre></div><br>
-<h3 id="35-年度申请量">3.5 年度申请量</h3>
-<p>计算内蒙古自治区，人工智能相关专利年度申请量。 根据申请日， 先生成year字段</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ai_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_df</span><span class="p">[</span><span class="s2">&#34;申请日&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span><span class="n">d</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
-
-<span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">ai_year_df</span> <span class="ow">in</span> <span class="n">ai_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ai_year_df</span><span class="p">))</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2015 2
-2016 3
-2017 4
-2018 7
-2019 8
-2020 28
-2021 24
-2022 3
-</code></pre></div><br>
-<h3 id="36-获取年度各种专利类型的数量">3.6 获取年度各种专利类型的数量</h3>
-<p>计算内蒙古自治区，人工智能领域各类型专利的年度申请量</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">ai_year_df</span> <span class="ow">in</span> <span class="n">ai_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">):</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">year</span>
-    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;实用新型&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;实用新型&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明公开&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明公开&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;外观设计&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;外观设计&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明授权&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明授权&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;省份&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;内蒙古自治区&#39;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;年度&#39;: &#39;2015&#39;, &#39;实用新型&#39;: 0, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 2, &#39;发明授权&#39;: 0, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
-{&#39;年度&#39;: &#39;2016&#39;, &#39;实用新型&#39;: 1, &#39;发明公开&#39;: 0, &#39;外观设计&#39;: 2, &#39;发明授权&#39;: 0, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
-{&#39;年度&#39;: &#39;2017&#39;, &#39;实用新型&#39;: 3, &#39;发明公开&#39;: 1, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 0, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
-{&#39;年度&#39;: &#39;2018&#39;, &#39;实用新型&#39;: 1, &#39;发明公开&#39;: 5, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 1, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
-{&#39;年度&#39;: &#39;2019&#39;, &#39;实用新型&#39;: 4, &#39;发明公开&#39;: 3, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 1, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
-{&#39;年度&#39;: &#39;2020&#39;, &#39;实用新型&#39;: 4, &#39;发明公开&#39;: 22, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 2, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
-{&#39;年度&#39;: &#39;2021&#39;, &#39;实用新型&#39;: 5, &#39;发明公开&#39;: 18, &#39;外观设计&#39;: 1, &#39;发明授权&#39;: 0, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
-{&#39;年度&#39;: &#39;2022&#39;, &#39;实用新型&#39;: 0, &#39;发明公开&#39;: 3, &#39;外观设计&#39;: 0, &#39;发明授权&#39;: 0, &#39;省份&#39;: &#39;内蒙古自治区&#39;}
-</code></pre></div><br>
-<h3 id="37-路径列表">3.7 路径列表</h3>
-<p>使用glob库查看专利申请数据集内的含 <em><strong>csv.gz</strong></em> 的所有文件路径</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">glob</span>
-
-<span class="c1">#剔除港、澳、台、海外</span>
-<span class="n">not_in</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;3571万专利申请全量数据1985-2022年/台湾省.csv.gz&#39;</span><span class="p">,</span>
-          <span class="s1">&#39;3571万专利申请全量数据1985-2022年/澳门特别行政区.csv.gz&#39;</span><span class="p">,</span> 
-          <span class="s1">&#39;3571万专利申请全量数据1985-2022年/香港特别行政区.csv.gz&#39;</span><span class="p">,</span> 
-          <span class="s1">&#39;3571万专利申请全量数据1985-2022年/其他国家.csv.gz&#39;</span><span class="p">]</span>
-
-
-<span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;3571万专利申请全量数据1985-2022年/*.csv.gz&#39;</span><span class="p">)</span>
-<span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">not_in</span><span class="p">]</span>
-<span class="n">files</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;3571万专利申请全量数据1985-2022年/内蒙古自治区.csv.gz&#39;,
- &#39;3571万专利申请全量数据1985-2022年/吉林省.csv.gz&#39;,
- &#39;3571万专利申请全量数据1985-2022年/安徽省.csv.gz&#39;,
- &#39;3571万专利申请全量数据1985-2022年/江苏省.csv.gz&#39;,
- ......
- &#39;3571万专利申请全量数据1985-2022年/海南省.csv.gz&#39;,
- &#39;3571万专利申请全量数据1985-2022年/河北省.csv.gz&#39;,
- &#39;3571万专利申请全量数据1985-2022年/黑龙江省.csv.gz&#39;,
- &#39;3571万专利申请全量数据1985-2022年/宁夏回族自治区.csv.gz&#39;,
- &#39;3571万专利申请全量数据1985-2022年/广西壮族自治区.csv.gz&#39;]
-</code></pre></div><br>
-<h3 id="38-批量运算">3.8 批量运算</h3>
-<p>现在对所有省市进行刚刚的操作， 筛选出的人工智能专利详细信息保存到 <em><strong>AI_details.csv</strong></em> , 同时汇总面板数据(年度、省份、专利数量), 得到 <em><strong>AI_panel.xlsx</strong></em> 。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
-
-<span class="n">AI_rela_words</span> <span class="o">=</span> <span class="s1">&#39;人工智能|机器学习|AI|NLP|智能问答|智能问答|神经机器翻译|NLU|增量学习&#39;</span>
-<span class="n">AI_Relatives_Patents</span> <span class="o">=</span> <span class="p">[]</span>
-
-<span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-    <span class="n">prov</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.csv.gz&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
-    
-    <span class="n">mask1</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
-    <span class="n">mask2</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利摘要&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
-
-    <span class="n">ai_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">mask1</span> <span class="o">&amp;</span> <span class="n">mask2</span><span class="p">]</span>
-    <span class="n">ai_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_df</span><span class="p">[</span><span class="s2">&#34;申请日&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span><span class="n">d</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
-    
-    <span class="c1">#保存全国AI专利详情信息</span>
-    <span class="n">ai_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;AI_details.csv&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    
-    <span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">ai_year_df</span> <span class="ow">in</span> <span class="n">ai_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">year</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;实用新型&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;实用新型&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明公开&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明公开&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;外观设计&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;外观设计&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明授权&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明授权&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;省份&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prov</span>
-        <span class="n">AI_Relatives_Patents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-<span class="n">ai_panel_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">AI_Relatives_Patents</span><span class="p">)</span>
-<span class="n">ai_panel_df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s1">&#39;AI_panel.xlsx&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;记录数:&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ai_panel_df</span><span class="p">))</span>
-<span class="n">ai_panel_df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">3571万专利申请全量数据1985-2022年/内蒙古自治区.csv.gzip
-3571万专利申请全量数据1985-2022年/吉林省.csv.gzip
-......
-3571万专利申请全量数据1985-2022年/宁夏回族自治区.csv.gzip
-3571万专利申请全量数据1985-2022年/广西壮族自治区.csv.gzip
-
-记录数: 394
-CPU times: user 12min 40s, sys: 1min 1s, total: 13min 41s
-Wall time: 13min 42s
-</code></pre></div><p><img loading="lazy" src="img/04-df.png" alt=""  />
-</p>
-<br>
-<h3 id="39-剔除重复">3.9 剔除重复</h3>
-<p>AI_details.csv 会有一些重复内容，可以剔除重复内容，删除旧文件，导出新的不重复的文件。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">os</span>
-
-<span class="n">AI_detail_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;AI_details.csv&#39;</span><span class="p">)</span>
-<span class="n">AI_detail_df</span> <span class="o">=</span> <span class="n">AI_detail_df</span><span class="p">[</span><span class="n">AI_detail_df</span><span class="p">[</span><span class="s1">&#39;专利公开号&#39;</span><span class="p">]</span><span class="o">!=</span><span class="s1">&#39;专利公开号&#39;</span><span class="p">]</span>
-<span class="n">AI_detail_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&#34;AI_details.csv&#34;</span><span class="p">)</span>
-<span class="n">AI_detail_df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s2">&#34;AI_details.xlsx&#34;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</code></pre></div><p><br><br></p>
-<h3 id="四汇总代码">四、汇总代码</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">glob</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-
-<span class="n">AI_rela_words</span> <span class="o">=</span> <span class="s1">&#39;人工智能|机器学习|AI|NLP|智能问答|智能问答|神经机器翻译|NLU|增量学习&#39;</span>
-
-<span class="c1">#剔除港、澳、台、海外</span>
-<span class="n">not_in</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;3571万专利申请全量数据1985-2022年/台湾省.csv.gz&#39;</span><span class="p">,</span>
-          <span class="s1">&#39;3571万专利申请全量数据1985-2022年/澳门特别行政区.csv.gz&#39;</span><span class="p">,</span> 
-          <span class="s1">&#39;3571万专利申请全量数据1985-2022年/香港特别行政区.csv.gz&#39;</span><span class="p">,</span> 
-          <span class="s1">&#39;3571万专利申请全量数据1985-2022年/其他国家.csv.gz&#39;</span><span class="p">]</span>
-<span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;3571万专利申请全量数据1985-2022年/*.csv.gz&#39;</span><span class="p">)</span>
-<span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">not_in</span><span class="p">]</span>
-
-
-<span class="n">AI_Relatives_Patents</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-    <span class="n">prov</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.csv.gz&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
-    
-    <span class="c1">#筛选出AI专利</span>
-    <span class="n">mask1</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
-    <span class="n">mask2</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;专利摘要&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">AI_rela_words</span><span class="p">)</span>
-    <span class="n">ai_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">mask1</span> <span class="o">&amp;</span> <span class="n">mask2</span><span class="p">]</span>
-    
-    <span class="c1">#保存全国AI专利详情信息</span>
-    <span class="n">ai_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;AI_details.csv&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    
-    <span class="n">ai_df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_df</span><span class="p">[</span><span class="s2">&#34;申请日&#34;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span><span class="n">d</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
-    <span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">ai_year_df</span> <span class="ow">in</span> <span class="n">ai_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;年度&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">year</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;实用新型&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;实用新型&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明公开&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明公开&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;外观设计&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;外观设计&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;发明授权&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ai_year_df</span><span class="p">[</span><span class="s1">&#39;专利类型&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;发明授权&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;省份&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prov</span>
-        <span class="n">AI_Relatives_Patents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    
-
-<span class="n">china_ai_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">AI_Relatives_Patents</span><span class="p">)</span>
-<span class="n">china_ai_df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s1">&#39;AI_panel.xlsx&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-
-<span class="n">AI_detail_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;AI_details.csv&#39;</span><span class="p">)</span>
-<span class="n">AI_detail_df</span> <span class="o">=</span> <span class="n">AI_detail_df</span><span class="p">[</span><span class="n">AI_detail_df</span><span class="p">[</span><span class="s1">&#39;专利公开号&#39;</span><span class="p">]</span><span class="o">!=</span><span class="s1">&#39;专利公开号&#39;</span><span class="p">]</span>
-<span class="n">AI_detail_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&#34;AI_details.csv&#34;</span><span class="p">)</span>
-<span class="n">AI_detail_df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s2">&#34;AI_details.xlsx&#34;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</code></pre></div><p><br><br></p>
-<h2 id="五欣赏下成品">五、欣赏下成品</h2>
-<ul>
-<li><a href="AI_panel.xlsx">点击下载AI_panel.xlsx</a></li>
-<li><a href="AI_details.xlsx">点击下载AI_details.xlsx</a></li>
-</ul>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ai_panel_df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;AI_panel.csv&#39;</span><span class="p">)</span>
-<span class="n">ai_panel_df2</span>
-</code></pre></div><p><img loading="lazy" src="img/02-df.png" alt=""  />
-</p>
-<br>
-<p>更多数据集，可点击前往 <a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></p>
 <br>
 <br>
 <h2 id="广而告之">广而告之</h2>
