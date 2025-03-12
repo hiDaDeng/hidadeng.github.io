@@ -105,8 +105,8 @@
   "keywords": [
     "数据集", "经济管理", "可视化", "pandas", "matplotlib", "中国大陆", "工商注册信息"
   ],
-  "articleBody": "一、工商数据集 1.1 概况 数据来源: 国家企业信用信息公示系统 记录条数: 2.49亿条 文件体积: 160G(解压后) 涵盖日期: 1949.10.1~2023.9.19 数据集已脱敏处理， 没有手机号、邮箱等联系信息，无商业营销价值。 科研用途，仅供展示。如有问题，加微信372335839，备注「姓名-学校-专业」 1.2 字段 任意csv文件的字段包括\n- 企业名称 - 英文名称 - 统一社会信用代码 - 企业类型 - 经营状态 - 成立日期 - 核准日期 - 法定代表人 - 注册咨本 - 实缴资本 - 参保人数 - 公司规模 - 经营范围 - 注册地址 - 营业期限 - 纳税人识别号 - 工商注册号 - 组织机构代码 - 纳税人资质 - 曾用名 - 所属省份 - 所属城市 - 所属区县 - 网站链接 - 所属行业 - 登记机关 - 经度 - 纬度 \n1.3 查看文件 import os os.listdir() Run\n[ '北京.csv.gz', '上海.csv.gz', '南京.csv.gz', ... '重庆.csv.gz', ] \n二、实验代码 2.1 读取数据 不考虑电脑内存容量限制， 读取 石家庄市、长沙市、杭州市。如果电脑内存很小，请先阅读 推荐 | 如何处理远超电脑内存的csv文件\nimport pandas as pd sjz_df = pd.read_csv('石家庄.csv.gz', compression='gzip', encoding='utf-8', low_memory=False) cs_df = pd.read_csv('长沙.csv.gz', compression='gzip', encoding='utf-8', low_memory=False) hz_df = pd.read_csv('杭州.csv.gz', compression='gzip', encoding='utf-8', low_memory=False) #随机显示2条记录 sjz_df.sample(2) 2.2 记录数 石家庄.csv 企业记录数\nlen(sjz_df) Run\n2010163 \n2.3 所含字段 含有的字段有\nsjz_df.columns Run\nIndex(['企业组织机构代码', '企业名称', '注册资本', '实缴资本', '纳税人识别号', '法定代表人', '企业状态', '所属行业', '企业名称', '英文名称', '统一社会信用代码', '企业类型', '经营状态', '成立日期', '核准日期', '法定代表人', '注册咨本', '实缴资本', '参保人数', '公司规模', '经营范围', '注册地址', '营业期限', '纳税人识别号', '工商注册号', '组织机构代码', '联系电话', '邮箱', '纳税人资质', '曾用名', '所属省份', '所属城市', '所属区县', '网站链接', '所属行业', '登记机关', '经度', '纬度'], dtype='object') \n2.4 日期转换 sjz_df['成立日期'] = pd.to_datetime(sjz_df['成立日期']) #石家庄数据集日期范围 print(sjz_df['成立日期'].min()) print(sjz_df['成立日期'].max()) Run\n1917-01-30 00:00:00 2023-09-19 00:00:00 \n查看成立日期为1917-01-30的信息\nimport datetime sjz_df[sjz_df['成立日期']==datetime.datetime(year=1917, month=1, day=30)].to_dict() Run\n{'企业组织机构代码': {913555: '81130000MC0611518K'}, '企业名称': {913555: '中国铁路工会石家庄站委员会'}, '注册资本': {913555: '276.5万元人民币'}, '实缴资本': {913555: '-'}, '纳税人识别号': {913555: '81130000MC0611518K'}, '法定代表人': {913555: '韩海峰'}, '企业状态': {913555: '暂无'}, '所属行业': {913555: '公共管理、社会保障和社会组织'}, '统一社会信用代码': {913555: '81130000MC0611518K'}, '工商注册号': {913555: nan}, '组织机构代码': {913555: '-'}, '登记机关': {913555: '河北省总工会'}, '成立日期': {913555: Timestamp('1917-01-30 00:00:00')}, '核准日期': {913555: '1949-10-01'}, '企业类型': {913555: '-'}, '经营期限': {913555: '2019-04-01 至 2022-02-09'}, '注册所在地': {913555: nan}, '地区编码': {913555: '130105'}, '详细地址': {913555: '石家庄市新华区大桥路2号'}, '经营范围': {913555: '-'}, '参保人数': {913555: 478.0}, '企业电话': {913555: nan}, '企业座机': {913555: nan}, '企业邮箱': {913555: nan}} \n三、可视化 绘制一个1992-2023年的注册量折线图\nimport matplotlib.pyplot as plt import matplotlib import matplotlib_inline matplotlib_inline.backend_inline.set_matplotlib_formats('png', 'svg') import scienceplots import platform plt.style.use(['science', 'no-latex', 'cjk-sc-font']) system = platform.system() # 获取操作系统类型 if system == 'Windows': font = {'family': 'SimHei'} elif system == 'Darwin': font = {'family': 'Arial Unicode MS'} else: font = {'family': 'sans-serif'} matplotlib.rc('font', **font) # 设置全局字体 plt.figure(figsize=(12, 8)) years = [str(y) for y in range(1992, 2023)] sjz_df['成立日期'].str.slice(0, 4).value_counts(ascending=True)[years].plot(label='石家庄') cs_df['成立日期'].str.slice(0, 4).value_counts(ascending=True)[years].plot(label='长沙') hz_df['成立日期'].str.slice(0, 4).value_counts(ascending=True)[years].plot(label='杭州') plt.title('工商企业注册量1992-2019年', fontsize=16, color='black', ha='center') plt.xlabel('年份') plt.ylabel('注册量') plt.legend(loc='upper right') plt.show() \n广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
-  "wordCount" : "347",
+  "articleBody": "一、工商数据集 1.1 概况 数据来源: 国家企业信用信息公示系统 记录条数: 2.49亿条 文件体积: 160G(解压后) 涵盖日期: 1949.10.1~2023.9.19 数据集已脱敏处理， 没有手机号、邮箱等联系信息，无商业营销价值。 科研用途，仅供展示。如有问题，加微信372335839，备注「姓名-学校-专业」 1.2 字段 任意csv文件的字段包括\n- 企业名称 - 英文名称 - 统一社会信用代码 - 企业类型 - 经营状态 - 成立日期 - 核准日期 - 法定代表人 - 注册咨本 - 实缴资本 - 参保人数 - 公司规模 - 经营范围 - 注册地址 - 营业期限 - 纳税人识别号 - 工商注册号 - 组织机构代码 - 纳税人资质 - 曾用名 - 所属省份 - 所属城市 - 所属区县 - 网站链接 - 所属行业 - 登记机关 - 经度 - 纬度 \n1.3 查看文件 import os os.listdir() Run\n[ '北京.csv.gz', '上海.csv.gz', '南京.csv.gz', ... '重庆.csv.gz', ] \n二、实验代码 2.1 读取数据 不考虑电脑内存容量限制， 读取 石家庄市、长沙市、杭州市。如果电脑内存很小，请先阅读 推荐 | 如何处理远超电脑内存的csv文件\nimport pandas as pd sjz_df = pd.read_csv('石家庄.csv.gz', compression='gzip', encoding='utf-8', low_memory=False) cs_df = pd.read_csv('长沙.csv.gz', compression='gzip', encoding='utf-8', low_memory=False) hz_df = pd.read_csv('杭州.csv.gz', compression='gzip', encoding='utf-8', low_memory=False) #随机显示2条记录 sjz_df.sample(2) 2.2 记录数 石家庄.csv 企业记录数\nlen(sjz_df) Run\n2010163 \n2.3 所含字段 含有的字段有\nsjz_df.columns Run\nIndex(['企业组织机构代码', '企业名称', '注册资本', '实缴资本', '纳税人识别号', '法定代表人', '企业状态', '所属行业', '企业名称', '英文名称', '统一社会信用代码', '企业类型', '经营状态', '成立日期', '核准日期', '法定代表人', '注册咨本', '实缴资本', '参保人数', '公司规模', '经营范围', '注册地址', '营业期限', '纳税人识别号', '工商注册号', '组织机构代码', '联系电话', '邮箱', '纳税人资质', '曾用名', '所属省份', '所属城市', '所属区县', '网站链接', '所属行业', '登记机关', '经度', '纬度'], dtype='object') \n2.4 日期转换 sjz_df['成立日期'] = pd.to_datetime(sjz_df['成立日期']) #石家庄数据集日期范围 print(sjz_df['成立日期'].min()) print(sjz_df['成立日期'].max()) Run\n1917-01-30 00:00:00 2023-09-19 00:00:00 \n查看成立日期为1917-01-30的信息\nimport datetime sjz_df[sjz_df['成立日期']==datetime.datetime(year=1917, month=1, day=30)].to_dict() Run\n{'企业组织机构代码': {913555: '81130000MC0611518K'}, '企业名称': {913555: '中国铁路工会石家庄站委员会'}, '注册资本': {913555: '276.5万元人民币'}, '实缴资本': {913555: '-'}, '纳税人识别号': {913555: '81130000MC0611518K'}, '法定代表人': {913555: '韩海峰'}, '企业状态': {913555: '暂无'}, '所属行业': {913555: '公共管理、社会保障和社会组织'}, '统一社会信用代码': {913555: '81130000MC0611518K'}, '工商注册号': {913555: nan}, '组织机构代码': {913555: '-'}, '登记机关': {913555: '河北省总工会'}, '成立日期': {913555: Timestamp('1917-01-30 00:00:00')}, '核准日期': {913555: '1949-10-01'}, '企业类型': {913555: '-'}, '经营期限': {913555: '2019-04-01 至 2022-02-09'}, '注册所在地': {913555: nan}, '地区编码': {913555: '130105'}, '详细地址': {913555: '石家庄市新华区大桥路2号'}, '经营范围': {913555: '-'}, '参保人数': {913555: 478.0}, '企业电话': {913555: nan}, '企业座机': {913555: nan}, '企业邮箱': {913555: nan}} \n三、可视化 绘制一个1992-2023年的注册量折线图\nimport matplotlib.pyplot as plt import matplotlib import matplotlib_inline matplotlib_inline.backend_inline.set_matplotlib_formats('png', 'svg') import scienceplots import platform plt.style.use(['science', 'no-latex', 'cjk-sc-font']) system = platform.system() # 获取操作系统类型 if system == 'Windows': font = {'family': 'SimHei'} elif system == 'Darwin': font = {'family': 'Arial Unicode MS'} else: font = {'family': 'sans-serif'} matplotlib.rc('font', **font) # 设置全局字体 plt.figure(figsize=(12, 8)) years = [str(y) for y in range(1992, 2023)] sjz_df['成立日期'].str.slice(0, 4).value_counts(ascending=True)[years].plot(label='石家庄') cs_df['成立日期'].str.slice(0, 4).value_counts(ascending=True)[years].plot(label='长沙') hz_df['成立日期'].str.slice(0, 4).value_counts(ascending=True)[years].plot(label='杭州') plt.title('工商企业注册量1992-2019年', fontsize=16, color='black', ha='center') plt.xlabel('年份') plt.ylabel('注册量') plt.legend(loc='upper right') plt.show() \n 点击了解课程详情   ",
+  "wordCount" : "342",
   "inLanguage": "en",
   "image":"/images/blog/china-mainland-corporate-registration-information-size.png","datePublished": "2023-12-03T00:00:00Z",
   "dateModified": "2023-12-03T00:00:00Z",
@@ -191,8 +191,8 @@
                 </a>
             </li>
             <li>
-                <a href="/blog" title="博文" target="_blank">
-                    <span>博文</span>
+                <a href="/archives/" title="归档" target="_blank">
+                    <span>归档</span>
                 </a>
             </li>
             <li>
@@ -335,9 +335,7 @@ onload="renderMathInElement(document.body);"></script>
                         <a href="#24-%e6%97%a5%e6%9c%9f%e8%bd%ac%e6%8d%a2" aria-label="2.4 日期转换">2.4 日期转换</a></li></ul>
                     </li>
                     <li>
-                        <a href="#%e4%b8%89%e5%8f%af%e8%a7%86%e5%8c%96" aria-label="三、可视化">三、可视化</a></li>
-                    <li>
-                        <a href="#%e5%b9%bf%e8%80%8c%e5%91%8a%e4%b9%8b" aria-label="广而告之">广而告之</a>
+                        <a href="#%e4%b8%89%e5%8f%af%e8%a7%86%e5%8c%96" aria-label="三、可视化">三、可视化</a>
                     </li>
                 </ul>
             </div>
@@ -563,12 +561,14 @@ onload="renderMathInElement(document.body);"></script>
 </code></pre></div><p><img loading="lazy" src="img/output_8_0.png" alt="svg"  />
 </p>
 <p><br><br></p>
-<h2 id="广而告之">广而告之<a hidden class="anchor" aria-hidden="true" href="#广而告之">#</a></h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 
 
   </div>

@@ -6,9 +6,238 @@
     <description>Recent content in pandas on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Mon, 10 Mar 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pandas/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 11 Mar 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pandas/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>推荐 | 如何处理远超电脑内存的csv文件</title>
+      <title>数据集 | Layline美股内幕交易数据集</title>
+      <link>https://textdata.cn/blog/2025-03-11-layline-insider-trading-dataset/</link>
+      <pubDate>Tue, 11 Mar 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2025-03-11-layline-insider-trading-dataset/</guid>
+      <description>该数据集捕捉了公开交易公司的内幕交易活动。证券交易委员会自 2003 年中以来在其网站上以结构化格式提供了这些内幕交易报告。然而，大多数学术论文使用的是商业数据库而非直接使用监管文件，这使得复制变得困难，因为商业数据库中的数据操作和聚合步骤是不透明的，而且随着时间的推移，数据提供者可能会更改历史记录。为了克服这些限制，本数据集是从原始监管文件创建的；它每天更新，并包括内幕人士报告的所有信息，未经修改。This dataset captures insider trading activity at publicly traded companies. The Securities and Exchange Commission has made these insider trading reports available on its web site in a structured format since mid-2003. However, most academic papers use proprietary commercial databases instead of regulatory filings directly, which makes replication challenging because the data manipulation and aggregation steps in commercial databases are opaque and historical records could be altered by the data provider over time. To overcome these limitations, the presented dataset is created from the original regulatory filings; it is updated daily and includes all information reported by insiders without alteration.</description>
+      <content:encoded><![CDATA[<p>该数据集捕捉了上市公司内幕交易活动。投资者和投资分析师需要这些信息，因为高管、董事和大股东被认为比外界人士更了解其公司的前景。内幕交易中的股票买卖可能揭示了财务报表中未披露的公司业务信息。如果内幕人士能够更好地解读有关公司的公开信息，这些交易还可能传递出预测股价变动的新信息。</p>
+<p>自 2003 年中起，证券交易委员会以结构化格式向公众提供了这些内幕交易报告； 然而，大多数学术论文使用的是商业数据库而非直接的监管文件。这使得复制研究变得困难，因为数据处理和聚合过程不透明，历史记录可能会随着时间被数据库提供商修改。为了克服这些限制，本数据集是从原始监管文件创建的；它每天更新，并包括内幕人士报告的所有信息，未经修改。</p>
+<p><br><br></p>
+<h2 id="一-数据集介绍">一、 数据集介绍</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">数据集名:  Layline内幕交易数据集(Layline insider trading dataset)
+覆盖日期: 2003-06-30 ~ 2023-02-02
+数据体积:  解压后35G(截止2023-02-02)
+数据来源: https://www.sec.gov/edgar
+下载数据:  https://www.kaggle.com/datasets/layline/insidertrading
+引用数据:  Balogh, Attila, 2023, &#34;Layline insider trading dataset&#34;, https://doi.org/10.7910/DVN/VH6GVH, Harvard Dataverse, V419
+本文说明: 科研用途; 如有问题，请加微信372335839，备注「姓名-学校-专业」
+</code></pre></div><p><img loading="lazy" src="img/01-harvard.png" alt=""  />
+</p>
+<br>
+<blockquote>
+<p>Layline项目是一个研究倡议，旨在利用高性能和云计算创建金融经济学领域的公开可访问数据集。它通过民主化数据访问来降低进入门槛，同时也通过促进复制研究增加了该领域的透明度。</p>
+</blockquote>
+<p><img loading="lazy" src="img/05-layline.png" alt=""  />
+</p>
+<br>
+<br>
+<h2 id="二实验代码">二、实验代码</h2>
+<p><strong>一般1G大小的csv，对应着要消耗电脑内 1G ~ 5G 内存</strong> 。 该数据集相关文件截图如下， 可以看到文件的体积都比较大。 目前大家使用的电脑，内存参数大多是8G或16G， 少部分同学们使用的32G+。接下来以 <em><strong>lit_footnotes.csv</strong></em> 为例， 简单学下 <em><strong>pd.read_csv</strong></em> 读取技巧。</p>
+<p><img loading="lazy" src="img/02-screen.png" alt=""  />
+</p>
+<p><strong>pd.read_csv(filepath_or_buffer, nrows, usecols, engine=&lsquo;pyarrow&rsquo;, dtype_backend=&lsquo;pyarrow&rsquo;,  chunksize)</strong></p>
+<ul>
+<li><em><strong>filepath_or_buffer</strong></em>   csv数据文件路径</li>
+<li><em><strong>nrows</strong></em>  限定读取行数</li>
+<li><em><strong>usecols</strong></em> 选取部分字段进行读取(列表)</li>
+<li><em><strong>engine</strong></em>  设置读取引擎， 可选python、c、pyarrow。
+<ul>
+<li>其中python为默认方式， 兼容性最佳。</li>
+<li>c和pyarrow读取速度较python更快</li>
+<li>pyarrow可并行读取，速度最快，但兼容性差，容易报错。</li>
+</ul>
+</li>
+<li><em><strong>dtype_backend</strong></em>  设置pyarrow后，大大降低python中该数据内存占用量</li>
+<li><em><strong>chunksize</strong></em>  每批次行数； 如果文件体积远超电脑内存时， 可将一个大文件拆分， 分批次读取。</li>
+</ul>
+<br>
+<p>这里设计一个df内存查看函数，单位GB</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>  
+    <span class="n">bytes_value</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">bytes_value</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span> <span class="o">**</span> <span class="mi">3</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>  
+  
+  
+<span class="k">def</span> <span class="nf">bytes_to_MB</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>  
+    <span class="n">bytes_value</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">bytes_value</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>  
+</code></pre></div><br>
+<h3 id="21-nrows">2.1 nrows</h3>
+<p>使用 <em><strong>nrows</strong></em> 参数设置只读取前n条记录， 了解csv字段有哪些</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#只读取csv中前5条记录</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;lit_footnotes.csv&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/03-df.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#只读取csv中前5条记录</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;lit_footnotes.csv&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 35.7 s, sys: 4.55 s, total: 40.3 s
+Wall time: 37.5 s
+
+内存占用: 10.84 GB
+</code></pre></div><br>
+<h3 id="22-usecols">2.2 usecols</h3>
+<p>指定某几个字段进行读取</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#指定某些字段读取</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;lit_footnotes.csv&#39;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;filingDate&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
+<span class="n">df</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">内存占用: 6.95 GB
+CPU times: user 32.2 s, sys: 1.55 s, total: 33.8 s
+Wall time: 34.1 s
+</code></pre></div><p><img loading="lazy" src="img/04-df.png" alt=""  />
+</p>
+<br>
+<h3 id="23-engine">2.3 engine</h3>
+<p>可指定 <em><strong>engine=&lsquo;pyarrow&rsquo;</strong></em>,  来提高读取速度。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;lit_footnotes.csv&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;pyarrow&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">内存占用: 10.84 GB
+CPU times: user 23.3 s, sys: 12.6 s, total: 35.9 s
+Wall time: 19.7 s
+</code></pre></div><p><strong>注: 有时候使用engine=&lsquo;pyarrow&rsquo;, 容易代码报错， 这时候就只能放弃这个方法乖乖的默认读取。</strong> 经大邓实验，本数据集全部csv文件均可正常使用 <em><strong>engine=&lsquo;pyarrow&rsquo;</strong></em> 。</p>
+<br>
+<h3 id="24-dtype_backend">2.4 dtype_backend</h3>
+<p>指定 <em><strong>dtype_backend=&lsquo;pyarrow&rsquo;</strong></em> 理论上会大大降低内存占用，但读取速度可能不一定提高。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;lit_footnotes.csv&#39;</span><span class="p">,</span> <span class="n">dtype_backend</span><span class="o">=</span><span class="s1">&#39;pyarrow&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">内存占用: 7.19 GB
+CPU times: user 44 s, sys: 8 s, total: 52 s
+Wall time: 53.5 s
+</code></pre></div><br>
+<p>同时指定 <em><strong>engine</strong></em> 和 <em><strong>dtype_backend</strong></em> 两个参数， 会明显提高读取速度。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;lit_footnotes.csv&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;pyarrow&#39;</span><span class="p">,</span> <span class="n">dtype_backend</span><span class="o">=</span><span class="s1">&#39;pyarrow&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">内存占用: 7.19 GB
+CPU times: user 9.88 s, sys: 7.55 s, total: 17.4 s
+Wall time: 2.12 s
+</code></pre></div><br>
+<h3 id="对比">对比</h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>解析速度</th>
+<th>内存占用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em><strong>pd.read_csv(csvf)</strong></em></td>
+<td>最慢</td>
+<td>最大</td>
+</tr>
+<tr>
+<td><em><strong>pd.read_csv(csvf. engine=&lsquo;pyarrow&rsquo;)</strong></em></td>
+<td>较快</td>
+<td>中等</td>
+</tr>
+<tr>
+<td><em><strong>pd.read_csv(csvf, engine=&lsquo;pyarrow&rsquo;, dtype_backend=&lsquo;pyarrow&rsquo;)</strong></em></td>
+<td><strong>最快</strong></td>
+<td><strong>最小</strong></td>
+</tr>
+</tbody>
+</table>
+<br>
+<h3 id="25-chunksize">2.5 chunksize</h3>
+<p>当探索完前n行，选中某些列，我们已经了解了哪些字段是我们必须要用的， 占用系统内存的大小。</p>
+<p>接下来，我们就可以尝试着按照批次读取数据。</p>
+<p>为了让实验简单高效，我们假设只读取前50000行， 每批次是10000 行。 对比下占用系统内存的量</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#一次性读取50000条记录</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;lit_footnotes.csv&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">50000</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;一次性读取内存占用: </span><span class="si">{</span><span class="n">bytes_to_MB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> MB&#34;</span><span class="p">)</span> 
+
+
+<span class="c1">#分批次读取</span>
+<span class="c1">#每10000条记录是一个批次，得到chunk_dfs</span>
+<span class="n">chunk_dfs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;lit_footnotes.csv&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span> <span class="n">chunksize</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+<span class="c1">#每个chunk_df就是我们熟悉的dataframe类型数据</span>
+<span class="k">for</span> <span class="n">chunk_df</span> <span class="ow">in</span> <span class="n">chunk_dfs</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;分批次读取内存占用: </span><span class="si">{</span><span class="n">bytes_to_MB</span><span class="p">(</span><span class="n">chunk_df</span><span class="p">)</span><span class="si">}</span><span class="s2"> MB&#34;</span><span class="p">)</span> 
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">一次性读取内存占用: 23.04 MB
+分批次读取内存占用: 4.71 MB
+分批次读取内存占用: 4.73 MB
+分批次读取内存占用: 4.43 MB
+分批次读取内存占用: 4.68 MB
+分批次读取内存占用: 4.5 MB
+</code></pre></div><br>
+<p>在实践中，<em><strong>nrows</strong></em>  和 <em><strong>chunksize</strong></em> 不会同时出现， 而且 <em><strong>chunksize</strong></em> 一般都会设置的很大，例如1000000条。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">chunk_dfs = pd.read_csv(&#39;csv文件&#39;, chunksize=1000000)
+</code></pre></div><p>看到 <em><strong>chunk_dfs</strong></em> 也不要害怕，其实每个 <em><strong>chunk_df</strong></em> 就是我们熟悉的 <em><strong>df</strong></em> ，即dataframe数据类型。</p>
+<br>
+<br>
+<h2 id="三总结">三、总结</h2>
+<p>记住这行代码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pd.read_csv(csvf, nrows, usecols, engine, dtype_backend, chunksize)
+</code></pre></div><p>8G内存的电脑， 通过以上技巧，基本可以把我们应对大数据的潜力放大N倍。  N可以是几倍、十几倍、几十倍、上百倍&hellip;，<strong>放大潜力的过程</strong></p>
+<ul>
+<li><em><strong>usecols</strong></em> 和 <em><strong>chunksize</strong></em>  起主要作用，百试百爽，稳定不出错。</li>
+<li><em><strong>engine</strong></em>  和  <em><strong>dtype_backend</strong></em>  提高读取速度并降低内存占用，但代码容易出错。</li>
+<li><em><strong>chunksize</strong></em>、<em><strong>nrows</strong></em> 参数不能与 <em><strong>engine</strong></em>、<em><strong>dtype_backend</strong></em>同时使用。</li>
+</ul>
+<p><br><br></p>
+<h2 id="相关内容">相关内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
+<li><a href="https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/">推荐 | 如何处理远超电脑内存的csv文件</a></li>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的科研数据集清单</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+</ul>
+<p><br><br></p>
+<p><div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
+<br>
+<br>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div></p>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>推荐 | 如何处理远超电脑内存的 csv 文件</title>
       <link>https://textdata.cn/blog/2023-11-17-how-handle-mega-csv-that-far-exceed-memory/</link>
       <pubDate>Mon, 10 Mar 2025 00:00:00 +0000</pubDate>
       
@@ -72,91 +301,45 @@
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-df.png&#34; alt=&#34;&#34;  /&gt;
 &lt;/p&gt;
 &lt;br&gt;
-&lt;h3 id=&#34;32-dfcolumns&#34;&gt;3.2 df.columns&lt;/h3&gt;
-&lt;p&gt;获得所有的字段名&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;columns&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Index([&amp;#39;标题&amp;#39;, &amp;#39;投诉时间&amp;#39;, &amp;#39;投诉问题&amp;#39;, &amp;#39;投诉要求&amp;#39;, &amp;#39;涉诉金额&amp;#39;, &amp;#39;投诉对象&amp;#39;, &amp;#39;使用服务&amp;#39;, &amp;#39;链接&amp;#39;, &amp;#39;投诉进度&amp;#39;,
-       &amp;#39;进度时间&amp;#39;],
-      dtype=&amp;#39;object&amp;#39;)
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;33-dfinfomemory_usagedeep&#34;&gt;3.3 df.info(memory_usage=&amp;lsquo;deep&amp;rsquo;)&lt;/h3&gt;
-&lt;p&gt;单单用df.columns只知其名，但无法内部什么数据结构。使用df.info()&lt;/p&gt;
+&lt;h3 id=&#34;32-usecols&#34;&gt;3.2 usecols&lt;/h3&gt;
+&lt;p&gt;使用usecols参数，设置只读取某个(些)字段&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
 
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;消费者黑猫投诉数据.csv.gz&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;info&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;memory_usage&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;deep&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;class &amp;#39;pandas.core.frame.DataFrame&amp;#39;&amp;gt;
-RangeIndex: 15314398 entries, 0 to 15314397
-Data columns (total 10 columns):
- #   Column  Dtype 
----  ------  ----- 
- 0   标题      object
- 1   投诉时间    object
- 2   投诉问题    object
- 3   投诉要求    object
- 4   涉诉金额    object
- 5   投诉对象    object
- 6   使用服务    object
- 7   链接      object
- 8   投诉进度    object
- 9   进度时间    object
-dtypes: object(10)
-memory usage: 11.0 GB
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;em&gt;&lt;strong&gt;注意: 「消费者黑猫投诉数据.csv.gz」解压后3.63G，但是当全部读入Python后，占用内存11G&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;消费者黑猫投诉数据.csv.gz&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;nrows&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;usecols&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;标题&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;投诉时间&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;进度时间&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
 &lt;br&gt;
-&lt;h3 id=&#34;34-dfmemory_usagedeeptrue&#34;&gt;3.4 df.memory_usage(deep=True)&lt;/h3&gt;
-&lt;p&gt;但最好能了解每个字段占用的系统内存， 后续可以决定只读取必要的字段，减少内存占用。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;消费者黑猫投诉数据.csv.gz&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;#单位MB&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;memory_usage&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;deep&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;/&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1024&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1024&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Index       0.000126
-标题       1406.530089
-投诉时间      993.136467
-投诉问题     1291.882941
-投诉要求     1187.013599
-涉诉金额     1081.462795
-投诉对象     1128.217254
-使用服务      553.707052
-链接       1489.704700
-投诉进度     1091.660748
-进度时间      993.134201
-dtype: float64
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;p&gt;这里定义函数*&lt;strong&gt;bytes_to_GB&lt;/strong&gt;， 方便后文查看变量占用内存大小(单位GB）。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;bytes_to_GB&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;bytes_value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;  
+&lt;h3 id=&#34;33-bytes_to_gbdf&#34;&gt;3.3 bytes_to_GB(df)&lt;/h3&gt;
+&lt;p&gt;设计一个查看文件内存的函数， 单位GB&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;bytes_to_GB&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;  
+    &lt;span class=&#34;n&#34;&gt;bytes_value&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;memory_usage&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;deep&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sum&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
     &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;round&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;bytes_value&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;/&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1024&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;**&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;  
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
 &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
 
 &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;消费者黑猫投诉数据.csv.gz&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;total_mb&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bytes_to_GB&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;memory_usage&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;deep&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;  
-&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;total_mb&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; GB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;  
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;bytes_to_GB&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; GB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;  
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 35.7 s, sys: 1.62 s, total: 37.3 s
 Wall time: 37.3 s
 内存占用: 10.95 GB
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;35-engine&#34;&gt;3.5 engine&lt;/h3&gt;
+&lt;h3 id=&#34;34-engine&#34;&gt;3.4 engine&lt;/h3&gt;
 &lt;p&gt;可指定 &lt;em&gt;&lt;strong&gt;engine=&amp;lsquo;pyarrow&amp;rsquo;&lt;/strong&gt;&lt;/em&gt;,  来提高读取速度。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
 &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
 
 &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;消费者黑猫投诉数据.csv.gz&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;engine&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;pyarrow&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;total_mb&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bytes_to_GB&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;memory_usage&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;deep&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;  
-&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;total_mb&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; GB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; 
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;bytes_to_GB&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; GB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 19.1 s, sys: 2.81 s, total: 21.9 s
 Wall time: 14.1 s
 内存占用: 9.14 GB
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;注: 使用engine=&amp;lsquo;pyarrow&amp;rsquo;, 容易代码报错， 这时候就只能放弃这个方法乖乖的默认读取。&lt;/strong&gt;&lt;/p&gt;
 &lt;br&gt;
-&lt;h3 id=&#34;36-dtype_backend&#34;&gt;3.6 dtype_backend&lt;/h3&gt;
+&lt;h3 id=&#34;35-dtype_backend&#34;&gt;3.5 dtype_backend&lt;/h3&gt;
 &lt;p&gt;指定 &lt;em&gt;&lt;strong&gt;dtype_backend=&amp;lsquo;pyarrow&amp;rsquo;&lt;/strong&gt;&lt;/em&gt; 理论上会大大降低内存占用，但读取速度可能不一定提高。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
 &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
@@ -164,8 +347,7 @@ Wall time: 14.1 s
 &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;消费者黑猫投诉数据.csv.gz&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
                   &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
                   &lt;span class=&#34;n&#34;&gt;dtype_backend&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;pyarrow&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;total_mb&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bytes_to_GB&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;memory_usage&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;deep&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;  
-&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;total_mb&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; GB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; 
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;bytes_to_GB&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; GB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 54.1 s, sys: 5.59 s, total: 59.7 s
 Wall time: 1min
@@ -179,63 +361,50 @@ Wall time: 1min
                   &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
                   &lt;span class=&#34;n&#34;&gt;engine&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;pyarrow&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
                   &lt;span class=&#34;n&#34;&gt;dtype_backend&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;pyarrow&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;total_mb&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bytes_to_mb&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;memory_usage&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;deep&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sum&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;  
-&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;total_mb&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; MB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;  
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;bytes_to_GB&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; GB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;CPU times: user 10.9 s, sys: 2.4 s, total: 13.3 s
 Wall time: 4.75 s
 
 内存占用: 3.36 GB
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;对比&#34;&gt;对比&lt;/h3&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
 &lt;th&gt;参数&lt;/th&gt;
 &lt;th&gt;解析速度&lt;/th&gt;
 &lt;th&gt;内存占用&lt;/th&gt;
-&lt;th&gt;原因&lt;/th&gt;
 &lt;/tr&gt;
 &lt;/thead&gt;
 &lt;tbody&gt;
 &lt;tr&gt;
-&lt;td&gt;默认读取&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;pd.read_csv(csvf)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
 &lt;td&gt;最慢&lt;/td&gt;
 &lt;td&gt;最大&lt;/td&gt;
-&lt;td&gt;逐行解析 + NumPy 行式存储 + 动态类型推断‌34&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
-&lt;td&gt;&lt;em&gt;&lt;strong&gt;engine=&amp;lsquo;pyarrow&amp;rsquo;&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;pd.read_csv(csvf. engine=&amp;lsquo;pyarrow&amp;rsquo;)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
 &lt;td&gt;较快&lt;/td&gt;
 &lt;td&gt;中等&lt;/td&gt;
-&lt;td&gt;列式并行解析 + Arrow 类型优化（但可能混用 NumPy 类型）‌24&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
-&lt;td&gt;&lt;em&gt;&lt;strong&gt;engine=&amp;lsquo;pyarrow&amp;rsquo;&lt;/strong&gt;&lt;/em&gt; 和 &lt;em&gt;&lt;strong&gt;dtype_backend=&amp;lsquo;pyarrow&amp;rsquo;&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;pd.read_csv(csvf, engine=&amp;lsquo;pyarrow&amp;rsquo;, dtype_backend=&amp;lsquo;pyarrow&amp;rsquo;)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
 &lt;td&gt;&lt;strong&gt;最快&lt;/strong&gt;&lt;/td&gt;
 &lt;td&gt;&lt;strong&gt;最小&lt;/strong&gt;&lt;/td&gt;
-&lt;td&gt;列式并行解析 + 全程 Arrow 类型（无类型转换）‌24&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;br&gt;
-&lt;h3 id=&#34;37-读取某字段&#34;&gt;3.7 读取某字段&lt;/h3&gt;
-&lt;p&gt;使用usecols参数，设置只读取某个(些)字段&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;消费者黑猫投诉数据.csv.gz&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;nrows&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;usecols&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;标题&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;投诉时间&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;进度时间&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-df.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;38--小批次读取&#34;&gt;3.8  小批次读取&lt;/h3&gt;
-&lt;p&gt;当探索完前n行，选中某些列，我们已经了解了哪些字段是我们必须要用的， 占用系统内存的大小。接下来，我们就可以尝试着按照批次读取数据。后面一节，我们尝试转csv为xlsx，其实就是按批次读取， 将数据转为体量更小的xlsx。&lt;/p&gt;
-&lt;p&gt;为了让实验简单高效，我们假设只读取前50行， 每批次是5行。 对比下占用系统内存的量&lt;/p&gt;
+&lt;h3 id=&#34;36-chunksize&#34;&gt;3.6 chunksize&lt;/h3&gt;
+&lt;p&gt;当探索完前n行，选中某些列，我们已经了解了哪些字段是我们必须要用的， 占用系统内存的大小。&lt;/p&gt;
+&lt;p&gt;接下来，我们就可以尝试着按照批次读取数据。&lt;/p&gt;
+&lt;p&gt;为了让实验简单高效，我们假设只读取前50000行， 每批次是10000 行。 对比下占用系统内存的量&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
 
 &lt;span class=&#34;c1&#34;&gt;#一次性读取10000条记录&lt;/span&gt;
 &lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;消费者黑猫投诉数据.csv.gz&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;nrows&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;50000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;total_mb&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bytes_to_mb&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;memory_usage&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;deep&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sum&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;  
-&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;一次性读取内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;total_mb&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; MB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;  
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;一次性读取内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;bytes_to_GB&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; GB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; 
 
 
 
@@ -246,15 +415,15 @@ Wall time: 4.75 s
 &lt;span class=&#34;c1&#34;&gt;#每个chunk_df就是我们熟悉的dataframe类型数据&lt;/span&gt;
 &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_dfs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
     &lt;span class=&#34;n&#34;&gt;chunkdf_total_mb&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bytes_to_mb&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;memory_usage&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;deep&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sum&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;  
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;一次性读取内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chunkdf_total_mb&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; MB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;  
+    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;分批次读取内存占用: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;bytes_to_GB&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; GB&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;一次性读取内存占用: 36.62 MB
 
-一次性读取内存占用: 7.32 MB
-一次性读取内存占用: 7.32 MB
-一次性读取内存占用: 7.33 MB
-一次性读取内存占用: 7.33 MB
-一次性读取内存占用: 7.32 MB
+分批次读取内存占用: 7.32 MB
+分批次读取内存占用: 7.32 MB
+分批次读取内存占用: 7.33 MB
+分批次读取内存占用: 7.33 MB
+分批次读取内存占用: 7.32 MB
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
 &lt;p&gt;在实践中，&lt;em&gt;&lt;strong&gt;nrows&lt;/strong&gt;&lt;/em&gt;  和 &lt;em&gt;&lt;strong&gt;chunksize&lt;/strong&gt;&lt;/em&gt; 不会同时出现， 而且 &lt;em&gt;&lt;strong&gt;chunksize&lt;/strong&gt;&lt;/em&gt; 一般都会设置的很大，例如1000000条。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;chunk_dfs = pd.read_csv(&amp;#39;csv文件&amp;#39;, chunksize=1000000)
@@ -262,19 +431,22 @@ Wall time: 4.75 s
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;四总结&#34;&gt;四、总结&lt;/h2&gt;
 &lt;p&gt;记住这行代码&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pd.read_csv(csvf, engine, dtype_backend, nrows, usecols, chunksize)
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pd.read_csv(csvf, nrows, usecols, engine, dtype_backend, chunksize)
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;8G内存的电脑， 通过以上技巧，基本可以把我们应对大数据的潜力放大N倍。  N可以是几倍、十几倍、几十倍、上百倍&amp;hellip;，&lt;strong&gt;放大潜力的过程&lt;/strong&gt;&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;em&gt;&lt;strong&gt;usecols&lt;/strong&gt;&lt;/em&gt; 和 &lt;em&gt;&lt;strong&gt;chunksize&lt;/strong&gt;&lt;/em&gt;  起主要作用，百试百爽，稳定不出错。&lt;/li&gt;
 &lt;li&gt;&lt;em&gt;&lt;strong&gt;engine&lt;/strong&gt;&lt;/em&gt;  和  &lt;em&gt;&lt;strong&gt;dtype_backend&lt;/strong&gt;&lt;/em&gt;  提高读取速度并降低内存占用，但代码容易出错。&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;chunksize&lt;/strong&gt;&lt;/em&gt;、&lt;em&gt;&lt;strong&gt;nrows&lt;/strong&gt;&lt;/em&gt; 参数不能与 &lt;em&gt;&lt;strong&gt;engine&lt;/strong&gt;&lt;/em&gt;、&lt;em&gt;&lt;strong&gt;dtype_backend&lt;/strong&gt;&lt;/em&gt;同时使用。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;
 </description>
       <content:encoded><![CDATA[<h2 id="一问题">一、问题</h2>
 <p>最近分享的数据集都是体量巨大，</p>
@@ -335,91 +507,45 @@ Wall time: 4.75 s
 </code></pre></div><p><img loading="lazy" src="img/01-df.png" alt=""  />
 </p>
 <br>
-<h3 id="32-dfcolumns">3.2 df.columns</h3>
-<p>获得所有的字段名</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Index([&#39;标题&#39;, &#39;投诉时间&#39;, &#39;投诉问题&#39;, &#39;投诉要求&#39;, &#39;涉诉金额&#39;, &#39;投诉对象&#39;, &#39;使用服务&#39;, &#39;链接&#39;, &#39;投诉进度&#39;,
-       &#39;进度时间&#39;],
-      dtype=&#39;object&#39;)
-</code></pre></div><br>
-<h3 id="33-dfinfomemory_usagedeep">3.3 df.info(memory_usage=&lsquo;deep&rsquo;)</h3>
-<p>单单用df.columns只知其名，但无法内部什么数据结构。使用df.info()</p>
+<h3 id="32-usecols">3.2 usecols</h3>
+<p>使用usecols参数，设置只读取某个(些)字段</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;消费者黑猫投诉数据.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">memory_usage</span><span class="o">=</span><span class="s1">&#39;deep&#39;</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
-RangeIndex: 15314398 entries, 0 to 15314397
-Data columns (total 10 columns):
- #   Column  Dtype 
----  ------  ----- 
- 0   标题      object
- 1   投诉时间    object
- 2   投诉问题    object
- 3   投诉要求    object
- 4   涉诉金额    object
- 5   投诉对象    object
- 6   使用服务    object
- 7   链接      object
- 8   投诉进度    object
- 9   进度时间    object
-dtypes: object(10)
-memory usage: 11.0 GB
-</code></pre></div><p><em><strong>注意: 「消费者黑猫投诉数据.csv.gz」解压后3.63G，但是当全部读入Python后，占用内存11G</strong></em></p>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;消费者黑猫投诉数据.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;标题&#39;</span><span class="p">,</span> <span class="s1">&#39;投诉时间&#39;</span><span class="p">,</span><span class="s1">&#39;进度时间&#39;</span><span class="p">])</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/02-df.png" alt=""  />
+</p>
 <br>
-<h3 id="34-dfmemory_usagedeeptrue">3.4 df.memory_usage(deep=True)</h3>
-<p>但最好能了解每个字段占用的系统内存， 后续可以决定只读取必要的字段，减少内存占用。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;消费者黑猫投诉数据.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
-<span class="c1">#单位MB</span>
-<span class="n">df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1024</span><span class="o">*</span><span class="mi">1024</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Index       0.000126
-标题       1406.530089
-投诉时间      993.136467
-投诉问题     1291.882941
-投诉要求     1187.013599
-涉诉金额     1081.462795
-投诉对象     1128.217254
-使用服务      553.707052
-链接       1489.704700
-投诉进度     1091.660748
-进度时间      993.134201
-dtype: float64
-</code></pre></div><br>
-<p>这里定义函数*<strong>bytes_to_GB</strong>， 方便后文查看变量占用内存大小(单位GB）。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">bytes_to_GB</span><span class="p">(</span><span class="n">bytes_value</span><span class="p">):</span>  
+<h3 id="33-bytes_to_gbdf">3.3 bytes_to_GB(df)</h3>
+<p>设计一个查看文件内存的函数， 单位GB</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>  
+    <span class="n">bytes_value</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">bytes_value</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span> <span class="o">**</span> <span class="mi">3</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>  
 </code></pre></div><br>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;消费者黑猫投诉数据.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
-<span class="n">total_mb</span> <span class="o">=</span> <span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="p">)</span>  
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">total_mb</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span>  
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span>  
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 35.7 s, sys: 1.62 s, total: 37.3 s
 Wall time: 37.3 s
 内存占用: 10.95 GB
 </code></pre></div><br>
-<h3 id="35-engine">3.5 engine</h3>
+<h3 id="34-engine">3.4 engine</h3>
 <p>可指定 <em><strong>engine=&lsquo;pyarrow&rsquo;</strong></em>,  来提高读取速度。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;消费者黑猫投诉数据.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;pyarrow&#39;</span><span class="p">)</span>
-<span class="n">total_mb</span> <span class="o">=</span> <span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="p">)</span>  
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">total_mb</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 19.1 s, sys: 2.81 s, total: 21.9 s
 Wall time: 14.1 s
 内存占用: 9.14 GB
 </code></pre></div><p><strong>注: 使用engine=&lsquo;pyarrow&rsquo;, 容易代码报错， 这时候就只能放弃这个方法乖乖的默认读取。</strong></p>
 <br>
-<h3 id="36-dtype_backend">3.6 dtype_backend</h3>
+<h3 id="35-dtype_backend">3.5 dtype_backend</h3>
 <p>指定 <em><strong>dtype_backend=&lsquo;pyarrow&rsquo;</strong></em> 理论上会大大降低内存占用，但读取速度可能不一定提高。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -427,8 +553,7 @@ Wall time: 14.1 s
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;消费者黑猫投诉数据.csv.gz&#39;</span><span class="p">,</span> 
                   <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> 
                   <span class="n">dtype_backend</span><span class="o">=</span><span class="s1">&#39;pyarrow&#39;</span><span class="p">)</span>
-<span class="n">total_mb</span> <span class="o">=</span> <span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="p">)</span>  
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">total_mb</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 54.1 s, sys: 5.59 s, total: 59.7 s
 Wall time: 1min
@@ -442,63 +567,50 @@ Wall time: 1min
                   <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> 
                   <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;pyarrow&#39;</span><span class="p">,</span> 
                   <span class="n">dtype_backend</span><span class="o">=</span><span class="s1">&#39;pyarrow&#39;</span><span class="p">)</span>
-<span class="n">total_mb</span> <span class="o">=</span> <span class="n">bytes_to_mb</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>  
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">total_mb</span><span class="si">}</span><span class="s2"> MB&#34;</span><span class="p">)</span>  
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;内存占用: </span><span class="si">{</span><span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 10.9 s, sys: 2.4 s, total: 13.3 s
 Wall time: 4.75 s
 
 内存占用: 3.36 GB
 </code></pre></div><br>
+<h3 id="对比">对比</h3>
 <table>
 <thead>
 <tr>
 <th>参数</th>
 <th>解析速度</th>
 <th>内存占用</th>
-<th>原因</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>默认读取</td>
+<td><em><strong>pd.read_csv(csvf)</strong></em></td>
 <td>最慢</td>
 <td>最大</td>
-<td>逐行解析 + NumPy 行式存储 + 动态类型推断‌34</td>
 </tr>
 <tr>
-<td><em><strong>engine=&lsquo;pyarrow&rsquo;</strong></em></td>
+<td><em><strong>pd.read_csv(csvf. engine=&lsquo;pyarrow&rsquo;)</strong></em></td>
 <td>较快</td>
 <td>中等</td>
-<td>列式并行解析 + Arrow 类型优化（但可能混用 NumPy 类型）‌24</td>
 </tr>
 <tr>
-<td><em><strong>engine=&lsquo;pyarrow&rsquo;</strong></em> 和 <em><strong>dtype_backend=&lsquo;pyarrow&rsquo;</strong></em></td>
+<td><em><strong>pd.read_csv(csvf, engine=&lsquo;pyarrow&rsquo;, dtype_backend=&lsquo;pyarrow&rsquo;)</strong></em></td>
 <td><strong>最快</strong></td>
 <td><strong>最小</strong></td>
-<td>列式并行解析 + 全程 Arrow 类型（无类型转换）‌24</td>
 </tr>
 </tbody>
 </table>
 <br>
-<h3 id="37-读取某字段">3.7 读取某字段</h3>
-<p>使用usecols参数，设置只读取某个(些)字段</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;消费者黑猫投诉数据.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;标题&#39;</span><span class="p">,</span> <span class="s1">&#39;投诉时间&#39;</span><span class="p">,</span><span class="s1">&#39;进度时间&#39;</span><span class="p">])</span>
-<span class="n">df</span>
-</code></pre></div><p><img loading="lazy" src="img/02-df.png" alt=""  />
-</p>
-<br>
-<h3 id="38--小批次读取">3.8  小批次读取</h3>
-<p>当探索完前n行，选中某些列，我们已经了解了哪些字段是我们必须要用的， 占用系统内存的大小。接下来，我们就可以尝试着按照批次读取数据。后面一节，我们尝试转csv为xlsx，其实就是按批次读取， 将数据转为体量更小的xlsx。</p>
-<p>为了让实验简单高效，我们假设只读取前50行， 每批次是5行。 对比下占用系统内存的量</p>
+<h3 id="36-chunksize">3.6 chunksize</h3>
+<p>当探索完前n行，选中某些列，我们已经了解了哪些字段是我们必须要用的， 占用系统内存的大小。</p>
+<p>接下来，我们就可以尝试着按照批次读取数据。</p>
+<p>为了让实验简单高效，我们假设只读取前50000行， 每批次是10000 行。 对比下占用系统内存的量</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="c1">#一次性读取10000条记录</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;消费者黑猫投诉数据.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">50000</span><span class="p">)</span>
-<span class="n">total_mb</span> <span class="o">=</span> <span class="n">bytes_to_mb</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>  
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;一次性读取内存占用: </span><span class="si">{</span><span class="n">total_mb</span><span class="si">}</span><span class="s2"> MB&#34;</span><span class="p">)</span>  
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;一次性读取内存占用: </span><span class="si">{</span><span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
 
 
 
@@ -509,15 +621,15 @@ Wall time: 4.75 s
 <span class="c1">#每个chunk_df就是我们熟悉的dataframe类型数据</span>
 <span class="k">for</span> <span class="n">chunk_df</span> <span class="ow">in</span> <span class="n">chunk_dfs</span><span class="p">:</span>
     <span class="n">chunkdf_total_mb</span> <span class="o">=</span> <span class="n">bytes_to_mb</span><span class="p">(</span><span class="n">chunk_df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>  
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;一次性读取内存占用: </span><span class="si">{</span><span class="n">chunkdf_total_mb</span><span class="si">}</span><span class="s2"> MB&#34;</span><span class="p">)</span>  
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;分批次读取内存占用: </span><span class="si">{</span><span class="n">bytes_to_GB</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> GB&#34;</span><span class="p">)</span> 
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">一次性读取内存占用: 36.62 MB
 
-一次性读取内存占用: 7.32 MB
-一次性读取内存占用: 7.32 MB
-一次性读取内存占用: 7.33 MB
-一次性读取内存占用: 7.33 MB
-一次性读取内存占用: 7.32 MB
+分批次读取内存占用: 7.32 MB
+分批次读取内存占用: 7.32 MB
+分批次读取内存占用: 7.33 MB
+分批次读取内存占用: 7.33 MB
+分批次读取内存占用: 7.32 MB
 </code></pre></div><br>
 <p>在实践中，<em><strong>nrows</strong></em>  和 <em><strong>chunksize</strong></em> 不会同时出现， 而且 <em><strong>chunksize</strong></em> 一般都会设置的很大，例如1000000条。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">chunk_dfs = pd.read_csv(&#39;csv文件&#39;, chunksize=1000000)
@@ -525,19 +637,22 @@ Wall time: 4.75 s
 <p><br><br></p>
 <h2 id="四总结">四、总结</h2>
 <p>记住这行代码</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pd.read_csv(csvf, engine, dtype_backend, nrows, usecols, chunksize)
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pd.read_csv(csvf, nrows, usecols, engine, dtype_backend, chunksize)
 </code></pre></div><p>8G内存的电脑， 通过以上技巧，基本可以把我们应对大数据的潜力放大N倍。  N可以是几倍、十几倍、几十倍、上百倍&hellip;，<strong>放大潜力的过程</strong></p>
 <ul>
 <li><em><strong>usecols</strong></em> 和 <em><strong>chunksize</strong></em>  起主要作用，百试百爽，稳定不出错。</li>
 <li><em><strong>engine</strong></em>  和  <em><strong>dtype_backend</strong></em>  提高读取速度并降低内存占用，但代码容易出错。</li>
+<li><em><strong>chunksize</strong></em>、<em><strong>nrows</strong></em> 参数不能与 <em><strong>engine</strong></em>、<em><strong>dtype_backend</strong></em>同时使用。</li>
 </ul>
 <p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -607,12 +722,14 @@ Wall time: 4.75 s
 &lt;/p&gt;
 &lt;br&gt;
 &lt;br&gt;
-&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;
 </description>
       <content:encoded><![CDATA[<p>DataFrame的四则运算， 涉及到标量数字与数组(列表、series、字典、dataframe)。我们先构造实验数据df</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -674,12 +791,14 @@ Wall time: 4.75 s
 </p>
 <br>
 <br>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -1122,12 +1241,14 @@ df_csv
 │ 4 ┆&amp;#34;赵六&amp;#34; ┆ 1995-06-15 00:00:00 ┆ &amp;#34;女&amp;#34;  │&amp;#34;躺平ing&amp;#34;         |[&amp;#34;躺平&amp;#34;]|
 └──────────┴─────────────────────┴───────┘─────────────────┴───────┴
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;
 </description>
       <content:encoded><![CDATA[<h2 id="一介绍">一、介绍</h2>
 <p>Polars 是一个用于操作结构化数据的高性能 DataFrame 库，由于 Polars 是从0开始用Rust编写，紧密与机器结合。其矢量化和列式处理可在现代处理器上实现缓存一致性算法和高性能。如果您经常使用 pandas，那么用起 Polars 会感觉很轻松，可以说是平替 Pandas 最有潜质的包。</p>
@@ -1562,12 +1683,14 @@ df_csv
 │ 4 ┆&#34;赵六&#34; ┆ 1995-06-15 00:00:00 ┆ &#34;女&#34;  │&#34;躺平ing&#34;         |[&#34;躺平&#34;]|
 └──────────┴─────────────────────┴───────┘─────────────────┴───────┴
 </code></pre></div><p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -1737,12 +1860,14 @@ df_csv
 </code></pre></div><p><img loading="lazy" src="img/output_8_0.png" alt="svg"  />
 </p>
 <p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -1951,12 +2076,14 @@ df
 &lt;p&gt;使用 GitHub API，我们构建了超过 1000 万 GitHub 用户的无偏见数据集。该数据收集于2018年7月20日至8月27日期间，涵盖10,649,574名用户、118,602,740次提交和20,999,258个存储库。每个数据条目都以 JSON 格式存储，代表一个 GitHub 用户，并包含用户个人资料页面中的描述信息、她的提交活动以及创建/分叉的公共存储库的信息。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;数据集下载地址&lt;/strong&gt; &lt;a href=&#34;https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/T6ZRJT&#34;&gt;https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/T6ZRJT&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;
 </description>
       <content:encoded><![CDATA[<blockquote>
 <p>科研用途，仅供展示；如有任何问题，加微信372335839，备注「姓名-学校-专业」</p>
@@ -2157,12 +2284,14 @@ df
 <p>使用 GitHub API，我们构建了超过 1000 万 GitHub 用户的无偏见数据集。该数据收集于2018年7月20日至8月27日期间，涵盖10,649,574名用户、118,602,740次提交和20,999,258个存储库。每个数据条目都以 JSON 格式存储，代表一个 GitHub 用户，并包含用户个人资料页面中的描述信息、她的提交活动以及创建/分叉的公共存储库的信息。</p>
 <p><strong>数据集下载地址</strong> <a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/T6ZRJT">https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/T6ZRJT</a></p>
 <p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -2246,12 +2375,14 @@ repo_list
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df.png&#34; alt=&#34;&#34;  /&gt;
 &lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;
 </description>
       <content:encoded><![CDATA[<h2 id="一github">一、Github</h2>
 <p>GitHub 是一个具有代表性的开发者社区，帮助了软件的在线开发，吸引了全球超过 1亿开发者。 GitHub 将每个用户活动视为一个事件，例如新存储库或创建的分支的创建事件。 GitHub 总共支持 42 种事件类型。 典型的用户活动包括创建新存储库、克隆现有存储库、从 GitHub 提取存储库的最新更改以及提交本地所做的更改并将其推送到共享存储库。</p>
@@ -2327,12 +2458,14 @@ repo_list
 </code></pre></div><p><img loading="lazy" src="img/df.png" alt=""  />
 </p>
 <p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -2507,12 +2640,14 @@ Wall time: 2min 40s
 &lt;p&gt;并行化是有代价的（实例化新进程、通过共享内存发送数据、 &amp;hellip;），只有在并行化的计算量大时才有效足够高。对于小规模的数据，使用并行化并不总是值得的。经过测试， 找了一个61kb的xlsx， 结果并行化反而还慢了。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;pandarallel&lt;/strong&gt; 通过使用计算机cpu所有内核来绕过此限制。 但代价是，需要两倍于标准操作的内存占用。&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;
 </description>
       <content:encoded><![CDATA[<p>只需更改一行代码， <strong>pandarallel库</strong> 就可以充分利用CPU性能，并行化所有 Pandas 操作，加速你的数据处理。</p>
 <p><strong>pandarallel</strong> 还提供漂亮的进度条（在笔记本和终端上可用）以 大致了解要完成的剩余计算量。</p>
@@ -2679,12 +2814,14 @@ Wall time: 2min 40s
 <p>并行化是有代价的（实例化新进程、通过共享内存发送数据、 &hellip;），只有在并行化的计算量大时才有效足够高。对于小规模的数据，使用并行化并不总是值得的。经过测试， 找了一个61kb的xlsx， 结果并行化反而还慢了。</p>
 <p><strong>pandarallel</strong> 通过使用计算机cpu所有内核来绕过此限制。 但代价是，需要两倍于标准操作的内存占用。</p>
 <p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -2859,12 +2996,14 @@ Wall time: 3.33 s
 &lt;h2 id=&#34;注意&#34;&gt;注意&lt;/h2&gt;
 &lt;p&gt;但是由于时间限制，实验比较简单， 个中情况不能一一覆盖。 也有人反映，使用modin，反而比pandas更慢了。&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;
 </description>
       <content:encoded><![CDATA[<p>modin库是python的第三方库，只需一行代码，就能用pandas语法来加速数据处理过程。</p>
 <br>
@@ -3031,12 +3170,14 @@ Wall time: 3.33 s
 <h2 id="注意">注意</h2>
 <p>但是由于时间限制，实验比较简单， 个中情况不能一一覆盖。 也有人反映，使用modin，反而比pandas更慢了。</p>
 <p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -3224,12 +3365,23 @@ Finish! 质量概念 candidates saved to output/Word2Vec
   
 声明: 仅用于科研用途
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt;&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;&lt;br&gt;
+&lt;br&gt;
+&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;&lt;/p&gt;
 </description>
       <content:encoded><![CDATA[<h2 id="一说明">一、说明</h2>
 <p><a href="https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/"><strong>5112万条专利申请数据集(1985-2025年)</strong></a> 中随机抽取了20%的 「<strong>专利摘要</strong>」，构成6.14G的训练语料(千万级别)， 耗时6小时，训练得到word2vec模型。</p>
@@ -3409,12 +3561,23 @@ Finish! 质量概念 candidates saved to output/Word2Vec
   
 声明: 仅用于科研用途
 </code></pre></div><p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<p><div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div><br>
+<br>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div></p>
 ]]></content:encoded>
     </item>
     
@@ -3502,12 +3665,14 @@ Samsung
 &amp;#39;微软&amp;#39;: &amp;#39;Microsoft&amp;#39;, 
 &amp;#39;苹果&amp;#39;: &amp;#39;Apple&amp;#39;})
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;
 </description>
       <content:encoded><![CDATA[<p>字典是一种键值对key-value pair数据结构， 用key查询到对应的值value， 但不能用value查到对应的key。但有时我们面对的分析任务，需要用value查到对应的key， bidict可以帮我们实现这一特性。</p>
 <br>
@@ -3587,12 +3752,14 @@ Samsung
 &#39;微软&#39;: &#39;Microsoft&#39;, 
 &#39;苹果&#39;: &#39;Apple&#39;})
 </code></pre></div><p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -3861,12 +4028,14 @@ Name: 个人简历, Length: 736970, dtype: int64
 &lt;h2 id=&#34;获取代码&#34;&gt;获取代码&lt;/h2&gt;
 &lt;p&gt;&lt;a href=&#34;top-ceo.ipynb&#34;&gt;&lt;strong&gt;点击下载ipynb代码文件&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;
 </description>
       <content:encoded><![CDATA[<h2 id="一高管数据集">一、高管数据集</h2>
 <h3 id="11-介绍">1.1 介绍</h3>
@@ -4127,12 +4296,14 @@ Name: 个人简历, Length: 736970, dtype: int64
 <h2 id="获取代码">获取代码</h2>
 <p><a href="top-ceo.ipynb"><strong>点击下载ipynb代码文件</strong></a></p>
 <p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -4329,12 +4500,14 @@ Name: 个人简历, Length: 736970, dtype: int64
 &amp;lt;class &amp;#39;pandas._libs.tslibs.timestamps.Timestamp&amp;#39;&amp;gt; &amp;lt;class &amp;#39;pandas.core.frame.DataFrame&amp;#39;&amp;gt;
 ......
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;广而告之&#34;&gt;广而告之&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/call_for_paper/&#34;&gt;长期征稿&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/we_need_you/&#34;&gt;长期招募小伙伴&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;付费视频课 | Python实证指标构建与文本分析&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;div style=&#34;text-align: center;&#34;&gt;
+&lt;figure &gt;
+    &lt;a href=&#34;https://textdata.cn/blog/management_python_course/&#34;&gt;
+        &lt;img src=&#34;/images/bg/management_data_mining_with_python_course2.png&#34; width=&#34;100%&#34; /&gt;
+    &lt;/a&gt;
+    &lt;figcaption&gt;&lt;small&gt;&lt;i&gt;点击了解课程详情&lt;/i&gt;&lt;/small&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;
 </description>
       <content:encoded><![CDATA[<p>在数据分析和处理中，经常需要按照月份对时间序列数据进行分组和聚合。今天以高管违规数据为例， 想根据这份数据绘制月度高管违规量趋势，需要按照月份对数据进行分组，可以使用resample或groupby。本文知识点</p>
 <ol>
@@ -4523,12 +4696,14 @@ Name: 个人简历, Length: 736970, dtype: int64
 &lt;class &#39;pandas._libs.tslibs.timestamps.Timestamp&#39;&gt; &lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
 ......
 </code></pre></div><p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -4714,12 +4889,14 @@ dtype: int64
 <p>而方法二， 最费时间的瓶颈是将文本转化为数字(比较费时间)，后续的计算均为向量化(矩阵化)的数值计算，随着词典数n的增加， 所消耗的时间会越来越短。</p>
 <p><strong>一般情况下，使用「方法一」即可。当第一种方法运行不出结果，可以尝试「方法二」。</strong></p>
 <p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -4913,12 +5090,14 @@ dtype: int64
 <li>汽车相关， 天津位列top1</li>
 </ul>
 <p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -5023,12 +5202,14 @@ dtype: object
 |  7 | 1984.06.9  | Qunique | 每天开心                        |    36 | female   |      168 |       62 |
 |  8 | 1993.07.09 | Sara    | 难过悲伤                        |    27 | female   |      175 |       66 |
 </code></pre></div><p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -5146,12 +5327,14 @@ B(1234, &#34;Bloxs in notebook!&#34;)
 </p>
 <br>
 <br>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -5286,12 +5469,14 @@ B(1234, &#34;Bloxs in notebook!&#34;)
 </ul>
 <br>
 <br>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -5670,13 +5855,15 @@ B(1234, &#34;Bloxs in notebook!&#34;)
     
 </figure>
 
-<br>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<p><br><br></p>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -5779,12 +5966,14 @@ B(1234, &#34;Bloxs in notebook!&#34;)
 </p>
 <br>
 <br>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -5951,12 +6140,14 @@ B(1234, &#34;Bloxs in notebook!&#34;)
 <li>Bokeh官方文档地址https://docs.bokeh.org/en/latest/</li>
 </ul>
 <br>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -7311,12 +7502,14 @@ dtype: int64
 公众号: 关于数据分析与可视化</p>
 </blockquote>
 <br>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a><a href="https://textdata.cn/blog/management_python_course/">https://textdata.cn/blog/management_python_course/</a>)</li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -7421,12 +7614,14 @@ dtype: int64
 </figure>
 
 <br>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     
@@ -7527,12 +7722,14 @@ Name: baladded, dtype: float64
 <p>保存结果</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">result_df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s1">&#39;result.xlsx&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div><p><br><br></p>
-<h2 id="广而告之">广而告之</h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 ]]></content:encoded>
     </item>
     

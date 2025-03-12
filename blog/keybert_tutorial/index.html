@@ -105,8 +105,8 @@
   "keywords": [
     "文本向量化", "文本相似性计算", "文本分析", "BERT", "余弦相似度", "KeyBERT", "python"
   ],
-  "articleBody": "尽管已经有很多方法可用于关键字生成（例如，Rake、YAKE!、TF-IDF 等），但我想创建一个非常基本但功能强大的方法来提取关键字和关键短语。这就是 KeyBERT 的用武之地！它使用 BERT 嵌入 和 简单余弦相似度 来查找文档中与文档本身最相似的短语。\nKeyBERT步骤\n 首先使用 BERT 提取文档嵌入以获得文档级向量表示。 随后，为 N-gram 词/短语提取词向量。 然后，我们使用余弦相似度来找到与文档最相似的单词/短语。 最后可以将最相似的词识别为最能描述整个文档的词。  代码下载 click to download the code\n安装 !pip3 install keybert==0.5.0 \n初始化模型 KeyBERT库需要安装配置spacy语言模型\n具体参考公众号：大邓和他的Python 2021-10-29 的推文 查看spacy配置方法\n初始化模型\nfrom keybert import KeyBERT import spacy import jieba zh_model = spacy.load(\"zh_core_web_sm\") bertModel = KeyBERT(model=zh_model) \n准备数据 中文测试数据需要先分词，而后构造成类英文的语言结构(用空格间隔的文本)\n# 测试数据 doc = \"\"\"时值10月25日抗美援朝纪念日，《长津湖》片方发布了“纪念中国人民志愿军抗美援朝出国作战71周年特别短片”，再次向伟大的志愿军致敬！ 电影《长津湖》全情全景地还原了71年前抗美援朝战场上那场史诗战役，志愿军奋不顾身的英勇精神令观众感叹：“岁月峥嵘英雄不灭，丹心铁骨军魂永存！”影片上映以来票房屡创新高，目前突破53亿元，暂列中国影史票房总榜第三名。 值得一提的是，这部影片的很多主创或有军人的血脉，或有当兵的经历，或者家人是军人。提起这些他们也充满自豪，影片总监制黄建新称：“当兵以后会有一种特别能坚持的劲儿。”饰演雷公的胡军透露：“我父亲曾经参加过抗美援朝，还得了一个三等功。”影片历史顾问王树增表示：“我当了五十多年的兵，我的老部队就是上甘岭上下来的，那些老兵都是我的偶像。” “身先士卒卫华夏家国，血战无畏护山河无恙。”片中饰演七连连长伍千里的吴京感叹：“要永远记住这些先烈们，他们给我们带来今天的和平。感谢他们的付出，才让我们有今天的幸福生活。”饰演新兵伍万里的易烊千玺表示：“战争的残酷、碾压式的伤害，其实我们现在的年轻人几乎很难能体会到，希望大家看完电影后能明白，是那些先辈们的牺牲奉献，换来了我们的现在。” 影片对战争群像的恢弘呈现，对个体命运的深切关怀，令许多观众无法控制自己的眼泪，观众称：“当看到影片中的惊险战斗场面，看到英雄们壮怀激烈的拼杀，为国捐躯的英勇无畏和无悔付出，我明白了为什么说今天的幸福生活来之不易。”（记者 王金跃） \"\"\" doc = ' '.join(jieba.lcut(doc)) # 关键词提取 keywords = bertModel.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None, top_n=10) keywords [('铁骨', 0.5028), ('纪念日', 0.495), ('丹心', 0.4894), ('战役', 0.4869), ('影史', 0.473), ('父亲', 0.4576), ('票房', 0.4571), ('偶像', 0.4497), ('精神', 0.4436), ('家国', 0.4373)]  常用参数 bertModel.extract_keywords(docs, keyphrase_ngram_range, stop_words, top_n)\n docs 文档字符串（空格间隔词语的字符串） keyphrase_ngram_range 设置ngram，默认(1, 1) stop_words 停用词列表 top_n 显示前n个关键词，默认5 highlight 可视化标亮关键词，默认False use_maxsum: 默认False;是否使用Max Sum Similarity作为关键词提取标准， use_mmr: 默认False;是否使用Maximal Marginal Relevance (MMR) 作为关键词提取标准 diversity 如果use_mmr=True，可以设置该参数。参数取值范围从0到1  对于keyphrase_ngram_range参数，\n (1, 1) 只单个词， 如\"抗美援朝\", “纪念日\"是孤立的两个词 (2, 2) 考虑词组， 如出现有意义的词组 “抗美援朝 纪念日” (1, 2) 同时考虑以上两者情况  # 关键词提取 keywords = bertModel.extract_keywords(doc, keyphrase_ngram_range=(2, 2), stop_words=None, diversity=0.7, top_n=10) keywords [('影片 总监制', 0.5412), ('丹心 铁骨', 0.5339), ('抗美援朝 纪念日', 0.5295), ('长津湖 片方', 0.5252), ('志愿军 致敬', 0.5207), ('老兵 偶像', 0.5192), ('票房 创新', 0.5108), ('军人 血脉', 0.5084), ('家国 血战', 0.4946), ('家人 军人', 0.4885)]  #可视化 keywords = bertModel.extract_keywords(doc, keyphrase_ngram_range=(2, 2), stop_words=None, highlight=True, top_n=10) # 关键词提取 keywords = bertModel.extract_keywords(doc, keyphrase_ngram_range=(2, 2), stop_words=None, use_mmr=True, diversity=0.05, top_n=10) keywords [('影片 总监制', 0.5412), ('长津湖 片方', 0.5252), ('抗美援朝 纪念日', 0.5295), ('丹心 铁骨', 0.5339), ('志愿军 致敬', 0.5207), ('老兵 偶像', 0.5192), ('票房 创新', 0.5108), ('军人 血脉', 0.5084), ('家国 血战', 0.4946), ('家人 军人', 0.4885)]  英文KeyBERT 同样需要配置spacy，参考公众号：大邓和他的Python 2021-10-29 的推文 查看spacy配置方法\nfrom keybert import KeyBERT import spacy en_model = spacy.load(\"en_core_web_sm\") doc = \"\"\" Supervised learning is the machine learning task of learning a function that maps an input to an output based on example input-output pairs. It infers a function from labeled training data consisting of a set of training examples. In supervised learning, each example is a pair consisting of an input object (typically a vector) and a desired output value (also called the supervisory signal). A supervised learning algorithm analyzes the training data and produces an inferred function, which can be used for mapping new examples. An optimal scenario will allow for the algorithm to correctly determine the class labels for unseen instances. This requires the learning algorithm to generalize from the training data to unseen situations in a 'reasonable' way (see inductive bias). \"\"\" kw_model = KeyBERT() keywords = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2)) keywords Run\n[('supervised learning', 0.6779), ('supervised', 0.6676), ('signal supervised', 0.6152), ('examples supervised', 0.6112), ('labeled training', 0.6013)]  广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
-  "wordCount" : "402",
+  "articleBody": "尽管已经有很多方法可用于关键字生成（例如，Rake、YAKE!、TF-IDF 等），但我想创建一个非常基本但功能强大的方法来提取关键字和关键短语。这就是 KeyBERT 的用武之地！它使用 BERT 嵌入 和 简单余弦相似度 来查找文档中与文档本身最相似的短语。\nKeyBERT步骤\n 首先使用 BERT 提取文档嵌入以获得文档级向量表示。 随后，为 N-gram 词/短语提取词向量。 然后，我们使用余弦相似度来找到与文档最相似的单词/短语。 最后可以将最相似的词识别为最能描述整个文档的词。  代码下载 click to download the code\n安装 !pip3 install keybert==0.5.0 \n初始化模型 KeyBERT库需要安装配置spacy语言模型\n具体参考公众号：大邓和他的Python 2021-10-29 的推文 查看spacy配置方法\n初始化模型\nfrom keybert import KeyBERT import spacy import jieba zh_model = spacy.load(\"zh_core_web_sm\") bertModel = KeyBERT(model=zh_model) \n准备数据 中文测试数据需要先分词，而后构造成类英文的语言结构(用空格间隔的文本)\n# 测试数据 doc = \"\"\"时值10月25日抗美援朝纪念日，《长津湖》片方发布了“纪念中国人民志愿军抗美援朝出国作战71周年特别短片”，再次向伟大的志愿军致敬！ 电影《长津湖》全情全景地还原了71年前抗美援朝战场上那场史诗战役，志愿军奋不顾身的英勇精神令观众感叹：“岁月峥嵘英雄不灭，丹心铁骨军魂永存！”影片上映以来票房屡创新高，目前突破53亿元，暂列中国影史票房总榜第三名。 值得一提的是，这部影片的很多主创或有军人的血脉，或有当兵的经历，或者家人是军人。提起这些他们也充满自豪，影片总监制黄建新称：“当兵以后会有一种特别能坚持的劲儿。”饰演雷公的胡军透露：“我父亲曾经参加过抗美援朝，还得了一个三等功。”影片历史顾问王树增表示：“我当了五十多年的兵，我的老部队就是上甘岭上下来的，那些老兵都是我的偶像。” “身先士卒卫华夏家国，血战无畏护山河无恙。”片中饰演七连连长伍千里的吴京感叹：“要永远记住这些先烈们，他们给我们带来今天的和平。感谢他们的付出，才让我们有今天的幸福生活。”饰演新兵伍万里的易烊千玺表示：“战争的残酷、碾压式的伤害，其实我们现在的年轻人几乎很难能体会到，希望大家看完电影后能明白，是那些先辈们的牺牲奉献，换来了我们的现在。” 影片对战争群像的恢弘呈现，对个体命运的深切关怀，令许多观众无法控制自己的眼泪，观众称：“当看到影片中的惊险战斗场面，看到英雄们壮怀激烈的拼杀，为国捐躯的英勇无畏和无悔付出，我明白了为什么说今天的幸福生活来之不易。”（记者 王金跃） \"\"\" doc = ' '.join(jieba.lcut(doc)) # 关键词提取 keywords = bertModel.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None, top_n=10) keywords [('铁骨', 0.5028), ('纪念日', 0.495), ('丹心', 0.4894), ('战役', 0.4869), ('影史', 0.473), ('父亲', 0.4576), ('票房', 0.4571), ('偶像', 0.4497), ('精神', 0.4436), ('家国', 0.4373)]  常用参数 bertModel.extract_keywords(docs, keyphrase_ngram_range, stop_words, top_n)\n docs 文档字符串（空格间隔词语的字符串） keyphrase_ngram_range 设置ngram，默认(1, 1) stop_words 停用词列表 top_n 显示前n个关键词，默认5 highlight 可视化标亮关键词，默认False use_maxsum: 默认False;是否使用Max Sum Similarity作为关键词提取标准， use_mmr: 默认False;是否使用Maximal Marginal Relevance (MMR) 作为关键词提取标准 diversity 如果use_mmr=True，可以设置该参数。参数取值范围从0到1  对于keyphrase_ngram_range参数，\n (1, 1) 只单个词， 如\"抗美援朝\", “纪念日\"是孤立的两个词 (2, 2) 考虑词组， 如出现有意义的词组 “抗美援朝 纪念日” (1, 2) 同时考虑以上两者情况  # 关键词提取 keywords = bertModel.extract_keywords(doc, keyphrase_ngram_range=(2, 2), stop_words=None, diversity=0.7, top_n=10) keywords [('影片 总监制', 0.5412), ('丹心 铁骨', 0.5339), ('抗美援朝 纪念日', 0.5295), ('长津湖 片方', 0.5252), ('志愿军 致敬', 0.5207), ('老兵 偶像', 0.5192), ('票房 创新', 0.5108), ('军人 血脉', 0.5084), ('家国 血战', 0.4946), ('家人 军人', 0.4885)]  #可视化 keywords = bertModel.extract_keywords(doc, keyphrase_ngram_range=(2, 2), stop_words=None, highlight=True, top_n=10) # 关键词提取 keywords = bertModel.extract_keywords(doc, keyphrase_ngram_range=(2, 2), stop_words=None, use_mmr=True, diversity=0.05, top_n=10) keywords [('影片 总监制', 0.5412), ('长津湖 片方', 0.5252), ('抗美援朝 纪念日', 0.5295), ('丹心 铁骨', 0.5339), ('志愿军 致敬', 0.5207), ('老兵 偶像', 0.5192), ('票房 创新', 0.5108), ('军人 血脉', 0.5084), ('家国 血战', 0.4946), ('家人 军人', 0.4885)]  英文KeyBERT 同样需要配置spacy，参考公众号：大邓和他的Python 2021-10-29 的推文 查看spacy配置方法\nfrom keybert import KeyBERT import spacy en_model = spacy.load(\"en_core_web_sm\") doc = \"\"\" Supervised learning is the machine learning task of learning a function that maps an input to an output based on example input-output pairs. It infers a function from labeled training data consisting of a set of training examples. In supervised learning, each example is a pair consisting of an input object (typically a vector) and a desired output value (also called the supervisory signal). A supervised learning algorithm analyzes the training data and produces an inferred function, which can be used for mapping new examples. An optimal scenario will allow for the algorithm to correctly determine the class labels for unseen instances. This requires the learning algorithm to generalize from the training data to unseen situations in a 'reasonable' way (see inductive bias). \"\"\" kw_model = KeyBERT() keywords = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2)) keywords Run\n[('supervised learning', 0.6779), ('supervised', 0.6676), ('signal supervised', 0.6152), ('examples supervised', 0.6112), ('labeled training', 0.6013)]   点击了解课程详情   ",
+  "wordCount" : "397",
   "inLanguage": "en",
   "image":"/images/blog/keybert.png","datePublished": "2021-10-27T00:00:00Z",
   "dateModified": "2021-10-27T00:00:00Z",
@@ -191,8 +191,8 @@
                 </a>
             </li>
             <li>
-                <a href="/blog" title="博文" target="_blank">
-                    <span>博文</span>
+                <a href="/archives/" title="归档" target="_blank">
+                    <span>归档</span>
                 </a>
             </li>
             <li>
@@ -323,9 +323,7 @@ onload="renderMathInElement(document.body);"></script>
                     <li>
                         <a href="#%e5%b8%b8%e7%94%a8%e5%8f%82%e6%95%b0" aria-label="常用参数">常用参数</a></li>
                     <li>
-                        <a href="#%e8%8b%b1%e6%96%87keybert" aria-label="英文KeyBERT">英文KeyBERT</a></li>
-                    <li>
-                        <a href="#%e5%b9%bf%e8%80%8c%e5%91%8a%e4%b9%8b" aria-label="广而告之">广而告之</a>
+                        <a href="#%e8%8b%b1%e6%96%87keybert" aria-label="英文KeyBERT">英文KeyBERT</a>
                     </li>
                 </ul>
             </div>
@@ -548,12 +546,14 @@ onload="renderMathInElement(document.body);"></script>
  ('labeled training', 0.6013)]
 </code></pre>
 <br>
-<h2 id="广而告之">广而告之<a hidden class="anchor" aria-hidden="true" href="#广而告之">#</a></h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 
 
   </div>

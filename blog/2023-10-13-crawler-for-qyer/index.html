@@ -144,8 +144,8 @@ import csv with open(&#39;harbin_sight.csv&#39;, &#39;w&#39;, encoding=&#39;utf-
   "keywords": [
     "网络爬虫", "穷游网"
   ],
-  "articleBody": "一、发现网址规律 1.1 判断网站类型 这里我选择哈尔滨作为目标城市，采集哈尔滨的景点信息。第一页的网址\nhttps://place.qyer.com/haerbin/sight/ \n点击页面下方翻页到第二页， 页面内容已经发生变化，但是网址栏中的网址没有变化，依然是\nhttps://place.qyer.com/haerbin/sight/ 所以可以判断该网站为动态网站类型，对付这类网站，需要打开开发者工具Network面板来构建网址规律。\n\n1.2 抓包构建网址规律 1.2.1 Headers 我用的chrome浏览器， F12键(Mac 快捷键command+option+I)打开开发者工具，如下图。\n打开开发者工具后， 点击Network面板。为了让 Network监测到数据流， 点击2 。这样就能发现下方截图中的\npoi.php?action=list_json 可以基于上方截图确认，该网站现在用的是post请求方法， 写代码时可以用requests.post(url, data)方式发起请求。 1.2.2 Payload 网址规律翻页规律如何构造呢， 通过检查发现 Payload决定着翻页，我们也看到下面截图中，page: 2对应着页面 2。\n1.2.3 Preview 我们顺便点击Preview，检查预览数据是否与页面数据有对应关系。 截图中「丁香公园」出现在页面和preview中。\n1.3 构造网址规律 构造网址规律， 以第二页为例， 发起请求，查看数据\n\n二、存储数据 采集的字段包括\n 景点名称 景点链接 评论人数 评级 图片链接  使用csv格式存储数据\nimport csv with open('harbin_sight.csv', 'w', encoding='utf-8', newline='') as csvf: fieldnames = ['sightName', 'sightUrl', 'commentCount', 'rate', 'imgUrl'] writer = csv.DictWriter(csvf, fieldnames = fieldnames) writer.writeheader() for sight in resp.json()['data']['list']: sight_info = {'sightName': sight['cnname'], 'sightUrl': 'https:' + sight['url'], 'commentCount': sight['commentCount'], 'rate': sight['grade'], 'imgUrl': sight['photo'] } writer.writerow(sight_info) 代码运行后， 尝试检查harbin_sight.csv， 现在该文件内暂时存储了第二页的景点信息\nimport pandas as pd df = pd.read_csv('harbin_sight.csv') print('景点数: ', len(df)) df.head() \n三、批量采集 以哈尔滨为例， 景点页面一共有92页，批量采集这92页信息。完整代码\nimport requests import csv import time url = 'https://place.qyer.com/poi.php?action=list_json' #控制翻页的字典 formdata = {'page': 2, 'type': 'city', 'pid': 11597, 'sort': 32, 'subsort': 'all', 'isnominate': -1, 'haslastm': 'false', 'rank': 6} headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36'} #新建csv，存储数据 with open('harbin_sight.csv', 'w', encoding='utf-8', newline='') as csvf: #设置csv的字段 fieldnames = ['sightName', 'sightUrl', 'commentCount', 'rate', 'imgUrl'] writer = csv.DictWriter(csvf, fieldnames = fieldnames) writer.writeheader() #采集哈尔滨从第1页到92页 for page in range(1, 93): #更新formdata网页数信息，相当于翻页 formdata['page'] = page #time.sleep(1) 控制访问速度，每秒访问1次 time.sleep(1) resp = requests.post(url, data=formdata, headers=headers) print('正在采集哈尔滨第{}页信息'.format(page)) #存储数据 for sight in resp.json()['data']['list']: sight_info = {'sightName': sight['cnname'], 'sightUrl': 'https:' + sight['url'], 'commentCount': sight['commentCount'], 'rate': sight['grade'], 'imgUrl': sight['photo'] } writer.writerow(sight_info) Run\n正在采集哈尔滨第1页信息 正在采集哈尔滨第2页信息 ...... 正在采集哈尔滨第91页信息 正在采集哈尔滨第92页信息 \n检查数据\nimport pandas as pd df = pd.read_csv('harbin_sight.csv') print('景点数: ', len(df)) df.head() \n四、获取代码 点击下载本文代码\n\n广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
-  "wordCount" : "242",
+  "articleBody": "一、发现网址规律 1.1 判断网站类型 这里我选择哈尔滨作为目标城市，采集哈尔滨的景点信息。第一页的网址\nhttps://place.qyer.com/haerbin/sight/ \n点击页面下方翻页到第二页， 页面内容已经发生变化，但是网址栏中的网址没有变化，依然是\nhttps://place.qyer.com/haerbin/sight/ 所以可以判断该网站为动态网站类型，对付这类网站，需要打开开发者工具Network面板来构建网址规律。\n\n1.2 抓包构建网址规律 1.2.1 Headers 我用的chrome浏览器， F12键(Mac 快捷键command+option+I)打开开发者工具，如下图。\n打开开发者工具后， 点击Network面板。为了让 Network监测到数据流， 点击2 。这样就能发现下方截图中的\npoi.php?action=list_json 可以基于上方截图确认，该网站现在用的是post请求方法， 写代码时可以用requests.post(url, data)方式发起请求。 1.2.2 Payload 网址规律翻页规律如何构造呢， 通过检查发现 Payload决定着翻页，我们也看到下面截图中，page: 2对应着页面 2。\n1.2.3 Preview 我们顺便点击Preview，检查预览数据是否与页面数据有对应关系。 截图中「丁香公园」出现在页面和preview中。\n1.3 构造网址规律 构造网址规律， 以第二页为例， 发起请求，查看数据\n\n二、存储数据 采集的字段包括\n 景点名称 景点链接 评论人数 评级 图片链接  使用csv格式存储数据\nimport csv with open('harbin_sight.csv', 'w', encoding='utf-8', newline='') as csvf: fieldnames = ['sightName', 'sightUrl', 'commentCount', 'rate', 'imgUrl'] writer = csv.DictWriter(csvf, fieldnames = fieldnames) writer.writeheader() for sight in resp.json()['data']['list']: sight_info = {'sightName': sight['cnname'], 'sightUrl': 'https:' + sight['url'], 'commentCount': sight['commentCount'], 'rate': sight['grade'], 'imgUrl': sight['photo'] } writer.writerow(sight_info) 代码运行后， 尝试检查harbin_sight.csv， 现在该文件内暂时存储了第二页的景点信息\nimport pandas as pd df = pd.read_csv('harbin_sight.csv') print('景点数: ', len(df)) df.head() \n三、批量采集 以哈尔滨为例， 景点页面一共有92页，批量采集这92页信息。完整代码\nimport requests import csv import time url = 'https://place.qyer.com/poi.php?action=list_json' #控制翻页的字典 formdata = {'page': 2, 'type': 'city', 'pid': 11597, 'sort': 32, 'subsort': 'all', 'isnominate': -1, 'haslastm': 'false', 'rank': 6} headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36'} #新建csv，存储数据 with open('harbin_sight.csv', 'w', encoding='utf-8', newline='') as csvf: #设置csv的字段 fieldnames = ['sightName', 'sightUrl', 'commentCount', 'rate', 'imgUrl'] writer = csv.DictWriter(csvf, fieldnames = fieldnames) writer.writeheader() #采集哈尔滨从第1页到92页 for page in range(1, 93): #更新formdata网页数信息，相当于翻页 formdata['page'] = page #time.sleep(1) 控制访问速度，每秒访问1次 time.sleep(1) resp = requests.post(url, data=formdata, headers=headers) print('正在采集哈尔滨第{}页信息'.format(page)) #存储数据 for sight in resp.json()['data']['list']: sight_info = {'sightName': sight['cnname'], 'sightUrl': 'https:' + sight['url'], 'commentCount': sight['commentCount'], 'rate': sight['grade'], 'imgUrl': sight['photo'] } writer.writerow(sight_info) Run\n正在采集哈尔滨第1页信息 正在采集哈尔滨第2页信息 ...... 正在采集哈尔滨第91页信息 正在采集哈尔滨第92页信息 \n检查数据\nimport pandas as pd df = pd.read_csv('harbin_sight.csv') print('景点数: ', len(df)) df.head() \n四、获取代码 点击下载本文代码\n\n 点击了解课程详情   ",
+  "wordCount" : "237",
   "inLanguage": "en",
   "image":"/images/blog/qyer.png","datePublished": "2023-10-13T00:00:00Z",
   "dateModified": "2023-10-13T00:00:00Z",
@@ -230,8 +230,8 @@ import csv with open(&#39;harbin_sight.csv&#39;, &#39;w&#39;, encoding=&#39;utf-
                 </a>
             </li>
             <li>
-                <a href="/blog" title="博文" target="_blank">
-                    <span>博文</span>
+                <a href="/archives/" title="归档" target="_blank">
+                    <span>归档</span>
                 </a>
             </li>
             <li>
@@ -372,9 +372,7 @@ onload="renderMathInElement(document.body);"></script>
                     <li>
                         <a href="#%e4%b8%89%e6%89%b9%e9%87%8f%e9%87%87%e9%9b%86" aria-label="三、批量采集">三、批量采集</a></li>
                     <li>
-                        <a href="#%e5%9b%9b%e8%8e%b7%e5%8f%96%e4%bb%a3%e7%a0%81" aria-label="四、获取代码">四、获取代码</a></li>
-                    <li>
-                        <a href="#%e5%b9%bf%e8%80%8c%e5%91%8a%e4%b9%8b" aria-label="广而告之">广而告之</a>
+                        <a href="#%e5%9b%9b%e8%8e%b7%e5%8f%96%e4%bb%a3%e7%a0%81" aria-label="四、获取代码">四、获取代码</a>
                     </li>
                 </ul>
             </div>
@@ -582,12 +580,14 @@ onload="renderMathInElement(document.body);"></script>
 <h2 id="四获取代码">四、获取代码<a hidden class="anchor" aria-hidden="true" href="#四获取代码">#</a></h2>
 <p><a href="%E7%A9%B7%E6%B8%B8%E4%BB%A3%E7%A0%81.ipynb"><strong>点击下载本文代码</strong></a></p>
 <p><br><br></p>
-<h2 id="广而告之">广而告之<a hidden class="anchor" aria-hidden="true" href="#广而告之">#</a></h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 
 
   </div>

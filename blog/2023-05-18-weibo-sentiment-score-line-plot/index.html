@@ -123,8 +123,8 @@
   "keywords": [
     "Python", "数据集", "dataset", "经济管理", "微博", "可视化", "情感分析", "pandas", "matplotlib"
   ],
-  "articleBody": "DataFrame数据如何绘制按时间趋势的折线图，今天以weibo数据集为例，绘制微博文本内容折线图\n 微博文本内容「平均长度随时间变化」 微博文本内容「平均情感分值随时间变化」  \n一、准备工作 1.1 下载数据集 数据集下载链接 https://www.kaggle.com/datasets/dylanli/weibo-content-during-covid19-period\n含8个json文件\n user1.json、user2.json、user3.json、user4.json weibo1.json、weibo2.json、weibo3.json、weibo4.json  这里仅尝试读取weibo1.json import os os.listdir() ['weibo2.json', '.DS_Store', 'weibo3.json', 'Untitled.ipynb', 'weibo4.json', 'user1.json', 'user2.json', '说明.md', 'user3.json', '.ipynb_checkpoints', 'user4.json', 'weibo1.json']  \n1.2 导入数据 导入 7138微博用户数据后，查看\n 数据量 字段的数据类型  import pandas as pd weibo_df = pd.read_json('weibo1.json') weibo_df.head() #记录数 len(weibo_df) 560840  #字段的数据类型 weibo_df.dtypes _id object user_id object screen_name object id object bid object text object pics object video_url object location object created_at datetime64[ns] source object attitudes_count int64 comments_count int64 reposts_count int64 topics object at_users object retweet object dtype: object  \n二、数据分析 绘制微博内容\n 平均长度随时间变化 平均情感分值随时间变化  2.1 平均长度随时间变化 import matplotlib.pyplot as plt import matplotlib import matplotlib_inline matplotlib_inline.backend_inline.set_matplotlib_formats('png', 'svg') import scienceplots import platform plt.style.use(['science', 'no-latex', 'cjk-sc-font']) system = platform.system() # 获取操作系统类型 if system == 'Windows': font = {'family': 'SimHei'} elif system == 'Darwin': font = {'family': 'Arial Unicode MS'} else: font = {'family': 'sans-serif'} matplotlib.rc('font', **font) # 设置全局字体 # 统计人均字符长度变化 #df['text_length'] = weibo_df['text'].apply(lambda x: len(x)) weibo_df['text_length'] = weibo_df['text'].str.len() df_avg_length = weibo_df.groupby('created_at')['text_length'].mean().reset_index() # 绘制人均字符长度变化图 plt.figure(figsize=(10, 5)) plt.plot(df_avg_length['created_at'], df_avg_length['text_length']) plt.xlabel('日期') plt.ylabel('微博内容平均长度') plt.title('微博内容平均长度随时间变化') plt.xticks(rotation=45) plt.show() 2.2 平均情感分值随时间变化  设计情感计算函数senti_score 测试一条文本的情感计算实验 推广到所有weibo内容的情感计算 参考「平均长度随时间变化」，会「平均情感分值随时间变化」  import cntext as ct import jieba #1.8.4版本cntext #使用知网Hownet情感词典 pos_words = ct.load_pkl_dict('HOWNET.pkl')['HOWNET']['pos'] neg_words = ct.load_pkl_dict('HOWNET.pkl')['HOWNET']['neg'] def senti_score(text): pos,neg = 0,0 words = jieba.lcut(text) for word in words: if word in pos_words: pos = pos + 1 if word in neg_words: neg = neg + 1 #(pos-neg)/(pos+neg)即可，为防止分母为0，特加1 return (pos-neg)/(pos+neg+1) print(senti_score(text='我很开心！')) print(senti_score(text='我很难过！')) 0.5 -0.5  len(weibo1_df) 560840  import matplotlib.pyplot as plt import matplotlib import matplotlib_inline matplotlib_inline.backend_inline.set_matplotlib_formats('png', 'svg') import scienceplots import platform import numpy as np #一共有560840条推特，这个部分代码运算量比较大，你所看到的情感变化图是按照1%随机抽样绘制的结果。 #按照1%随机抽样绘制的结果,  #np.random.seed(666) #weibo_df = weibo_df.sample(frac=0.01) plt.style.use(['science', 'no-latex', 'cjk-sc-font']) system = platform.system() # 获取操作系统类型 if system == 'Windows': font = {'family': 'SimHei'} elif system == 'Darwin': font = {'family': 'Arial Unicode MS'} else: font = {'family': 'sans-serif'} matplotlib.rc('font', **font) # 设置全局字体 # 统计平均情感分值 weibo_df['senti'] = weibo_df['text'].apply(senti_score) df_senti_avg_length = weibo_df.groupby('created_at')['senti'].mean().reset_index() # 绘制平均情感分值随时间变化 plt.figure(figsize=(10, 5)) plt.plot(df_senti_avg_length['created_at'], df_senti_avg_length['senti']) plt.xlabel('日期') plt.ylabel('微博内容平均情感分值') plt.title('微博内容平均情感分值随时间变化') plt.xticks(rotation=45) plt.show() ​\n\n广而告之  长期征稿 长期招募小伙伴 付费视频课 | Python实证指标构建与文本分析  ",
-  "wordCount" : "305",
+  "articleBody": "DataFrame数据如何绘制按时间趋势的折线图，今天以weibo数据集为例，绘制微博文本内容折线图\n 微博文本内容「平均长度随时间变化」 微博文本内容「平均情感分值随时间变化」  \n一、准备工作 1.1 下载数据集 数据集下载链接 https://www.kaggle.com/datasets/dylanli/weibo-content-during-covid19-period\n含8个json文件\n user1.json、user2.json、user3.json、user4.json weibo1.json、weibo2.json、weibo3.json、weibo4.json  这里仅尝试读取weibo1.json import os os.listdir() ['weibo2.json', '.DS_Store', 'weibo3.json', 'Untitled.ipynb', 'weibo4.json', 'user1.json', 'user2.json', '说明.md', 'user3.json', '.ipynb_checkpoints', 'user4.json', 'weibo1.json']  \n1.2 导入数据 导入 7138微博用户数据后，查看\n 数据量 字段的数据类型  import pandas as pd weibo_df = pd.read_json('weibo1.json') weibo_df.head() #记录数 len(weibo_df) 560840  #字段的数据类型 weibo_df.dtypes _id object user_id object screen_name object id object bid object text object pics object video_url object location object created_at datetime64[ns] source object attitudes_count int64 comments_count int64 reposts_count int64 topics object at_users object retweet object dtype: object  \n二、数据分析 绘制微博内容\n 平均长度随时间变化 平均情感分值随时间变化  2.1 平均长度随时间变化 import matplotlib.pyplot as plt import matplotlib import matplotlib_inline matplotlib_inline.backend_inline.set_matplotlib_formats('png', 'svg') import scienceplots import platform plt.style.use(['science', 'no-latex', 'cjk-sc-font']) system = platform.system() # 获取操作系统类型 if system == 'Windows': font = {'family': 'SimHei'} elif system == 'Darwin': font = {'family': 'Arial Unicode MS'} else: font = {'family': 'sans-serif'} matplotlib.rc('font', **font) # 设置全局字体 # 统计人均字符长度变化 #df['text_length'] = weibo_df['text'].apply(lambda x: len(x)) weibo_df['text_length'] = weibo_df['text'].str.len() df_avg_length = weibo_df.groupby('created_at')['text_length'].mean().reset_index() # 绘制人均字符长度变化图 plt.figure(figsize=(10, 5)) plt.plot(df_avg_length['created_at'], df_avg_length['text_length']) plt.xlabel('日期') plt.ylabel('微博内容平均长度') plt.title('微博内容平均长度随时间变化') plt.xticks(rotation=45) plt.show() 2.2 平均情感分值随时间变化  设计情感计算函数senti_score 测试一条文本的情感计算实验 推广到所有weibo内容的情感计算 参考「平均长度随时间变化」，会「平均情感分值随时间变化」  import cntext as ct import jieba #1.8.4版本cntext #使用知网Hownet情感词典 pos_words = ct.load_pkl_dict('HOWNET.pkl')['HOWNET']['pos'] neg_words = ct.load_pkl_dict('HOWNET.pkl')['HOWNET']['neg'] def senti_score(text): pos,neg = 0,0 words = jieba.lcut(text) for word in words: if word in pos_words: pos = pos + 1 if word in neg_words: neg = neg + 1 #(pos-neg)/(pos+neg)即可，为防止分母为0，特加1 return (pos-neg)/(pos+neg+1) print(senti_score(text='我很开心！')) print(senti_score(text='我很难过！')) 0.5 -0.5  len(weibo1_df) 560840  import matplotlib.pyplot as plt import matplotlib import matplotlib_inline matplotlib_inline.backend_inline.set_matplotlib_formats('png', 'svg') import scienceplots import platform import numpy as np #一共有560840条推特，这个部分代码运算量比较大，你所看到的情感变化图是按照1%随机抽样绘制的结果。 #按照1%随机抽样绘制的结果,  #np.random.seed(666) #weibo_df = weibo_df.sample(frac=0.01) plt.style.use(['science', 'no-latex', 'cjk-sc-font']) system = platform.system() # 获取操作系统类型 if system == 'Windows': font = {'family': 'SimHei'} elif system == 'Darwin': font = {'family': 'Arial Unicode MS'} else: font = {'family': 'sans-serif'} matplotlib.rc('font', **font) # 设置全局字体 # 统计平均情感分值 weibo_df['senti'] = weibo_df['text'].apply(senti_score) df_senti_avg_length = weibo_df.groupby('created_at')['senti'].mean().reset_index() # 绘制平均情感分值随时间变化 plt.figure(figsize=(10, 5)) plt.plot(df_senti_avg_length['created_at'], df_senti_avg_length['senti']) plt.xlabel('日期') plt.ylabel('微博内容平均情感分值') plt.title('微博内容平均情感分值随时间变化') plt.xticks(rotation=45) plt.show() ​\n\n 点击了解课程详情   ",
+  "wordCount" : "300",
   "inLanguage": "en",
   "image":"/images/blog/weibo-sentiment-socre-line-plot.png","datePublished": "2023-05-18T00:00:00Z",
   "dateModified": "2023-05-18T00:00:00Z",
@@ -209,8 +209,8 @@
                 </a>
             </li>
             <li>
-                <a href="/blog" title="博文" target="_blank">
-                    <span>博文</span>
+                <a href="/archives/" title="归档" target="_blank">
+                    <span>归档</span>
                 </a>
             </li>
             <li>
@@ -344,11 +344,10 @@ onload="renderMathInElement(document.body);"></script>
                     <li>
                         <a href="#21-%e5%b9%b3%e5%9d%87%e9%95%bf%e5%ba%a6%e9%9a%8f%e6%97%b6%e9%97%b4%e5%8f%98%e5%8c%96" aria-label="2.1 平均长度随时间变化">2.1 平均长度随时间变化</a></li>
                     <li>
-                        <a href="#22-%e5%b9%b3%e5%9d%87%e6%83%85%e6%84%9f%e5%88%86%e5%80%bc%e9%9a%8f%e6%97%b6%e9%97%b4%e5%8f%98%e5%8c%96" aria-label="2.2 平均情感分值随时间变化">2.2 平均情感分值随时间变化</a></li></ul>
+                        <a href="#22-%e5%b9%b3%e5%9d%87%e6%83%85%e6%84%9f%e5%88%86%e5%80%bc%e9%9a%8f%e6%97%b6%e9%97%b4%e5%8f%98%e5%8c%96" aria-label="2.2 平均情感分值随时间变化">2.2 平均情感分值随时间变化</a>
                     </li>
-                    <li>
-                        <a href="#%e5%b9%bf%e8%80%8c%e5%91%8a%e4%b9%8b" aria-label="广而告之">广而告之</a>
-                    </li>
+                </ul>
+                </li>
                 </ul>
             </div>
         </details>
@@ -615,12 +614,14 @@ dtype: object
 
 ​</p>
 <p><br><br></p>
-<h2 id="广而告之">广而告之<a hidden class="anchor" aria-hidden="true" href="#广而告之">#</a></h2>
-<ul>
-<li><a href="https://textdata.cn/blog/call_for_paper/">长期征稿</a></li>
-<li><a href="https://textdata.cn/blog/we_need_you/">长期招募小伙伴</a></li>
-<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
-</ul>
+<div style="text-align: center;">
+<figure >
+    <a href="https://textdata.cn/blog/management_python_course/">
+        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+    </a>
+    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+</figure>
+</div>
 
 
   </div>
