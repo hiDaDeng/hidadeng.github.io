@@ -105,8 +105,8 @@
   "keywords": [
     "Python", "large language model", "大语言模型", "情感分析", "sentiment analysis", "ollama", "structured outputs", "json shema", "qwen", "deepseek"
   ],
-  "articleBody": "一、问题 我们希望LLM的回答的结果具有格式，最好是JSON格式(Python字典)， 这样有利于后续的调用。\n#普通格式 姓名 张三 年龄 34 兴趣 打篮球、踢足球、游泳、打游戏 #JSON格式 { \"name\": \"张三\", \"age\": 34, \"hobby\": [ \"打篮球\", \"踢足球\", \"游泳\", \"打游戏\" ] } 如何从 「普通格式」转为 结构化的「JSON格式」？这里就用到 Instructor库 。\n\n二、Instructor介绍 Instructor 是一个 Python 库，它使处理大型语言模型 (LLM) 的结构化输出变得轻而易举。它建立在 Pydantic 之上，提供了一个简单、透明且用户友好的 API 来管理验证、重试和流式响应。\n2.1 Instructor的主要特征  定义输出样式：指定 Pydantic 模型来定义 LLM 输出的结构 失败重试管理：轻松配置请求失败的重试次数 样式验证：使用 Pydantic 验证确保 LLM 响应符合您的期望 灵活的后端：与 OpenAI 之外的各种 LLM 提供商无缝集成  2.2 安装 pip install instructor \n2.3 样例 import instructor from pydantic import BaseModel from openai import OpenAI # Define your desired output structure class UserInfo(BaseModel): name: str age: int # Patch the OpenAI client client = instructor.from_openai(OpenAI()) # Extract structured data from natural language user_info = client.chat.completions.create( model=\"gpt-3.5-turbo\", response_model=UserInfo, messages=[{\"role\": \"user\", \"content\": \"John Doe is 30 years old.\"}], ) print(user_info.name) # John Doe print(user_info.age) # 30 注意，本部分的样例仅供观看，因为chatGPT 限制中国大陆用户使用，所以不论是你还是大邓，运行此代码会失败。但文章末尾会提供本地电脑可运行的实验代码。\n\n三、结构化输出实验 3.1 环境配置 假设已在本地安装Ollama软件， 也使用ollama安装了相应的大语言模型(如 qwen2.5:0.5b、deepseek-r1:1.5b 等)。 如果之前没有进行这些操作， 请阅读 教程 | 如何使用 Ollama 下载 \u0026 使用本地大语言模型\n在命令行cmd (mac对应terminal) 中启动本地服务。\nollama serve \n3.2 代码 只要完成2.2、3.1，本章节的代码是可以运行出结果的。 不做过多解释，直接上代码，大家看运行结果。\n%%time from openai import OpenAI from pydantic import BaseModel from typing import List import os import instructor #结构化输出 class UserDetail(BaseModel): name: str age: int hobby: List[str] #Prompt提示 PROMPT_TEXT = \"根据自我介绍文本内容，从中提取出姓名、年龄、兴趣\" #实验数据 introduction_text = '我是张三，今年34岁， 来自黑龙江省， 我的兴趣爱好有打篮球、踢足球、游泳、打游戏。' client = instructor.from_openai( OpenAI( base_url=\"http://localhost:11434/v1\", api_key=\"NA\", # required, but unused ), mode = instructor.Mode.JSON, ) resp = client.chat.completions.create( model = \"qwen2.5:0.5b\", #本次任务简单，可以使用最轻量的0.5b模型。  messages=[ {\"role\": \"system\", \"content\": PROMPT_TEXT}, {\"role\": \"user\", \"content\": introduction_text} ], response_model = UserDetail, max_retries = 3 ) print(resp.model_dump_json(indent=2)) Run\n{ \"name\": \"张三\", \"age\": 34, \"hobby\": [ \"打篮球\", \"踢足球\", \"游泳\", \"打游戏\" ] } CPU times: user 47.2 ms, sys: 5.71 ms, total: 52.9 ms Wall time: 412 ms resp的数据类型为UserDetail， 是代码中是我们定义的 UserDetail 类。该类具有一些方法，也可直接 resp.dict() 转化为dict\n查看 resp 的数据类型\nprint(resp.dict()) print(type(resp.dict())) Run\n{'name': '张三', 'age': 34, 'hobby': ['打篮球', '踢足球', '游泳', '打游戏']} \n相关内容  教程 | 如何使用 Ollama 下载 \u0026 使用本地大语言模型 实验 | 使用本地大模型预测在线评论情感类别和分值 教程 | 使用大模型API将文本数据转化为结构化数据 推荐 | 文本分析库cntext2.x使用手册 实验 | 使用本地大模型从文本中提取结构化信息 实验 | 使用Ollama本地大模型DIY制作单词书教案PDF 实验 | 使用 Crewai 和 Ollama 构建智能体(AI Agent)帮我撰写博客文章  \n精选内容  LIST | 可供社科(经管)领域使用的数据集汇总 LIST | 社科(经管)数据挖掘文献资料汇总 网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据 推荐 | 文本分析库cntext2.x使用手册 付费视频课 | Python实证指标构建与文本分析 实验 | 使用本地大模型从文本中提取结构化信息  点击了解课程详情    ",
-  "wordCount" : "330",
+  "articleBody": "一、问题 我们希望LLM的回答的结果具有格式，最好是JSON格式(Python字典)， 这样有利于后续的调用。\n#普通格式 姓名 张三 年龄 34 兴趣 打篮球、踢足球、游泳、打游戏 #JSON格式 { \"name\": \"张三\", \"age\": 34, \"hobby\": [ \"打篮球\", \"踢足球\", \"游泳\", \"打游戏\" ] } 如何从 「普通格式」转为 结构化的「JSON格式」？这里就用到 Instructor库 。\n\n二、Instructor介绍 Instructor 是一个 Python 库，它使处理大型语言模型 (LLM) 的结构化输出变得轻而易举。它建立在 Pydantic 之上，提供了一个简单、透明且用户友好的 API 来管理验证、重试和流式响应。\n2.1 Instructor的主要特征  定义输出样式：指定 Pydantic 模型来定义 LLM 输出的结构 失败重试管理：轻松配置请求失败的重试次数 样式验证：使用 Pydantic 验证确保 LLM 响应符合您的期望 灵活的后端：与 OpenAI 之外的各种 LLM 提供商无缝集成  2.2 安装 pip install instructor \n2.3 样例 import instructor from pydantic import BaseModel from openai import OpenAI # Define your desired output structure class UserInfo(BaseModel): name: str age: int # Patch the OpenAI client client = instructor.from_openai(OpenAI()) # Extract structured data from natural language user_info = client.chat.completions.create( model=\"gpt-3.5-turbo\", response_model=UserInfo, messages=[{\"role\": \"user\", \"content\": \"John Doe is 30 years old.\"}], ) print(user_info.name) # John Doe print(user_info.age) # 30 注意，本部分的样例仅供观看，因为chatGPT 限制中国大陆用户使用，所以不论是你还是大邓，运行此代码会失败。但文章末尾会提供本地电脑可运行的实验代码。\n\n三、结构化输出实验 3.1 环境配置 假设已在本地安装Ollama软件， 也使用ollama安装了相应的大语言模型(如 qwen2.5:0.5b、deepseek-r1:1.5b 等)。 如果之前没有进行这些操作， 请阅读 教程 | 如何使用 Ollama 下载 \u0026 使用本地大语言模型\n在命令行cmd (mac对应terminal) 中启动本地服务。\nollama serve \n3.2 代码 只要完成2.2、3.1，本章节的代码是可以运行出结果的。 不做过多解释，直接上代码，大家看运行结果。\n%%time from openai import OpenAI from pydantic import BaseModel from typing import List import os import instructor #结构化输出 class UserDetail(BaseModel): name: str age: int hobby: List[str] #Prompt提示 PROMPT_TEXT = \"根据自我介绍文本内容，从中提取出姓名、年龄、兴趣\" #实验数据 introduction_text = '我是张三，今年34岁， 来自黑龙江省， 我的兴趣爱好有打篮球、踢足球、游泳、打游戏。' client = instructor.from_openai( OpenAI( base_url=\"http://localhost:11434/v1\", api_key=\"NA\", # required, but unused ), mode = instructor.Mode.JSON, ) resp = client.chat.completions.create( model = \"qwen2.5:0.5b\", #本次任务简单，可以使用最轻量的0.5b模型。  messages=[ {\"role\": \"system\", \"content\": PROMPT_TEXT}, {\"role\": \"user\", \"content\": introduction_text} ], response_model = UserDetail, max_retries = 3 ) print(resp.model_dump_json(indent=2)) Run\n{ \"name\": \"张三\", \"age\": 34, \"hobby\": [ \"打篮球\", \"踢足球\", \"游泳\", \"打游戏\" ] } CPU times: user 47.2 ms, sys: 5.71 ms, total: 52.9 ms Wall time: 412 ms resp的数据类型为UserDetail， 是代码中是我们定义的 UserDetail 类。该类具有一些方法，也可直接 resp.dict() 转化为dict\n查看 resp 的数据类型\nprint(resp.dict()) print(type(resp.dict())) Run\n{'name': '张三', 'age': 34, 'hobby': ['打篮球', '踢足球', '游泳', '打游戏']} \n相关内容  教程 | 如何使用 Ollama 下载 \u0026 使用本地大语言模型 实验 | 使用本地大模型预测在线评论情感类别和分值 教程 | 使用大模型API将文本数据转化为结构化数据 推荐 | 文本分析库cntext2.x使用手册 实验 | 使用本地大模型从文本中提取结构化信息 实验 | 使用Ollama本地大模型DIY制作单词书教案PDF 实验 | 使用 Crewai 和 Ollama 构建智能体(AI Agent)帮我撰写博客文章  \n精选内容  LIST | 可供社科(经管)领域使用的数据集汇总 LIST | 社科(经管)数据挖掘文献资料汇总 网络爬虫 | 使用scrapegraph-ai(大模型方案)自动采集网页数据 推荐 | 文本分析库cntext2.x使用手册 付费视频课 | Python实证指标构建与文本分析 实验 | 使用本地大模型从文本中提取结构化信息   ",
+  "wordCount" : "329",
   "inLanguage": "en",
   "image":"/images/blog/json-shema.png","datePublished": "2025-02-07T00:00:00Z",
   "dateModified": "2025-02-07T00:00:00Z",
@@ -402,6 +402,25 @@ onload="renderMathInElement(document.body);"></script>
     }
 </script>
 
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者：大邓
+        <p>本文标题：实验 | 如何使 Ollama 结构化输出 JSON 样式的结果
+        <p>本文链接：/blog/2024-08-07-structured-outputs-with-ollama/
+        <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">「署名-非商业性使用-相同方式共享 4.0 国际」</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+  <br>
+
+
+
+  
   <div class="post-content"><h2 id="一问题">一、问题<a hidden class="anchor" aria-hidden="true" href="#一问题">#</a></h2>
 <p>我们希望LLM的回答的结果具有格式，最好是JSON格式(Python字典)， 这样有利于后续的调用。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#普通格式</span>
@@ -562,19 +581,42 @@ Wall time: 412 ms
 <li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python实证指标构建与文本分析</a></li>
 <li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a>
 <br>
-<br>
-<div style="text-align: center;">
-<figure >
-    <a href="https://textdata.cn/blog/management_python_course/">
-        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
-    </a>
-    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
-</figure>
-</div></li>
+<br></li>
 </ul>
 
 
   </div>
+
+
+  <br>
+
+  <div style="text-align: center;">
+    <figure >
+        <a href="https://textdata.cn/blog/management_python_course/">
+            <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+        </a>
+        <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+    </figure>
+  </div>
+
+  <br>
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者：大邓
+        <p>本文标题：实验 | 如何使 Ollama 结构化输出 JSON 样式的结果
+        <p>本文链接：/blog/2024-08-07-structured-outputs-with-ollama/
+        <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">「署名-非商业性使用-相同方式共享 4.0 国际」</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+
+
+
 
   <footer class="post-footer">
       <ul class="post-tags">

@@ -117,8 +117,8 @@ lambda 关键字可以用来创建一个 lambda 函数，紧跟其后的是参�
   "keywords": [
     "python技巧", "lambda"
   ],
-  "articleBody": " 本文来源：掘金社区。仅用于传递和分享更多信息，并不代表本平台赞同其观点和对其真实性负责，版权归原作者所有，如有侵权请联系我们删除。\n 当你需要完成一件小工作时，在本地环境中使用这个函数，可以让工作如此得心应手，它就是Lambda 函数。\nLambda 函数是 Python 中的匿名函数。有些人将它们简称为lambdas，它们的语法如下： lambda arguments: expression\nlambda 关键字可以用来创建一个 lambda 函数，紧跟其后的是参数列表和用冒号分割开的单个表达式。例如，lambda x: 2 * x 是将任何输入的数乘2，而 lambda x, y: x+y 是计算两个数字的和。语法十分直截了当，对吧？ 假设您知道什么是 lambda 函数，本文旨在提供有关如何正确使用 lambda 函数的一些常规准则。 1. 不要返回任何值 看看语法，您可能会注意到我们在 lambda 函数中并没有返回任何内容。这都是因为 lambda 函数只能包含一个表达式。然而，使用 return 关键字会构成不符合规定语法的语句，如下所示：\n integers = [(3, -3), (2, 3), (5, 1), (-4, 4)]  sorted(integers, key=lambda x: x[-1]) [(3, -3), (5, 1), (2, 3), (-4, 4)]  sorted(integers, key=lambda x: return x[-1]) ... File \"\", line 1 sorted(integers, key=lambda x: return x[-1]) ^ SyntaxError: invalid syntax \n该错误可能是由于无法区分表达式和语句而引起的。像是包含 return、try、 with 以及 if 的语句会执行特殊动作。然而，表达式指的是那些可以被计算出一个值的表达，例如数值或其他 Python 对象。 通过使用 lambda 函数，单个表达式会被计算为一个值并且参与后续的计算，例如由 sorted 函数排序。\n\n2. 不要忘记更好的选择 lambda 函数最常见的使用场景是将它作为一些内置工具函数中 key 的实参，比如上面展示的 sorted() 和 max()。根据情况，我们可以使用其他替代方法。思考下面的例子：\n integers = [-4, 3, 7, -5, -2, 6]  sorted(integers, key=lambda x: abs(x)) [-2, 3, -4, -5, 6, 7]  sorted(integers, key=abs) [-2, 3, -4, -5, 6, 7]  scores = [(93, 100), (92, 99), (95, 94)]  max(scores, key=lambda x: x[0] + x[1]) (93, 100)  max(scores, key=sum) (93, 100) \n在数据科学领域，很多人使用 pandas 库来处理数据。如下所示，我们可以使用 lambda 函数通过 map() 函数从现有数据中创建新数据。除了使用 lambda 函数外，我们还可以直接使用算术函数，因为 pandas 是支持的：\n import pandas as pd  data = pd.Series([1, 2, 3, 4])  data.map(lambda x: x + 5) 0 6 1 7 2 8 3 9 dtype: int64  data + 5 0 6 1 7 2 8 3 9 dtype: int64 \n3. 不要将它赋值给变量 我曾见过一些人将 lambda 函数误认为是简单函数的另一种声明方式，您可能也见过有人像下面这么做：\n doubler = lambda x: 2 * x  doubler(5) 10  doubler(7) 14  type(doubler) \n对 lambda 函数命名的唯一作用可能是出于教学目的，以表明 lambda 函数的确是和其他函数一样的函数——可以被调用并且具有某种功能。除此之外，我们不应该将 lambda 函数赋值给变量。\n为 lambda 函数命名的问题在于这使得调试不那么直观。与其他的使用常规 def 关键字创建的函数不同，lambda 函数没有名字，这也是为什么有时它们被称为匿名函数的原因。思考下面简单的例子，找出细微的区别：\n inversive0 = lambda x: 1 / x  inversive0(2) 0.5  inversive0(0) Traceback (most recent call last): File \"\", line 1, in  File \"\", line 1, in ZeroDivisionError: division by zero  def inversive1(x): ... return 1 / x ...  inversive1(2) 0.5  inversive1(0) Traceback (most recent call last): File \"\", line 1, in  File \"\", line 2, in inversive1 ZeroDivisionError: division by zero \n当您的代码存在关于 lambda 函数的问题（即 inversive0），Traceback 错误信息只会提示您 lambda 函数存在问题。 相比之下，使用正常定义的函数，Traceback会清晰地提示您有问题的函数（即 inversive1）。 与此相关，如果您想多次使用 lambda 函数，最佳实践是使用通过 def 定义的允许使用文档字符串的常规函数。\n\n4. 不要忘记列表推导式 有些人喜欢将 lambda 函数和高阶函数一起使用，比如 map 或 filter。思考下面用法示例：\n # 创建一个数字列表  numbers = [2, 1, 3, -3]  # 使用带有 lambda 函数的 map 函数  list(map(lambda x: x * x, numbers)) [4, 1, 9, 9]  # 使用带有 lambda 函数的 filter 函数  list(filter(lambda x: x % 2, numbers)) [1, 3, -3] \n我们可以使用可读性更强的列表推导式代替 lambda 函数。如下所示，我们使用列表推导式来创建相同的列表对象。如您所见，与列表推导式相比，之前将 map 或 filter 函数与 lambda 函数一起使用更麻烦。因此，在创建涉及高阶函数的列表时，应考虑使用列表推导式。\n # Use list comprehensions  [x * x for x in numbers] [4, 1, 9, 9]  [x for x in numbers if x % 2] [1, 3, -3] \n结论 在本文中，我们回顾了使用 lambda 函数可能会犯的四个常见错误。通过避免这些错误，您应该能在代码中正确使用 lambda 函数。 使用 lambda 函数的经验准则是保持简单以及只在本地使用一次。\n\n 点击了解课程详情   ",
-  "wordCount" : "429",
+  "articleBody": " 本文来源：掘金社区。仅用于传递和分享更多信息，并不代表本平台赞同其观点和对其真实性负责，版权归原作者所有，如有侵权请联系我们删除。\n 当你需要完成一件小工作时，在本地环境中使用这个函数，可以让工作如此得心应手，它就是Lambda 函数。\nLambda 函数是 Python 中的匿名函数。有些人将它们简称为lambdas，它们的语法如下： lambda arguments: expression\nlambda 关键字可以用来创建一个 lambda 函数，紧跟其后的是参数列表和用冒号分割开的单个表达式。例如，lambda x: 2 * x 是将任何输入的数乘2，而 lambda x, y: x+y 是计算两个数字的和。语法十分直截了当，对吧？ 假设您知道什么是 lambda 函数，本文旨在提供有关如何正确使用 lambda 函数的一些常规准则。 1. 不要返回任何值 看看语法，您可能会注意到我们在 lambda 函数中并没有返回任何内容。这都是因为 lambda 函数只能包含一个表达式。然而，使用 return 关键字会构成不符合规定语法的语句，如下所示：\n integers = [(3, -3), (2, 3), (5, 1), (-4, 4)]  sorted(integers, key=lambda x: x[-1]) [(3, -3), (5, 1), (2, 3), (-4, 4)]  sorted(integers, key=lambda x: return x[-1]) ... File \"\", line 1 sorted(integers, key=lambda x: return x[-1]) ^ SyntaxError: invalid syntax \n该错误可能是由于无法区分表达式和语句而引起的。像是包含 return、try、 with 以及 if 的语句会执行特殊动作。然而，表达式指的是那些可以被计算出一个值的表达，例如数值或其他 Python 对象。 通过使用 lambda 函数，单个表达式会被计算为一个值并且参与后续的计算，例如由 sorted 函数排序。\n\n2. 不要忘记更好的选择 lambda 函数最常见的使用场景是将它作为一些内置工具函数中 key 的实参，比如上面展示的 sorted() 和 max()。根据情况，我们可以使用其他替代方法。思考下面的例子：\n integers = [-4, 3, 7, -5, -2, 6]  sorted(integers, key=lambda x: abs(x)) [-2, 3, -4, -5, 6, 7]  sorted(integers, key=abs) [-2, 3, -4, -5, 6, 7]  scores = [(93, 100), (92, 99), (95, 94)]  max(scores, key=lambda x: x[0] + x[1]) (93, 100)  max(scores, key=sum) (93, 100) \n在数据科学领域，很多人使用 pandas 库来处理数据。如下所示，我们可以使用 lambda 函数通过 map() 函数从现有数据中创建新数据。除了使用 lambda 函数外，我们还可以直接使用算术函数，因为 pandas 是支持的：\n import pandas as pd  data = pd.Series([1, 2, 3, 4])  data.map(lambda x: x + 5) 0 6 1 7 2 8 3 9 dtype: int64  data + 5 0 6 1 7 2 8 3 9 dtype: int64 \n3. 不要将它赋值给变量 我曾见过一些人将 lambda 函数误认为是简单函数的另一种声明方式，您可能也见过有人像下面这么做：\n doubler = lambda x: 2 * x  doubler(5) 10  doubler(7) 14  type(doubler) \n对 lambda 函数命名的唯一作用可能是出于教学目的，以表明 lambda 函数的确是和其他函数一样的函数——可以被调用并且具有某种功能。除此之外，我们不应该将 lambda 函数赋值给变量。\n为 lambda 函数命名的问题在于这使得调试不那么直观。与其他的使用常规 def 关键字创建的函数不同，lambda 函数没有名字，这也是为什么有时它们被称为匿名函数的原因。思考下面简单的例子，找出细微的区别：\n inversive0 = lambda x: 1 / x  inversive0(2) 0.5  inversive0(0) Traceback (most recent call last): File \"\", line 1, in  File \"\", line 1, in ZeroDivisionError: division by zero  def inversive1(x): ... return 1 / x ...  inversive1(2) 0.5  inversive1(0) Traceback (most recent call last): File \"\", line 1, in  File \"\", line 2, in inversive1 ZeroDivisionError: division by zero \n当您的代码存在关于 lambda 函数的问题（即 inversive0），Traceback 错误信息只会提示您 lambda 函数存在问题。 相比之下，使用正常定义的函数，Traceback会清晰地提示您有问题的函数（即 inversive1）。 与此相关，如果您想多次使用 lambda 函数，最佳实践是使用通过 def 定义的允许使用文档字符串的常规函数。\n\n4. 不要忘记列表推导式 有些人喜欢将 lambda 函数和高阶函数一起使用，比如 map 或 filter。思考下面用法示例：\n # 创建一个数字列表  numbers = [2, 1, 3, -3]  # 使用带有 lambda 函数的 map 函数  list(map(lambda x: x * x, numbers)) [4, 1, 9, 9]  # 使用带有 lambda 函数的 filter 函数  list(filter(lambda x: x % 2, numbers)) [1, 3, -3] \n我们可以使用可读性更强的列表推导式代替 lambda 函数。如下所示，我们使用列表推导式来创建相同的列表对象。如您所见，与列表推导式相比，之前将 map 或 filter 函数与 lambda 函数一起使用更麻烦。因此，在创建涉及高阶函数的列表时，应考虑使用列表推导式。\n # Use list comprehensions  [x * x for x in numbers] [4, 1, 9, 9]  [x for x in numbers if x % 2] [1, 3, -3] \n结论 在本文中，我们回顾了使用 lambda 函数可能会犯的四个常见错误。通过避免这些错误，您应该能在代码中正确使用 lambda 函数。 使用 lambda 函数的经验准则是保持简单以及只在本地使用一次。\n\n",
+  "wordCount" : "428",
   "inLanguage": "en",
   "image":"/images/blog/lamda-function-python.png","datePublished": "2024-01-03T00:00:00Z",
   "dateModified": "2024-01-03T00:00:00Z",
@@ -400,6 +400,25 @@ onload="renderMathInElement(document.body);"></script>
     }
 </script>
 
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者：掘金社区
+        <p>本文标题：如何设计好 lambda 函数 ？
+        <p>本文链接：/blog/2024-01-03-how-to-design-lambda-function/
+        <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">「署名-非商业性使用-相同方式共享 4.0 国际」</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+  <br>
+
+
+
+  
   <div class="post-content"><blockquote>
 <p>本文来源：掘金社区。仅用于传递和分享更多信息，并不代表本平台赞同其观点和对其真实性负责，版权归原作者所有，如有侵权请联系我们删除。</p>
 </blockquote>
@@ -511,17 +530,40 @@ ZeroDivisionError: division by zero
 <p>在本文中，我们回顾了使用 lambda 函数可能会犯的四个常见错误。通过避免这些错误，您应该能在代码中正确使用 lambda 函数。
 使用 lambda 函数的经验准则是保持简单以及只在本地使用一次。</p>
 <p><br><br></p>
-<div style="text-align: center;">
-<figure >
-    <a href="https://textdata.cn/blog/management_python_course/">
-        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
-    </a>
-    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
-</figure>
-</div>
 
 
   </div>
+
+
+  <br>
+
+  <div style="text-align: center;">
+    <figure >
+        <a href="https://textdata.cn/blog/management_python_course/">
+            <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+        </a>
+        <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+    </figure>
+  </div>
+
+  <br>
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者：掘金社区
+        <p>本文标题：如何设计好 lambda 函数 ？
+        <p>本文链接：/blog/2024-01-03-how-to-design-lambda-function/
+        <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">「署名-非商业性使用-相同方式共享 4.0 国际」</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+
+
+
 
   <footer class="post-footer">
       <ul class="post-tags">

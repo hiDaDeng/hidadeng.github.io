@@ -105,8 +105,8 @@
   "keywords": [
     "文本分析", "经济管理", "语调", "管理层", "年报", "管理世界", "chinese", "text analysis", "text mining", "python"
   ],
-  "articleBody": "今天分享的这篇论文通过 有道翻译 这一简单有效的的方式汉化了 LM英文金融词典，并使用 数词语数个数 的方式构造了管理层语调这个指标。\n文献 曾庆生,周波,张程,陈信元.年报语调与内部人交易:“表里如一”还是“口是心非”?[J].管理世界,2018,34(09):143-160.\n本文代码实现的视频讲解已更新至付费课 Python实证指标构建与文本分析 中。\n 点击上方图片购买课程   本文代码 点击下载\n摘要 基于中国A股非金融公司2007～2014年年报语调的文本分析,本文研究了年报语调与年报披露后的内部人交易行为之间的关系。研究发现,年报语调越积极,公司高管在年报公布后一段期间内的卖出股票规模越大,净买入股票规模越小,表明公司高管编制年报时存在**「口是心非」** 的操纵嫌疑。进一步研究发现,年报披露后中期市场表现差、信息透明度低、非国有控股的公司高管交易与年报语调的反向关系分别显著强于年报披露后中期市场表现好、信息透明度高、国有控股的公司;而公司盈余管理程度、交易者职位（是否核心高管）对年报语调与高管交易关系的影响不显著。此外,年报语调越积极,高管亲属卖出股票的规模也越大,但未发现公司重要股东交易与 「年报语调」 相关。上述结果表明,中国上市公司年报存在语调管理行为,年报语调成为除会计报表以外另一种可以被内部人管理或操纵的信息。\n关键词 年报; 语调管理; 内部人交易; 信息不对称;\n代码  年报数据 data/reports.csv LM金融词典 需要更新cntext库至于1.7.3及以上版本  \n语调指标  算法1 该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例； 算法2 （积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）  import pandas as pd df = pd.read_csv('data/reports.csv') df.head() Run\n .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  company year content     0 四川长虹 2017 2017 年，面对复杂多变的外部环境和多重叠加的困难挑战，公司聚焦用户与产品，强化消费洞...   1 江苏吴中 2014 2014 年，正值公司成立二十周年，上市十五周年，在董事会带领下，公司经营管理团队与全体...   2 联美控股 2017 报告期内，公司实现营业收入 2,376,375,380.44 元，同比增长 16.24%，营...   3 华海药业 2016 第三节\\t公司业务概要\\n\\n一、 报告期内公司所从事的主要业务、经营模式及行业情况说明\\n...   4 江泉实业 2014 报告期内，全球经济形势复杂多变、复苏进程缓慢；我国宏观经济进入增速放缓、结构调整加剧的新...     len(df) Run\n500  \ncntext 安装cntext\n!pip3 install cntext \nimport cntext as ct print(ct.__version__) Run\n1.9 \n查看内置词典\nct.dict_pkl_list() Run\n['DUTIR.pkl', 'HOWNET.pkl', 'Chinese_Loughran_McDonald_Financial_Sentiment.pkl', 'sentiws.pkl', 'ChineseFinancialFormalUnformalSentiment.pkl', 'ANEW.pkl', 'LSD2015.pkl', 'NRC.pkl', 'geninqposneg.pkl', 'HuLiu.pkl', 'Loughran_McDonald_Financial_Sentiment.pkl', 'AFINN.pkl', 'ADV_CONJ.pkl', 'STOPWORDS.pkl'] \nclm = ct.load_pkl_dict('Chinese_Loughran_McDonald_Financial_Sentiment.pkl') #print(clm) print('clm关键词: ',clm.keys()) print() print('Desc: ', clm['Desc']) print() print('Referer: ', clm['Referer']) print() print('Chinese_Loughran_McDonald_Financial_Sentiment词典含2类情感词\\n，分别是', clm['Chinese_Loughran_McDonald_Financial_Sentiment'].keys()) Run\nclm关键词: dict_keys(['Chinese_Loughran_McDonald_Financial_Sentiment', 'Desc', 'Referer']) Desc: 参照该论文，cntext库使用百度翻译、有道翻译对LM词典进行汉化处理。原文使用的有道翻译、金山词霸。 Referer: 曾庆生, 周波, 张程, and 陈信元. \"年报语调与内部人交易: 表里如一还是口是心非?.\" 管理世界 34, no. 09 (2018): 143-160. Chinese_Loughran_McDonald_Financial_Sentiment词典含2类情感词 ，分别是 dict_keys(['negative', 'positive']) \ncntext语调的实现  算法1 该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例； 算法2 （积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）  import cntext as ct diction = {'pos': ['高兴', '快乐', '分享'], 'neg': ['难过', '悲伤']} text = '我今天得奖了，很高兴，我要将快乐分享大家。' ct.sentiment(text=text, diction=diction, lang='chinese') Run\n{'pos_num': 3, 'neg_num': 0, 'stopword_num': 8, 'word_num': 14, 'sentence_num': 1} \nimport cntext as ct #cntext1.x版 diction = ct.load_pkl_dict('Chinese_Loughran_McDonald_Financial_Sentiment.pkl')['Chinese_Loughran_McDonald_Financial_Sentiment'] #cntext2.x版代码 #diction = ct.read_yaml_dict('en_common_LoughranMcDonald.yaml')['Dictionary'] def tone(text): res = ct.sentiment(text=text, diction=diction, lang='chinese') return pd.Series(res) #第一个年报的语调 tone(text=df['content'].tolist()[0]) Run\nnegative_num 67 positive_num 76 stopword_num 462 word_num 1831 sentence_num 52 dtype: int64 \n选中文本列content， 对content整体实施tone计算，\n#计算tone语调 tone_df = df['content'].apply(tone) tone_df.head() Run\n .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  negative_num positive_num stopword_num word_num sentence_num     0 67 76 462 1831 52   1 32 59 372 1266 34   2 18 33 178 816 19   3 81 114 1055 3619 90   4 27 17 134 453 16      算法1 该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例； 算法2 （积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）  将得到的正、负面、总词数分别按照算法1和算法2进行计算。\n# 算法1 tone_df['tone1'] = (tone_df['positive_num']-tone_df['negative_num'])/tone_df['word_num'] #tone_df['tone1'] = (tone_df['positive_num']-tone_df['negative_num'])/(tone_df['word_num']+1) #算法2 tone_df['tone2'] = (tone_df['positive_num']-tone_df['negative_num'])/(tone_df['positive_num']+tone_df['negative_num']) #tone_df['tone2'] = (tone_df['positive_num']-tone_df['negative_num'])/(tone_df['positive_num']+tone_df['negative_num']+1) tone_df.head() Run\n .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  negative_num positive_num stopword_num word_num sentence_num tone1 tone2     0 67 76 462 1831 52 0.004915 0.062937   1 32 59 372 1266 34 0.021327 0.296703   2 18 33 178 816 19 0.018382 0.294118   3 81 114 1055 3619 90 0.009119 0.169231   4 27 17 134 453 16 -0.022075 -0.227273     将结果存储到xlsx中\ntone_df.to_excel('output/管理层-语调分析.xlsx') \n 点击了解课程详情   ",
-  "wordCount" : "422",
+  "articleBody": "今天分享的这篇论文通过 有道翻译 这一简单有效的的方式汉化了 LM英文金融词典，并使用 数词语数个数 的方式构造了管理层语调这个指标。\n文献 曾庆生,周波,张程,陈信元.年报语调与内部人交易:“表里如一”还是“口是心非”?[J].管理世界,2018,34(09):143-160.\n本文代码实现的视频讲解已更新至付费课 Python实证指标构建与文本分析 中。\n 点击上方图片购买课程   本文代码 点击下载\n摘要 基于中国A股非金融公司2007～2014年年报语调的文本分析,本文研究了年报语调与年报披露后的内部人交易行为之间的关系。研究发现,年报语调越积极,公司高管在年报公布后一段期间内的卖出股票规模越大,净买入股票规模越小,表明公司高管编制年报时存在**「口是心非」** 的操纵嫌疑。进一步研究发现,年报披露后中期市场表现差、信息透明度低、非国有控股的公司高管交易与年报语调的反向关系分别显著强于年报披露后中期市场表现好、信息透明度高、国有控股的公司;而公司盈余管理程度、交易者职位（是否核心高管）对年报语调与高管交易关系的影响不显著。此外,年报语调越积极,高管亲属卖出股票的规模也越大,但未发现公司重要股东交易与 「年报语调」 相关。上述结果表明,中国上市公司年报存在语调管理行为,年报语调成为除会计报表以外另一种可以被内部人管理或操纵的信息。\n关键词 年报; 语调管理; 内部人交易; 信息不对称;\n代码  年报数据 data/reports.csv LM金融词典 需要更新cntext库至于1.7.3及以上版本  \n语调指标  算法1 该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例； 算法2 （积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）  import pandas as pd df = pd.read_csv('data/reports.csv') df.head() Run\n .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  company year content     0 四川长虹 2017 2017 年，面对复杂多变的外部环境和多重叠加的困难挑战，公司聚焦用户与产品，强化消费洞...   1 江苏吴中 2014 2014 年，正值公司成立二十周年，上市十五周年，在董事会带领下，公司经营管理团队与全体...   2 联美控股 2017 报告期内，公司实现营业收入 2,376,375,380.44 元，同比增长 16.24%，营...   3 华海药业 2016 第三节\\t公司业务概要\\n\\n一、 报告期内公司所从事的主要业务、经营模式及行业情况说明\\n...   4 江泉实业 2014 报告期内，全球经济形势复杂多变、复苏进程缓慢；我国宏观经济进入增速放缓、结构调整加剧的新...     len(df) Run\n500  \ncntext 安装cntext\n!pip3 install cntext \nimport cntext as ct print(ct.__version__) Run\n1.9 \n查看内置词典\nct.dict_pkl_list() Run\n['DUTIR.pkl', 'HOWNET.pkl', 'Chinese_Loughran_McDonald_Financial_Sentiment.pkl', 'sentiws.pkl', 'ChineseFinancialFormalUnformalSentiment.pkl', 'ANEW.pkl', 'LSD2015.pkl', 'NRC.pkl', 'geninqposneg.pkl', 'HuLiu.pkl', 'Loughran_McDonald_Financial_Sentiment.pkl', 'AFINN.pkl', 'ADV_CONJ.pkl', 'STOPWORDS.pkl'] \nclm = ct.load_pkl_dict('Chinese_Loughran_McDonald_Financial_Sentiment.pkl') #print(clm) print('clm关键词: ',clm.keys()) print() print('Desc: ', clm['Desc']) print() print('Referer: ', clm['Referer']) print() print('Chinese_Loughran_McDonald_Financial_Sentiment词典含2类情感词\\n，分别是', clm['Chinese_Loughran_McDonald_Financial_Sentiment'].keys()) Run\nclm关键词: dict_keys(['Chinese_Loughran_McDonald_Financial_Sentiment', 'Desc', 'Referer']) Desc: 参照该论文，cntext库使用百度翻译、有道翻译对LM词典进行汉化处理。原文使用的有道翻译、金山词霸。 Referer: 曾庆生, 周波, 张程, and 陈信元. \"年报语调与内部人交易: 表里如一还是口是心非?.\" 管理世界 34, no. 09 (2018): 143-160. Chinese_Loughran_McDonald_Financial_Sentiment词典含2类情感词 ，分别是 dict_keys(['negative', 'positive']) \ncntext语调的实现  算法1 该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例； 算法2 （积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）  import cntext as ct diction = {'pos': ['高兴', '快乐', '分享'], 'neg': ['难过', '悲伤']} text = '我今天得奖了，很高兴，我要将快乐分享大家。' ct.sentiment(text=text, diction=diction, lang='chinese') Run\n{'pos_num': 3, 'neg_num': 0, 'stopword_num': 8, 'word_num': 14, 'sentence_num': 1} \nimport cntext as ct #cntext1.x版 diction = ct.load_pkl_dict('Chinese_Loughran_McDonald_Financial_Sentiment.pkl')['Chinese_Loughran_McDonald_Financial_Sentiment'] #cntext2.x版代码 #diction = ct.read_yaml_dict('en_common_LoughranMcDonald.yaml')['Dictionary'] def tone(text): res = ct.sentiment(text=text, diction=diction, lang='chinese') return pd.Series(res) #第一个年报的语调 tone(text=df['content'].tolist()[0]) Run\nnegative_num 67 positive_num 76 stopword_num 462 word_num 1831 sentence_num 52 dtype: int64 \n选中文本列content， 对content整体实施tone计算，\n#计算tone语调 tone_df = df['content'].apply(tone) tone_df.head() Run\n .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  negative_num positive_num stopword_num word_num sentence_num     0 67 76 462 1831 52   1 32 59 372 1266 34   2 18 33 178 816 19   3 81 114 1055 3619 90   4 27 17 134 453 16      算法1 该年报内 「积极词汇数 与消极词汇数 之差」 占 「年报总词汇数」 的比例； 算法2 （积极词汇数-消极词汇数）/（ 积极词汇数+消极词汇数）  将得到的正、负面、总词数分别按照算法1和算法2进行计算。\n# 算法1 tone_df['tone1'] = (tone_df['positive_num']-tone_df['negative_num'])/tone_df['word_num'] #tone_df['tone1'] = (tone_df['positive_num']-tone_df['negative_num'])/(tone_df['word_num']+1) #算法2 tone_df['tone2'] = (tone_df['positive_num']-tone_df['negative_num'])/(tone_df['positive_num']+tone_df['negative_num']) #tone_df['tone2'] = (tone_df['positive_num']-tone_df['negative_num'])/(tone_df['positive_num']+tone_df['negative_num']+1) tone_df.head() Run\n .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  negative_num positive_num stopword_num word_num sentence_num tone1 tone2     0 67 76 462 1831 52 0.004915 0.062937   1 32 59 372 1266 34 0.021327 0.296703   2 18 33 178 816 19 0.018382 0.294118   3 81 114 1055 3619 90 0.009119 0.169231   4 27 17 134 453 16 -0.022075 -0.227273     将结果存储到xlsx中\ntone_df.to_excel('output/管理层-语调分析.xlsx') \n",
+  "wordCount" : "421",
   "inLanguage": "en",
   "image":"/images/blog/manager_tone_analysis_with_LM.png","datePublished": "2022-06-22T18:43:10+06:00",
   "dateModified": "2022-06-22T18:43:10+06:00",
@@ -396,6 +396,25 @@ onload="renderMathInElement(document.body);"></script>
     }
 </script>
 
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者：大邓
+        <p>本文标题：管理世界 | 使用LM中文金融词典对年报进行语调分析
+        <p>本文链接：/blog/manager_tone_analysis_with_lm/
+        <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">「署名-非商业性使用-相同方式共享 4.0 国际」</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+  <br>
+
+
+
+  
   <div class="post-content"><p>今天分享的这篇论文通过 <strong>有道翻译</strong> 这一简单有效的的方式汉化了 LM英文金融词典，并使用 <strong>数词语数个数</strong>  的方式构造了管理层语调这个指标。</p>
 <h2 id="文献">文献<a hidden class="anchor" aria-hidden="true" href="#文献">#</a></h2>
 <p><strong>曾庆生,周波,张程,陈信元.年报语调与内部人交易:“表里如一”还是“口是心非”?[J].管理世界,2018,34(09):143-160.</strong></p>
@@ -766,17 +785,40 @@ onload="renderMathInElement(document.body);"></script>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">tone_df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s1">&#39;output/管理层-语调分析.xlsx&#39;</span><span class="p">)</span>
 </code></pre></div><br>
 <br>
-<div style="text-align: center;">
-<figure >
-    <a href="https://textdata.cn/blog/management_python_course/">
-        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
-    </a>
-    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
-</figure>
-</div>
 
 
   </div>
+
+
+  <br>
+
+  <div style="text-align: center;">
+    <figure >
+        <a href="https://textdata.cn/blog/management_python_course/">
+            <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+        </a>
+        <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+    </figure>
+  </div>
+
+  <br>
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者：大邓
+        <p>本文标题：管理世界 | 使用LM中文金融词典对年报进行语调分析
+        <p>本文链接：/blog/manager_tone_analysis_with_lm/
+        <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">「署名-非商业性使用-相同方式共享 4.0 国际」</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+
+
+
 
   <footer class="post-footer">
       <ul class="post-tags">

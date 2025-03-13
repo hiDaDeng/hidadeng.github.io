@@ -138,8 +138,8 @@
   "keywords": [
     "Python", "时间序列数据", "raputures", "变化点"
   ],
-  "articleBody": "时间序列数据 在各个领域中都占据着重要地位，从金融市场到生产制造，都需要对时间序列数据进行分析和监测。其中一个关键任务是识别时间序列数据中的变化点，这些变化点可能代表了重要的事件或趋势转折点。例如之前分享过 金融研究 | 央行货币政策文本相似度计算与可视化, 仅仅构造了相似度时序数据， 但是如果要做让程序自动识别政策变化时间点， 还需要今日分享的内容。\n为了解决这一问题，Ruptures 库是一个非常强大的工具，它提供了多种算法，可用于检测时间序列数据的变化点。本文将介绍如何使用 Ruptures 库来解决时间序列数据分析中的变化点检测问题。 点击下载本文代码\n\n一、问题场景 在各种应用场景中，需要识别时间序列数据中的变化点，例如：\n 金融市场：检测股票价格中的趋势转折点，以指导投资决策。 生产制造：监测生产线上的设备状态变化，及时发现问题并采取措施维护。 气象数据：发现天气数据中的异常变化，如风暴的到来或气温剧烈波动。 网络流量：检测网络流量中的异常行为，可能是网络攻击的迹象。  在这些场景下，Ruptures 库可以帮助我们识别变化点，从而更好地理解时间序列数据的特点。\n\n二、Ruptures 库介绍 Ruptures 库是一个用于信号分割和变化点检测的 Python 库，它提供了多种算法和工具，可用于处理不同类型的时间序列数据。\n以下是 Ruptures 库的一些关键特点：\n 多种算法支持：Ruptures 提供了多种变化点检测算法，包括 Pelt、Binary Segmentation、Window-based Methods 等，适用于不同类型的时间序列数据和问题。 简单易用：库的 API 设计简洁，容易上手，用户可以轻松地进行变化点检测任务。 高性能：Ruptures 经过优化，能够处理大规模的时间序列数据集，同时具有较低的计算复杂度。  \n三、常用算法 下面是 Ruptures 库中常用的一些变化点检测算法：\n Pelt (Pruned Exact Linear Time)：Pelt算法是一种基于动态规划的算法，适用于多个变化点的检测任务。它的优点在于其精确性和高效性，通常能够找到全局最优的变化点位置。Pelt算法通过将时间序列数据划分为多个分段，使得每个分段内的变化点数目最小化，从而找到最优的分段方式。 Binary Segmentation (BS)：Binary Segmentation算法是一种简单而有效的分割方法，通过迭代地将时间序列数据分为两个部分来检测变化点。该算法的计算复杂度较低，适用于中等规模的数据集。主要缺点是可能会导致分段的粒度过粗。 Window-based Methods：这些方法使用滑动窗口的方式来检测时间序列数据中的变化点。窗口会在时间序列上滑动，对窗口内的数据进行分析，然后根据某种准则来确定窗口内是否存在变化点。优点是简单易懂，但需要调整窗口大小和准则参数。 Bottom-Up Methods：Bottom-Up方法从小的分段开始，逐渐合并以检测变化点。它从最小的分段（每个数据点都是一个分段）开始，然后合并相邻的分段，直到满足某种准则为止。优点在于能够处理多个变化点，但计算复杂度较高。  \n四、实验 4.1 导入包 导入本文需要的包， 使得matplotlib支持中文，绘制高清图；\nimport matplotlib.pyplot as plt import ruptures as rpt import matplotlib #绘制高清图 import matplotlib_inline matplotlib_inline.backend_inline.set_matplotlib_formats('png', 'svg') #支持中文 import platform system = platform.system() # 获取操作系统类型 if system == 'Windows': font = {'family': 'SimHei'} elif system == 'Darwin': font = {'family': 'Arial Unicode MS'} else: font = {'family': 'sans-serif'} matplotlib.rc('font', **font) # 设置全局字体 \n4.2 生成实验数据 # 生成示例时间序列数据 n_samples, dim, sigma = 1000, 1, 1 n_bkps = 4 # 假设有4个变化点 signal, bkps = rpt.pw_constant(n_samples, dim, n_bkps, noise_std=sigma) print(signal.shape) print(bkps) signal Run\n(1000, 1) [198, 415, 608, 807, 1000] array([[-10.36078315], [-10.20386008], [ -9.97983878], [-10.53406566], ... [-11.43256337], [-10.61377906], [-10.56300421], [-10.83854557], [-10.21754732]]) ruptures为我们生成的实验数据signal是一个长度为1000的array型数据。生成的变化点bkps的位置序列 [198, 415, 608, 807, 1000]。 数据不够直观，我们可视化一下\n# 创建时间序列图 plt.figure(figsize=(12, 6)) plt.plot(signal, lw=2, label='时间序列数据') plt.legend() #保存 plt.savefig('ts-data.png', dpi=200) # 显示 plt.show() 从上图可以清楚的看到，ruptures为我们生成了1000个点，大致有4个变化点，将数据分成了五部分。现在我们使用ruptures为我们识别变化点\n4.3 识别变化点 Pelt算法是Ruptures库中的一种高效而准确的变化点检测算法，它的全称是Pruned Exact Linear Time（修剪的线性时间精确算法）。它的性能取决于成本函数的选择和 pen参数的调整，pen 参数的全称是 Penalty，它代表了在检测到变化点时的成本或惩罚值。这里将 pen 设置为 10\n# 使用 Ruptures 库进行变化点检测 algo = rpt.Pelt(model=\"rbf\").fit(signal) result = algo.predict(pen=10) Run\n[200, 415, 610, 805, 1000] \n4.3.1 matplotlib可视化 我们现在比较原数据变化点bkps 和 预测出来的变化点result，为了直观一些，进行可视化\nimport matplotlib.pyplot as plt import ruptures as rpt # 创建时间序列图 plt.figure(figsize=(12, 6)) # 绘制时间序列数据 plt.plot(signal, lw=2, label='时间序列数据', color='blue') # 绘制实际变化点位置 for bkp in bkps: plt.axvline(x=bkp, color='red', linestyle='--', label='实际变化点') # 绘制检测到的变化点位置 for bkp in result: plt.axvline(x=bkp, color='green', linestyle='--', label='检测到的变化点') plt.title(\"变化点检测示例\") plt.xlabel(\"时间步长\") plt.ylabel(\"数值\") # 显示单独的图例 handles, labels = plt.gca().get_legend_handles_labels() unique_labels = list(set(labels)) # 去除重复的标签 unique_handles = [handles[labels.index(label)] for label in unique_labels] # 获取对应的图例项 plt.legend(unique_handles, unique_labels) #保存图 plt.savefig('change-point2.png', dpi=200) plt.show() 4.3.2 ruptures自带可视化 matplotlib代码复杂， 使用ruptures更简洁一些。\n# 绘制结果 # 时间序列数据、 实际变化点、 预测的变化点 rpt.display(signal, bkps, result) plt.title(\"变化点检测示例\") #保存图 plt.savefig('change-point.png', dpi=200) #显示 plt.show() 4.4 关于pen 更具体地说，pen 参数的值越大，算法就会倾向于检测更少的变化点，而值越小，算法就会倾向于检测更多的变化点。\n通常情况下，您可以根据自己的数据和问题来调整pen参数的值。以下是一些常见的情况和建议：\n 如果您希望检测到较少的变化点，以捕捉主要的趋势转折点，可以选择较大的pen值。 如果您希望检测到更多的变化点，以捕捉数据中的细微变化，可以选择较小的pen值。 如果您不确定要选择哪个pen值，可以尝试多个不同的值，然后根据结果的质量和实际需求来选择最合适的pen值。  在实践中，调整pen参数通常需要一些试验和经验，因为最佳的pen值取决于您的数据和分析目标。您可以尝试不同的pen值，然后根据检测结果和领域知识来选择最适合的参数值。\n\n 点击了解课程详情   ",
-  "wordCount" : "309",
+  "articleBody": "时间序列数据 在各个领域中都占据着重要地位，从金融市场到生产制造，都需要对时间序列数据进行分析和监测。其中一个关键任务是识别时间序列数据中的变化点，这些变化点可能代表了重要的事件或趋势转折点。例如之前分享过 金融研究 | 央行货币政策文本相似度计算与可视化, 仅仅构造了相似度时序数据， 但是如果要做让程序自动识别政策变化时间点， 还需要今日分享的内容。\n为了解决这一问题，Ruptures 库是一个非常强大的工具，它提供了多种算法，可用于检测时间序列数据的变化点。本文将介绍如何使用 Ruptures 库来解决时间序列数据分析中的变化点检测问题。 点击下载本文代码\n\n一、问题场景 在各种应用场景中，需要识别时间序列数据中的变化点，例如：\n 金融市场：检测股票价格中的趋势转折点，以指导投资决策。 生产制造：监测生产线上的设备状态变化，及时发现问题并采取措施维护。 气象数据：发现天气数据中的异常变化，如风暴的到来或气温剧烈波动。 网络流量：检测网络流量中的异常行为，可能是网络攻击的迹象。  在这些场景下，Ruptures 库可以帮助我们识别变化点，从而更好地理解时间序列数据的特点。\n\n二、Ruptures 库介绍 Ruptures 库是一个用于信号分割和变化点检测的 Python 库，它提供了多种算法和工具，可用于处理不同类型的时间序列数据。\n以下是 Ruptures 库的一些关键特点：\n 多种算法支持：Ruptures 提供了多种变化点检测算法，包括 Pelt、Binary Segmentation、Window-based Methods 等，适用于不同类型的时间序列数据和问题。 简单易用：库的 API 设计简洁，容易上手，用户可以轻松地进行变化点检测任务。 高性能：Ruptures 经过优化，能够处理大规模的时间序列数据集，同时具有较低的计算复杂度。  \n三、常用算法 下面是 Ruptures 库中常用的一些变化点检测算法：\n Pelt (Pruned Exact Linear Time)：Pelt算法是一种基于动态规划的算法，适用于多个变化点的检测任务。它的优点在于其精确性和高效性，通常能够找到全局最优的变化点位置。Pelt算法通过将时间序列数据划分为多个分段，使得每个分段内的变化点数目最小化，从而找到最优的分段方式。 Binary Segmentation (BS)：Binary Segmentation算法是一种简单而有效的分割方法，通过迭代地将时间序列数据分为两个部分来检测变化点。该算法的计算复杂度较低，适用于中等规模的数据集。主要缺点是可能会导致分段的粒度过粗。 Window-based Methods：这些方法使用滑动窗口的方式来检测时间序列数据中的变化点。窗口会在时间序列上滑动，对窗口内的数据进行分析，然后根据某种准则来确定窗口内是否存在变化点。优点是简单易懂，但需要调整窗口大小和准则参数。 Bottom-Up Methods：Bottom-Up方法从小的分段开始，逐渐合并以检测变化点。它从最小的分段（每个数据点都是一个分段）开始，然后合并相邻的分段，直到满足某种准则为止。优点在于能够处理多个变化点，但计算复杂度较高。  \n四、实验 4.1 导入包 导入本文需要的包， 使得matplotlib支持中文，绘制高清图；\nimport matplotlib.pyplot as plt import ruptures as rpt import matplotlib #绘制高清图 import matplotlib_inline matplotlib_inline.backend_inline.set_matplotlib_formats('png', 'svg') #支持中文 import platform system = platform.system() # 获取操作系统类型 if system == 'Windows': font = {'family': 'SimHei'} elif system == 'Darwin': font = {'family': 'Arial Unicode MS'} else: font = {'family': 'sans-serif'} matplotlib.rc('font', **font) # 设置全局字体 \n4.2 生成实验数据 # 生成示例时间序列数据 n_samples, dim, sigma = 1000, 1, 1 n_bkps = 4 # 假设有4个变化点 signal, bkps = rpt.pw_constant(n_samples, dim, n_bkps, noise_std=sigma) print(signal.shape) print(bkps) signal Run\n(1000, 1) [198, 415, 608, 807, 1000] array([[-10.36078315], [-10.20386008], [ -9.97983878], [-10.53406566], ... [-11.43256337], [-10.61377906], [-10.56300421], [-10.83854557], [-10.21754732]]) ruptures为我们生成的实验数据signal是一个长度为1000的array型数据。生成的变化点bkps的位置序列 [198, 415, 608, 807, 1000]。 数据不够直观，我们可视化一下\n# 创建时间序列图 plt.figure(figsize=(12, 6)) plt.plot(signal, lw=2, label='时间序列数据') plt.legend() #保存 plt.savefig('ts-data.png', dpi=200) # 显示 plt.show() 从上图可以清楚的看到，ruptures为我们生成了1000个点，大致有4个变化点，将数据分成了五部分。现在我们使用ruptures为我们识别变化点\n4.3 识别变化点 Pelt算法是Ruptures库中的一种高效而准确的变化点检测算法，它的全称是Pruned Exact Linear Time（修剪的线性时间精确算法）。它的性能取决于成本函数的选择和 pen参数的调整，pen 参数的全称是 Penalty，它代表了在检测到变化点时的成本或惩罚值。这里将 pen 设置为 10\n# 使用 Ruptures 库进行变化点检测 algo = rpt.Pelt(model=\"rbf\").fit(signal) result = algo.predict(pen=10) Run\n[200, 415, 610, 805, 1000] \n4.3.1 matplotlib可视化 我们现在比较原数据变化点bkps 和 预测出来的变化点result，为了直观一些，进行可视化\nimport matplotlib.pyplot as plt import ruptures as rpt # 创建时间序列图 plt.figure(figsize=(12, 6)) # 绘制时间序列数据 plt.plot(signal, lw=2, label='时间序列数据', color='blue') # 绘制实际变化点位置 for bkp in bkps: plt.axvline(x=bkp, color='red', linestyle='--', label='实际变化点') # 绘制检测到的变化点位置 for bkp in result: plt.axvline(x=bkp, color='green', linestyle='--', label='检测到的变化点') plt.title(\"变化点检测示例\") plt.xlabel(\"时间步长\") plt.ylabel(\"数值\") # 显示单独的图例 handles, labels = plt.gca().get_legend_handles_labels() unique_labels = list(set(labels)) # 去除重复的标签 unique_handles = [handles[labels.index(label)] for label in unique_labels] # 获取对应的图例项 plt.legend(unique_handles, unique_labels) #保存图 plt.savefig('change-point2.png', dpi=200) plt.show() 4.3.2 ruptures自带可视化 matplotlib代码复杂， 使用ruptures更简洁一些。\n# 绘制结果 # 时间序列数据、 实际变化点、 预测的变化点 rpt.display(signal, bkps, result) plt.title(\"变化点检测示例\") #保存图 plt.savefig('change-point.png', dpi=200) #显示 plt.show() 4.4 关于pen 更具体地说，pen 参数的值越大，算法就会倾向于检测更少的变化点，而值越小，算法就会倾向于检测更多的变化点。\n通常情况下，您可以根据自己的数据和问题来调整pen参数的值。以下是一些常见的情况和建议：\n 如果您希望检测到较少的变化点，以捕捉主要的趋势转折点，可以选择较大的pen值。 如果您希望检测到更多的变化点，以捕捉数据中的细微变化，可以选择较小的pen值。 如果您不确定要选择哪个pen值，可以尝试多个不同的值，然后根据结果的质量和实际需求来选择最合适的pen值。  在实践中，调整pen参数通常需要一些试验和经验，因为最佳的pen值取决于您的数据和分析目标。您可以尝试不同的pen值，然后根据检测结果和领域知识来选择最适合的参数值。\n\n",
+  "wordCount" : "308",
   "inLanguage": "en",
   "image":"/images/blog/ruptures-change-point.png","datePublished": "2023-11-26T00:00:00Z",
   "dateModified": "2023-11-26T00:00:00Z",
@@ -436,6 +436,25 @@ onload="renderMathInElement(document.body);"></script>
     }
 </script>
 
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者：大邓
+        <p>本文标题：使用 Ruptures 识别时间序列数据中的变化点
+        <p>本文链接：/blog/2023-11-26-using-ruptures-to-detect-change-point/
+        <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">「署名-非商业性使用-相同方式共享 4.0 国际」</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+  <br>
+
+
+
+  
   <div class="post-content"><p><strong>时间序列数据</strong> 在各个领域中都占据着重要地位，从金融市场到生产制造，都需要对时间序列数据进行分析和监测。其中一个关键任务是识别时间序列数据中的变化点，这些变化点可能代表了重要的事件或趋势转折点。例如之前分享过 <a href="https://textdata.cn/blog/2023-01-10-similarity_of_cental_bank_monetary_policy/">金融研究 | 央行货币政策文本相似度计算与可视化</a>, 仅仅构造了相似度时序数据， 但是如果要做让程序自动识别政策变化时间点， 还需要今日分享的内容。</p>
 <p>为了解决这一问题，<strong>Ruptures 库是一个非常强大的工具，它提供了多种算法，可用于检测时间序列数据的变化点</strong>。本文将介绍如何使用 Ruptures 库来解决时间序列数据分析中的变化点检测问题。 <a href="code.ipynb"><strong>点击下载本文代码</strong></a></p>
 <p><br><br></p>
@@ -598,17 +617,40 @@ array([[-10.36078315],
 </ol>
 <p>在实践中，调整<em><strong>pen</strong></em>参数通常需要一些试验和经验，因为最佳的<em><strong>pen</strong></em>值取决于您的数据和分析目标。您可以尝试不同的<em><strong>pen</strong></em>值，然后根据检测结果和领域知识来选择最适合的参数值。</p>
 <p><br><br></p>
-<div style="text-align: center;">
-<figure >
-    <a href="https://textdata.cn/blog/management_python_course/">
-        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
-    </a>
-    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
-</figure>
-</div>
 
 
   </div>
+
+
+  <br>
+
+  <div style="text-align: center;">
+    <figure >
+        <a href="https://textdata.cn/blog/management_python_course/">
+            <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+        </a>
+        <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+    </figure>
+  </div>
+
+  <br>
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者：大邓
+        <p>本文标题：使用 Ruptures 识别时间序列数据中的变化点
+        <p>本文链接：/blog/2023-11-26-using-ruptures-to-detect-change-point/
+        <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">「署名-非商业性使用-相同方式共享 4.0 国际」</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+
+
+
 
   <footer class="post-footer">
       <ul class="post-tags">

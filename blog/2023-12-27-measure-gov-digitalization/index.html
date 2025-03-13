@@ -120,8 +120,8 @@ def generate_city_panel_data(csvf, concept_words, selected_citys=None, selected_
   "keywords": [
     "Python", "可视化", "dataset", "经济管理", "公共管理", "public management", "文本分析", "text analysis", "visualization", "可视化", "面板数据"
   ],
-  "articleBody": "使用 10 个城市的2003-2024年的政府工作报告，绘制出的「数字化概念」词频的趋势图。 直接上效果效果图\n相关代码  代码 | 使用地方gov工作报告生成某类概念词词频「面板数据」 数据集 | 国、省、市三级政府工作报告文本  \n一、直接上代码 1.1 代码文件结构 项目文件夹 |---代码.ipynb |---GovReportData #数据集 | 国、省、市三级政府工作报告文本 |---city.csv #市政府工作报告（2002-2024） |---province.csv #省政府工作报告（2002-2024） |---nation.csv #国务院政府工作报告（2002-2024） \n1.2 读取数据 读取地级市报告数据文件 city.csv ，点击链接，获取政府工作报告数据集\nimport pandas as pd df = pd.read_csv('GovReportData/city.csv') df.head() 1.3 设计面板数据生成函数 假设你使用的城市政府工作报告数据是大邓提供的，可以直接使用下面封装的函数，快速生成概念词典，指定城市指定年度区间的面板数据。\ndef generate_city_panel_data(csvf, concept_words, selected_citys=None, selected_years=None): \"\"\" csvf: csv的文件路径 concept_words: 概念词词语列表 selected_citys: 筛选指定城市的数据进行计算，列表 selected_years: 筛选指定年度的数据进行计算，列表 结果返回dataframe， 每一行代表一个省，每一列代表一年。 \"\"\" import pandas as pd import jieba df = pd.read_csv(csvf) table_df = pd.pivot_table(df, columns='year', #列-年份 index='city', #行-城市  values='doc', #单元格-文本 aggfunc=lambda cs: ''.join(str(c) for c in cs)) #让单元格填充文本 if selected_citys: table_df = table_df[table_df.index.isin(selected_citys)] if selected_years: selected_years = [str(y) for y in selected_years] table_df = table_df[selected_years] word_count_df = table_df.apply(lambda row: row.apply(lambda t: len(jieba.lcut(t)))) concept_word_count_df = table_df.apply(lambda row: row.str.count('|'.join(concept_words))) concept_word_ratio_df = concept_word_count_df/word_count_df return concept_word_ratio_df \n1.4 生成面板数据 %%time #数字化关键词仅供参考 digitalization_words = '大数据|移动化|云端化|互联网化|智能化|云化|服务化|数字化|数智化|信息化|信息技术|电子政务|智能化|数字平台|移动应用|app|智慧化|网络化|智慧型||数字平台|信息平台|综合信息平台|管理软件|saas|数据赋能|云端|互联网应用|智慧互联|数据化|上云|互联化|移动办公|数据驱动|可视化|在线化|rfid技术|云架构|协同化|一体化平台|云办公|信息服务平台|综合信息服务|数据服务平台|软件应用|数字化转型|云上|融合媒体|智能管理系统|互联网平台|aiot|ai+|智能物联|宽带|全面云化' digitalization_words = digitalization_words.split('|') #所有城市，所有年度(2003-2024) 数字化 panel_data_df = generate_city_panel_data(csvf='GovReportData/city.csv', concept_words = digitalization_words) print(panel_data_df.shape) #如果需要保存 panel_data_df.to_csv('282city-digitalization2003-2024.csv') #panel_data_df.to_excel('282city-digitalization2003-2024.csv') panel_data_df Run\n二、可视化 2.1 plot_line def plot_line(panel_df, title): import matplotlib.pyplot as plt import matplotlib import scienceplots import platform import pandas as pd import matplotlib_inline matplotlib_inline.backend_inline.set_matplotlib_formats('png', 'svg') import jieba import warnings warnings.filterwarnings('ignore') plt.style.use(['science', 'no-latex', 'cjk-sc-font']) system = platform.system() # 获取操作系统类型 if system == 'Windows': font = {'family': 'SimHei'} elif system == 'Darwin': font = {'family': 'Arial Unicode MS'} else: font = {'family': 'sans-serif'} matplotlib.rc('font', **font) # 设置全局字体 panel_df_T = panel_df.T ax = panel_df_T.plot(figsize=(10, 5)) # 添加图例，并指定位置和偏移 ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1.05)) plt.title(title, size=15) plt.xticks(size=12) plt.xlabel('年份', size=13) plt.ylabel('词频', size=13) plt.show() \n2.2 十城数字化 按照我自己对城市的感知， 1-5线城市\n 深圳市 杭州市 成都市 合肥市 青岛市 长沙市 西安市 哈尔滨市 石家庄市 衡水市  咱们看看不同级别城市的数字化词频是否有显著的差异\nselected_citys = ['深圳市', '杭州市', '成都市', '合肥市', '青岛市', '长沙市', '西安市', '哈尔滨市', '石家庄市', '衡水市'] #数字化关键词仅供参考 digitalization_words = '大数据|移动化|云端化|互联网化|智能化|云化|服务化|数字化|数智化|信息化|信息技术|电子政务|智能化|数字平台|移动应用|app|智慧化|网络化|智慧型||数字平台|信息平台|综合信息平台|管理软件|saas|数据赋能|云端|互联网应用|智慧互联|数据化|上云|互联化|移动办公|数据驱动|可视化|在线化|rfid技术|云架构|协同化|一体化平台|云办公|信息服务平台|综合信息服务|数据服务平台|软件应用|数字化转型|云上|融合媒体|智能管理系统|互联网平台|aiot|ai+|智能物联|宽带|全面云化' digitalization_words = digitalization_words.split('|') #生成面板数据 panel_data_df2 = generate_city_panel_data(csvf='GovReportData/city.csv', concept_words = digitalization_words, selected_citys = selected_citys) #绘图 plot_line(panel_df=panel_data_df2, title='城市数字化词频(程度)折线图(2003-2024)') 从图中可以看到\n 12年之前， 数字化词频变动较大。 衡水市数字化词频在2004、2007、2010是所有城市中最高的， 但是在这三个时间点之间又是局部最低点。 12年之后各个城市呈现下降趋势。 可能的原因并不是政府不重视数字化建设， 恰恰是数字化问题得到解决，没那么迫切，也就不太提及。  从政务数字化实现程度(从常识出发)， 杭州绝对是no1。 用数字化词频高低体现数字化重视程度， 衡水曾有几个年份是十个城市中的最高点，是最重视数字化的城市。 而杭州的政府工作报告中数字化词频并不比其他地市突出，这令我很失望啊。\n\n三、总结 之前看到一篇论文研究人民网留言板问答中的政府回复行为， 控制变量使用的是政府数字化程度。\n论文使用政府工作报告数字化词语提及次数， 用来测量政府的数字化程度。\n但从今天的实验看，用数字化词频测量政府数字化程度，不怎么准， 要慎重使用。\n四、获取资料   数据集| 国、省、市三级政府工作报告文本\n  点击下载本文计算结果 282city-digitalization2003-2024.csv\n   点击了解课程详情   ",
-  "wordCount" : "301",
+  "articleBody": "使用 10 个城市的2003-2024年的政府工作报告，绘制出的「数字化概念」词频的趋势图。 直接上效果效果图\n相关代码  代码 | 使用地方gov工作报告生成某类概念词词频「面板数据」 数据集 | 国、省、市三级政府工作报告文本  \n一、直接上代码 1.1 代码文件结构 项目文件夹 |---代码.ipynb |---GovReportData #数据集 | 国、省、市三级政府工作报告文本 |---city.csv #市政府工作报告（2002-2024） |---province.csv #省政府工作报告（2002-2024） |---nation.csv #国务院政府工作报告（2002-2024） \n1.2 读取数据 读取地级市报告数据文件 city.csv ，点击链接，获取政府工作报告数据集\nimport pandas as pd df = pd.read_csv('GovReportData/city.csv') df.head() 1.3 设计面板数据生成函数 假设你使用的城市政府工作报告数据是大邓提供的，可以直接使用下面封装的函数，快速生成概念词典，指定城市指定年度区间的面板数据。\ndef generate_city_panel_data(csvf, concept_words, selected_citys=None, selected_years=None): \"\"\" csvf: csv的文件路径 concept_words: 概念词词语列表 selected_citys: 筛选指定城市的数据进行计算，列表 selected_years: 筛选指定年度的数据进行计算，列表 结果返回dataframe， 每一行代表一个省，每一列代表一年。 \"\"\" import pandas as pd import jieba df = pd.read_csv(csvf) table_df = pd.pivot_table(df, columns='year', #列-年份 index='city', #行-城市  values='doc', #单元格-文本 aggfunc=lambda cs: ''.join(str(c) for c in cs)) #让单元格填充文本 if selected_citys: table_df = table_df[table_df.index.isin(selected_citys)] if selected_years: selected_years = [str(y) for y in selected_years] table_df = table_df[selected_years] word_count_df = table_df.apply(lambda row: row.apply(lambda t: len(jieba.lcut(t)))) concept_word_count_df = table_df.apply(lambda row: row.str.count('|'.join(concept_words))) concept_word_ratio_df = concept_word_count_df/word_count_df return concept_word_ratio_df \n1.4 生成面板数据 %%time #数字化关键词仅供参考 digitalization_words = '大数据|移动化|云端化|互联网化|智能化|云化|服务化|数字化|数智化|信息化|信息技术|电子政务|智能化|数字平台|移动应用|app|智慧化|网络化|智慧型||数字平台|信息平台|综合信息平台|管理软件|saas|数据赋能|云端|互联网应用|智慧互联|数据化|上云|互联化|移动办公|数据驱动|可视化|在线化|rfid技术|云架构|协同化|一体化平台|云办公|信息服务平台|综合信息服务|数据服务平台|软件应用|数字化转型|云上|融合媒体|智能管理系统|互联网平台|aiot|ai+|智能物联|宽带|全面云化' digitalization_words = digitalization_words.split('|') #所有城市，所有年度(2003-2024) 数字化 panel_data_df = generate_city_panel_data(csvf='GovReportData/city.csv', concept_words = digitalization_words) print(panel_data_df.shape) #如果需要保存 panel_data_df.to_csv('282city-digitalization2003-2024.csv') #panel_data_df.to_excel('282city-digitalization2003-2024.csv') panel_data_df Run\n二、可视化 2.1 plot_line def plot_line(panel_df, title): import matplotlib.pyplot as plt import matplotlib import scienceplots import platform import pandas as pd import matplotlib_inline matplotlib_inline.backend_inline.set_matplotlib_formats('png', 'svg') import jieba import warnings warnings.filterwarnings('ignore') plt.style.use(['science', 'no-latex', 'cjk-sc-font']) system = platform.system() # 获取操作系统类型 if system == 'Windows': font = {'family': 'SimHei'} elif system == 'Darwin': font = {'family': 'Arial Unicode MS'} else: font = {'family': 'sans-serif'} matplotlib.rc('font', **font) # 设置全局字体 panel_df_T = panel_df.T ax = panel_df_T.plot(figsize=(10, 5)) # 添加图例，并指定位置和偏移 ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1.05)) plt.title(title, size=15) plt.xticks(size=12) plt.xlabel('年份', size=13) plt.ylabel('词频', size=13) plt.show() \n2.2 十城数字化 按照我自己对城市的感知， 1-5线城市\n 深圳市 杭州市 成都市 合肥市 青岛市 长沙市 西安市 哈尔滨市 石家庄市 衡水市  咱们看看不同级别城市的数字化词频是否有显著的差异\nselected_citys = ['深圳市', '杭州市', '成都市', '合肥市', '青岛市', '长沙市', '西安市', '哈尔滨市', '石家庄市', '衡水市'] #数字化关键词仅供参考 digitalization_words = '大数据|移动化|云端化|互联网化|智能化|云化|服务化|数字化|数智化|信息化|信息技术|电子政务|智能化|数字平台|移动应用|app|智慧化|网络化|智慧型||数字平台|信息平台|综合信息平台|管理软件|saas|数据赋能|云端|互联网应用|智慧互联|数据化|上云|互联化|移动办公|数据驱动|可视化|在线化|rfid技术|云架构|协同化|一体化平台|云办公|信息服务平台|综合信息服务|数据服务平台|软件应用|数字化转型|云上|融合媒体|智能管理系统|互联网平台|aiot|ai+|智能物联|宽带|全面云化' digitalization_words = digitalization_words.split('|') #生成面板数据 panel_data_df2 = generate_city_panel_data(csvf='GovReportData/city.csv', concept_words = digitalization_words, selected_citys = selected_citys) #绘图 plot_line(panel_df=panel_data_df2, title='城市数字化词频(程度)折线图(2003-2024)') 从图中可以看到\n 12年之前， 数字化词频变动较大。 衡水市数字化词频在2004、2007、2010是所有城市中最高的， 但是在这三个时间点之间又是局部最低点。 12年之后各个城市呈现下降趋势。 可能的原因并不是政府不重视数字化建设， 恰恰是数字化问题得到解决，没那么迫切，也就不太提及。  从政务数字化实现程度(从常识出发)， 杭州绝对是no1。 用数字化词频高低体现数字化重视程度， 衡水曾有几个年份是十个城市中的最高点，是最重视数字化的城市。 而杭州的政府工作报告中数字化词频并不比其他地市突出，这令我很失望啊。\n\n三、总结 之前看到一篇论文研究人民网留言板问答中的政府回复行为， 控制变量使用的是政府数字化程度。\n论文使用政府工作报告数字化词语提及次数， 用来测量政府的数字化程度。\n但从今天的实验看，用数字化词频测量政府数字化程度，不怎么准， 要慎重使用。\n四、获取资料   数据集| 国、省、市三级政府工作报告文本\n  点击下载本文计算结果 282city-digitalization2003-2024.csv\n  ",
+  "wordCount" : "300",
   "inLanguage": "en",
   "image":"/images/blog/2023-12-27-gov-plot.png","datePublished": "2023-12-27T00:00:00Z",
   "dateModified": "2023-12-27T00:00:00Z",
@@ -419,6 +419,25 @@ onload="renderMathInElement(document.body);"></script>
     }
 </script>
 
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者：大邓
+        <p>本文标题：代码 | 使用gov工作报告生成数字化词频「面板数据」
+        <p>本文链接：/blog/2023-12-27-measure-gov-digitalization/
+        <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">「署名-非商业性使用-相同方式共享 4.0 国际」</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+  <br>
+
+
+
+  
   <div class="post-content"><p>使用 10 个城市的2003-2024年的政府工作报告，绘制出的「<em><strong>数字化概念</strong></em>」词频的趋势图。 直接上效果效果图</p>
 <p><img loading="lazy" src="img/plot.png" alt=""  />
 </p>
@@ -606,17 +625,40 @@ onload="renderMathInElement(document.body);"></script>
 </ul>
 <br>
 <br>
-<div style="text-align: center;">
-<figure >
-    <a href="https://textdata.cn/blog/management_python_course/">
-        <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
-    </a>
-    <figcaption><small><i>点击了解课程详情</i></small></figcaption>
-</figure>
-</div>
 
 
   </div>
+
+
+  <br>
+
+  <div style="text-align: center;">
+    <figure >
+        <a href="https://textdata.cn/blog/management_python_course/">
+            <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+        </a>
+        <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+    </figure>
+  </div>
+
+  <br>
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者：大邓
+        <p>本文标题：代码 | 使用gov工作报告生成数字化词频「面板数据」
+        <p>本文链接：/blog/2023-12-27-measure-gov-digitalization/
+        <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">「署名-非商业性使用-相同方式共享 4.0 国际」</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+
+
+
 
   <footer class="post-footer">
       <ul class="post-tags">
