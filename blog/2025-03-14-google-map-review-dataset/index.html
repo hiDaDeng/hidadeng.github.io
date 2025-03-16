@@ -65,12 +65,12 @@
 <meta property="og:description" content="这个数据集包含截至 2021 年 9 月美国谷歌地图上的评论信息（评分、文本、图片等），企业元数据（地址、地理信息、描述、类别信息、价格、营业时间以及其它信息），以及相关企业的链接。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/blog/2025-03-14-google-map-review-dataset/" />
-<meta property="og:image" content="/images/blog/glassdoor.png" /><meta property="article:section" content="blog" />
+<meta property="og:image" content="/images/blog/google-map.jpg" /><meta property="article:section" content="blog" />
 <meta property="article:published_time" content="2025-03-14T00:00:00&#43;00:00" />
 <meta property="article:modified_time" content="2025-03-14T00:00:00&#43;00:00" />
 
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:image" content="/images/blog/glassdoor.png" />
+<meta name="twitter:image" content="/images/blog/google-map.jpg" />
 <meta name="twitter:title" content="数据集 | 6.6亿条美国谷歌地图评论数据(~2021.9)"/>
 <meta name="twitter:description" content="这个数据集包含截至 2021 年 9 月美国谷歌地图上的评论信息（评分、文本、图片等），企业元数据（地址、地理信息、描述、类别信息、价格、营业时间以及其它信息），以及相关企业的链接。"/>
 
@@ -108,7 +108,7 @@
   "articleBody": "一、数据集概况 数据集名: 美国谷歌地图评论数据集 数据来源: Google Map 覆盖日期: 2008-01-25 ~ 2021-09 评论数量: 666,324,103(6.6亿) 用户数量: 113,643,107(1.1亿用户) 实体数量: 4,963,111家商铺 所含字段: 评分、文本、图片、地址、地理信息、价格、营业时间等 数据格式: json文件 下载数据: https://datarepo.eng.ucsd.edu/mcauley_group/gdrive/googlelocal/ 本文声明: 科研用途； 如分享有问题，可加微信372335839，备注「姓名-学校-专业」 1.1 引用数据 [1]Li, Jiacheng, Jingbo Shang, and Julian McAuley. \"UCTopic: Unsupervised contrastive learning for phrase representations and topic mining.\" arXiv preprint arXiv:2202.13469 (2022). [2]Yan, An, Zhankui He, Jiacheng Li, Tianyang Zhang, and Julian McAuley. \"Personalized showcases: Generating multi-modal explanations for recommendations.\" In Proceedings of the 46th International ACM SIGIR Conference on Research and Development in Information Retrieval, pp. 2251-2255. 2023. \n1.2 下载数据 选择 Complete review data - New York, 分别点击review 和 metadata， 下载得到review-New_York.json.gz 和 meta-New_York.json.gz 。\n下面分别以 review-New_York.json.gz 和 meta-New_York.json.gz 进行讲解。\n\n二、meta-New_York.json.gz .json.gz 是json文件的压缩文件， 压缩格式为gzip。 双击可以使用解压软件进行解压。\njson文件内，每条评论是一行 json 格式的数据。 如需进一步了解数据，请参见以下示例。\n2.1 使用jsonlines读取 使用jsonlines读取前1行\n# 读取meta-New_York.json.gz 前1行记录 first_n_json_objects = read_json_nlines(file='meta-New_York.json.gz', nrows=1) first_n_json_objects Run\n[{'name': 'A-Top Insurance', 'address': 'A-Top Insurance, 1009 Brighton Beach Ave, Brooklyn, NY 11235', 'gmap_id': '0x89c24469c758686b:0x641f5b84cb9bedfa', 'description': None, 'latitude': 40.5782537, 'longitude': -73.9591269, 'category': ['Insurance broker', 'Insurance agency'], 'avg_rating': 2, 'num_of_reviews': 4, 'price': None, 'hours': [['Thursday', '10AM–6PM'], ['Friday', '10AM–6PM'], ['Saturday', 'Closed'], ['Sunday', 'Closed'], ['Monday', '10AM–6PM'], ['Tuesday', '10AM–6PM'], ['Wednesday', '10AM–6PM']], 'MISC': None, 'state': 'Open ⋅ Closes 6PM', 'relative_results': ['0x89c24449907718fb:0x31b554a0983f621d', '0x4065f38ac8af66fd:0x991c223e83658501', '0x89c24450d471cd67:0x169d824916e1d42', '0x89c25bae39b5a677:0x5f129fa988693a25', '0x89c245029897765d:0xa04072e1ef9ab823'], 'url': 'https://www.google.com/maps/place//data=!4m2!3m1!1s0x89c24469c758686b:0x641f5b84cb9bedfa?authuser=-1\u0026hl=en\u0026gl=us'}] \n2.2 使用pandas读取 使用pandas读取 meta-New_York.json.gz 全部数据\n%%time import pandas as pd #读取前2行  #mdf = pd.read_json('meta-New_York.json.gz', nrows=2, compression='gzip', lines=True) #全部读取 mdf = pd.read_json('meta-New_York.json.gz', compression='gzip', lines=True) mdf Run\nCPU times: user 2.65 s, sys: 2.71 s, total: 5.36 s Wall time: 2.55 s 2.3 字段含义 name 商业实体名称 address 地址 gmap_id 商业实体ID description 业务描述 latitude 纬度 longitude 经度 category 商业的类别 avg_rating 该业务的平均评分 num_of_reviews 评论数量 price 业务价格 hours 营业时间 MISC MISC信息 state 当前状态（例如，永久关闭） relative_results 谷歌推荐的相关商业信息 url 企业的网址 \n2.4 字段缺失程度 字段缺失程度如下\nimport missingno as ms ms.matrix(mdf) \n三、review-New_York.json.gz 3.1 使用jsonlines读取 import gzip import jsonlines def read_json_nlines(file, nrows): json_objects = [] with gzip.open(file, 'rt', encoding='utf-8') as gz_file: reader = jsonlines.Reader(gz_file) for i in range(nrows): try: json_objects.append(reader.read()) except EOFError: break # 如果到达文件末尾，则退出循环 return json_objects # 读取review-New_York.json.gz 前2行记录 first_n_json_objects = read_json_nlines(file='review-New_York.json.gz', nrows=2) first_n_json_objects Run\n[ {'user_id': '101855823232666695168', 'name': 'R Mac', 'time': 1629141186463, 'rating': 1, 'text': 'Natalia may be the worst agent I have ever dealt with. Look up the definition of entitled b**** in the dictionary and there she would be. Look at their reviews...they are garbage through and through.', 'pics': None, 'resp': None, 'gmap_id': '0x89c24469c758686b:0x641f5b84cb9bedfa'}, {'user_id': '105821946869087882225', 'name': 'Beck TJ', 'time': 1528477593994, 'rating': 1, 'text': 'The lady at the front desk is rude. The bathroom key is supposed to be available for anyone who is visiting the business and any question must be answered in a nice manner.', 'pics': None, 'resp': None, 'gmap_id': '0x89c24469c758686b:0x641f5b84cb9bedfa'} ] \n3.2 使用pandas读取 使用 pandas 读取 review-New_York.json.gz 全部数据\n%%time import pandas as pd #读取前2行  #rdf = pd.read_json('review-New_York.json.gz', nrows=2, compression='gzip', lines=True) #全部读取 rdf = pd.read_json('review-New_York.json.gz', compression='gzip', lines=True) rdf Run\nCPU times: user 1min 30s, sys: 2min 2s, total: 3min 32s Wall time: 4min 11s 3.3 字段含义 user_id 评论者的 ID name 评论者的姓名 time 评论时间（unix 时间戳） rating 对企业的评分 text 评论文本 pics 评论图片链接 resp 商家对评论的回复，包括 unix 时间戳和回复文本 gmap_id 商业 ID \n3.4 字段缺失程度 字段缺失程度如下\nimport missingno as ms ms.matrix(rdf) \n相关内容 可以借鉴这篇 代码 | 如何用pandas处理超大csv文件 ， 了解如何处理远超内存的数据文件。\n",
   "wordCount" : "495",
   "inLanguage": "en",
-  "image":"/images/blog/glassdoor.png","datePublished": "2025-03-14T00:00:00Z",
+  "image":"/images/blog/google-map.jpg","datePublished": "2025-03-14T00:00:00Z",
   "dateModified": "2025-03-14T00:00:00Z",
   "author":{
     "@type": "Person",
@@ -260,8 +260,8 @@ onload="renderMathInElement(document.body);"></script>
 
 </div>
   </header> 
-<figure class="entry-cover"><a href="/images/blog/glassdoor.png" target="_blank"
-            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/glassdoor.png" alt=""></a>
+<figure class="entry-cover"><a href="/images/blog/google-map.jpg" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/google-map.jpg" alt=""></a>
         
 </figure>
 <div class="share-buttons">
@@ -424,7 +424,7 @@ onload="renderMathInElement(document.body);"></script>
     <div style="padding-bottom:1em;">
         <p>本文作者：大邓
         <p>本文标题：数据集 | 6.6亿条美国谷歌地图评论数据(~2021.9)
-        <p>本文链接：https://textdata.cn/blog/blog/2025-03-14-google-map-review-dataset/
+        <p>本文链接：https://textdata.cn/blog/2025-03-14-google-map-review-dataset/
         <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际</a></p>
     </div>
     <hr>
@@ -641,7 +641,7 @@ gmap_id   商业 ID
     <div style="padding-bottom:1em;">
         <p>本文作者：大邓
         <p>本文标题：数据集 | 6.6亿条美国谷歌地图评论数据(~2021.9)
-        <p>本文链接：https://textdata.cn/blog/blog/2025-03-14-google-map-review-dataset/
+        <p>本文链接：https://textdata.cn/blog/2025-03-14-google-map-review-dataset/
         <p>版权声明：<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际</a></p>
     </div>
     <hr>
