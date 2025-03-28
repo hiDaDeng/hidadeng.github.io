@@ -6,7 +6,7 @@
     <description>Recent content in 学术应用 on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Fri, 14 Mar 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E5%AD%A6%E6%9C%AF%E5%BA%94%E7%94%A8/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 28 Mar 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/%E5%AD%A6%E6%9C%AF%E5%BA%94%E7%94%A8/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>LIST | 社科(经管)数据挖掘文献资料汇总</title>
       <link>https://textdata.cn/blog/the_text_analysis_list_about_ms/</link>
@@ -134,6 +134,666 @@
     </item>
     
     <item>
+      <title>实验 | 使用Stanford Glove代码训练中文语料的Glove模型</title>
+      <link>https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/</link>
+      <pubDate>Fri, 28 Mar 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/</guid>
+      <description>&lt;h2 id=&#34;一简介&#34;&gt;一、简介&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://nlp.stanford.edu/projects/glove/&#34;&gt;Stanford GloVe&lt;/a&gt;（Global Vectors for Word Representation）算法作为一种融合全局统计信息与局部上下文窗口的词嵌入模型，相较于Word2Vec仅依赖局部上下文，GloVe利用全局统计信息，能更精准地反映词频分布特征。例如，在高维词向量（如200D）中，GloVe在词语类比任务中准确率达75%，并在命名实体识别任务中优于其他词嵌入模型。因其高效的语义表征能力，在社会学、管理学等领域展现出广泛的应用价值。 相关词嵌入文献资料可阅读&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/&#34;&gt;https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/&#34;&gt;转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/&#34;&gt;词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2022-04-09-literature-about-embeddings/&#34;&gt;文献汇总 | 词嵌入 与 社会科学中的偏见(态度)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2022-04-01-embeddings-and-attitude/&#34;&gt;词嵌入测量不同群体对某概念的态度(偏见)&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二环境准备&#34;&gt;二、环境准备&lt;/h2&gt;
+&lt;h3 id=&#34;21-windows&#34;&gt;2.1 Windows&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;打开 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt;（建议以管理员身份运行）。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;运行以下命令来安装 &lt;em&gt;&lt;strong&gt;Chocolatey&lt;/strong&gt;&lt;/em&gt;：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString(&amp;#39;https://community.chocolatey.org/install.ps1&amp;#39;))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;安装完成后，重新打开一个新的 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt; 窗口。 运行以下命令确认 &lt;em&gt;&lt;strong&gt;Chocolatey&lt;/strong&gt;&lt;/em&gt; 是否成功安装：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;choco --version
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;安装 &lt;em&gt;&lt;strong&gt;make&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;choco install make
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;安装完成后，重新打开一个新的 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt; 窗口。 运行以下命令确认 &lt;em&gt;&lt;strong&gt;make&lt;/strong&gt;&lt;/em&gt; 是否成功安装：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;make --version
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;获取&lt;a href=&#34;https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/&#34;&gt;cntext2.x&lt;/a&gt; 的安装文件 &lt;em&gt;&lt;strong&gt;cntext-2.1.4-py3-none-any.whl&lt;/strong&gt;&lt;/em&gt;，并将该whl文件放置于桌面。执行以下安装命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd Desktop
+pip install cntext-2.1.4-py3-none-any.whl
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;22-mac&#34;&gt;2.2 Mac&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;打开 &lt;em&gt;&lt;strong&gt;terminal&lt;/strong&gt;&lt;/em&gt;，执行命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;/bin/bash -c &amp;#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;安装完成后，重新打开一个新的 &lt;em&gt;&lt;strong&gt;terminal&lt;/strong&gt;&lt;/em&gt; 窗口。 运行以下命令确认 &lt;em&gt;&lt;strong&gt;Homebrew&lt;/strong&gt;&lt;/em&gt; 是否成功安装：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;brew --version
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;安装 &lt;em&gt;&lt;strong&gt;make&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;brew install make
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;安装完成后，重新打开一个新的 &lt;em&gt;&lt;strong&gt;terminal&lt;/strong&gt;&lt;/em&gt; 窗口。 运行以下命令确认 &lt;em&gt;&lt;strong&gt;make&lt;/strong&gt;&lt;/em&gt; 是否成功安装：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;make --version
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;获取&lt;a href=&#34;https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/&#34;&gt;cntext2.x&lt;/a&gt; 的安装文件 &lt;em&gt;&lt;strong&gt;cntext-2.1.4-py3-none-any.whl&lt;/strong&gt;&lt;/em&gt;，并将该whl文件放置于桌面。执行以下安装命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd desktop
+pip3 install cntext-2.1.4-py3-none-any.whl
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三训练中文glove&#34;&gt;三、训练中文GloVe&lt;/h2&gt;
+&lt;h3 id=&#34;31-准备中文语料&#34;&gt;3.1 准备中文语料&lt;/h3&gt;
+&lt;p&gt;以三体小说为例，&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-santi.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;re&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;jieba&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 读取原始数据「raw三体.txt」&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;raw三体.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 去除非中文字符&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;chinese_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;re&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;findall&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;[\u4e00-\u9fa5]+&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 分词并保存到「三体.txt」中&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;三体.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;a+&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39; &amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;jieba&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;lcut&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-下载glove&#34;&gt;3.2 下载GloVe&lt;/h3&gt;
+&lt;p&gt;这里大邓准备了两个选择&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;- stanfordnlp/GloVe            https://github.com/stanfordnlp/GloVe  
+- hiDaDeng/GloVe               https://github.com/hiDaDeng/GloVe
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;a href=&#34;https://github.com/stanfordnlp/GloVe&#34;&gt;&lt;em&gt;&lt;strong&gt;stanfordnlp/GloVe&lt;/strong&gt;&lt;/em&gt;&lt;/a&gt;设计很巧妙， 但该项目没有展示环境配置、中文实验数据、中文实验结果。&lt;/p&gt;
+&lt;p&gt;因此， 大邓在 &lt;a href=&#34;https://github.com/stanfordnlp/GloVe&#34;&gt;&lt;em&gt;&lt;strong&gt;stanfordnlp/GloVe&lt;/strong&gt;&lt;/em&gt;&lt;/a&gt; 基础上， 添加了增加了环境配置、代码参数说明、准备中文实验数据、中文实验结果等说明。&lt;/p&gt;
+&lt;p&gt;接下来以 &lt;a href=&#34;https://github.com/hiDaDeng/GloVe&#34;&gt;&lt;em&gt;&lt;strong&gt;hiDaDeng/GloVe&lt;/strong&gt;&lt;/em&gt;&lt;/a&gt; 做说明。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-download.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;33-glove文件目录&#34;&gt;3.3 GloVe文件目录&lt;/h3&gt;
+&lt;p&gt;从  &lt;a href=&#34;https://github.com/hiDaDeng/GloVe&#34;&gt;&lt;em&gt;&lt;strong&gt;hiDaDeng/GloVe&lt;/strong&gt;&lt;/em&gt;&lt;/a&gt; 解压后得到 &lt;em&gt;&lt;strong&gt;GloVe-master&lt;/strong&gt;&lt;/em&gt; 文件夹。 &lt;em&gt;&lt;strong&gt;GloVe-master&lt;/strong&gt;&lt;/em&gt; 目录(含义)&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;GloVe
+├── README.md  GloVe代码说明文档
+├── src        GloVe算法C语言源代码
+├── eval       评估代码
+├── demo.sh    GloVe训练命令(这里是重点)
+├── output     GloVe训练输出文件夹；此处存储着大邓使用{三体.txt}训练出的Glove模型相关文件
+│   ├── 三体_cooccurrence.bin
+│   └── 三体_cooccurrence.shuf.bin
+│   └── 三体_vectors.txt
+│   └── 三体_vectors.bin 三体_vocab.txt
+│   └── 三体_vocab.txt
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;这里我们展示下 &lt;em&gt;&lt;strong&gt;demo.sh&lt;/strong&gt;&lt;/em&gt;的源代码， 并对部分代码进行展示说明。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 设置语料数据文件&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 注意: 中文语料文件必须是分词后的文本文件。&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 如 「我是中国人，我爱中国」 要整备成 「我 是 中国人 ， 我 爱 中国」&lt;/span&gt;
+&lt;span class=&#34;nv&#34;&gt;CORPUS_FILE&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; 三体.txt
+
+&lt;span class=&#34;c1&#34;&gt;# 创建 output 文件夹，保存训练结果(模型文件bin/txt等文件)&lt;/span&gt;
+&lt;span class=&#34;nv&#34;&gt;OUTPUT_DIR&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;output&amp;#34;&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 程序运行时允许使用的最大内存，单位为 GB&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 注意: 此值越大，程序运行速度可能越快，但也会占用更多系统资源&lt;/span&gt;
+&lt;span class=&#34;nv&#34;&gt;MEMORY&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; 4.0
+
+&lt;span class=&#34;c1&#34;&gt;# 词汇表中单词的最小出现次数&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 出现次数低于此值的单词将被忽略，以减少词汇表的大小&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 注意: 此值越大，模型可能越精确，但词汇表也会越小&lt;/span&gt;
+&lt;span class=&#34;nv&#34;&gt;VOCAB_MIN_COUNT&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;5&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 每个单词向量的维度大小&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 维度越大，向量表示的信息越丰富，但计算成本也越高&lt;/span&gt;
+&lt;span class=&#34;nv&#34;&gt;VECTOR_SIZE&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;50&lt;/span&gt;   
+
+&lt;span class=&#34;c1&#34;&gt;# 训练模型的最大迭代次数&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 迭代次数越多，模型可能越精确，但训练时间也会相应增加&lt;/span&gt;
+&lt;span class=&#34;nv&#34;&gt;MAX_ITER&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;15&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 计算共现矩阵时考虑的上下文窗口大小&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 即当前单词前后各多少个单词会被考虑在内&lt;/span&gt;
+&lt;span class=&#34;nv&#34;&gt;WINDOW_SIZE&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;15&lt;/span&gt;   
+
+&lt;span class=&#34;c1&#34;&gt;# 训练模型时使用的线程数量&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 线程数越多，训练速度可能越快，但也会占用更多系统资源&lt;/span&gt;
+&lt;span class=&#34;nv&#34;&gt;NUM_THREADS&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;8&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 共现矩阵中元素的最大计数值； 超过此值的元素将被截断为该值&lt;/span&gt;
+&lt;span class=&#34;nv&#34;&gt;X_MAX&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;10&lt;/span&gt; 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;34-开始训练&#34;&gt;3.4 开始训练&lt;/h3&gt;
+&lt;p&gt;以准备好的 &lt;em&gt;&lt;strong&gt;三体.txt&lt;/strong&gt;&lt;/em&gt; 语料文件为例， 训练 50 维的 GloVe 模型(VECTOR_SIZE=50)， 结果保存到  &lt;em&gt;&lt;strong&gt;output&lt;/strong&gt;&lt;/em&gt; 文件夹内。&lt;/p&gt;
+&lt;br&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;打开 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt; (Mac用户打开terminal) 。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;将 &lt;em&gt;&lt;strong&gt;GloVe-master&lt;/strong&gt;&lt;/em&gt; 文件夹移动到桌面。 在 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt; 执行以下命令，切换工作目录到 &lt;em&gt;&lt;strong&gt;GloVe-master&lt;/strong&gt;&lt;/em&gt; 文件夹。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd desktop/GloVe-master
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt; 中执行&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;./demo.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;大概运行了几分钟就出结果了。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/03-output.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;35-转化成word2vec格式&#34;&gt;3.5 转化成Word2Vec格式&lt;/h3&gt;
+&lt;p&gt;打开 &lt;em&gt;&lt;strong&gt;三体_vectors.txt&lt;/strong&gt;&lt;/em&gt; 查看不同词语对应的词向量&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/04-vector-txt.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;注意刚刚生成的 &lt;em&gt;&lt;strong&gt;output/三体_vectors.txt&lt;/strong&gt;&lt;/em&gt; 是无法用 python 直接利用的。&lt;/p&gt;
+&lt;p&gt;使用 gensim库 或 cntext2.x 库将其转化为 word2vec 格式的txt文件。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;glove_file&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;output/三体_vectors.txt&amp;#39;&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;word2vec_file&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;output/三体_vectors_word2vec.txt&amp;#39;&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 将Glove转化为Word2Vec格式&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;glove2word2vec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;glove_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;word2vec_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/05-g2v.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;其实两个txt文件的区别，仅仅是在 &lt;em&gt;&lt;strong&gt;三体_vectors_word2vec.txt&lt;/strong&gt;&lt;/em&gt; 在第一行多了两个数字， 分别代表词汇表大小和向量维度。&lt;/p&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;四使用中文glove模型&#34;&gt;四、使用中文GloVe模型&lt;/h2&gt;
+&lt;h3 id=&#34;41-加载模型&#34;&gt;4.1 加载模型&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;word2vec_file&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;output/三体_vectors_word2vec.txt&amp;#39;&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 加载word2vec模型.txt文件&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;wv_model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;word2vec_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;binary&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;False&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;wv_model&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;gensim.models.keyedvectors.KeyedVectors at 0x336ff8dd0&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;42-keyedvectors的操作方法或属性&#34;&gt;4.2 KeyedVectors的操作方法(或属性)&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;方法&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;KeyedVectors.key_to_index&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;获取单词到索引的映射。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;KeyedVectors.vector_size&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;获取GloVe模型中任意词向量的维度。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;KeyedVectors.get_vector(word)&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;获取给定单词的词向量。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;KeyedVectors.index_to_key&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;获取词汇表中的所有单词。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;KeyedVectors.similar_by_word(word, topn=10)&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;获取某词语最相似的10个近义词。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;KeyedVectors.similar_by_vector(vector, topn=10)&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;获取词向量最相似的10个近义词。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&amp;hellip;&lt;/td&gt;
+&lt;td&gt;&amp;hellip;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;421-词表&#34;&gt;4.2.1 词表&lt;/h3&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;wv_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;index_to_key&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[&amp;#39;的&amp;#39;,
+ &amp;#39;了&amp;#39;,
+ &amp;#39;在&amp;#39;,
+...
+ &amp;#39;引力&amp;#39;,
+ &amp;#39;所说&amp;#39;,
+ &amp;#39;星际&amp;#39;,
+ ...]
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;422-词表映射&#34;&gt;4.2.2 词表映射&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;wv_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;key_to_index&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;{&amp;#39;的&amp;#39;: 0,
+ &amp;#39;了&amp;#39;: 1,
+ &amp;#39;在&amp;#39;: 2,
+...
+ &amp;#39;引力&amp;#39;: 997,
+ &amp;#39;所说&amp;#39;: 998,
+ &amp;#39;星际&amp;#39;: 999,
+ ...}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;423-向量维度数&#34;&gt;4.2.3 向量维度数&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;词表有 &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;key_to_index&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt; 个词&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;向量是 &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt; 维&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;词表有 4365 个词
+向量是 50 维
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;424-获取词向量&#34;&gt;4.2.4 获取词向量&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 查看「降临」的词向量&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;get_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;降临&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;array([ 0.672314,  0.020081,  0.653733,  0.598732, -0.680517, -0.049689,
+       -0.16845 , -0.06759 , -0.147955,  0.024006,  0.264551, -0.050127,
+        0.252063, -0.475633,  0.103722, -0.012481,  0.040755,  1.154912,
+        0.742695,  0.048619, -0.514424, -1.184054,  0.515892, -0.1034  ,
+        0.368755, -0.690357, -0.784287, -0.505814,  0.035807, -0.166354,
+       -0.26149 ,  0.015089,  0.10626 , -0.215666, -0.374001, -0.123558,
+        0.422617, -0.075277, -0.316387, -0.484295,  0.059687,  0.132621,
+        0.192094, -0.591919,  0.236281,  0.164198, -0.058724,  1.285457,
+        0.905606, -0.52032 ], dtype=float32)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;425-近义词&#34;&gt;4.2.5 近义词&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;similar_by_word&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;三体&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;叛军&amp;#39;, 0.7699569463729858),
+ (&amp;#39;更新&amp;#39;, 0.7687217593193054),
+ (&amp;#39;地球&amp;#39;, 0.760529100894928),
+ (&amp;#39;全集&amp;#39;, 0.7575182914733887),
+ (&amp;#39;最快&amp;#39;, 0.7426372170448303),
+ (&amp;#39;世界&amp;#39;, 0.7262137532234192),
+ (&amp;#39;最新&amp;#39;, 0.7219281792640686),
+ (&amp;#39;游戏&amp;#39;, 0.7180070877075195),
+ (&amp;#39;危机&amp;#39;, 0.7020451426506042),
+ (&amp;#39;教&amp;#39;, 0.7012627720832825)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;426-计算多个词的中心向量&#34;&gt;4.2.6 计算多个词的中心向量&lt;/h3&gt;
+&lt;p&gt;我们可以计算「三体」、「降临」、「组织」、「拯救」的中心向量eto_vector。 并试图寻找中心向量eto_vector的最相似的10个词。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;eto_vector&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;semantic_centroid&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;words&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;三体&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;降临&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;组织&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;拯救&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;eto_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 寻找 eto_vector 语义最相似的10个词&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;similar_by_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;eto_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[ 0.6267875   0.08975425  0.48438451  0.405128   -0.49928901  0.11347825
+ -0.90057975  0.11877625 -0.27053049  0.344603    0.4368495  -0.3839495
+  0.02633176 -0.138534    0.2531555  -0.0060905  -0.48776849  0.75548999
+  0.72575876 -0.446079   -0.30361701 -1.039792    0.457687   -0.4286315
+  0.44577325 -0.39119426 -0.4783935  -0.2596135  -0.32513325 -0.10315975
+ -0.42880575 -0.48328425  0.129438   -0.17085625 -0.13454625 -0.070053
+  0.68060375  0.16736924 -0.15664874 -0.20528575  0.385481    0.206432
+  0.18913225 -0.93453825  0.58597099  0.60727924  0.009064    0.87661726
+  0.65814423 -0.356567  ]
+
+[(&amp;#39;降临&amp;#39;, 0.8707027435302734),
+ (&amp;#39;组织&amp;#39;, 0.8625670671463013),
+ (&amp;#39;三体&amp;#39;, 0.8621653914451599),
+ (&amp;#39;派&amp;#39;, 0.8343338966369629),
+ (&amp;#39;拯救&amp;#39;, 0.8301094174385071),
+ (&amp;#39;叛军&amp;#39;, 0.784512460231781),
+ (&amp;#39;地球&amp;#39;, 0.7536635398864746),
+ (&amp;#39;世界&amp;#39;, 0.7245718836784363),
+ (&amp;#39;外部&amp;#39;, 0.7078365087509155),
+ (&amp;#39;入侵&amp;#39;, 0.6962169408798218)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;熟悉三体的朋友应该能联想到背叛人类的ETO(地球三体组织)有两个派别，分别是拯救派和降临派。&lt;/p&gt;
+&lt;p&gt;ETO开发了一款虚拟现实游戏，它向参与者展示了三体世界的真实情况，包括其恶劣的自然条件、三体文明的历史及其科技水平等。通过参与这个游戏，玩家们能够逐渐了解三体世界的真相，并最终决定是否要加入到支持三体文明入侵地球的行列中来。&lt;/p&gt;
+&lt;p&gt;这个游戏不仅充当了信息传递的媒介，也是甄别志同道合者的工具，让那些对人类社会现状不满、渴望变革的人们找到了组织，进而成为了背叛人类的叛军一员。在这个过程中，“三体游戏”起到了关键的作用，是连接地球人与三体世界的重要桥梁。&lt;/p&gt;
+&lt;br&gt;</description>
+      <content:encoded><![CDATA[<h2 id="一简介">一、简介</h2>
+<p><a href="https://nlp.stanford.edu/projects/glove/">Stanford GloVe</a>（Global Vectors for Word Representation）算法作为一种融合全局统计信息与局部上下文窗口的词嵌入模型，相较于Word2Vec仅依赖局部上下文，GloVe利用全局统计信息，能更精准地反映词频分布特征。例如，在高维词向量（如200D）中，GloVe在词语类比任务中准确率达75%，并在命名实体识别任务中优于其他词嵌入模型。因其高效的语义表征能力，在社会学、管理学等领域展现出广泛的应用价值。 相关词嵌入文献资料可阅读</p>
+<ul>
+<li><a href="https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/">https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/</a></li>
+<li><a href="https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/">转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用</a></li>
+<li><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></li>
+<li><a href="https://textdata.cn/blog/2022-04-09-literature-about-embeddings/">文献汇总 | 词嵌入 与 社会科学中的偏见(态度)</a></li>
+<li><a href="https://textdata.cn/blog/2022-04-01-embeddings-and-attitude/">词嵌入测量不同群体对某概念的态度(偏见)</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="二环境准备">二、环境准备</h2>
+<h3 id="21-windows">2.1 Windows</h3>
+<ol>
+<li>
+<p>打开 <em><strong>cmd</strong></em>（建议以管理员身份运行）。</p>
+</li>
+<li>
+<p>运行以下命令来安装 <em><strong>Chocolatey</strong></em>：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString(&#39;https://community.chocolatey.org/install.ps1&#39;))
+</code></pre></div></li>
+<li>
+<p>安装完成后，重新打开一个新的 <em><strong>cmd</strong></em> 窗口。 运行以下命令确认 <em><strong>Chocolatey</strong></em> 是否成功安装：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">choco --version
+</code></pre></div></li>
+<li>
+<p>安装 <em><strong>make</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">choco install make
+</code></pre></div></li>
+<li>
+<p>安装完成后，重新打开一个新的 <em><strong>cmd</strong></em> 窗口。 运行以下命令确认 <em><strong>make</strong></em> 是否成功安装：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">make --version
+</code></pre></div></li>
+<li>
+<p>获取<a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">cntext2.x</a> 的安装文件 <em><strong>cntext-2.1.4-py3-none-any.whl</strong></em>，并将该whl文件放置于桌面。执行以下安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd Desktop
+pip install cntext-2.1.4-py3-none-any.whl
+</code></pre></div></li>
+</ol>
+<br>
+<h3 id="22-mac">2.2 Mac</h3>
+<ol>
+<li>
+<p>打开 <em><strong>terminal</strong></em>，执行命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">/bin/bash -c &#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&#34;
+</code></pre></div></li>
+<li>
+<p>安装完成后，重新打开一个新的 <em><strong>terminal</strong></em> 窗口。 运行以下命令确认 <em><strong>Homebrew</strong></em> 是否成功安装：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">brew --version
+</code></pre></div></li>
+<li>
+<p>安装 <em><strong>make</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">brew install make
+</code></pre></div></li>
+<li>
+<p>安装完成后，重新打开一个新的 <em><strong>terminal</strong></em> 窗口。 运行以下命令确认 <em><strong>make</strong></em> 是否成功安装：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">make --version
+</code></pre></div></li>
+<li>
+<p>获取<a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">cntext2.x</a> 的安装文件 <em><strong>cntext-2.1.4-py3-none-any.whl</strong></em>，并将该whl文件放置于桌面。执行以下安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+pip3 install cntext-2.1.4-py3-none-any.whl
+</code></pre></div></li>
+</ol>
+<p><br><br></p>
+<h2 id="三训练中文glove">三、训练中文GloVe</h2>
+<h3 id="31-准备中文语料">3.1 准备中文语料</h3>
+<p>以三体小说为例，</p>
+<p><img loading="lazy" src="img/01-santi.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">jieba</span>
+
+<span class="c1"># 读取原始数据「raw三体.txt」</span>
+<span class="n">raw_text</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;raw三体.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+<span class="c1"># 去除非中文字符</span>
+<span class="n">chinese_text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[\u4e00-\u9fa5]+&#39;</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">))</span>
+
+<span class="c1"># 分词并保存到「三体.txt」中</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;三体.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span>
+</code></pre></div><br>
+<h3 id="32-下载glove">3.2 下载GloVe</h3>
+<p>这里大邓准备了两个选择</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- stanfordnlp/GloVe            https://github.com/stanfordnlp/GloVe  
+- hiDaDeng/GloVe               https://github.com/hiDaDeng/GloVe
+</code></pre></div><p><a href="https://github.com/stanfordnlp/GloVe"><em><strong>stanfordnlp/GloVe</strong></em></a>设计很巧妙， 但该项目没有展示环境配置、中文实验数据、中文实验结果。</p>
+<p>因此， 大邓在 <a href="https://github.com/stanfordnlp/GloVe"><em><strong>stanfordnlp/GloVe</strong></em></a> 基础上， 添加了增加了环境配置、代码参数说明、准备中文实验数据、中文实验结果等说明。</p>
+<p>接下来以 <a href="https://github.com/hiDaDeng/GloVe"><em><strong>hiDaDeng/GloVe</strong></em></a> 做说明。</p>
+<p><img loading="lazy" src="img/02-download.png" alt=""  />
+</p>
+<br>
+<h3 id="33-glove文件目录">3.3 GloVe文件目录</h3>
+<p>从  <a href="https://github.com/hiDaDeng/GloVe"><em><strong>hiDaDeng/GloVe</strong></em></a> 解压后得到 <em><strong>GloVe-master</strong></em> 文件夹。 <em><strong>GloVe-master</strong></em> 目录(含义)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">GloVe
+├── README.md  GloVe代码说明文档
+├── src        GloVe算法C语言源代码
+├── eval       评估代码
+├── demo.sh    GloVe训练命令(这里是重点)
+├── output     GloVe训练输出文件夹；此处存储着大邓使用{三体.txt}训练出的Glove模型相关文件
+│   ├── 三体_cooccurrence.bin
+│   └── 三体_cooccurrence.shuf.bin
+│   └── 三体_vectors.txt
+│   └── 三体_vectors.bin 三体_vocab.txt
+│   └── 三体_vocab.txt
+</code></pre></div><br>
+<p>这里我们展示下 <em><strong>demo.sh</strong></em>的源代码， 并对部分代码进行展示说明。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 设置语料数据文件</span>
+<span class="c1"># 注意: 中文语料文件必须是分词后的文本文件。</span>
+<span class="c1"># 如 「我是中国人，我爱中国」 要整备成 「我 是 中国人 ， 我 爱 中国」</span>
+<span class="nv">CORPUS_FILE</span> <span class="o">=</span> 三体.txt
+
+<span class="c1"># 创建 output 文件夹，保存训练结果(模型文件bin/txt等文件)</span>
+<span class="nv">OUTPUT_DIR</span> <span class="o">=</span> <span class="s2">&#34;output&#34;</span>
+
+<span class="c1"># 程序运行时允许使用的最大内存，单位为 GB</span>
+<span class="c1"># 注意: 此值越大，程序运行速度可能越快，但也会占用更多系统资源</span>
+<span class="nv">MEMORY</span> <span class="o">=</span> 4.0
+
+<span class="c1"># 词汇表中单词的最小出现次数</span>
+<span class="c1"># 出现次数低于此值的单词将被忽略，以减少词汇表的大小</span>
+<span class="c1"># 注意: 此值越大，模型可能越精确，但词汇表也会越小</span>
+<span class="nv">VOCAB_MIN_COUNT</span> <span class="o">=</span> <span class="m">5</span>
+
+<span class="c1"># 每个单词向量的维度大小</span>
+<span class="c1"># 维度越大，向量表示的信息越丰富，但计算成本也越高</span>
+<span class="nv">VECTOR_SIZE</span> <span class="o">=</span> <span class="m">50</span>   
+
+<span class="c1"># 训练模型的最大迭代次数</span>
+<span class="c1"># 迭代次数越多，模型可能越精确，但训练时间也会相应增加</span>
+<span class="nv">MAX_ITER</span> <span class="o">=</span> <span class="m">15</span>
+
+<span class="c1"># 计算共现矩阵时考虑的上下文窗口大小</span>
+<span class="c1"># 即当前单词前后各多少个单词会被考虑在内</span>
+<span class="nv">WINDOW_SIZE</span> <span class="o">=</span> <span class="m">15</span>   
+
+<span class="c1"># 训练模型时使用的线程数量</span>
+<span class="c1"># 线程数越多，训练速度可能越快，但也会占用更多系统资源</span>
+<span class="nv">NUM_THREADS</span> <span class="o">=</span> <span class="m">8</span>
+
+<span class="c1"># 共现矩阵中元素的最大计数值； 超过此值的元素将被截断为该值</span>
+<span class="nv">X_MAX</span> <span class="o">=</span> <span class="m">10</span> 
+</code></pre></div><br>
+<h3 id="34-开始训练">3.4 开始训练</h3>
+<p>以准备好的 <em><strong>三体.txt</strong></em> 语料文件为例， 训练 50 维的 GloVe 模型(VECTOR_SIZE=50)， 结果保存到  <em><strong>output</strong></em> 文件夹内。</p>
+<br>
+<ol>
+<li>
+<p>打开 <em><strong>cmd</strong></em> (Mac用户打开terminal) 。</p>
+</li>
+<li>
+<p>将 <em><strong>GloVe-master</strong></em> 文件夹移动到桌面。 在 <em><strong>cmd</strong></em> 执行以下命令，切换工作目录到 <em><strong>GloVe-master</strong></em> 文件夹。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop/GloVe-master
+</code></pre></div></li>
+<li>
+<p>在 <em><strong>cmd</strong></em> 中执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">./demo.sh
+</code></pre></div></li>
+</ol>
+<p>大概运行了几分钟就出结果了。</p>
+<p><img loading="lazy" src="img/03-output.png" alt=""  />
+</p>
+<br>
+<h3 id="35-转化成word2vec格式">3.5 转化成Word2Vec格式</h3>
+<p>打开 <em><strong>三体_vectors.txt</strong></em> 查看不同词语对应的词向量</p>
+<p><img loading="lazy" src="img/04-vector-txt.png" alt=""  />
+</p>
+<p>注意刚刚生成的 <em><strong>output/三体_vectors.txt</strong></em> 是无法用 python 直接利用的。</p>
+<p>使用 gensim库 或 cntext2.x 库将其转化为 word2vec 格式的txt文件。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">glove_file</span> <span class="o">=</span> <span class="s1">&#39;output/三体_vectors.txt&#39;</span>
+<span class="n">word2vec_file</span> <span class="o">=</span> <span class="s1">&#39;output/三体_vectors_word2vec.txt&#39;</span>
+
+<span class="c1"># 将Glove转化为Word2Vec格式</span>
+<span class="n">ct</span><span class="o">.</span><span class="n">glove2word2vec</span><span class="p">(</span><span class="n">glove_file</span><span class="p">,</span> <span class="n">word2vec_file</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/05-g2v.png" alt=""  />
+</p>
+<p>其实两个txt文件的区别，仅仅是在 <em><strong>三体_vectors_word2vec.txt</strong></em> 在第一行多了两个数字， 分别代表词汇表大小和向量维度。</p>
+<br>
+<h2 id="四使用中文glove模型">四、使用中文GloVe模型</h2>
+<h3 id="41-加载模型">4.1 加载模型</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">word2vec_file</span> <span class="o">=</span> <span class="s1">&#39;output/三体_vectors_word2vec.txt&#39;</span>
+
+<span class="c1"># 加载word2vec模型.txt文件</span>
+<span class="n">wv_model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_wv</span><span class="p">(</span><span class="n">word2vec_file</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">wv_model</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&lt;gensim.models.keyedvectors.KeyedVectors at 0x336ff8dd0&gt;
+</code></pre></div><br>
+<h3 id="42-keyedvectors的操作方法或属性">4.2 KeyedVectors的操作方法(或属性)</h3>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KeyedVectors.key_to_index</code></td>
+<td>获取单词到索引的映射。</td>
+</tr>
+<tr>
+<td><code>KeyedVectors.vector_size</code></td>
+<td>获取GloVe模型中任意词向量的维度。</td>
+</tr>
+<tr>
+<td><code>KeyedVectors.get_vector(word)</code></td>
+<td>获取给定单词的词向量。</td>
+</tr>
+<tr>
+<td><code>KeyedVectors.index_to_key</code></td>
+<td>获取词汇表中的所有单词。</td>
+</tr>
+<tr>
+<td><code>KeyedVectors.similar_by_word(word, topn=10)</code></td>
+<td>获取某词语最相似的10个近义词。</td>
+</tr>
+<tr>
+<td><code>KeyedVectors.similar_by_vector(vector, topn=10)</code></td>
+<td>获取词向量最相似的10个近义词。</td>
+</tr>
+<tr>
+<td>&hellip;</td>
+<td>&hellip;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="421-词表">4.2.1 词表</h3>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">wv_model</span><span class="o">.</span><span class="n">index_to_key</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;的&#39;,
+ &#39;了&#39;,
+ &#39;在&#39;,
+...
+ &#39;引力&#39;,
+ &#39;所说&#39;,
+ &#39;星际&#39;,
+ ...]
+
+</code></pre></div><br>
+<h3 id="422-词表映射">4.2.2 词表映射</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">wv_model</span><span class="o">.</span><span class="n">key_to_index</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;的&#39;: 0,
+ &#39;了&#39;: 1,
+ &#39;在&#39;: 2,
+...
+ &#39;引力&#39;: 997,
+ &#39;所说&#39;: 998,
+ &#39;星际&#39;: 999,
+ ...}
+</code></pre></div><br>
+<h3 id="423-向量维度数">4.2.3 向量维度数</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;词表有 </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">wv_model</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">)</span><span class="si">}</span><span class="s1"> 个词&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;向量是 </span><span class="si">{</span><span class="n">wv_model</span><span class="o">.</span><span class="n">vector_size</span><span class="si">}</span><span class="s1"> 维&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">词表有 4365 个词
+向量是 50 维
+</code></pre></div><br>
+<h3 id="424-获取词向量">4.2.4 获取词向量</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 查看「降临」的词向量</span>
+<span class="n">wv</span><span class="o">.</span><span class="n">get_vector</span><span class="p">(</span><span class="s1">&#39;降临&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([ 0.672314,  0.020081,  0.653733,  0.598732, -0.680517, -0.049689,
+       -0.16845 , -0.06759 , -0.147955,  0.024006,  0.264551, -0.050127,
+        0.252063, -0.475633,  0.103722, -0.012481,  0.040755,  1.154912,
+        0.742695,  0.048619, -0.514424, -1.184054,  0.515892, -0.1034  ,
+        0.368755, -0.690357, -0.784287, -0.505814,  0.035807, -0.166354,
+       -0.26149 ,  0.015089,  0.10626 , -0.215666, -0.374001, -0.123558,
+        0.422617, -0.075277, -0.316387, -0.484295,  0.059687,  0.132621,
+        0.192094, -0.591919,  0.236281,  0.164198, -0.058724,  1.285457,
+        0.905606, -0.52032 ], dtype=float32)
+</code></pre></div><br>
+<h3 id="425-近义词">4.2.5 近义词</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">wv</span><span class="o">.</span><span class="n">similar_by_word</span><span class="p">(</span><span class="s1">&#39;三体&#39;</span><span class="p">,</span> <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;叛军&#39;, 0.7699569463729858),
+ (&#39;更新&#39;, 0.7687217593193054),
+ (&#39;地球&#39;, 0.760529100894928),
+ (&#39;全集&#39;, 0.7575182914733887),
+ (&#39;最快&#39;, 0.7426372170448303),
+ (&#39;世界&#39;, 0.7262137532234192),
+ (&#39;最新&#39;, 0.7219281792640686),
+ (&#39;游戏&#39;, 0.7180070877075195),
+ (&#39;危机&#39;, 0.7020451426506042),
+ (&#39;教&#39;, 0.7012627720832825)]
+</code></pre></div><br>
+<h3 id="426-计算多个词的中心向量">4.2.6 计算多个词的中心向量</h3>
+<p>我们可以计算「三体」、「降临」、「组织」、「拯救」的中心向量eto_vector。 并试图寻找中心向量eto_vector的最相似的10个词。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">eto_vector</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">semantic_centroid</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span> <span class="n">words</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;三体&#39;</span><span class="p">,</span> <span class="s1">&#39;降临&#39;</span><span class="p">,</span> <span class="s1">&#39;组织&#39;</span><span class="p">,</span> <span class="s1">&#39;拯救&#39;</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">eto_vector</span><span class="p">)</span>
+<span class="c1"># 寻找 eto_vector 语义最相似的10个词</span>
+<span class="n">wv</span><span class="o">.</span><span class="n">similar_by_vector</span><span class="p">(</span><span class="n">eto_vector</span><span class="p">,</span> <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[ 0.6267875   0.08975425  0.48438451  0.405128   -0.49928901  0.11347825
+ -0.90057975  0.11877625 -0.27053049  0.344603    0.4368495  -0.3839495
+  0.02633176 -0.138534    0.2531555  -0.0060905  -0.48776849  0.75548999
+  0.72575876 -0.446079   -0.30361701 -1.039792    0.457687   -0.4286315
+  0.44577325 -0.39119426 -0.4783935  -0.2596135  -0.32513325 -0.10315975
+ -0.42880575 -0.48328425  0.129438   -0.17085625 -0.13454625 -0.070053
+  0.68060375  0.16736924 -0.15664874 -0.20528575  0.385481    0.206432
+  0.18913225 -0.93453825  0.58597099  0.60727924  0.009064    0.87661726
+  0.65814423 -0.356567  ]
+
+[(&#39;降临&#39;, 0.8707027435302734),
+ (&#39;组织&#39;, 0.8625670671463013),
+ (&#39;三体&#39;, 0.8621653914451599),
+ (&#39;派&#39;, 0.8343338966369629),
+ (&#39;拯救&#39;, 0.8301094174385071),
+ (&#39;叛军&#39;, 0.784512460231781),
+ (&#39;地球&#39;, 0.7536635398864746),
+ (&#39;世界&#39;, 0.7245718836784363),
+ (&#39;外部&#39;, 0.7078365087509155),
+ (&#39;入侵&#39;, 0.6962169408798218)]
+</code></pre></div><br>
+<p>熟悉三体的朋友应该能联想到背叛人类的ETO(地球三体组织)有两个派别，分别是拯救派和降临派。</p>
+<p>ETO开发了一款虚拟现实游戏，它向参与者展示了三体世界的真实情况，包括其恶劣的自然条件、三体文明的历史及其科技水平等。通过参与这个游戏，玩家们能够逐渐了解三体世界的真相，并最终决定是否要加入到支持三体文明入侵地球的行列中来。</p>
+<p>这个游戏不仅充当了信息传递的媒介，也是甄别志同道合者的工具，让那些对人类社会现状不满、渴望变革的人们找到了组织，进而成为了背叛人类的叛军一员。在这个过程中，“三体游戏”起到了关键的作用，是连接地球人与三体世界的重要桥梁。</p>
+<br>]]></content:encoded>
+    </item>
+    
+    <item>
       <title>推荐 | 文本分析库cntext2.x使用手册</title>
       <link>https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/</link>
       <pubDate>Fri, 14 Mar 2025 00:00:00 +0000</pubDate>
@@ -248,7 +908,17 @@
 &lt;tr&gt;
 &lt;td&gt;&lt;em&gt;&lt;strong&gt;model&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
 &lt;td&gt;&lt;em&gt;&lt;strong&gt;ct.load_w2v(w2v_path)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
-&lt;td&gt;读取cntext2.x训练出的word2vec模型文件&lt;/td&gt;
+&lt;td&gt;读取cntext2.x训练出的word2vec模型.bin文件&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;model&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;ct.glove2word2vec(glove_file, word2vec_file)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;将GLoVe模型.txt文件转化为Word2Vec模型.txt文件；注意这里的GLoVe模型.txt是通过&lt;a href=&#34;https://github.com/standfordnlp/GloVe&#34;&gt;Standfordnlp/GloVe&lt;/a&gt; 训练得到的&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;model&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;ct.load_wv(wv_path)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;读取cntext2.x训练出的word2vec模型.txt文件&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;em&gt;&lt;strong&gt;model&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
@@ -367,7 +1037,7 @@
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;em&gt;&lt;strong&gt;mind&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
-&lt;td&gt;&lt;em&gt;&lt;strong&gt;ct.procrustes_align(base_embed, other_embed)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;ct.procrustes_align(base_wv, other_wv)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
 &lt;td&gt;两个word2vec进行语义对齐，可反应随时间的社会语义变迁&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
@@ -1406,7 +2076,17 @@ B词汇多样性 0.9297520661157025
 &lt;tr&gt;
 &lt;td&gt;&lt;em&gt;&lt;strong&gt;model&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
 &lt;td&gt;&lt;em&gt;&lt;strong&gt;ct.load_w2v(w2v_path)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
-&lt;td&gt;读取cntext2.x训练出的word2vec模型文件&lt;/td&gt;
+&lt;td&gt;读取cntext2.x训练出的word2vec模型 .bin 文件&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;model&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;ct.load_wv(wv_path)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;读取cntext2.x训练出的word2vec模型.txt文件&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;model&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;ct.glove2word2vec(glove_file, word2vec_file)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;将GLoVe模型.txt文件转化为Word2Vec模型.txt文件；注意这里的GLoVe模型.txt是通过&lt;a href=&#34;https://github.com/standfordnlp/GloVe&#34;&gt;Standfordnlp/GloVe&lt;/a&gt; 训练得到的&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;em&gt;&lt;strong&gt;model&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
@@ -1426,12 +2106,15 @@ B词汇多样性 0.9297520661157025
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;h3 id=&#34;41-w2vmodel&#34;&gt;4.1 W2VModel()&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ct.W2VModel(corpus_file,  encoding=&amp;#39;utf-8&amp;#39;, lang=&amp;#39;chinese&amp;#39;) 
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;model = ct.W2VModel(corpus_file,  encoding=&amp;#39;utf-8&amp;#39;, lang=&amp;#39;chinese&amp;#39;) 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;corpus_file&lt;/strong&gt; 语料txt文件路径&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;encoding&lt;/strong&gt; 语料txt文件编码方式&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;lang&lt;/strong&gt; 语料的语言类型， 中文chinese、英文english，默认中文。&lt;/li&gt;
 &lt;/ul&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;model.train()
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
 
 &lt;span class=&#34;c1&#34;&gt;#训练模型&lt;/span&gt;
@@ -1504,7 +2187,7 @@ Finish! used 19.74 s
 &lt;/p&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;44-load_w2v&#34;&gt;4.4 load_w2v()&lt;/h3&gt;
-&lt;p&gt;导入预训练的word2vec模型，建议是cntext训练的！！其他版本的语言模型很容易出问题&lt;/p&gt;
+&lt;p&gt;导入 cntext2.x 预训练的word2vec模型 .bin文件&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ct.load_w2v(w2v_path)
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;w2v_path&lt;/strong&gt; 模型文件路径&lt;/li&gt;
@@ -1519,18 +2202,54 @@ Finish! used 19.74 s
 &lt;span class=&#34;n&#34;&gt;santi_w2v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w2v_path&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/Word2Vec/三体.100.6.bin&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 &lt;span class=&#34;n&#34;&gt;santi_w2v&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Loading word2vec model...
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Loading word2vec model bin file...
 &amp;lt;gensim.models.word2vec.Word2Vec at 0x1069c0dd0&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;45-load_wv&#34;&gt;4.5 load_wv()&lt;/h3&gt;
+&lt;p&gt;导入cntext2.x 预训练的word2vec模型 .txt文件&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ct.load_wv(wv_path)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;wv_path&lt;/strong&gt; 模型文件路径&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;读取  &lt;em&gt;&lt;strong&gt;output/Word2Vec/三体.100.6.txt&lt;/strong&gt;&lt;/em&gt; 模型文件,  返回 &lt;code&gt;gensim.models.word2vec.Word2Vec&lt;/code&gt; 类型。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;#使用gensim也可读取训练的模型&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#from gensim.models import KeyedVectors&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;#santi_wv = KeyedVectors.load_word2vec_format(&amp;#39;output/Word2Vec/三体.100.6.txt&amp;#39;, binary=False)&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;santi_wv&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv_path&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/Word2Vec/三体.100.6.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;santi_wv&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Loading word2vec model txt file...
+&amp;lt;gensim.models.word2vec.KeyedVectors at 0x33f535640&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;46-glove2word2vec&#34;&gt;4.6 glove2word2vec()&lt;/h3&gt;
+&lt;p&gt;将GLoVe模型.txt文件转化为Word2Vec模型.txt文件；&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;glove2word2vec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;glove_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;word2vec_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;glove_file&lt;/strong&gt;&lt;/em&gt;: GLoVe模型.txt文件路径&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;word2vec_file&lt;/strong&gt;&lt;/em&gt;: Word2Vec模型.txt文件路径&lt;/li&gt;
+&lt;/ul&gt;
+&lt;br&gt;
+&lt;p&gt;注意这里的GLoVe模型.txt是通过&lt;a href=&#34;https://github.com/standfordnlp/GloVe&#34;&gt;Standfordnlp/GloVe&lt;/a&gt; 训练得到的&lt;/p&gt;
+&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;glove2word2vec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;glove_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data/GloVe.6B.50d.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+                  &lt;span class=&#34;n&#34;&gt;word2vec_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/word2vec_format_GloVe.6B.50d.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
 &lt;h3 id=&#34;注意&#34;&gt;注意&lt;/h3&gt;
-&lt;p&gt;&lt;em&gt;&lt;strong&gt;ct.load_w2v()&lt;/strong&gt;&lt;/em&gt; 导入后得到的数据类型是 &lt;em&gt;&lt;strong&gt;gensim.models.word2vec.Word2Vec&lt;/strong&gt;&lt;/em&gt; 。&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;&lt;strong&gt;gensim.models.word2vec.Word2Vec&lt;/strong&gt;&lt;/em&gt; 可以转化为  &lt;em&gt;&lt;strong&gt;gensim.models.keyedvectors.KeyedVectors&lt;/strong&gt;&lt;/em&gt; ，&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;ct.load_w2v()&lt;/strong&gt;&lt;/em&gt; 导入后得到的数据类型是 &lt;em&gt;&lt;strong&gt;gensim.models.word2vec.Word2Vec&lt;/strong&gt;&lt;/em&gt; 。&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;ct.load_wv()&lt;/strong&gt;&lt;/em&gt; 导入后得到的数据类型是 &lt;em&gt;&lt;strong&gt;gensim.models.keyedvectors.KeyedVectors&lt;/strong&gt;&lt;/em&gt; 。&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;gensim.models.word2vec.Word2Vec&lt;/strong&gt;&lt;/em&gt; 可以转化为  &lt;em&gt;&lt;strong&gt;gensim.models.keyedvectors.KeyedVectors&lt;/strong&gt;&lt;/em&gt; ，&lt;/li&gt;
+&lt;/ul&gt;
 &lt;p&gt;例如&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;santi_w2v.wv
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;gensim.models.keyedvectors.KeyedVectors at 0x319f4a090&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;45-expand_dictionary&#34;&gt;4.5 expand_dictionary()&lt;/h3&gt;
+&lt;h3 id=&#34;47-expand_dictionary&#34;&gt;4.7 expand_dictionary()&lt;/h3&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ct.expand_dictionary(wv,  seeddict, topn=100)
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;wv&lt;/strong&gt;  预训练模型，数据类型为 gensim.models.keyedvectors.KeyedVectors。&lt;/li&gt;
@@ -1593,7 +2312,7 @@ Finish! used 19.74 s
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;em&gt;&lt;strong&gt;mind&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
-&lt;td&gt;&lt;em&gt;&lt;strong&gt;ct.procrustes_align(base_embed, other_embed)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;ct.procrustes_align(base_wv, other_wv)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
 &lt;td&gt;两个word2vec进行语义对齐，可反应随时间的社会语义变迁&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
@@ -1605,7 +2324,7 @@ Finish! used 19.74 s
 &lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ct.sematic_distance(wv, words, c_words1, c_words2) 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;wv&lt;/strong&gt;&lt;/em&gt;   模型数据， 数据类型为gensim.models.keyedvectors.KeyedVectors。&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;wv&lt;/strong&gt;&lt;/em&gt;   模型数据， 数据类型为 gensim.models.keyedvectors.KeyedVectors。&lt;/li&gt;
 &lt;li&gt;&lt;em&gt;&lt;strong&gt;words&lt;/strong&gt;&lt;/em&gt;、&lt;em&gt;&lt;strong&gt;c_words2&lt;/strong&gt;&lt;/em&gt;、&lt;em&gt;&lt;strong&gt;c_words2&lt;/strong&gt;&lt;/em&gt; 均为词语列表&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;分别计算 &lt;em&gt;&lt;strong&gt;words&lt;/strong&gt;&lt;/em&gt; 与  &lt;em&gt;&lt;strong&gt;c_words1&lt;/strong&gt;&lt;/em&gt; 、&lt;em&gt;&lt;strong&gt;c_words2&lt;/strong&gt;&lt;/em&gt; 语义距离，返回距离差值。例如&lt;/p&gt;
@@ -1709,10 +2428,11 @@ print(ct.divergent_association_task(wv, high_words)) # 95
 &lt;br&gt;
 &lt;h3 id=&#34;55-procrustes_align&#34;&gt;5.5 procrustes_align()&lt;/h3&gt;
 &lt;p&gt;该函数主要用于反映同一研究对象随着时间推进的社会文化变迁，或者同一时间范围内两个被研究主体间的差异。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ct.procrustes_align(base_embed, other_embed)
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ct.procrustes_align(base_wv, other_wv, words=None)
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;base_embed&lt;/strong&gt;&lt;/em&gt;  基本模型； 模型数据类型为&lt;em&gt;&lt;strong&gt;gensim.models.word2vec.Word2Vec&lt;/strong&gt;&lt;/em&gt;&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;base_embed&lt;/strong&gt;&lt;/em&gt;  其他模型； 模型数据类型为&lt;em&gt;&lt;strong&gt;gensim.models.word2vec.Word2Vec&lt;/strong&gt;&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;base_wv (gensim.models.keyedvectors.KeyedVectors): 基准语言模型&lt;/li&gt;
+&lt;li&gt;other_wv (gensim.models.keyedvectors.KeyedVectors): 其他语言模型&lt;/li&gt;
+&lt;li&gt;words (list, optional): 是否根据词典words对模型进行对齐， 对齐结束后的模型中含有的词不会超出words的范围； 默认None.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;由于不同语料训练的Word2Vec模型无法直接比较， 需要先选定一个基准模型 &lt;em&gt;&lt;strong&gt;base_embed&lt;/strong&gt;&lt;/em&gt;， 之后根据 &lt;em&gt;&lt;strong&gt;base_embed&lt;/strong&gt;&lt;/em&gt; 对其他模型 &lt;em&gt;&lt;strong&gt;other_embed&lt;/strong&gt;&lt;/em&gt; 进行调整，调整后的模型就可以使用前面的语义距离函数或者语义投影函数。 这一过程用到的算法叫做 procrustes正交算法。&lt;/p&gt;
 &lt;p&gt;这里推荐一篇 &lt;a href=&#34;https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/&#34;&gt;可视化 | 人民日报语料反映七十年文化演变&lt;/a&gt;&lt;/p&gt;
@@ -1965,7 +2685,17 @@ year = {2022}
 <tr>
 <td><em><strong>model</strong></em></td>
 <td><em><strong>ct.load_w2v(w2v_path)</strong></em></td>
-<td>读取cntext2.x训练出的word2vec模型文件</td>
+<td>读取cntext2.x训练出的word2vec模型.bin文件</td>
+</tr>
+<tr>
+<td><em><strong>model</strong></em></td>
+<td><em><strong>ct.glove2word2vec(glove_file, word2vec_file)</strong></em></td>
+<td>将GLoVe模型.txt文件转化为Word2Vec模型.txt文件；注意这里的GLoVe模型.txt是通过<a href="https://github.com/standfordnlp/GloVe">Standfordnlp/GloVe</a> 训练得到的</td>
+</tr>
+<tr>
+<td><em><strong>model</strong></em></td>
+<td><em><strong>ct.load_wv(wv_path)</strong></em></td>
+<td>读取cntext2.x训练出的word2vec模型.txt文件</td>
 </tr>
 <tr>
 <td><em><strong>model</strong></em></td>
@@ -2084,7 +2814,7 @@ year = {2022}
 </tr>
 <tr>
 <td><em><strong>mind</strong></em></td>
-<td><em><strong>ct.procrustes_align(base_embed, other_embed)</strong></em></td>
+<td><em><strong>ct.procrustes_align(base_wv, other_wv)</strong></em></td>
 <td>两个word2vec进行语义对齐，可反应随时间的社会语义变迁</td>
 </tr>
 <tr>
@@ -3123,7 +3853,17 @@ B词汇多样性 0.9297520661157025
 <tr>
 <td><em><strong>model</strong></em></td>
 <td><em><strong>ct.load_w2v(w2v_path)</strong></em></td>
-<td>读取cntext2.x训练出的word2vec模型文件</td>
+<td>读取cntext2.x训练出的word2vec模型 .bin 文件</td>
+</tr>
+<tr>
+<td><em><strong>model</strong></em></td>
+<td><em><strong>ct.load_wv(wv_path)</strong></em></td>
+<td>读取cntext2.x训练出的word2vec模型.txt文件</td>
+</tr>
+<tr>
+<td><em><strong>model</strong></em></td>
+<td><em><strong>ct.glove2word2vec(glove_file, word2vec_file)</strong></em></td>
+<td>将GLoVe模型.txt文件转化为Word2Vec模型.txt文件；注意这里的GLoVe模型.txt是通过<a href="https://github.com/standfordnlp/GloVe">Standfordnlp/GloVe</a> 训练得到的</td>
 </tr>
 <tr>
 <td><em><strong>model</strong></em></td>
@@ -3143,12 +3883,15 @@ B词汇多样性 0.9297520661157025
 </tbody>
 </table>
 <h3 id="41-w2vmodel">4.1 W2VModel()</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.W2VModel(corpus_file,  encoding=&#39;utf-8&#39;, lang=&#39;chinese&#39;) 
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">model = ct.W2VModel(corpus_file,  encoding=&#39;utf-8&#39;, lang=&#39;chinese&#39;) 
 </code></pre></div><ul>
 <li><strong>corpus_file</strong> 语料txt文件路径</li>
 <li><strong>encoding</strong> 语料txt文件编码方式</li>
 <li><strong>lang</strong> 语料的语言类型， 中文chinese、英文english，默认中文。</li>
 </ul>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">model.train()
+</code></pre></div><br>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 
 <span class="c1">#训练模型</span>
@@ -3221,7 +3964,7 @@ Finish! used 19.74 s
 </p>
 <br>
 <h3 id="44-load_w2v">4.4 load_w2v()</h3>
-<p>导入预训练的word2vec模型，建议是cntext训练的！！其他版本的语言模型很容易出问题</p>
+<p>导入 cntext2.x 预训练的word2vec模型 .bin文件</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.load_w2v(w2v_path)
 </code></pre></div><ul>
 <li><strong>w2v_path</strong> 模型文件路径</li>
@@ -3236,18 +3979,54 @@ Finish! used 19.74 s
 <span class="n">santi_w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">w2v_path</span><span class="o">=</span><span class="s1">&#39;output/Word2Vec/三体.100.6.bin&#39;</span><span class="p">)</span>
 <span class="n">santi_w2v</span>
 </code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Loading word2vec model...
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Loading word2vec model bin file...
 &lt;gensim.models.word2vec.Word2Vec at 0x1069c0dd0&gt;
 </code></pre></div><br>
+<h3 id="45-load_wv">4.5 load_wv()</h3>
+<p>导入cntext2.x 预训练的word2vec模型 .txt文件</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.load_wv(wv_path)
+</code></pre></div><ul>
+<li><strong>wv_path</strong> 模型文件路径</li>
+</ul>
+<p>读取  <em><strong>output/Word2Vec/三体.100.6.txt</strong></em> 模型文件,  返回 <code>gensim.models.word2vec.Word2Vec</code> 类型。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="c1">#使用gensim也可读取训练的模型</span>
+<span class="c1">#from gensim.models import KeyedVectors</span>
+<span class="c1">#santi_wv = KeyedVectors.load_word2vec_format(&#39;output/Word2Vec/三体.100.6.txt&#39;, binary=False)</span>
+
+<span class="n">santi_wv</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_wv</span><span class="p">(</span><span class="n">wv_path</span><span class="o">=</span><span class="s1">&#39;output/Word2Vec/三体.100.6.txt&#39;</span><span class="p">)</span>
+<span class="n">santi_wv</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Loading word2vec model txt file...
+&lt;gensim.models.word2vec.KeyedVectors at 0x33f535640&gt;
+</code></pre></div><br>
+<h3 id="46-glove2word2vec">4.6 glove2word2vec()</h3>
+<p>将GLoVe模型.txt文件转化为Word2Vec模型.txt文件；</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">glove2word2vec</span><span class="p">(</span><span class="n">glove_file</span><span class="p">,</span> <span class="n">word2vec_file</span><span class="p">)</span>
+</code></pre></div><ul>
+<li><em><strong>glove_file</strong></em>: GLoVe模型.txt文件路径</li>
+<li><em><strong>word2vec_file</strong></em>: Word2Vec模型.txt文件路径</li>
+</ul>
+<br>
+<p>注意这里的GLoVe模型.txt是通过<a href="https://github.com/standfordnlp/GloVe">Standfordnlp/GloVe</a> 训练得到的</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="n">ct</span><span class="o">.</span><span class="n">glove2word2vec</span><span class="p">(</span><span class="n">glove_file</span><span class="o">=</span><span class="s1">&#39;data/GloVe.6B.50d.txt&#39;</span><span class="p">,</span>
+                  <span class="n">word2vec_file</span><span class="o">=</span><span class="s1">&#39;output/word2vec_format_GloVe.6B.50d.txt&#39;</span><span class="p">)</span>
+</code></pre></div><br>
 <h3 id="注意">注意</h3>
-<p><em><strong>ct.load_w2v()</strong></em> 导入后得到的数据类型是 <em><strong>gensim.models.word2vec.Word2Vec</strong></em> 。</p>
-<p><em><strong>gensim.models.word2vec.Word2Vec</strong></em> 可以转化为  <em><strong>gensim.models.keyedvectors.KeyedVectors</strong></em> ，</p>
+<ul>
+<li><em><strong>ct.load_w2v()</strong></em> 导入后得到的数据类型是 <em><strong>gensim.models.word2vec.Word2Vec</strong></em> 。</li>
+<li><em><strong>ct.load_wv()</strong></em> 导入后得到的数据类型是 <em><strong>gensim.models.keyedvectors.KeyedVectors</strong></em> 。</li>
+<li><em><strong>gensim.models.word2vec.Word2Vec</strong></em> 可以转化为  <em><strong>gensim.models.keyedvectors.KeyedVectors</strong></em> ，</li>
+</ul>
 <p>例如</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">santi_w2v.wv
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&lt;gensim.models.keyedvectors.KeyedVectors at 0x319f4a090&gt;
 </code></pre></div><br>
-<h3 id="45-expand_dictionary">4.5 expand_dictionary()</h3>
+<h3 id="47-expand_dictionary">4.7 expand_dictionary()</h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.expand_dictionary(wv,  seeddict, topn=100)
 </code></pre></div><ul>
 <li><strong>wv</strong>  预训练模型，数据类型为 gensim.models.keyedvectors.KeyedVectors。</li>
@@ -3310,7 +4089,7 @@ Finish! used 19.74 s
 </tr>
 <tr>
 <td><em><strong>mind</strong></em></td>
-<td><em><strong>ct.procrustes_align(base_embed, other_embed)</strong></em></td>
+<td><em><strong>ct.procrustes_align(base_wv, other_wv)</strong></em></td>
 <td>两个word2vec进行语义对齐，可反应随时间的社会语义变迁</td>
 </tr>
 </tbody>
@@ -3322,7 +4101,7 @@ Finish! used 19.74 s
 </p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.sematic_distance(wv, words, c_words1, c_words2) 
 </code></pre></div><ul>
-<li><em><strong>wv</strong></em>   模型数据， 数据类型为gensim.models.keyedvectors.KeyedVectors。</li>
+<li><em><strong>wv</strong></em>   模型数据， 数据类型为 gensim.models.keyedvectors.KeyedVectors。</li>
 <li><em><strong>words</strong></em>、<em><strong>c_words2</strong></em>、<em><strong>c_words2</strong></em> 均为词语列表</li>
 </ul>
 <p>分别计算 <em><strong>words</strong></em> 与  <em><strong>c_words1</strong></em> 、<em><strong>c_words2</strong></em> 语义距离，返回距离差值。例如</p>
@@ -3426,10 +4205,11 @@ print(ct.divergent_association_task(wv, high_words)) # 95
 <br>
 <h3 id="55-procrustes_align">5.5 procrustes_align()</h3>
 <p>该函数主要用于反映同一研究对象随着时间推进的社会文化变迁，或者同一时间范围内两个被研究主体间的差异。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.procrustes_align(base_embed, other_embed)
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.procrustes_align(base_wv, other_wv, words=None)
 </code></pre></div><ul>
-<li><em><strong>base_embed</strong></em>  基本模型； 模型数据类型为<em><strong>gensim.models.word2vec.Word2Vec</strong></em></li>
-<li><em><strong>base_embed</strong></em>  其他模型； 模型数据类型为<em><strong>gensim.models.word2vec.Word2Vec</strong></em></li>
+<li>base_wv (gensim.models.keyedvectors.KeyedVectors): 基准语言模型</li>
+<li>other_wv (gensim.models.keyedvectors.KeyedVectors): 其他语言模型</li>
+<li>words (list, optional): 是否根据词典words对模型进行对齐， 对齐结束后的模型中含有的词不会超出words的范围； 默认None.</li>
 </ul>
 <p>由于不同语料训练的Word2Vec模型无法直接比较， 需要先选定一个基准模型 <em><strong>base_embed</strong></em>， 之后根据 <em><strong>base_embed</strong></em> 对其他模型 <em><strong>other_embed</strong></em> 进行调整，调整后的模型就可以使用前面的语义距离函数或者语义投影函数。 这一过程用到的算法叫做 procrustes正交算法。</p>
 <p>这里推荐一篇 <a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/">可视化 | 人民日报语料反映七十年文化演变</a></p>
@@ -6219,6 +6999,7 @@ Digital_Index最大值: 5.963579343618446
 <br>
 <h3 id="44-词向量">4.4 词向量</h3>
 <ul>
+<li><a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用Stanford Glove代码训练中文语料的Glove模型</a></li>
 <li><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/"><strong>可视化 | 人民日报语料反映七十年文化演变</strong></a></li>
 <li><a href="https://textdata.cn/blog/2023-04-26-chinese-it-industry-slangs-words/"><strong>实验 | 互联网黑话与MD&amp;A</strong></a></li>
 <li><a href="https://textdata.cn/blog/douban_w2v/">豆瓣影评 | 探索词向量妙处</a></li>

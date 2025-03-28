@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>实验 | 使用Stanford Glove代码训练中文语料的Glove模型 | 大邓和他的PYTHON</title>
+<meta name="keywords" content="数据集, 文本分析, 词嵌入, 语言模型, GloVe, StanfordNLP, Stanford GloVe" />
+<meta name="description" content="一、简介 Stanford GloVe（Global Vectors for Word Representation）算法作为一种融合全局统计信息与局部上下文窗口的词嵌入模型，相较于Word2Vec仅依赖局部上下文，GloVe利用全局统计信息，能更精准地反映词频分布特征。例如，在高维词向量（如200D）中，GloVe在词语类比任务中准确率达75%，并在命名实体识别任务中优于其他词嵌入模型。因其高效的语义表征能力，在社会学、管理学等领域展现出广泛的应用价值。 相关词嵌入文献资料可阅读
+ https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/ 转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用 词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总 文献汇总 | 词嵌入 与 社会科学中的偏见(态度) 词嵌入测量不同群体对某概念的态度(偏见)  
+二、环境准备 2.1 Windows   打开 cmd（建议以管理员身份运行）。
+  运行以下命令来安装 Chocolatey：
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString(&#39;https://community.chocolatey.org/install.ps1&#39;))   安装完成后，重新打开一个新的 cmd 窗口。 运行以下命令确认 Chocolatey 是否成功安装：
+choco --version   安装 make
+choco install make   安装完成后，重新打开一个新的 cmd 窗口。 运行以下命令确认 make 是否成功安装：
+make --version   获取cntext2.">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/" />
+<meta name="baidu-site-verification" content="codeva-TJUe6nOmGr" />
+<meta name="sogou-site-verification" content="dZHPIorOhK" />
+<meta name="sogou-site-verification" content="dZHPIorOhK" />
+<meta name="google-site-verification" content="0cmjnyICPwXY_UmLHzs6RRUBIFxxqieMsgTGT_kVctk" />
+<meta name="yandex-verification" content="5e672f12d3e2cacd" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="实验 | 使用Stanford Glove代码训练中文语料的Glove模型" />
+<meta property="og:description" content="一、简介 Stanford GloVe（Global Vectors for Word Representation）算法作为一种融合全局统计信息与局部上下文窗口的词嵌入模型，相较于Word2Vec仅依赖局部上下文，GloVe利用全局统计信息，能更精准地反映词频分布特征。例如，在高维词向量（如200D）中，GloVe在词语类比任务中准确率达75%，并在命名实体识别任务中优于其他词嵌入模型。因其高效的语义表征能力，在社会学、管理学等领域展现出广泛的应用价值。 相关词嵌入文献资料可阅读
+ https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/ 转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用 词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总 文献汇总 | 词嵌入 与 社会科学中的偏见(态度) 词嵌入测量不同群体对某概念的态度(偏见)  
+二、环境准备 2.1 Windows   打开 cmd（建议以管理员身份运行）。
+  运行以下命令来安装 Chocolatey：
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString(&#39;https://community.chocolatey.org/install.ps1&#39;))   安装完成后，重新打开一个新的 cmd 窗口。 运行以下命令确认 Chocolatey 是否成功安装：
+choco --version   安装 make
+choco install make   安装完成后，重新打开一个新的 cmd 窗口。 运行以下命令确认 make 是否成功安装：
+make --version   获取cntext2." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/" />
+<meta property="og:image" content="/images/blog/stanford-geometry.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2025-03-28T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2025-03-28T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/stanford-geometry.png" />
+<meta name="twitter:title" content="实验 | 使用Stanford Glove代码训练中文语料的Glove模型"/>
+<meta name="twitter:description" content="一、简介 Stanford GloVe（Global Vectors for Word Representation）算法作为一种融合全局统计信息与局部上下文窗口的词嵌入模型，相较于Word2Vec仅依赖局部上下文，GloVe利用全局统计信息，能更精准地反映词频分布特征。例如，在高维词向量（如200D）中，GloVe在词语类比任务中准确率达75%，并在命名实体识别任务中优于其他词嵌入模型。因其高效的语义表征能力，在社会学、管理学等领域展现出广泛的应用价值。 相关词嵌入文献资料可阅读
+ https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/ 转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用 词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总 文献汇总 | 词嵌入 与 社会科学中的偏见(态度) 词嵌入测量不同群体对某概念的态度(偏见)  
+二、环境准备 2.1 Windows   打开 cmd（建议以管理员身份运行）。
+  运行以下命令来安装 Chocolatey：
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString(&#39;https://community.chocolatey.org/install.ps1&#39;))   安装完成后，重新打开一个新的 cmd 窗口。 运行以下命令确认 Chocolatey 是否成功安装：
+choco --version   安装 make
+choco install make   安装完成后，重新打开一个新的 cmd 窗口。 运行以下命令确认 make 是否成功安装：
+make --version   获取cntext2."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "实验 | 使用Stanford Glove代码训练中文语料的Glove模型",
+      "item": "/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "实验 | 使用Stanford Glove代码训练中文语料的Glove模型",
+  "name": "实验 | 使用Stanford Glove代码训练中文语料的Glove模型",
+  "description": "一、简介 Stanford GloVe（Global Vectors for Word Representation）算法作为一种融合全局统计信息与局部上下文窗口的词嵌入模型，相较于Word2Vec仅依赖局部上下文，GloVe利用全局统计信息，能更精准地反映词频分布特征。例如，在高维词向量（如200D）中，GloVe在词语类比任务中准确率达75%，并在命名实体识别任务中优于其他词嵌入模型。因其高效的语义表征能力，在社会学、管理学等领域展现出广泛的应用价值。 相关词嵌入文献资料可阅读\n https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/ 转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用 词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总 文献汇总 | 词嵌入 与 社会科学中的偏见(态度) 词嵌入测量不同群体对某概念的态度(偏见)  \n二、环境准备 2.1 Windows   打开 cmd（建议以管理员身份运行）。\n  运行以下命令来安装 Chocolatey：\nSet-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString(\u0026#39;https://community.chocolatey.org/install.ps1\u0026#39;))   安装完成后，重新打开一个新的 cmd 窗口。 运行以下命令确认 Chocolatey 是否成功安装：\nchoco --version   安装 make\nchoco install make   安装完成后，重新打开一个新的 cmd 窗口。 运行以下命令确认 make 是否成功安装：\nmake --version   获取cntext2.",
+  "keywords": [
+    "数据集", "文本分析", "词嵌入", "语言模型", "GloVe", "StanfordNLP", "Stanford GloVe"
+  ],
+  "articleBody": "一、简介 Stanford GloVe（Global Vectors for Word Representation）算法作为一种融合全局统计信息与局部上下文窗口的词嵌入模型，相较于Word2Vec仅依赖局部上下文，GloVe利用全局统计信息，能更精准地反映词频分布特征。例如，在高维词向量（如200D）中，GloVe在词语类比任务中准确率达75%，并在命名实体识别任务中优于其他词嵌入模型。因其高效的语义表征能力，在社会学、管理学等领域展现出广泛的应用价值。 相关词嵌入文献资料可阅读\n https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/ 转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用 词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总 文献汇总 | 词嵌入 与 社会科学中的偏见(态度) 词嵌入测量不同群体对某概念的态度(偏见)  \n二、环境准备 2.1 Windows   打开 cmd（建议以管理员身份运行）。\n  运行以下命令来安装 Chocolatey：\nSet-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))   安装完成后，重新打开一个新的 cmd 窗口。 运行以下命令确认 Chocolatey 是否成功安装：\nchoco --version   安装 make\nchoco install make   安装完成后，重新打开一个新的 cmd 窗口。 运行以下命令确认 make 是否成功安装：\nmake --version   获取cntext2.x 的安装文件 cntext-2.1.4-py3-none-any.whl，并将该whl文件放置于桌面。执行以下安装命令\ncd Desktop pip install cntext-2.1.4-py3-none-any.whl   2.2 Mac   打开 terminal，执行命令\n/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"   安装完成后，重新打开一个新的 terminal 窗口。 运行以下命令确认 Homebrew 是否成功安装：\nbrew --version   安装 make\nbrew install make   安装完成后，重新打开一个新的 terminal 窗口。 运行以下命令确认 make 是否成功安装：\nmake --version   获取cntext2.x 的安装文件 cntext-2.1.4-py3-none-any.whl，并将该whl文件放置于桌面。执行以下安装命令\ncd desktop pip3 install cntext-2.1.4-py3-none-any.whl   \n三、训练中文GloVe 3.1 准备中文语料 以三体小说为例，\nimport re import jieba # 读取原始数据「raw三体.txt」 raw_text = open('raw三体.txt').read() # 去除非中文字符 chinese_text = ''.join(re.findall(r'[\\u4e00-\\u9fa5]+', raw_text)) # 分词并保存到「三体.txt」中 with open('三体.txt', 'a+', encoding='utf-8') as f: f.write(' '.join(jieba.lcut(text))) \n3.2 下载GloVe 这里大邓准备了两个选择\n- stanfordnlp/GloVe https://github.com/stanfordnlp/GloVe - hiDaDeng/GloVe https://github.com/hiDaDeng/GloVe stanfordnlp/GloVe设计很巧妙， 但该项目没有展示环境配置、中文实验数据、中文实验结果。\n因此， 大邓在 stanfordnlp/GloVe 基础上， 添加了增加了环境配置、代码参数说明、准备中文实验数据、中文实验结果等说明。\n接下来以 hiDaDeng/GloVe 做说明。\n3.3 GloVe文件目录 从 hiDaDeng/GloVe 解压后得到 GloVe-master 文件夹。 GloVe-master 目录(含义)\nGloVe ├── README.md GloVe代码说明文档 ├── src GloVe算法C语言源代码 ├── eval 评估代码 ├── demo.sh GloVe训练命令(这里是重点) ├── output GloVe训练输出文件夹；此处存储着大邓使用{三体.txt}训练出的Glove模型相关文件 │ ├── 三体_cooccurrence.bin │ └── 三体_cooccurrence.shuf.bin │ └── 三体_vectors.txt │ └── 三体_vectors.bin 三体_vocab.txt │ └── 三体_vocab.txt \n这里我们展示下 demo.sh的源代码， 并对部分代码进行展示说明。\n# 设置语料数据文件 # 注意: 中文语料文件必须是分词后的文本文件。 # 如 「我是中国人，我爱中国」 要整备成 「我 是 中国人 ， 我 爱 中国」 CORPUS_FILE = 三体.txt # 创建 output 文件夹，保存训练结果(模型文件bin/txt等文件) OUTPUT_DIR = \"output\" # 程序运行时允许使用的最大内存，单位为 GB # 注意: 此值越大，程序运行速度可能越快，但也会占用更多系统资源 MEMORY = 4.0 # 词汇表中单词的最小出现次数 # 出现次数低于此值的单词将被忽略，以减少词汇表的大小 # 注意: 此值越大，模型可能越精确，但词汇表也会越小 VOCAB_MIN_COUNT = 5 # 每个单词向量的维度大小 # 维度越大，向量表示的信息越丰富，但计算成本也越高 VECTOR_SIZE = 50 # 训练模型的最大迭代次数 # 迭代次数越多，模型可能越精确，但训练时间也会相应增加 MAX_ITER = 15 # 计算共现矩阵时考虑的上下文窗口大小 # 即当前单词前后各多少个单词会被考虑在内 WINDOW_SIZE = 15 # 训练模型时使用的线程数量 # 线程数越多，训练速度可能越快，但也会占用更多系统资源 NUM_THREADS = 8 # 共现矩阵中元素的最大计数值； 超过此值的元素将被截断为该值 X_MAX = 10 \n3.4 开始训练 以准备好的 三体.txt 语料文件为例， 训练 50 维的 GloVe 模型(VECTOR_SIZE=50)， 结果保存到 output 文件夹内。\n  打开 cmd (Mac用户打开terminal) 。\n  将 GloVe-master 文件夹移动到桌面。 在 cmd 执行以下命令，切换工作目录到 GloVe-master 文件夹。\ncd desktop/GloVe-master   在 cmd 中执行\n./demo.sh   大概运行了几分钟就出结果了。\n3.5 转化成Word2Vec格式 打开 三体_vectors.txt 查看不同词语对应的词向量\n注意刚刚生成的 output/三体_vectors.txt 是无法用 python 直接利用的。\n使用 gensim库 或 cntext2.x 库将其转化为 word2vec 格式的txt文件。\nimport cntext as ct glove_file = 'output/三体_vectors.txt' word2vec_file = 'output/三体_vectors_word2vec.txt' # 将Glove转化为Word2Vec格式 ct.glove2word2vec(glove_file, word2vec_file) 其实两个txt文件的区别，仅仅是在 三体_vectors_word2vec.txt 在第一行多了两个数字， 分别代表词汇表大小和向量维度。\n四、使用中文GloVe模型 4.1 加载模型 import cntext as ct word2vec_file = 'output/三体_vectors_word2vec.txt' # 加载word2vec模型.txt文件 wv_model = ct.load_wv(word2vec_file, binary=False) wv_model Run\n\n4.2 KeyedVectors的操作方法(或属性)    方法 描述     KeyedVectors.key_to_index 获取单词到索引的映射。   KeyedVectors.vector_size 获取GloVe模型中任意词向量的维度。   KeyedVectors.get_vector(word) 获取给定单词的词向量。   KeyedVectors.index_to_key 获取词汇表中的所有单词。   KeyedVectors.similar_by_word(word, topn=10) 获取某词语最相似的10个近义词。   KeyedVectors.similar_by_vector(vector, topn=10) 获取词向量最相似的10个近义词。   … …    4.2.1 词表 wv_model.index_to_key Run\n['的', '了', '在', ... '引力', '所说', '星际', ...] \n4.2.2 词表映射 wv_model.key_to_index Run\n{'的': 0, '了': 1, '在': 2, ... '引力': 997, '所说': 998, '星际': 999, ...} \n4.2.3 向量维度数 print(f'词表有 {len(wv_model.key_to_index)}个词') print(f'向量是 {wv_model.vector_size}维') Run\n词表有 4365 个词 向量是 50 维 \n4.2.4 获取词向量 # 查看「降临」的词向量 wv.get_vector('降临') Run\narray([ 0.672314, 0.020081, 0.653733, 0.598732, -0.680517, -0.049689, -0.16845 , -0.06759 , -0.147955, 0.024006, 0.264551, -0.050127, 0.252063, -0.475633, 0.103722, -0.012481, 0.040755, 1.154912, 0.742695, 0.048619, -0.514424, -1.184054, 0.515892, -0.1034 , 0.368755, -0.690357, -0.784287, -0.505814, 0.035807, -0.166354, -0.26149 , 0.015089, 0.10626 , -0.215666, -0.374001, -0.123558, 0.422617, -0.075277, -0.316387, -0.484295, 0.059687, 0.132621, 0.192094, -0.591919, 0.236281, 0.164198, -0.058724, 1.285457, 0.905606, -0.52032 ], dtype=float32) \n4.2.5 近义词 wv.similar_by_word('三体', topn=10) Run\n[('叛军', 0.7699569463729858), ('更新', 0.7687217593193054), ('地球', 0.760529100894928), ('全集', 0.7575182914733887), ('最快', 0.7426372170448303), ('世界', 0.7262137532234192), ('最新', 0.7219281792640686), ('游戏', 0.7180070877075195), ('危机', 0.7020451426506042), ('教', 0.7012627720832825)] \n4.2.6 计算多个词的中心向量 我们可以计算「三体」、「降临」、「组织」、「拯救」的中心向量eto_vector。 并试图寻找中心向量eto_vector的最相似的10个词。\neto_vector = ct.semantic_centroid(wv=wv, words=['三体', '降临', '组织', '拯救']) print(eto_vector) # 寻找 eto_vector 语义最相似的10个词 wv.similar_by_vector(eto_vector, topn=10) Run\n[ 0.6267875 0.08975425 0.48438451 0.405128 -0.49928901 0.11347825 -0.90057975 0.11877625 -0.27053049 0.344603 0.4368495 -0.3839495 0.02633176 -0.138534 0.2531555 -0.0060905 -0.48776849 0.75548999 0.72575876 -0.446079 -0.30361701 -1.039792 0.457687 -0.4286315 0.44577325 -0.39119426 -0.4783935 -0.2596135 -0.32513325 -0.10315975 -0.42880575 -0.48328425 0.129438 -0.17085625 -0.13454625 -0.070053 0.68060375 0.16736924 -0.15664874 -0.20528575 0.385481 0.206432 0.18913225 -0.93453825 0.58597099 0.60727924 0.009064 0.87661726 0.65814423 -0.356567 ] [('降临', 0.8707027435302734), ('组织', 0.8625670671463013), ('三体', 0.8621653914451599), ('派', 0.8343338966369629), ('拯救', 0.8301094174385071), ('叛军', 0.784512460231781), ('地球', 0.7536635398864746), ('世界', 0.7245718836784363), ('外部', 0.7078365087509155), ('入侵', 0.6962169408798218)] \n熟悉三体的朋友应该能联想到背叛人类的ETO(地球三体组织)有两个派别，分别是拯救派和降临派。\nETO开发了一款虚拟现实游戏，它向参与者展示了三体世界的真实情况，包括其恶劣的自然条件、三体文明的历史及其科技水平等。通过参与这个游戏，玩家们能够逐渐了解三体世界的真相，并最终决定是否要加入到支持三体文明入侵地球的行列中来。\n这个游戏不仅充当了信息传递的媒介，也是甄别志同道合者的工具，让那些对人类社会现状不满、渴望变革的人们找到了组织，进而成为了背叛人类的叛军一员。在这个过程中，“三体游戏”起到了关键的作用，是连接地球人与三体世界的重要桥梁。\n",
+  "wordCount" : "607",
+  "inLanguage": "en",
+  "image":"/images/blog/stanford-geometry.png","datePublished": "2025-03-28T00:00:00Z",
+  "dateModified": "2025-03-28T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LEXKZ8MRX7"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-LEXKZ8MRX7');
+</script>
+
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif" rel="stylesheet">
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/archives/" title="归档" target="_blank">
+                    <span>归档</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/management_python_course/" title="课程" target="_blank">
+                    <span>课程</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/the_text_analysis_list_about_ms/" title="文献" target="_blank">
+                    <span>文献</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/datasets_available_for_management_science/" title="数据" target="_blank">
+                    <span>数据</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/2024-04-27-cntext2x-usage-tutorial/" title="cntext2.x" target="_blank">
+                    <span>cntext2.x</span>
+                </a>
+            </li>
+            <li>
+                <a href="/index.xml" title="RSS" target="_blank">
+                    <span>RSS</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      实验 | 使用Stanford Glove代码训练中文语料的Glove模型
+    </h1>
+    <div class="post-meta"><span title='2025-03-28 00:00:00 +0000 UTC'>2025-03-28</span>&nbsp;·&nbsp;3 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/stanford-geometry.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/stanford-geometry.png" alt=""></a>
+        
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f&amp;hashtags=%e6%95%b0%e6%8d%ae%e9%9b%86%2c%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e8%af%8d%e5%b5%8c%e5%85%a5%2c%e8%af%ad%e8%a8%80%e6%a8%a1%e5%9e%8b%2c%e5%ad%a6%e6%9c%af%e5%ba%94%e7%94%a8">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f&amp;title=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b&amp;summary=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b&amp;source=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f&title=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b%20-%20%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on telegram"
+        href="https://telegram.me/share/url?text=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e4%b8%80%e7%ae%80%e4%bb%8b" aria-label="一、简介">一、简介</a></li>
+                    <li>
+                        <a href="#%e4%ba%8c%e7%8e%af%e5%a2%83%e5%87%86%e5%a4%87" aria-label="二、环境准备">二、环境准备</a><ul>
+                            
+                    <li>
+                        <a href="#21-windows" aria-label="2.1 Windows">2.1 Windows</a></li>
+                    <li>
+                        <a href="#22-mac" aria-label="2.2 Mac">2.2 Mac</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e4%b8%89%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87glove" aria-label="三、训练中文GloVe">三、训练中文GloVe</a><ul>
+                            
+                    <li>
+                        <a href="#31-%e5%87%86%e5%a4%87%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99" aria-label="3.1 准备中文语料">3.1 准备中文语料</a></li>
+                    <li>
+                        <a href="#32-%e4%b8%8b%e8%bd%bdglove" aria-label="3.2 下载GloVe">3.2 下载GloVe</a></li>
+                    <li>
+                        <a href="#33-glove%e6%96%87%e4%bb%b6%e7%9b%ae%e5%bd%95" aria-label="3.3 GloVe文件目录">3.3 GloVe文件目录</a></li>
+                    <li>
+                        <a href="#34-%e5%bc%80%e5%a7%8b%e8%ae%ad%e7%bb%83" aria-label="3.4 开始训练">3.4 开始训练</a></li>
+                    <li>
+                        <a href="#35-%e8%bd%ac%e5%8c%96%e6%88%90word2vec%e6%a0%bc%e5%bc%8f" aria-label="3.5 转化成Word2Vec格式">3.5 转化成Word2Vec格式</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e5%9b%9b%e4%bd%bf%e7%94%a8%e4%b8%ad%e6%96%87glove%e6%a8%a1%e5%9e%8b" aria-label="四、使用中文GloVe模型">四、使用中文GloVe模型</a><ul>
+                            
+                    <li>
+                        <a href="#41-%e5%8a%a0%e8%bd%bd%e6%a8%a1%e5%9e%8b" aria-label="4.1 加载模型">4.1 加载模型</a></li>
+                    <li>
+                        <a href="#42-keyedvectors%e7%9a%84%e6%93%8d%e4%bd%9c%e6%96%b9%e6%b3%95%e6%88%96%e5%b1%9e%e6%80%a7" aria-label="4.2 KeyedVectors的操作方法(或属性)">4.2 KeyedVectors的操作方法(或属性)</a></li>
+                    <li>
+                        <a href="#421-%e8%af%8d%e8%a1%a8" aria-label="4.2.1 词表">4.2.1 词表</a></li>
+                    <li>
+                        <a href="#422-%e8%af%8d%e8%a1%a8%e6%98%a0%e5%b0%84" aria-label="4.2.2 词表映射">4.2.2 词表映射</a></li>
+                    <li>
+                        <a href="#423-%e5%90%91%e9%87%8f%e7%bb%b4%e5%ba%a6%e6%95%b0" aria-label="4.2.3 向量维度数">4.2.3 向量维度数</a></li>
+                    <li>
+                        <a href="#424-%e8%8e%b7%e5%8f%96%e8%af%8d%e5%90%91%e9%87%8f" aria-label="4.2.4 获取词向量">4.2.4 获取词向量</a></li>
+                    <li>
+                        <a href="#425-%e8%bf%91%e4%b9%89%e8%af%8d" aria-label="4.2.5 近义词">4.2.5 近义词</a></li>
+                    <li>
+                        <a href="#426-%e8%ae%a1%e7%ae%97%e5%a4%9a%e4%b8%aa%e8%af%8d%e7%9a%84%e4%b8%ad%e5%bf%83%e5%90%91%e9%87%8f" aria-label="4.2.6 计算多个词的中心向量">4.2.6 计算多个词的中心向量</a>
+                    </li>
+                </ul>
+                </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者: 大邓
+        <p>本文标题: 实验 | 使用Stanford Glove代码训练中文语料的Glove模型
+        <p>本文链接: https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/
+        <p>版权声明: <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+  <br>
+
+
+
+  
+  <div class="post-content"><h2 id="一简介">一、简介<a hidden class="anchor" aria-hidden="true" href="#一简介">#</a></h2>
+<p><a href="https://nlp.stanford.edu/projects/glove/">Stanford GloVe</a>（Global Vectors for Word Representation）算法作为一种融合全局统计信息与局部上下文窗口的词嵌入模型，相较于Word2Vec仅依赖局部上下文，GloVe利用全局统计信息，能更精准地反映词频分布特征。例如，在高维词向量（如200D）中，GloVe在词语类比任务中准确率达75%，并在命名实体识别任务中优于其他词嵌入模型。因其高效的语义表征能力，在社会学、管理学等领域展现出广泛的应用价值。 相关词嵌入文献资料可阅读</p>
+<ul>
+<li><a href="https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/">https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/</a></li>
+<li><a href="https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/">转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用</a></li>
+<li><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></li>
+<li><a href="https://textdata.cn/blog/2022-04-09-literature-about-embeddings/">文献汇总 | 词嵌入 与 社会科学中的偏见(态度)</a></li>
+<li><a href="https://textdata.cn/blog/2022-04-01-embeddings-and-attitude/">词嵌入测量不同群体对某概念的态度(偏见)</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="二环境准备">二、环境准备<a hidden class="anchor" aria-hidden="true" href="#二环境准备">#</a></h2>
+<h3 id="21-windows">2.1 Windows<a hidden class="anchor" aria-hidden="true" href="#21-windows">#</a></h3>
+<ol>
+<li>
+<p>打开 <em><strong>cmd</strong></em>（建议以管理员身份运行）。</p>
+</li>
+<li>
+<p>运行以下命令来安装 <em><strong>Chocolatey</strong></em>：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString(&#39;https://community.chocolatey.org/install.ps1&#39;))
+</code></pre></div></li>
+<li>
+<p>安装完成后，重新打开一个新的 <em><strong>cmd</strong></em> 窗口。 运行以下命令确认 <em><strong>Chocolatey</strong></em> 是否成功安装：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">choco --version
+</code></pre></div></li>
+<li>
+<p>安装 <em><strong>make</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">choco install make
+</code></pre></div></li>
+<li>
+<p>安装完成后，重新打开一个新的 <em><strong>cmd</strong></em> 窗口。 运行以下命令确认 <em><strong>make</strong></em> 是否成功安装：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">make --version
+</code></pre></div></li>
+<li>
+<p>获取<a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">cntext2.x</a> 的安装文件 <em><strong>cntext-2.1.4-py3-none-any.whl</strong></em>，并将该whl文件放置于桌面。执行以下安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd Desktop
+pip install cntext-2.1.4-py3-none-any.whl
+</code></pre></div></li>
+</ol>
+<br>
+<h3 id="22-mac">2.2 Mac<a hidden class="anchor" aria-hidden="true" href="#22-mac">#</a></h3>
+<ol>
+<li>
+<p>打开 <em><strong>terminal</strong></em>，执行命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">/bin/bash -c &#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&#34;
+</code></pre></div></li>
+<li>
+<p>安装完成后，重新打开一个新的 <em><strong>terminal</strong></em> 窗口。 运行以下命令确认 <em><strong>Homebrew</strong></em> 是否成功安装：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">brew --version
+</code></pre></div></li>
+<li>
+<p>安装 <em><strong>make</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">brew install make
+</code></pre></div></li>
+<li>
+<p>安装完成后，重新打开一个新的 <em><strong>terminal</strong></em> 窗口。 运行以下命令确认 <em><strong>make</strong></em> 是否成功安装：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">make --version
+</code></pre></div></li>
+<li>
+<p>获取<a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">cntext2.x</a> 的安装文件 <em><strong>cntext-2.1.4-py3-none-any.whl</strong></em>，并将该whl文件放置于桌面。执行以下安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+pip3 install cntext-2.1.4-py3-none-any.whl
+</code></pre></div></li>
+</ol>
+<p><br><br></p>
+<h2 id="三训练中文glove">三、训练中文GloVe<a hidden class="anchor" aria-hidden="true" href="#三训练中文glove">#</a></h2>
+<h3 id="31-准备中文语料">3.1 准备中文语料<a hidden class="anchor" aria-hidden="true" href="#31-准备中文语料">#</a></h3>
+<p>以三体小说为例，</p>
+<p><img loading="lazy" src="img/01-santi.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">jieba</span>
+
+<span class="c1"># 读取原始数据「raw三体.txt」</span>
+<span class="n">raw_text</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;raw三体.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+<span class="c1"># 去除非中文字符</span>
+<span class="n">chinese_text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[\u4e00-\u9fa5]+&#39;</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">))</span>
+
+<span class="c1"># 分词并保存到「三体.txt」中</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;三体.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">jieba</span><span class="o">.</span><span class="n">lcut</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span>
+</code></pre></div><br>
+<h3 id="32-下载glove">3.2 下载GloVe<a hidden class="anchor" aria-hidden="true" href="#32-下载glove">#</a></h3>
+<p>这里大邓准备了两个选择</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- stanfordnlp/GloVe            https://github.com/stanfordnlp/GloVe  
+- hiDaDeng/GloVe               https://github.com/hiDaDeng/GloVe
+</code></pre></div><p><a href="https://github.com/stanfordnlp/GloVe"><em><strong>stanfordnlp/GloVe</strong></em></a>设计很巧妙， 但该项目没有展示环境配置、中文实验数据、中文实验结果。</p>
+<p>因此， 大邓在 <a href="https://github.com/stanfordnlp/GloVe"><em><strong>stanfordnlp/GloVe</strong></em></a> 基础上， 添加了增加了环境配置、代码参数说明、准备中文实验数据、中文实验结果等说明。</p>
+<p>接下来以 <a href="https://github.com/hiDaDeng/GloVe"><em><strong>hiDaDeng/GloVe</strong></em></a> 做说明。</p>
+<p><img loading="lazy" src="img/02-download.png" alt=""  />
+</p>
+<br>
+<h3 id="33-glove文件目录">3.3 GloVe文件目录<a hidden class="anchor" aria-hidden="true" href="#33-glove文件目录">#</a></h3>
+<p>从  <a href="https://github.com/hiDaDeng/GloVe"><em><strong>hiDaDeng/GloVe</strong></em></a> 解压后得到 <em><strong>GloVe-master</strong></em> 文件夹。 <em><strong>GloVe-master</strong></em> 目录(含义)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">GloVe
+├── README.md  GloVe代码说明文档
+├── src        GloVe算法C语言源代码
+├── eval       评估代码
+├── demo.sh    GloVe训练命令(这里是重点)
+├── output     GloVe训练输出文件夹；此处存储着大邓使用{三体.txt}训练出的Glove模型相关文件
+│   ├── 三体_cooccurrence.bin
+│   └── 三体_cooccurrence.shuf.bin
+│   └── 三体_vectors.txt
+│   └── 三体_vectors.bin 三体_vocab.txt
+│   └── 三体_vocab.txt
+</code></pre></div><br>
+<p>这里我们展示下 <em><strong>demo.sh</strong></em>的源代码， 并对部分代码进行展示说明。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 设置语料数据文件</span>
+<span class="c1"># 注意: 中文语料文件必须是分词后的文本文件。</span>
+<span class="c1"># 如 「我是中国人，我爱中国」 要整备成 「我 是 中国人 ， 我 爱 中国」</span>
+<span class="nv">CORPUS_FILE</span> <span class="o">=</span> 三体.txt
+
+<span class="c1"># 创建 output 文件夹，保存训练结果(模型文件bin/txt等文件)</span>
+<span class="nv">OUTPUT_DIR</span> <span class="o">=</span> <span class="s2">&#34;output&#34;</span>
+
+<span class="c1"># 程序运行时允许使用的最大内存，单位为 GB</span>
+<span class="c1"># 注意: 此值越大，程序运行速度可能越快，但也会占用更多系统资源</span>
+<span class="nv">MEMORY</span> <span class="o">=</span> 4.0
+
+<span class="c1"># 词汇表中单词的最小出现次数</span>
+<span class="c1"># 出现次数低于此值的单词将被忽略，以减少词汇表的大小</span>
+<span class="c1"># 注意: 此值越大，模型可能越精确，但词汇表也会越小</span>
+<span class="nv">VOCAB_MIN_COUNT</span> <span class="o">=</span> <span class="m">5</span>
+
+<span class="c1"># 每个单词向量的维度大小</span>
+<span class="c1"># 维度越大，向量表示的信息越丰富，但计算成本也越高</span>
+<span class="nv">VECTOR_SIZE</span> <span class="o">=</span> <span class="m">50</span>   
+
+<span class="c1"># 训练模型的最大迭代次数</span>
+<span class="c1"># 迭代次数越多，模型可能越精确，但训练时间也会相应增加</span>
+<span class="nv">MAX_ITER</span> <span class="o">=</span> <span class="m">15</span>
+
+<span class="c1"># 计算共现矩阵时考虑的上下文窗口大小</span>
+<span class="c1"># 即当前单词前后各多少个单词会被考虑在内</span>
+<span class="nv">WINDOW_SIZE</span> <span class="o">=</span> <span class="m">15</span>   
+
+<span class="c1"># 训练模型时使用的线程数量</span>
+<span class="c1"># 线程数越多，训练速度可能越快，但也会占用更多系统资源</span>
+<span class="nv">NUM_THREADS</span> <span class="o">=</span> <span class="m">8</span>
+
+<span class="c1"># 共现矩阵中元素的最大计数值； 超过此值的元素将被截断为该值</span>
+<span class="nv">X_MAX</span> <span class="o">=</span> <span class="m">10</span> 
+</code></pre></div><br>
+<h3 id="34-开始训练">3.4 开始训练<a hidden class="anchor" aria-hidden="true" href="#34-开始训练">#</a></h3>
+<p>以准备好的 <em><strong>三体.txt</strong></em> 语料文件为例， 训练 50 维的 GloVe 模型(VECTOR_SIZE=50)， 结果保存到  <em><strong>output</strong></em> 文件夹内。</p>
+<br>
+<ol>
+<li>
+<p>打开 <em><strong>cmd</strong></em> (Mac用户打开terminal) 。</p>
+</li>
+<li>
+<p>将 <em><strong>GloVe-master</strong></em> 文件夹移动到桌面。 在 <em><strong>cmd</strong></em> 执行以下命令，切换工作目录到 <em><strong>GloVe-master</strong></em> 文件夹。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop/GloVe-master
+</code></pre></div></li>
+<li>
+<p>在 <em><strong>cmd</strong></em> 中执行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">./demo.sh
+</code></pre></div></li>
+</ol>
+<p>大概运行了几分钟就出结果了。</p>
+<p><img loading="lazy" src="img/03-output.png" alt=""  />
+</p>
+<br>
+<h3 id="35-转化成word2vec格式">3.5 转化成Word2Vec格式<a hidden class="anchor" aria-hidden="true" href="#35-转化成word2vec格式">#</a></h3>
+<p>打开 <em><strong>三体_vectors.txt</strong></em> 查看不同词语对应的词向量</p>
+<p><img loading="lazy" src="img/04-vector-txt.png" alt=""  />
+</p>
+<p>注意刚刚生成的 <em><strong>output/三体_vectors.txt</strong></em> 是无法用 python 直接利用的。</p>
+<p>使用 gensim库 或 cntext2.x 库将其转化为 word2vec 格式的txt文件。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">glove_file</span> <span class="o">=</span> <span class="s1">&#39;output/三体_vectors.txt&#39;</span>
+<span class="n">word2vec_file</span> <span class="o">=</span> <span class="s1">&#39;output/三体_vectors_word2vec.txt&#39;</span>
+
+<span class="c1"># 将Glove转化为Word2Vec格式</span>
+<span class="n">ct</span><span class="o">.</span><span class="n">glove2word2vec</span><span class="p">(</span><span class="n">glove_file</span><span class="p">,</span> <span class="n">word2vec_file</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/05-g2v.png" alt=""  />
+</p>
+<p>其实两个txt文件的区别，仅仅是在 <em><strong>三体_vectors_word2vec.txt</strong></em> 在第一行多了两个数字， 分别代表词汇表大小和向量维度。</p>
+<br>
+<h2 id="四使用中文glove模型">四、使用中文GloVe模型<a hidden class="anchor" aria-hidden="true" href="#四使用中文glove模型">#</a></h2>
+<h3 id="41-加载模型">4.1 加载模型<a hidden class="anchor" aria-hidden="true" href="#41-加载模型">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">word2vec_file</span> <span class="o">=</span> <span class="s1">&#39;output/三体_vectors_word2vec.txt&#39;</span>
+
+<span class="c1"># 加载word2vec模型.txt文件</span>
+<span class="n">wv_model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_wv</span><span class="p">(</span><span class="n">word2vec_file</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">wv_model</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&lt;gensim.models.keyedvectors.KeyedVectors at 0x336ff8dd0&gt;
+</code></pre></div><br>
+<h3 id="42-keyedvectors的操作方法或属性">4.2 KeyedVectors的操作方法(或属性)<a hidden class="anchor" aria-hidden="true" href="#42-keyedvectors的操作方法或属性">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KeyedVectors.key_to_index</code></td>
+<td>获取单词到索引的映射。</td>
+</tr>
+<tr>
+<td><code>KeyedVectors.vector_size</code></td>
+<td>获取GloVe模型中任意词向量的维度。</td>
+</tr>
+<tr>
+<td><code>KeyedVectors.get_vector(word)</code></td>
+<td>获取给定单词的词向量。</td>
+</tr>
+<tr>
+<td><code>KeyedVectors.index_to_key</code></td>
+<td>获取词汇表中的所有单词。</td>
+</tr>
+<tr>
+<td><code>KeyedVectors.similar_by_word(word, topn=10)</code></td>
+<td>获取某词语最相似的10个近义词。</td>
+</tr>
+<tr>
+<td><code>KeyedVectors.similar_by_vector(vector, topn=10)</code></td>
+<td>获取词向量最相似的10个近义词。</td>
+</tr>
+<tr>
+<td>&hellip;</td>
+<td>&hellip;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="421-词表">4.2.1 词表<a hidden class="anchor" aria-hidden="true" href="#421-词表">#</a></h3>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">wv_model</span><span class="o">.</span><span class="n">index_to_key</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;的&#39;,
+ &#39;了&#39;,
+ &#39;在&#39;,
+...
+ &#39;引力&#39;,
+ &#39;所说&#39;,
+ &#39;星际&#39;,
+ ...]
+
+</code></pre></div><br>
+<h3 id="422-词表映射">4.2.2 词表映射<a hidden class="anchor" aria-hidden="true" href="#422-词表映射">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">wv_model</span><span class="o">.</span><span class="n">key_to_index</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;的&#39;: 0,
+ &#39;了&#39;: 1,
+ &#39;在&#39;: 2,
+...
+ &#39;引力&#39;: 997,
+ &#39;所说&#39;: 998,
+ &#39;星际&#39;: 999,
+ ...}
+</code></pre></div><br>
+<h3 id="423-向量维度数">4.2.3 向量维度数<a hidden class="anchor" aria-hidden="true" href="#423-向量维度数">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;词表有 </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">wv_model</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">)</span><span class="si">}</span><span class="s1"> 个词&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;向量是 </span><span class="si">{</span><span class="n">wv_model</span><span class="o">.</span><span class="n">vector_size</span><span class="si">}</span><span class="s1"> 维&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">词表有 4365 个词
+向量是 50 维
+</code></pre></div><br>
+<h3 id="424-获取词向量">4.2.4 获取词向量<a hidden class="anchor" aria-hidden="true" href="#424-获取词向量">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 查看「降临」的词向量</span>
+<span class="n">wv</span><span class="o">.</span><span class="n">get_vector</span><span class="p">(</span><span class="s1">&#39;降临&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([ 0.672314,  0.020081,  0.653733,  0.598732, -0.680517, -0.049689,
+       -0.16845 , -0.06759 , -0.147955,  0.024006,  0.264551, -0.050127,
+        0.252063, -0.475633,  0.103722, -0.012481,  0.040755,  1.154912,
+        0.742695,  0.048619, -0.514424, -1.184054,  0.515892, -0.1034  ,
+        0.368755, -0.690357, -0.784287, -0.505814,  0.035807, -0.166354,
+       -0.26149 ,  0.015089,  0.10626 , -0.215666, -0.374001, -0.123558,
+        0.422617, -0.075277, -0.316387, -0.484295,  0.059687,  0.132621,
+        0.192094, -0.591919,  0.236281,  0.164198, -0.058724,  1.285457,
+        0.905606, -0.52032 ], dtype=float32)
+</code></pre></div><br>
+<h3 id="425-近义词">4.2.5 近义词<a hidden class="anchor" aria-hidden="true" href="#425-近义词">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">wv</span><span class="o">.</span><span class="n">similar_by_word</span><span class="p">(</span><span class="s1">&#39;三体&#39;</span><span class="p">,</span> <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;叛军&#39;, 0.7699569463729858),
+ (&#39;更新&#39;, 0.7687217593193054),
+ (&#39;地球&#39;, 0.760529100894928),
+ (&#39;全集&#39;, 0.7575182914733887),
+ (&#39;最快&#39;, 0.7426372170448303),
+ (&#39;世界&#39;, 0.7262137532234192),
+ (&#39;最新&#39;, 0.7219281792640686),
+ (&#39;游戏&#39;, 0.7180070877075195),
+ (&#39;危机&#39;, 0.7020451426506042),
+ (&#39;教&#39;, 0.7012627720832825)]
+</code></pre></div><br>
+<h3 id="426-计算多个词的中心向量">4.2.6 计算多个词的中心向量<a hidden class="anchor" aria-hidden="true" href="#426-计算多个词的中心向量">#</a></h3>
+<p>我们可以计算「三体」、「降临」、「组织」、「拯救」的中心向量eto_vector。 并试图寻找中心向量eto_vector的最相似的10个词。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">eto_vector</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">semantic_centroid</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span> <span class="n">words</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;三体&#39;</span><span class="p">,</span> <span class="s1">&#39;降临&#39;</span><span class="p">,</span> <span class="s1">&#39;组织&#39;</span><span class="p">,</span> <span class="s1">&#39;拯救&#39;</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">eto_vector</span><span class="p">)</span>
+<span class="c1"># 寻找 eto_vector 语义最相似的10个词</span>
+<span class="n">wv</span><span class="o">.</span><span class="n">similar_by_vector</span><span class="p">(</span><span class="n">eto_vector</span><span class="p">,</span> <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[ 0.6267875   0.08975425  0.48438451  0.405128   -0.49928901  0.11347825
+ -0.90057975  0.11877625 -0.27053049  0.344603    0.4368495  -0.3839495
+  0.02633176 -0.138534    0.2531555  -0.0060905  -0.48776849  0.75548999
+  0.72575876 -0.446079   -0.30361701 -1.039792    0.457687   -0.4286315
+  0.44577325 -0.39119426 -0.4783935  -0.2596135  -0.32513325 -0.10315975
+ -0.42880575 -0.48328425  0.129438   -0.17085625 -0.13454625 -0.070053
+  0.68060375  0.16736924 -0.15664874 -0.20528575  0.385481    0.206432
+  0.18913225 -0.93453825  0.58597099  0.60727924  0.009064    0.87661726
+  0.65814423 -0.356567  ]
+
+[(&#39;降临&#39;, 0.8707027435302734),
+ (&#39;组织&#39;, 0.8625670671463013),
+ (&#39;三体&#39;, 0.8621653914451599),
+ (&#39;派&#39;, 0.8343338966369629),
+ (&#39;拯救&#39;, 0.8301094174385071),
+ (&#39;叛军&#39;, 0.784512460231781),
+ (&#39;地球&#39;, 0.7536635398864746),
+ (&#39;世界&#39;, 0.7245718836784363),
+ (&#39;外部&#39;, 0.7078365087509155),
+ (&#39;入侵&#39;, 0.6962169408798218)]
+</code></pre></div><br>
+<p>熟悉三体的朋友应该能联想到背叛人类的ETO(地球三体组织)有两个派别，分别是拯救派和降临派。</p>
+<p>ETO开发了一款虚拟现实游戏，它向参与者展示了三体世界的真实情况，包括其恶劣的自然条件、三体文明的历史及其科技水平等。通过参与这个游戏，玩家们能够逐渐了解三体世界的真相，并最终决定是否要加入到支持三体文明入侵地球的行列中来。</p>
+<p>这个游戏不仅充当了信息传递的媒介，也是甄别志同道合者的工具，让那些对人类社会现状不满、渴望变革的人们找到了组织，进而成为了背叛人类的叛军一员。在这个过程中，“三体游戏”起到了关键的作用，是连接地球人与三体世界的重要桥梁。</p>
+<br>
+
+  </div>
+
+
+  <br>
+
+  <div style="text-align: center;">
+    <figure >
+        <a href="https://textdata.cn/blog/management_python_course/">
+            <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+        </a>
+        <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+    </figure>
+  </div>
+
+  <br>
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者: 大邓
+        <p>本文标题: 实验 | 使用Stanford Glove代码训练中文语料的Glove模型
+        <p>本文链接: https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/ 
+        <p>版权声明: <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+
+
+
+
+  <footer class="post-footer">
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/" target='_blank'>数据集</a></li>
+        <li><a href="/tags/%E6%96%87%E6%9C%AC%E5%88%86%E6%9E%90/" target='_blank'>文本分析</a></li>
+        <li><a href="/tags/%E8%AF%8D%E5%B5%8C%E5%85%A5/" target='_blank'>词嵌入</a></li>
+        <li><a href="/tags/%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" target='_blank'>语言模型</a></li>
+        <li><a href="/tags/%E5%AD%A6%E6%9C%AF%E5%BA%94%E7%94%A8/" target='_blank'>学术应用</a></li>
+      </ul>
+
+
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f&amp;hashtags=%e6%95%b0%e6%8d%ae%e9%9b%86%2c%e6%96%87%e6%9c%ac%e5%88%86%e6%9e%90%2c%e8%af%8d%e5%b5%8c%e5%85%a5%2c%e8%af%ad%e8%a8%80%e6%a8%a1%e5%9e%8b%2c%e5%ad%a6%e6%9c%af%e5%ba%94%e7%94%a8">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f&amp;title=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b&amp;summary=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b&amp;source=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f&title=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b%20-%20%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 实验 | 使用Stanford Glove代码训练中文语料的Glove模型 on telegram"
+        href="https://telegram.me/share/url?text=%e5%ae%9e%e9%aa%8c%20%7c%20%e4%bd%bf%e7%94%a8Stanford%20Glove%e4%bb%a3%e7%a0%81%e8%ae%ad%e7%bb%83%e4%b8%ad%e6%96%87%e8%af%ad%e6%96%99%e7%9a%84Glove%e6%a8%a1%e5%9e%8b&amp;url=%2fblog%2f2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2025 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'Copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+
+
+    
+    
+</body>
+
+</html>
