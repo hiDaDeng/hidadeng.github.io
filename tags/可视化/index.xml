@@ -1580,17 +1580,20 @@ pip3 install datashader,bokeh,holoviews  #可视化可能会用到的库
 <h3 id="22--构造语料">2.2  构造语料</h3>
 <p>本使用的 <em><strong>rmrb.csv.gz</strong></em> 对该数据集感兴趣的同学，可点击查看  <a href="https://textdata.cn/blog/2023-12-14-daily-news-dataset/">新闻数据集 | 含 人民日报/经济日报/光明日报 等数十家媒体(2024.05)</a>  。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">re</span>
 
-<span class="c1">#读取人民日报rmrb.csv.gz，含1946-2024.05.24全部新闻文本</span>
+<span class="c1"># 读取人民日报rmrb.csv.gz，含1946-2024.05.24全部新闻文本</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;人民日报/人民日报.csv.gz&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
 
-<span class="c1">#每5年构造一个语料txt文件</span>
+<span class="c1"># 每5年构造一个语料txt文件</span>
 <span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">freq_df</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;5Y&#39;</span><span class="p">)):</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;corpus/</span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s1">.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">text_series</span> <span class="o">=</span> <span class="n">freq_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
         <span class="n">text_series</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_series</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+        <span class="n">raw_text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_series</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+        <span class="n">chinese_text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^\u4e00-\u9fa5]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chinese_text</span><span class="p">)</span>
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1946-12-31 00:00:00
 1951-12-31 00:00:00
@@ -1618,16 +1621,17 @@ pip3 install datashader,bokeh,holoviews  #可视化可能会用到的库
 <br>
 <h3 id="23-训练word2vec">2.3 训练word2vec</h3>
 <h3 id="231-配置环境">2.3.1 配置环境</h3>
-<p>使用 <strong>cntext2.1.2</strong>，未公开，需微信大邓 372335839 购买获取。 安装方法，将 <strong>cntext-2.1.2-py3-none-any.whl</strong> 放置于桌面， 打开命令行 <em><strong>cmd</strong></em> （mac是terminal), 依次执行</p>
+<p>使用 <strong>cntext2.1.4</strong>，未公开，需微信大邓 372335839 购买获取。</p>
+<p>安装方法，将 <strong>cntext-2.1.4-py3-none-any.whl</strong> 放置于桌面， 打开命令行 <em><strong>cmd</strong></em> （mac是terminal), 依次执行</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
-pip3 install cntext-2.1.2-py3-none-any.whl
+pip3 install cntext-2.1.4-py3-none-any.whl
 </code></pre></div><blockquote>
-<p><strong>cntext2.1.0</strong>    100元，已购买cntext2.0.0可免费更新。</p>
+<p><strong>cntext-2.1.4-py3-none-any.whl</strong>    100元，已购买cntext2.0.0可免费更新。</p>
 </blockquote>
 <br>
 <h3 id="232-开始训练">2.3.2 开始训练</h3>
-<p>训练代码比较简单，已经封装到 <strong>cntext2.1.2</strong>， 只需几行代码即可。</p>
-<p>训练环境win11， 内存126G，大家回去可以试试16G、32G，应该也能跑通。</p>
+<p>训练代码比较简单，已经封装到 <strong>cntext2.1.4</strong>， 只需几行代码即可。</p>
+<p>训练环境 win11， 内存 126G ，大家回去可以试试 16G、32G，应该也能跑通。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 
@@ -1666,7 +1670,7 @@ Note: The Word2Vec model has been saved to output/Word2Vec
 </p>
 <p><br><br></p>
 <h2 id="三检查模型">三、检查模型</h2>
-<p>现在我们要检查模型， 为了方便，我就随机抽查 1946/1981/2001/2026， 查看这四个模型关于【工业】的近义词，看模型语义捕捉的准不准。</p>
+<p>现在我们要检查模型， 为了方便，我就随机抽查 1946/1981/2001/2026， 查看这四个模型关于「工业」的近义词，看模型语义捕捉的准不准。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 
 <span class="n">mfiles</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;output/Word2Vec/1946.200.6.bin&#39;</span><span class="p">,</span>
@@ -1675,7 +1679,7 @@ Note: The Word2Vec model has been saved to output/Word2Vec
           <span class="s1">&#39;output/Word2Vec/2026.200.6.bin&#39;</span><span class="p">]</span>
 
 <span class="k">for</span> <span class="n">mfile</span> <span class="ow">in</span> <span class="n">mfiles</span><span class="p">:</span>
-    <span class="n">w2v_model</span>  <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">mfile</span><span class="p">)</span>
+    <span class="n">w2v_model</span>  <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">mfile</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">mfile</span><span class="p">)</span>
     <span class="n">word_scores</span> <span class="o">=</span> <span class="n">w2v_model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;工业&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">word</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">word_scores</span><span class="p">:</span>
@@ -1798,18 +1802,18 @@ Note: The Word2Vec model has been saved to output/Word2Vec
 <p>总的来说，通过对齐Word2Vec模型，你可以更准确地比较不同年份的语料库，深入研究语义的演变和语言使用的变迁。这有助于揭示社会、文化、科技等方面的发展对语言表达的影响。</p>
 <br>
 <h3 id="43-对齐代码">4.3 对齐代码</h3>
-<p>使用 <strong>cntext2.1.0</strong>，未公开，需微信大邓 372335839 购买获取。</p>
+<p>使用 <strong>cntext2.1.4</strong>，未公开，需微信大邓 372335839 购买获取。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 
-<span class="c1">#基准模型</span>
-<span class="n">base_embed</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;output/Word2Vec/2026.200.6.bin&#39;</span><span class="p">)</span>
+<span class="c1"># 基准模型</span>
+<span class="n">base_wv</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;output/Word2Vec/2026.200.6.bin&#39;</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="c1">#将其他模型与基准模型对齐</span>
 <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">mfiles</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-    <span class="n">other_embed</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-    <span class="n">procrusted_w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">procrustes_align</span><span class="p">(</span><span class="n">base_embed</span><span class="o">=</span><span class="n">base_embed</span><span class="p">,</span>
-                                         <span class="n">other_embed</span><span class="o">=</span><span class="n">other_embed</span><span class="p">)</span>
+    <span class="n">other_wv</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">procrusted_w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">procrustes_align</span><span class="p">(</span><span class="n">base_wv</span><span class="o">=</span><span class="n">base_wv</span><span class="p">,</span>
+                                         <span class="n">other_wv</span><span class="o">=</span><span class="n">other_wv</span><span class="p">)</span>
     <span class="n">year</span><span class="o">=</span><span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="mi">4</span><span class="p">]</span>
     <span class="n">procrusted_w2v</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;output/Aligned_Word2Vec/</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">.200.6.bin&#39;</span><span class="p">)</span>
 </code></pre></div><p>Run</p>
@@ -1834,7 +1838,7 @@ Loading word2vec model...
 <p>这里我演示 两个对立词组分别与目标词组进行语义距离计算， 根据语义距离反应刻板印象态度偏见，其实这也反映了文化变迁。</p>
 <h3 id="51-性别与成功">5.1 性别与成功</h3>
 <p>男性、女性与成功之间的语义距离</p>
-<p><strong>cntext2.1.2</strong> 内置了两种算法， 语义投影和语义距离，</p>
+<p><strong>cntext2.1.4</strong> 内置了两种算法， 语义投影和语义距离，</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">distance = distance(女, 成功) - distance(男, 成功)
 </code></pre></div><p>如果distance趋近于0， 男女在成功概念上语义接近， 无明显刻板印象。</p>
 <p>但是当distance明显大于0， 当人们聊到成功概念时，更容易联想到男性，而不是女性。</p>
@@ -1850,8 +1854,8 @@ Loading word2vec model...
 
 <span class="n">mfiles</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;output/Aligned_Word2Vec/*.bin&#39;</span><span class="p">))</span>
 <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">mfiles</span><span class="p">:</span>
-    <span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-    <span class="n">mind</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Text2Mind</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="p">)</span>
+    <span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">mind</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Text2Mind</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">w2v</span><span class="p">)</span>
     <span class="n">distance</span> <span class="o">=</span> <span class="n">mind</span><span class="o">.</span><span class="n">sematic_distance</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">,</span> 
                                      <span class="n">c_words1</span><span class="o">=</span><span class="n">c_words1</span><span class="p">,</span> 
                                      <span class="n">c_words2</span><span class="o">=</span><span class="n">c_words2</span><span class="p">)</span>
@@ -1905,8 +1909,8 @@ Loading word2vec model...
 
 <span class="n">mfiles</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;output/Aligned_Word2Vec/*.bin&#39;</span><span class="p">))</span>
 <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">mfiles</span><span class="p">:</span>
-    <span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-    <span class="n">mind</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Text2Mind</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">w2v</span><span class="o">.</span><span class="n">wv</span><span class="p">)</span>
+    <span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">mind</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Text2Mind</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">w2v</span><span class="p">)</span>
     <span class="n">projection</span> <span class="o">=</span> <span class="n">mind</span><span class="o">.</span><span class="n">sematic_projection</span><span class="p">(</span><span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">,</span> 
                                          <span class="n">c_words1</span><span class="o">=</span><span class="n">c_words1</span><span class="p">,</span> 
                                          <span class="n">c_words2</span><span class="o">=</span><span class="n">c_words2</span><span class="p">)</span>
