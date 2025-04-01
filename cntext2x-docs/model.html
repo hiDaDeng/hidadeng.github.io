@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>三、Model模块 &#8212; cntext2.x 2.1.5 文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=77c12230"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="四、Mind模块" href="mind.html" />
+    <link rel="prev" title="二、Stats模块" href="stats.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="model">
+<h1>三、Model模块<a class="headerlink" href="#model" title="Link to this heading">¶</a></h1>
+<p>本部分主要内容是词嵌入模型相关技术， 包括Word2Vec(GLove)的训练、读取、扩展词典。</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>模块</p></th>
+<th class="head"><p>函数(类)</p></th>
+<th class="head"><p>功能</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><em><strong>model</strong></em></p></td>
+<td><p><em><strong>ct.Word2Vec(corpus_file, encoding, lang, window_size, vector_size,...)</strong></em></p></td>
+<td><p>训练Word2Vec</p></td>
+</tr>
+<tr class="row-odd"><td><p><em><strong>model</strong></em></p></td>
+<td><p><em><strong>ct.GloVe(corpus_file, encoding, lang, window_size, vector_size, ...)</strong></em></p></td>
+<td><p>训练GLove模型。</p></td>
+</tr>
+<tr class="row-even"><td><p><em><strong>model</strong></em></p></td>
+<td><p><em><strong>ct.load_w2v(wv_path)</strong></em></p></td>
+<td><p>读取cntext2.x训练出的Word2Vec/GloVe模型文件</p></td>
+</tr>
+<tr class="row-odd"><td><p><em><strong>model</strong></em></p></td>
+<td><p><em><strong>ct.glove2word2vec(glove_file, word2vec_file)</strong></em></p></td>
+<td><p>将GLoVe模型.txt文件转化为Word2Vec模型.txt文件；注意这里的GLoVe模型.txt是通过<a class="reference external" href="https://github.com/standfordnlp/GloVe">Standfordnlp/GloVe</a> 训练得到的。</p></td>
+</tr>
+<tr class="row-even"><td><p><em><strong>model</strong></em></p></td>
+<td><p><em><strong>ct.expand_dictionary(wv,  seeddict, topn=100)</strong></em></p></td>
+<td><p>扩展词典,  结果保存到路径[output/Word2Vec]中</p></td>
+</tr>
+</tbody>
+</table>
+<p>| <em><strong>model</strong></em> | <em><strong>ct.SoPmi(corpus_file, seed_file, lang='chinese')</strong></em>     | 共现法扩展词典                                   |</p>
+<section id="word2vec">
+<h2>3.1 Word2Vec()<a class="headerlink" href="#word2vec" title="Link to this heading">¶</a></h2>
+<p>可直接对原始语料txt文件进行自动Word2vec训练。该函数会自动处理文本预处理(分词、去停词)、内存管理、参数调整等问题，确保训练过程顺利进行。</p>
+<p>在 <em><strong>gensim.models.word2vec.Word2Vec</strong></em> 基础上，增加了中英文的预处理， 简化了代码使用。配置好cntext2.x环境， 可以做到</p>
+<ul class="simple">
+<li><ol class="arabic simple">
+<li><p>训练只用一行代码</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple" start="2">
+<li><p>读取调用只用一行代码</p></li>
+</ol>
+</li>
+</ul>
+<br>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ct</span><span class="o">.</span><span class="n">Word2Vec</span><span class="p">(</span><span class="n">corpus_file</span><span class="p">,</span> 
+            <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">,</span> 
+            <span class="n">dict_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+            <span class="n">stopwords_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+            <span class="n">vector_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> 
+            <span class="n">window_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> 
+            <span class="n">min_count</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> 
+            <span class="n">max_iter</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> 
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><em><strong>corpus_file</strong></em>: 语料库文件的路径。</p></li>
+<li><p><em><strong>lang</strong></em>: 语言类型，支持 'chinese' 和 'english'，默认为 'chinese'。</p></li>
+<li><p><em><strong>dict_file</strong></em>: 自定义词典txt文件路径，默认为None。utf-8编码。</p></li>
+<li><p><em><strong>stopwords_file</strong></em>: 停用词文件路径，默认为 None。utf-8编码。</p></li>
+<li><p><em><strong>vector_size</strong></em>: 词向量的维度，默认为 50。</p></li>
+<li><p><em><strong>window_size</strong></em>: 上下文窗口的大小，默认为 6。</p></li>
+<li><p><em><strong>min_count</strong></em>: 最小词频，默认为 10。</p></li>
+<li><p><em><strong>max_iter</strong></em>: 最大迭代次数，默认为 5。</p></li>
+<li><p><em><strong>kwargs</strong></em>: 其他gensim可选参数，如negative、sample、hs等。</p></li>
+</ul>
+<br>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cntext</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ct</span>
+
+<span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Word2Vec</span><span class="p">(</span><span class="n">corpus_file</span> <span class="o">=</span> <span class="s1">&#39;data/三体.txt&#39;</span><span class="p">,</span>  
+                  <span class="n">lang</span> <span class="o">=</span> <span class="s1">&#39;chinese&#39;</span><span class="p">,</span> 
+                  <span class="n">window_size</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span> 
+                  <span class="n">vector_size</span> <span class="o">=</span> <span class="mi">50</span><span class="p">)</span> 
+
+
+<span class="n">w2v</span>
+</pre></div>
+</div>
+<p>Run</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Mac</span><span class="p">(</span><span class="n">Linux</span><span class="p">)</span> <span class="n">System</span><span class="p">,</span> <span class="n">Enable</span> <span class="n">Parallel</span> <span class="n">Processing</span>
+<span class="n">Cache</span> <span class="n">output</span><span class="o">/</span><span class="n">三体_cache</span><span class="o">.</span><span class="n">txt</span> <span class="n">Not</span> <span class="n">Found</span> <span class="ow">or</span> <span class="n">Empty</span><span class="p">,</span> <span class="n">Preprocessing</span> <span class="n">Corpus</span>
+<span class="n">Reading</span> <span class="n">Preprocessed</span> <span class="n">Corpus</span> <span class="kn">from</span><span class="w"> </span><span class="nn">output</span><span class="o">/</span><span class="n">三体_cache</span><span class="o">.</span><span class="n">txt</span>
+<span class="n">Start</span> <span class="n">Training</span> <span class="n">Word2Vec</span>
+<span class="n">Word2Vec</span> <span class="n">Training</span> <span class="n">Cost</span> <span class="mi">10</span> <span class="n">s</span><span class="o">.</span> 
+<span class="n">Output</span> <span class="n">Saved</span> <span class="n">To</span><span class="p">:</span> <span class="n">output</span><span class="o">/</span><span class="n">Word2Vec</span><span class="o">/</span><span class="n">三体</span><span class="o">-</span><span class="n">Word2Vec</span><span class="mf">.50.6</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>[data/三体.txt]体积2.7M，  训练时间10s， 模型文件存储于 <em><strong>output/Word2Vec/三体-Word2Vec.50.6.txt</strong></em></p>
+<p><img alt="" src="_images/03-word2vec.png" /></p>
+<br>
+<p>需要注意， <em><strong>ct.Word2Vec</strong></em> 函数十分吃内存， 使用的 2G 的中文语料txt文件， 几乎能吃满我服务器全部内存(256G内存,常见电脑内存多为8G、16G)， 出现 <em><strong>MemoryError</strong></em> 问题。 但同样的 2G 的中文语料， 运行 <em><strong>ct.GloVe</strong></em> 就轻松很多，很难出现 <em><strong>MemoryError</strong></em>。</p>
+<br>
+</section>
+<section id="glove">
+<h2>3.2 GloVe()<a class="headerlink" href="#glove" title="Link to this heading">¶</a></h2>
+<p>使用Stanford GloVe代码工具训练GloVe模型。该函数会自动处理文本预处理、内存管理、参数调整等问题，确保训练过程顺利进行。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ct</span><span class="o">.</span><span class="n">GloVe</span><span class="p">(</span><span class="n">corpus_file</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">,</span> <span class="n">dict_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stopwords_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vector_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">min_count</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">max_memory</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">x_max</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><em><strong>corpus_file</strong></em>: 输入语料文件路径（文本格式）。该文件为分词后的语料文件。</p></li>
+<li><p><em><strong>lang</strong></em>: 语料文件的语言类型，默认为 'chinese'。</p></li>
+<li><p><em><strong>dict_file</strong></em>: 自定义词典txt文件路径，默认为None。utf-8编码。</p></li>
+<li><p><em><strong>stopwords_file</strong></em>: 停用词文件路径，默认为 None。utf-8编码。</p></li>
+<li><p><em><strong>vector_size</strong></em>: 词向量维度，默认 100。</p></li>
+<li><p><em><strong>window_size</strong></em>: 上下文窗口大小，默认 15。</p></li>
+<li><p><em><strong>min_count</strong></em>: 忽略出现次数低于此值的单词，默认 5。</p></li>
+<li><p><em><strong>max_memory</strong></em>: 可供使用的最大内存大小，单位为GB，默认 4;  该参数越大，训练越快。</p></li>
+<li><p><em><strong>max_iter</strong></em>: 训练的最大迭代次数，默认 15。</p></li>
+<li><p><em><strong>x_max</strong></em>: 共现矩阵中元素的最大计数值，默认 10。</p></li>
+</ul>
+<br>
+<p>ct.GloVe内置 <a class="reference external" href="https://nlp.stanford.edu/projects/glove/">Stanford GloVe</a>算法， 训练速度非常快。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cntext</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ct</span>
+
+<span class="n">glove</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">GloVe</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;data/三体.txt&#39;</span><span class="p">,</span> 
+                 <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">,</span>
+                 <span class="n">vector_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                 <span class="n">window_size</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+<span class="n">glove</span>
+</pre></div>
+</div>
+<p>Run</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Mac</span><span class="p">(</span><span class="n">Linux</span><span class="p">)</span> <span class="n">System</span><span class="p">,</span> <span class="n">Enable</span> <span class="n">Parallel</span> <span class="n">Processing</span>
+<span class="n">Cache</span> <span class="n">output</span><span class="o">/</span><span class="n">三体_cache</span><span class="o">.</span><span class="n">txt</span> <span class="n">Not</span> <span class="n">Found</span> <span class="ow">or</span> <span class="n">Empty</span><span class="p">,</span> <span class="n">Preprocessing</span> <span class="n">Corpus</span>
+<span class="n">Start</span> <span class="n">Training</span> <span class="n">GloVe</span>
+<span class="n">BUILDING</span> <span class="n">VOCABULARY</span>
+<span class="n">Using</span> <span class="n">vocabulary</span> <span class="n">of</span> <span class="n">size</span> <span class="mf">6975.</span>
+
+<span class="n">COUNTING</span> <span class="n">COOCCURRENCES</span>
+<span class="n">Merging</span> <span class="n">cooccurrence</span> <span class="n">files</span><span class="p">:</span> <span class="n">processed</span> <span class="mi">2106999</span> <span class="n">lines</span><span class="o">.</span>
+
+<span class="n">Using</span> <span class="n">random</span> <span class="n">seed</span> <span class="mi">1743474106</span>
+<span class="n">SHUFFLING</span> <span class="n">COOCCURRENCES</span>
+<span class="n">Merging</span> <span class="n">temp</span> <span class="n">files</span><span class="p">:</span> <span class="n">processed</span> <span class="mi">2106999</span> <span class="n">lines</span><span class="o">.</span>
+
+<span class="n">TRAINING</span> <span class="n">MODEL</span>
+<span class="n">Read</span> <span class="mi">2106999</span> <span class="n">lines</span><span class="o">.</span>
+<span class="n">Using</span> <span class="n">random</span> <span class="n">seed</span> <span class="mi">1743474106</span>
+<span class="mi">04</span><span class="o">/</span><span class="mi">01</span><span class="o">/</span><span class="mi">25</span> <span class="o">-</span> <span class="mi">10</span><span class="p">:</span><span class="mf">21.46</span><span class="n">AM</span><span class="p">,</span> <span class="nb">iter</span><span class="p">:</span> <span class="mi">001</span><span class="p">,</span> <span class="n">cost</span><span class="p">:</span> <span class="mf">0.055981</span>
+<span class="mi">04</span><span class="o">/</span><span class="mi">01</span><span class="o">/</span><span class="mi">25</span> <span class="o">-</span> <span class="mi">10</span><span class="p">:</span><span class="mf">21.46</span><span class="n">AM</span><span class="p">,</span> <span class="nb">iter</span><span class="p">:</span> <span class="mi">002</span><span class="p">,</span> <span class="n">cost</span><span class="p">:</span> <span class="mf">0.050632</span>
+<span class="o">......</span>
+<span class="mi">04</span><span class="o">/</span><span class="mi">01</span><span class="o">/</span><span class="mi">25</span> <span class="o">-</span> <span class="mi">10</span><span class="p">:</span><span class="mf">21.48</span><span class="n">AM</span><span class="p">,</span> <span class="nb">iter</span><span class="p">:</span> <span class="mi">014</span><span class="p">,</span> <span class="n">cost</span><span class="p">:</span> <span class="mf">0.030047</span>
+<span class="mi">04</span><span class="o">/</span><span class="mi">01</span><span class="o">/</span><span class="mi">25</span> <span class="o">-</span> <span class="mi">10</span><span class="p">:</span><span class="mf">21.48</span><span class="n">AM</span><span class="p">,</span> <span class="nb">iter</span><span class="p">:</span> <span class="mi">015</span><span class="p">,</span> <span class="n">cost</span><span class="p">:</span> <span class="mf">0.029100</span>
+
+<span class="n">GloVe</span> <span class="n">Training</span> <span class="n">Cost</span> <span class="mi">9</span> <span class="n">s</span><span class="o">.</span> 
+<span class="n">Output</span> <span class="n">Saved</span> <span class="n">To</span><span class="p">:</span> <span class="n">output</span><span class="o">/</span><span class="n">三体</span><span class="o">-</span><span class="n">GloVe</span><span class="mf">.50.15</span><span class="o">.</span><span class="n">txt</span>
+<span class="o">&lt;</span><span class="n">gensim</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">keyedvectors</span><span class="o">.</span><span class="n">KeyedVectors</span> <span class="n">at</span> <span class="mh">0x331517440</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="" src="_images/05-glove.png" /></p>
+<p>训练生成的 <code class="docutils literal notranslate"><span class="pre">output/GloVe/三体-GloVe.50.15.txt</span></code> 可用 <em><strong>ct.load_w2v</strong></em> 读取，在后面会有展示。</p>
+<br>
+</section>
+<section id="sopmi">
+<h2>3.3 SoPmi()<a class="headerlink" href="#sopmi" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ct</span><span class="o">.</span><span class="n">SoPmi</span><span class="p">(</span><span class="n">corpus_file</span><span class="p">,</span> <span class="n">seed_file</span><span class="p">)</span>       <span class="c1">#人工标注的初始种子词</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>corpus_file</strong>  语料txt文件路径</p></li>
+<li><p><strong>seed_file</strong> 初始种子词txt文件路径</p></li>
+</ul>
+<p>共现法</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cntext</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ct</span>
+
+<span class="n">ct</span><span class="o">.</span><span class="n">SoPmi</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;data/sopmi_corpus.txt&#39;</span><span class="p">,</span>   
+         <span class="n">seed_file</span><span class="o">=</span><span class="s1">&#39;data/sopmi_seed.txt&#39;</span><span class="p">)</span>       <span class="c1"># 人工标注的初始种子词</span>
+                     
+</pre></div>
+</div>
+<p>Run</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Step 1/4:...Preprocess   Corpus ...
+Step 2/4:...Collect co-occurrency information ...
+Step 3/4:...Calculate   mutual information ...
+Step 4/4:...Save    candidate words ...
+Finish! used 19.74 s
+</pre></div>
+</div>
+<p><img alt="" src="_images/06-sopmi.png" /></p>
+<br>
+</section>
+<section id="load-w2v">
+<h2>3.4 load_w2v()<a class="headerlink" href="#load-w2v" title="Link to this heading">¶</a></h2>
+<p>导入cntext2.x 预训练的word2vec模型 .txt文件</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">w2v_path</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>w2v_path</strong> 模型文件路径</p></li>
+</ul>
+<p>读取  <em><strong>output/三体.100.6.txt</strong></em> 模型文件,  返回 <code class="docutils literal notranslate"><span class="pre">gensim.models.word2vec.Word2Vec</span></code> 类型。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cntext</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ct</span>
+
+<span class="n">santi_w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">w2v_path</span><span class="o">=</span><span class="s1">&#39;output/三体-Word2Vec.50.6.bin&#39;</span><span class="p">)</span>
+<span class="c1"># santi_w2v = ct.load_wv(wv_path=&#39;output/三体-Word2Vec.50.6.txt&#39;)</span>
+
+<span class="n">santi_glove</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">w2v_path</span><span class="o">=</span><span class="s1">&#39;output/三体-GloVe.50.15.bin&#39;</span><span class="p">)</span>
+<span class="c1"># santi_glove = ct.load_wv(wv_path=&#39;output/三体-GloVe.50.15.bin&#39;)</span>
+
+<span class="n">santi_w2v</span>
+</pre></div>
+</div>
+<p>Run</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Loading</span> <span class="n">output</span><span class="o">/</span><span class="n">三体</span><span class="o">-</span><span class="n">Word2Vec</span><span class="mf">.50.6</span><span class="o">.</span><span class="n">bin</span><span class="o">...</span>
+<span class="n">Loading</span> <span class="n">output</span><span class="o">/</span><span class="n">三体</span><span class="o">-</span><span class="n">GloVe</span><span class="mf">.50.15</span><span class="o">.</span><span class="n">bin</span><span class="o">...</span>
+<span class="o">&lt;</span><span class="n">gensim</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">keyedvectors</span><span class="o">.</span><span class="n">KeyedVectors</span> <span class="n">at</span> <span class="mh">0x33aa9cf80</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<br>
+</section>
+<section id="glove2word2vec">
+<h2>3.5 glove2word2vec()<a class="headerlink" href="#glove2word2vec" title="Link to this heading">¶</a></h2>
+<p>将GLoVe模型.txt文件转化为Word2Vec模型.txt文件； 除非从网络下载的GloVe模型资源， 否则一般情况用不到这个函数。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ct</span><span class="o">.</span><span class="n">glove2word2vec</span><span class="p">(</span><span class="n">glove_file</span><span class="p">,</span> <span class="n">word2vec_file</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><em><strong>glove_file</strong></em>: GLoVe模型.txt文件路径</p></li>
+<li><p><em><strong>word2vec_file</strong></em>: Word2Vec模型.txt文件路径</p></li>
+</ul>
+<br>
+<p>注意这里的GLoVe模型.txt是通过<a class="reference external" href="https://github.com/standfordnlp/GloVe">Standfordnlp/GloVe</a> 训练得到的</p>
+<br>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cntext</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ct</span>
+<span class="n">ct</span><span class="o">.</span><span class="n">glove2word2vec</span><span class="p">(</span><span class="n">glove_file</span><span class="o">=</span><span class="s1">&#39;data/GloVe.6B.50d.txt&#39;</span><span class="p">,</span>
+                  <span class="n">word2vec_file</span><span class="o">=</span><span class="s1">&#39;output/word2vec_format_GloVe.6B.50d.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<br>
+</section>
+<section id="id1">
+<h2>注意<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><em><strong>ct.load_w2v()</strong></em> 导入后得到的数据类型是 <em><strong>gensim.models.keyedvectors.KeyedVectors</strong></em> 。</p></li>
+<li><p><em><strong>gensim.models.word2vec.Word2Vec</strong></em> 可以转化为  <em><strong>gensim.models.keyedvectors.KeyedVectors</strong></em> ，</p></li>
+</ul>
+<br>
+</section>
+<section id="expand-dictionary">
+<h2>3.6 expand_dictionary()<a class="headerlink" href="#expand-dictionary" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ct</span><span class="o">.</span><span class="n">expand_dictionary</span><span class="p">(</span><span class="n">wv</span><span class="p">,</span>  <span class="n">seeddict</span><span class="p">,</span> <span class="n">topn</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>wv</strong>  预训练模型，数据类型为 gensim.models.keyedvectors.KeyedVectors。</p></li>
+<li><p><strong>seeddict</strong>  参数类似于种子词；格式为PYTHON字典；</p></li>
+<li><p><strong>topn</strong> 返回topn个语义最接近seeddict的词</p></li>
+</ul>
+<p>根据设置的seeddict,  可按类别扩展并生成对应的词典txt文件， txt文件位于[output]文件夹内。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">seeddict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;人物&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;叶文洁&#39;</span><span class="p">,</span> <span class="s1">&#39;史强&#39;</span><span class="p">,</span> <span class="s1">&#39;罗辑&#39;</span><span class="p">],</span> 
+    <span class="s1">&#39;物体&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;飞船&#39;</span><span class="p">,</span> <span class="s1">&#39;车辆&#39;</span><span class="p">]</span>
+<span class="p">}</span>
+
+
+<span class="n">ct</span><span class="o">.</span><span class="n">expand_dictionary</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">santi_w2v</span><span class="o">.</span><span class="n">wv</span><span class="p">,</span>  
+                     <span class="n">seeddict</span><span class="o">=</span><span class="n">seeddict</span><span class="p">,</span> 
+                     <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><img alt="" src="_images/04-expand.png" /></p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">cntext2.x</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>导航</h3>
+<p class="caption" role="heading"><span class="caption-text">目录</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">简介</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">安装</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">QuickStart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">一、IO模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stats.html">二、Stats模块</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">三、Model模块</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#word2vec">3.1 Word2Vec()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#glove">3.2 GloVe()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sopmi">3.3 SoPmi()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#load-w2v">3.4 load_w2v()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#glove2word2vec">3.5 glove2word2vec()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">注意</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#expand-dictionary">3.6 expand_dictionary()</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mind.html">四、Mind模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="llm.html">五、LLM模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot.html">六、Plot模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cite.html">引用说明</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="stats.html" title="上一章">二、Stats模块</a></li>
+      <li>Next: <a href="mind.html" title="下一章">四、Mind模块</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, 大邓.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/model.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
