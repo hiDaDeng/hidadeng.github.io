@@ -6,7 +6,855 @@
     <description>Recent content in python on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Mon, 24 Mar 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 03 Apr 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>词向量 | 使用1985年-2025年专利申请摘要训练 Word2Vec 模型</title>
+      <link>https://textdata.cn/blog/2023-11-10-training-word2vec-model-using-china-3751w-patent-application-dataset/</link>
+      <pubDate>Thu, 03 Apr 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-10-training-word2vec-model-using-china-3751w-patent-application-dataset/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/&#34;&gt;&lt;strong&gt;5112万条专利申请数据集(1985-2025年)&lt;/strong&gt;&lt;/a&gt; 中随机抽取了30%的 「&lt;strong&gt;专利摘要&lt;/strong&gt;」，构成6.14G的训练语料(千万级别)， 耗时6小时，训练得到word2vec模型。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;需要注意， 100%全部语料有30+G， 训练时间非常长。&lt;/p&gt;
+&lt;p&gt;没办法，我不会优化代码性能，所以只能抽取 30% 的文本数据来训练word2vec ，语料体积大概10G。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;br&gt;
+&lt;p&gt;本文需要用到新cntext，因为bug较多， 直接上传到PyPi，将导致之前制作的课程和公众号推文相关内容全部重新一遍。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;一语料构建&#34;&gt;一、语料构建&lt;/h2&gt;
+&lt;p&gt;随机抽取20%的记录，构成千万专利文本摘要训练语料。&lt;/p&gt;
+&lt;p&gt;为了防止电脑内存爆炸， 对任意单个大csv文件，分批次读取，每次读10w行。最终将专利摘要文本保存到txt文件中，编码方式为utf-8。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;如果想开发一些词典，可以跳过此部分内容，并不影响代码运行。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/screen-datasets.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 将代码放在csv数据文件夹内&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;os&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;re&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;专利摘要.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;w&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;# 获得当前文件夹内所有的csv文件路径&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;chunk_dfs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;中国专利数据库.csv.gz&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                            &lt;span class=&#34;n&#34;&gt;usecols&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;专利名称&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;摘要文本&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; 
+                            &lt;span class=&#34;n&#34;&gt;chunksize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;100000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_dfs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;c1&#34;&gt;# 剔除专利摘要为空的记录&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;sample_df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sample&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;frac&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mf&#34;&gt;0.3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sample_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;摘要文本&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fillna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;))&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;最终得到的 &lt;strong&gt;专利摘要.txt&lt;/strong&gt;  文件有 10G&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二训练word2vec&#34;&gt;二、训练word2vec&lt;/h2&gt;
+&lt;h3 id=&#34;21-安装&#34;&gt;2.1 安装&lt;/h3&gt;
+&lt;p&gt;将 &lt;em&gt;&lt;strong&gt;cntext-2.1.5-py3-none-any.whl&lt;/strong&gt;&lt;/em&gt; 放置于桌面，打开 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt;  (苹果电脑打开terminal)， 输入cd desktop&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd desktop
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;之后在 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt;  (苹果电脑打开terminal) 中使用 &lt;em&gt;&lt;strong&gt;pip3&lt;/strong&gt;&lt;/em&gt; 安装&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install cntext-2.1.5-py3-none-any.whl
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;文末有 &lt;em&gt;&lt;strong&gt;cntext-2.1.5-py3-none-any.whl&lt;/strong&gt;&lt;/em&gt; 获取方式&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;22-训练-word2vec&#34;&gt;2.2 训练 Word2Vec&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# cntext为2.1.5&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;Word2Vec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;专利摘要.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+                        &lt;span class=&#34;n&#34;&gt;lang&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;chinese&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+                        &lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;# 词向量维度&lt;/span&gt;
+                        &lt;span class=&#34;n&#34;&gt;window_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;# 窗口大小&lt;/span&gt;
+                        &lt;span class=&#34;n&#34;&gt;chunksize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;# 每次读取10000行&lt;/span&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Mac(Linux) System, Enable Parallel Processing
+Cache output/专利摘要_cache.txt Not Found or Empty, Preprocessing Corpus
+
+Reading Preprocessed Corpus from output/专利摘要_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 8816 s. 
+Output Saved To: output/专利摘要-Word2Vec.200.15.bin
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;整理训练过程 2.5 小时， 训练结束后得到 &lt;em&gt;&lt;strong&gt;output&lt;/strong&gt;&lt;/em&gt; 文件夹， 里面有&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;output/专利摘要-Word2Vec.200.15.bin&lt;/strong&gt;&lt;/em&gt;  模型文件&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;专利摘要_cache.txt&lt;/strong&gt;&lt;/em&gt;                   训练缓存文件&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三使用词向量&#34;&gt;三、使用词向量&lt;/h2&gt;
+&lt;h3 id=&#34;31-录入模型&#34;&gt;3.1 录入模型&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/专利摘要-Word2Vec.200.15.bin&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Loading 专利摘要-Word2Vec.200.15.bin...
+&amp;lt;gensim.models.keyedvectors.KeyedVectors at 0x32b079340&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-keyedvectors的操作方法或属性&#34;&gt;3.2 KeyedVectors的操作方法(或属性)&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;方法&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;KeyedVectors.index_to_key&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;获取词汇表中的所有单词。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;KeyedVectors.key_to_index&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;获取单词到索引的映射。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;KeyedVectors.vector_size&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;获取GloVe模型中任意词向量的维度。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;KeyedVectors.get_vector(word)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;获取给定单词的词向量。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;KeyedVectors.most_similar(words, topn=10)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;获取某类词(list)最相似的10个近义词。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;KeyedVectors.similar_by_word(word, topn=10)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;获取某词语最相似的10个近义词。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;&lt;strong&gt;KeyedVectors.similar_by_vector(vector, topn=10)&lt;/strong&gt;&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;获取词向量最相似的10个近义词。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;33-词汇量维度数&#34;&gt;3.3 词汇量&amp;amp;维度数&lt;/h3&gt;
+&lt;p&gt;查看模型中的词汇量&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;print(f&amp;#39;词汇量: {len(w2v)}&amp;#39;)
+print(f&amp;#39;维度数: {w2v.vector_size}&amp;#39;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;词汇量: 1059801
+维度数: 200
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;34-查看词向量&#34;&gt;3.4 查看词向量&lt;/h3&gt;
+&lt;p&gt;查看任意词的词向量，例如“&lt;strong&gt;”人工智能”&lt;/strong&gt;”&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 查看 ”人工智能” 的词向量&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;人工智能&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;array([-1.1817173 , -2.1371903 , -3.0181015 ,  1.7000161 , -3.081852  ,
+        3.554449  , -0.22385244,  3.6647737 , -3.7086377 , -1.4868759 ,
+       -0.7706527 ,  5.9335155 ,  2.8328223 , -1.7995875 , -6.051175  ,
+       -0.91756725, -4.15509   , -1.6975762 , -4.5753274 , -3.022245  ,
+       ......
+       -2.0807118 , -3.4522808 ,  4.29429   , -1.712142  , -1.6512033 ,
+        2.625037  , -3.4015207 ,  1.3526493 , -0.7858534 , -1.6782432 ,
+       -3.1669524 , -2.6371615 , -1.5394825 ,  3.101744  ,  0.44502366,
+       -1.4104489 , -0.01298253, -4.217453  , -0.92512876,  0.10754411],
+      dtype=float32)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;35-最相似词&#34;&gt;3.5 最相似词&lt;/h3&gt;
+&lt;p&gt;与&amp;rsquo;创新&#39;, &amp;lsquo;颠覆&amp;rsquo;最相似的20个词&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;# 词语列表中可传入任意多个词，
+# 大邓词穷，只想到这两个相似的种子词
+w2v.most_similar([&amp;#39;创新&amp;#39;, &amp;#39;颠覆&amp;#39;], topn=20)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;革新&amp;#39;, 0.7983665466308594),
+ (&amp;#39;改革&amp;#39;, 0.7454208731651306),
+ (&amp;#39;变革&amp;#39;, 0.7136300206184387),
+ (&amp;#39;全新&amp;#39;, 0.707391619682312),
+ (&amp;#39;彻底改变&amp;#39;, 0.7064372301101685),
+ (&amp;#39;创造性&amp;#39;, 0.6960274577140808),
+ (&amp;#39;颠覆性&amp;#39;, 0.6874485611915588),
+ (&amp;#39;有别于&amp;#39;, 0.6775000095367432),
+ (&amp;#39;加以改进&amp;#39;, 0.6736693978309631),
+ (&amp;#39;摒弃&amp;#39;, 0.6716011762619019),
+ (&amp;#39;独创&amp;#39;, 0.6609643697738647),
+ (&amp;#39;颠覆传统&amp;#39;, 0.6604534983634949),
+ (&amp;#39;开创&amp;#39;, 0.6531570553779602),
+ (&amp;#39;核心技术&amp;#39;, 0.6419240236282349),
+ (&amp;#39;彻底颠覆&amp;#39;, 0.6397384405136108),
+ (&amp;#39;技术创新&amp;#39;, 0.6390863060951233),
+ (&amp;#39;突破性&amp;#39;, 0.6368305087089539),
+ (&amp;#39;大胆&amp;#39;, 0.6357517242431641),
+ (&amp;#39;技术革新&amp;#39;, 0.6347700357437134),
+ (&amp;#39;沿用&amp;#39;, 0.6328355669975281)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;刚刚的运行，体现模型很好的学习到了专利摘要中的语义关系。&lt;/p&gt;
+&lt;p&gt;如果我想开发三个词典，分别是 &lt;strong&gt;创新&lt;/strong&gt;、&lt;strong&gt;成本&lt;/strong&gt;、&lt;strong&gt;质量&lt;/strong&gt; ，想直接将结果保存到txt中，可以运行如下代码&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;seeds&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;创新概念&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;创新&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;颠覆&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;
+         &lt;span class=&#34;s1&#34;&gt;&amp;#39;成本概念&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;成本&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;
+         &lt;span class=&#34;s1&#34;&gt;&amp;#39;质量概念&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;质量&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]}&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;expand_dictionary&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;          &lt;span class=&#34;c1&#34;&gt;# word2vec词向量&lt;/span&gt;
+                     &lt;span class=&#34;n&#34;&gt;seeddict&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;seeds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;# 种子词字典&lt;/span&gt;
+                     &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;         &lt;span class=&#34;c1&#34;&gt;# 保留20个最相似的词&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Finish! 创新概念 candidates saved to output/创新概念.txt
+Finish! 成本概念 candidates saved to output/成本概念.txt
+Finish! 质量概念 candidates saved to output/质量概念.txt
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/similar-words.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四获取资源&#34;&gt;四、获取资源&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;- 免费     专利摘要-Word2Vec.200.15.bin 链接: https://pan.baidu.com/s/1LKebAWL5fzjUVo_MR7dVug?pwd=a56c 提取码: a56c
+
+- 100元   cntext-2.1.5-py3-none-any.whl   如有需要，加微信 372335839， 备注「姓名-学校-专业」
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+      <content:encoded><![CDATA[<p><a href="https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/"><strong>5112万条专利申请数据集(1985-2025年)</strong></a> 中随机抽取了30%的 「<strong>专利摘要</strong>」，构成6.14G的训练语料(千万级别)， 耗时6小时，训练得到word2vec模型。</p>
+<blockquote>
+<p>需要注意， 100%全部语料有30+G， 训练时间非常长。</p>
+<p>没办法，我不会优化代码性能，所以只能抽取 30% 的文本数据来训练word2vec ，语料体积大概10G。</p>
+</blockquote>
+<br>
+<p>本文需要用到新cntext，因为bug较多， 直接上传到PyPi，将导致之前制作的课程和公众号推文相关内容全部重新一遍。</p>
+<p><br><br></p>
+<h2 id="一语料构建">一、语料构建</h2>
+<p>随机抽取20%的记录，构成千万专利文本摘要训练语料。</p>
+<p>为了防止电脑内存爆炸， 对任意单个大csv文件，分批次读取，每次读10w行。最终将专利摘要文本保存到txt文件中，编码方式为utf-8。</p>
+<blockquote>
+<p>如果想开发一些词典，可以跳过此部分内容，并不影响代码运行。</p>
+</blockquote>
+<p><img loading="lazy" src="img/screen-datasets.png" alt=""  />
+</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 将代码放在csv数据文件夹内</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;专利摘要.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">corpus_file</span><span class="p">:</span>
+    <span class="c1"># 获得当前文件夹内所有的csv文件路径</span>
+    <span class="n">chunk_dfs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;中国专利数据库.csv.gz&#39;</span><span class="p">,</span> 
+                            <span class="n">usecols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">,</span> <span class="s1">&#39;摘要文本&#39;</span><span class="p">],</span> 
+                            <span class="n">chunksize</span><span class="o">=</span><span class="mi">100000</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">chunk_df</span> <span class="ow">in</span> <span class="n">chunk_dfs</span><span class="p">:</span>
+        <span class="c1"># 剔除专利摘要为空的记录</span>
+        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">chunk_df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+        <span class="n">raw_text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sample_df</span><span class="p">[</span><span class="s1">&#39;摘要文本&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;))</span>
+        <span class="n">corpus_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">raw_text</span><span class="p">)</span>
+</code></pre></div><p>最终得到的 <strong>专利摘要.txt</strong>  文件有 10G<br><br></p>
+<h2 id="二训练word2vec">二、训练word2vec</h2>
+<h3 id="21-安装">2.1 安装</h3>
+<p>将 <em><strong>cntext-2.1.5-py3-none-any.whl</strong></em> 放置于桌面，打开 <em><strong>cmd</strong></em>  (苹果电脑打开terminal)， 输入cd desktop</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+</code></pre></div><p>之后在 <em><strong>cmd</strong></em>  (苹果电脑打开terminal) 中使用 <em><strong>pip3</strong></em> 安装</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install cntext-2.1.5-py3-none-any.whl
+</code></pre></div><p>文末有 <em><strong>cntext-2.1.5-py3-none-any.whl</strong></em> 获取方式</p>
+<br>
+<h3 id="22-训练-word2vec">2.2 训练 Word2Vec</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># cntext为2.1.5</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">w2v_model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Word2Vec</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;专利摘要.txt&#39;</span><span class="p">,</span>
+                        <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">,</span>
+                        <span class="n">vector_size</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="c1"># 词向量维度</span>
+                        <span class="n">window_size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span><span class="c1"># 窗口大小</span>
+                        <span class="n">chunksize</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span> <span class="c1"># 每次读取10000行</span>
+
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Mac(Linux) System, Enable Parallel Processing
+Cache output/专利摘要_cache.txt Not Found or Empty, Preprocessing Corpus
+
+Reading Preprocessed Corpus from output/专利摘要_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 8816 s. 
+Output Saved To: output/专利摘要-Word2Vec.200.15.bin
+</code></pre></div><p>整理训练过程 2.5 小时， 训练结束后得到 <em><strong>output</strong></em> 文件夹， 里面有</p>
+<ul>
+<li><em><strong>output/专利摘要-Word2Vec.200.15.bin</strong></em>  模型文件</li>
+<li><em><strong>专利摘要_cache.txt</strong></em>                   训练缓存文件</li>
+</ul>
+<p><br><br></p>
+<h2 id="三使用词向量">三、使用词向量</h2>
+<h3 id="31-录入模型">3.1 录入模型</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;output/专利摘要-Word2Vec.200.15.bin&#39;</span><span class="p">)</span>
+<span class="n">w2v</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Loading 专利摘要-Word2Vec.200.15.bin...
+&lt;gensim.models.keyedvectors.KeyedVectors at 0x32b079340&gt;
+</code></pre></div><br>
+<h3 id="32-keyedvectors的操作方法或属性">3.2 KeyedVectors的操作方法(或属性)</h3>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em><strong>KeyedVectors.index_to_key</strong></em></td>
+<td>获取词汇表中的所有单词。</td>
+</tr>
+<tr>
+<td><em><strong>KeyedVectors.key_to_index</strong></em></td>
+<td>获取单词到索引的映射。</td>
+</tr>
+<tr>
+<td><em><strong>KeyedVectors.vector_size</strong></em></td>
+<td>获取GloVe模型中任意词向量的维度。</td>
+</tr>
+<tr>
+<td><em><strong>KeyedVectors.get_vector(word)</strong></em></td>
+<td>获取给定单词的词向量。</td>
+</tr>
+<tr>
+<td><em><strong>KeyedVectors.most_similar(words, topn=10)</strong></em></td>
+<td>获取某类词(list)最相似的10个近义词。</td>
+</tr>
+<tr>
+<td><em><strong>KeyedVectors.similar_by_word(word, topn=10)</strong></em></td>
+<td>获取某词语最相似的10个近义词。</td>
+</tr>
+<tr>
+<td><em><strong>KeyedVectors.similar_by_vector(vector, topn=10)</strong></em></td>
+<td>获取词向量最相似的10个近义词。</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h3 id="33-词汇量维度数">3.3 词汇量&amp;维度数</h3>
+<p>查看模型中的词汇量</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">print(f&#39;词汇量: {len(w2v)}&#39;)
+print(f&#39;维度数: {w2v.vector_size}&#39;)
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">词汇量: 1059801
+维度数: 200
+</code></pre></div><br>
+<h3 id="34-查看词向量">3.4 查看词向量</h3>
+<p>查看任意词的词向量，例如“<strong>”人工智能”</strong>”</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 查看 ”人工智能” 的词向量</span>
+<span class="n">w2v</span><span class="p">[</span><span class="s1">&#39;人工智能&#39;</span><span class="p">]</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([-1.1817173 , -2.1371903 , -3.0181015 ,  1.7000161 , -3.081852  ,
+        3.554449  , -0.22385244,  3.6647737 , -3.7086377 , -1.4868759 ,
+       -0.7706527 ,  5.9335155 ,  2.8328223 , -1.7995875 , -6.051175  ,
+       -0.91756725, -4.15509   , -1.6975762 , -4.5753274 , -3.022245  ,
+       ......
+       -2.0807118 , -3.4522808 ,  4.29429   , -1.712142  , -1.6512033 ,
+        2.625037  , -3.4015207 ,  1.3526493 , -0.7858534 , -1.6782432 ,
+       -3.1669524 , -2.6371615 , -1.5394825 ,  3.101744  ,  0.44502366,
+       -1.4104489 , -0.01298253, -4.217453  , -0.92512876,  0.10754411],
+      dtype=float32)
+</code></pre></div><br>
+<h3 id="35-最相似词">3.5 最相似词</h3>
+<p>与&rsquo;创新', &lsquo;颠覆&rsquo;最相似的20个词</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"># 词语列表中可传入任意多个词，
+# 大邓词穷，只想到这两个相似的种子词
+w2v.most_similar([&#39;创新&#39;, &#39;颠覆&#39;], topn=20)
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;革新&#39;, 0.7983665466308594),
+ (&#39;改革&#39;, 0.7454208731651306),
+ (&#39;变革&#39;, 0.7136300206184387),
+ (&#39;全新&#39;, 0.707391619682312),
+ (&#39;彻底改变&#39;, 0.7064372301101685),
+ (&#39;创造性&#39;, 0.6960274577140808),
+ (&#39;颠覆性&#39;, 0.6874485611915588),
+ (&#39;有别于&#39;, 0.6775000095367432),
+ (&#39;加以改进&#39;, 0.6736693978309631),
+ (&#39;摒弃&#39;, 0.6716011762619019),
+ (&#39;独创&#39;, 0.6609643697738647),
+ (&#39;颠覆传统&#39;, 0.6604534983634949),
+ (&#39;开创&#39;, 0.6531570553779602),
+ (&#39;核心技术&#39;, 0.6419240236282349),
+ (&#39;彻底颠覆&#39;, 0.6397384405136108),
+ (&#39;技术创新&#39;, 0.6390863060951233),
+ (&#39;突破性&#39;, 0.6368305087089539),
+ (&#39;大胆&#39;, 0.6357517242431641),
+ (&#39;技术革新&#39;, 0.6347700357437134),
+ (&#39;沿用&#39;, 0.6328355669975281)]
+</code></pre></div><br>
+<p>刚刚的运行，体现模型很好的学习到了专利摘要中的语义关系。</p>
+<p>如果我想开发三个词典，分别是 <strong>创新</strong>、<strong>成本</strong>、<strong>质量</strong> ，想直接将结果保存到txt中，可以运行如下代码</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">seeds</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;创新概念&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;颠覆&#39;</span><span class="p">],</span>
+         <span class="s1">&#39;成本概念&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;成本&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">],</span>
+         <span class="s1">&#39;质量概念&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;质量&#39;</span><span class="p">]}</span>
+
+<span class="n">ct</span><span class="o">.</span><span class="n">expand_dictionary</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">w2v</span><span class="p">,</span>          <span class="c1"># word2vec词向量</span>
+                     <span class="n">seeddict</span><span class="o">=</span><span class="n">seeds</span><span class="p">,</span>  <span class="c1"># 种子词字典</span>
+                     <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>         <span class="c1"># 保留20个最相似的词</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Finish! 创新概念 candidates saved to output/创新概念.txt
+Finish! 成本概念 candidates saved to output/成本概念.txt
+Finish! 质量概念 candidates saved to output/质量概念.txt
+</code></pre></div><p><img loading="lazy" src="img/similar-words.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="四获取资源">四、获取资源</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 免费     专利摘要-Word2Vec.200.15.bin 链接: https://pan.baidu.com/s/1LKebAWL5fzjUVo_MR7dVug?pwd=a56c 提取码: a56c
+
+- 100元   cntext-2.1.5-py3-none-any.whl   如有需要，加微信 372335839， 备注「姓名-学校-专业」
+</code></pre></div>]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>词向量 | 使用1亿B站用户签名训练word2vec词向量</title>
+      <link>https://textdata.cn/blog/2023-11-12-using-100m-bilibili-user-sign-data-to-training-word2vec/</link>
+      <pubDate>Thu, 03 Apr 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-12-using-100m-bilibili-user-sign-data-to-training-word2vec/</guid>
+      <description>&lt;h2 id=&#34;一用户签名&#34;&gt;一、用户签名&lt;/h2&gt;
+&lt;p&gt;1亿B站用户群体十分庞大，文本中蕴含着这个群体的认知信息(如兴趣、身份、座右铭等)，如果能用签名训练word2vec词向量模型，说不定就有利用这个模型，对每个用户签名进行量化,  对用户进行分类。 本文要解决&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;构建语料训练出模型&lt;/li&gt;
+&lt;li&gt;简单看看模型训练效果&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二准备语料&#34;&gt;二、准备语料&lt;/h2&gt;
+&lt;p&gt;Kaggle网有1亿B站用户数据集，下载地址&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.kaggle.com/datasets/beats0/bilibili-user&#34;&gt;https://www.kaggle.com/datasets/beats0/bilibili-user&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;之前分享过 &lt;a href=&#34;https://textdata.cn/blog/2023-05-10-100m-bilibili-user-info-dataset/&#34;&gt;数据集 | 哔哩哔哩 1 亿用户数据&lt;/a&gt; ， 阅读此文可以熟悉pandas的一些基本操作，如数据读取、文本操作等。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 从kaggle下载B站1亿用户数据&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 查看前5行&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;User.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;nrows&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df2.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;将 9093092 个非空签名汇总到 &lt;em&gt;&lt;strong&gt;B站用户签名语料.txt&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;B站签名.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;w&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;sign&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fillna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;代码运行后，得到 320M  的 &lt;em&gt;&lt;strong&gt;B站签名.txt&lt;/strong&gt;&lt;/em&gt;  。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三训练-word2vec&#34;&gt;三、训练 Word2Vec&lt;/h2&gt;
+&lt;p&gt;我使用的自己 &lt;strong&gt;未公开&lt;/strong&gt; 的cntext 2.1.5版本， Bug频出，等调整好了再公开。&lt;/p&gt;
+&lt;h3 id=&#34;31-安装cntext&#34;&gt;3.1 安装cntext&lt;/h3&gt;
+&lt;p&gt;将 cntext-2.1.5-py3-none-any.whl 放置于桌面，打开 &lt;strong&gt;cmd&lt;/strong&gt;  (苹果电脑打开terminal)， 输入cd desktop&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd desktop
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;之后在 &lt;strong&gt;cmd&lt;/strong&gt;  (苹果电脑打开terminal) 中使用pip3 安装&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install cntext-2.1.5-py3-none-any.whl
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;文末有 ***cntext-2.1.5-py3-none-any.whl ***获取方式&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;32-训练word2vec&#34;&gt;3.2 训练word2vec&lt;/h3&gt;
+&lt;p&gt;cntext 训练时候Word2Vec模型参数&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;corpus_file&lt;/strong&gt;&lt;/em&gt; 语料txt文件路径； 刚刚准备的 &lt;em&gt;&lt;strong&gt;B站用户签名语料.txt&lt;/strong&gt;&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;window_size&lt;/strong&gt;&lt;/em&gt;   上下文窗口大小(上下文语义)&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;vector_size&lt;/strong&gt;&lt;/em&gt; 向量维度数&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;chunksize&lt;/strong&gt;&lt;/em&gt;  每次语料txt文件中读取的行数&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;lang&lt;/strong&gt;&lt;/em&gt; 语言的语言&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# cntext2.1.5未公开，获取2.1.5请阅读文末获取方式&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;Word2Vec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;B站用户签名语料.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                    &lt;span class=&#34;n&#34;&gt;window&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                    &lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                    &lt;span class=&#34;n&#34;&gt;window_size&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;
+                    &lt;span class=&#34;n&#34;&gt;lang&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;chinese&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Mac(Linux) System, Enable Parallel Processing
+Cache output/B站签名_cache.txt Not Found or Empty, Preprocessing Corpus
+
+Reading Preprocessed Corpus from output/B站签名_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 275 s. 
+Output Saved To: output/B站签名-Word2Vec.200.15.bin
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;耗时 275s， 模型训练完成！需要注意， output文件夹内有&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;B站签名-Word2Vec.200.15.bin&lt;/strong&gt;&lt;/em&gt;        模型文件&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;B站签名_cache.txt&lt;/strong&gt;&lt;/em&gt;                  训练缓存文件&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四使用word2vec&#34;&gt;四、使用word2vec&lt;/h2&gt;
+&lt;h3 id=&#34;41-读取模型&#34;&gt;4.1 读取模型&lt;/h3&gt;
+&lt;p&gt;使用gensim录入模型 &lt;em&gt;&lt;strong&gt;B站用户签名语料-Word2Vec.100.15.bin&lt;/strong&gt;&lt;/em&gt; ,&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;gensim.models&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;KeyedVectors&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/B站签名-Word2Vec.200.15.bin&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;模型词汇量: &amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;模型词汇量:  244491
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;42-查询某词的词向量&#34;&gt;4.2 查询某词的词向量&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;w2v[&amp;#39;高冷&amp;#39;]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;array([ 1.05914783e+00,  4.51383203e-01, -1.34764791e+00, -9.42894161e-01,
+        5.28594255e-01,  8.05936933e-01, -1.59555584e-01,  2.42719814e-01,
+       -6.04722261e-01, -9.25606042e-02,  9.69056904e-01,  8.85407850e-02,
+       -1.67851341e+00,  3.26303959e-01,  6.52321458e-01,  5.77043407e-02,
+       -4.24268842e-02, -2.64299393e-01,  5.24512887e-01,  2.15208486e-01,
+       -2.09263057e-01, -4.55661058e-01,  8.78976703e-01, -1.24363959e+00,
+       -1.71196852e-02, -9.03965294e-01, -6.52690083e-02,  2.47650072e-02,
+       -2.82155067e-01,  9.09134224e-02,  9.13890541e-01, -1.40862179e+00,
+       -1.31956196e+00, -5.29659569e-01,  1.23605825e-01, -4.00647372e-01,
+        4.94630456e-01,  2.81695575e-01,  1.71391249e-01,  1.23341233e-01,
+       -7.70617545e-01,  5.81079908e-02, -4.89788234e-01,  2.14924827e-01,
+       -7.73121595e-01, -6.66803181e-01, -1.31617844e+00,  1.18301921e-01,
+        6.22543573e-01, -8.07524860e-01, -4.36694354e-01,  2.95946062e-01,
+        3.10503364e-01, -4.93252903e-01,  1.27962172e-01,  1.97043195e-01,
+        6.61175609e-01, -1.80842638e-01,  1.13270843e+00, -5.34760773e-01,
+        9.13145125e-01,  5.48191011e-01,  7.68198539e-03,  1.17955339e+00,
+       -1.96015276e-02,  9.14144278e-01, -9.06695664e-01,  4.39731702e-02,
+       -3.87832075e-01,  4.72544342e-01,  4.95476156e-01, -1.21628530e-01,
+       -4.41256445e-03,  1.82375580e-01, -7.00045705e-01,  4.34259921e-01,
+        2.00862193e+00, -5.61490715e-01, -7.67120644e-02,  5.78972995e-01,
+       -7.80492842e-01, -5.01321375e-01, -5.50926566e-01, -8.99926543e-01,
+       -1.66289490e-02,  1.77679747e-01,  4.23889339e-01,  1.40111005e+00,
+       -7.63866380e-02, -8.86032939e-01, -1.08106744e+00,  3.31989765e-01,
+        3.78885448e-01, -1.23718023e+00,  2.09680721e-01,  2.39727721e-01,
+        2.46049106e-01,  2.32866824e-01, -6.65583909e-02,  1.09542537e+00,
+       -5.44713318e-01,  7.68220305e-01, -1.56612769e-02,  3.48719925e-01,
+        2.91741371e-01,  1.88722059e-01, -2.12467611e-01,  8.20825279e-01,
+       -1.74725935e-01, -8.05535197e-01, -1.41250715e-01, -7.84179568e-01,
+       -8.00660312e-01, -1.12991728e-01, -2.16052849e-02, -1.07448053e+00,
+        2.53552765e-01, -1.28611282e-01, -1.16868567e+00, -6.08788371e-01,
+        4.30017859e-02, -5.11076570e-01,  6.43583059e-01,  3.11966389e-01,
+       -1.63116843e-01,  3.58751595e-01,  5.16831456e-03,  5.09353161e-01,
+        1.61675465e+00,  6.42039478e-01, -1.07160270e+00, -2.34255135e-01,
+       -7.27983773e-01,  1.20267116e-01, -1.11912894e+00,  1.49096262e+00,
+       -1.48015752e-01,  6.85670376e-02, -1.70197403e+00,  2.16349974e-01,
+        1.32302952e+00,  5.39037228e-01, -8.35760951e-01, -7.43441284e-01,
+        6.55625939e-01, -5.07541537e-01, -5.40877655e-02, -5.38533449e-01,
+       -2.57937461e-01,  8.67499232e-01, -6.53150141e-01, -1.32043970e+00,
+       -5.84588587e-01,  1.24599323e-01, -8.35753500e-01, -2.68954426e-01,
+        3.67542468e-02,  1.61010170e+00,  7.27127492e-01,  1.35515738e+00,
+       -2.76694775e-01,  2.69006938e-01,  4.81265247e-01, -6.30314708e-01,
+       -3.66074532e-01,  3.03934813e-01,  1.92417920e+00,  4.67498928e-01,
+       -1.83004290e-01,  1.01947844e+00, -5.52489638e-01,  1.59275869e-03,
+        4.84914184e-01,  1.33545566e+00, -9.75372076e-01,  2.25273356e-01,
+        6.02540433e-01,  7.07564950e-01,  1.36330187e-01, -4.34346311e-02,
+        4.53452200e-01,  1.58401883e+00, -6.68083191e-01, -1.30876124e+00,
+       -1.19713686e-01, -9.80615169e-02, -2.04207993e+00,  8.29822361e-01,
+       -4.08902228e-01, -4.70339246e-02,  1.00982547e+00,  1.64084151e-01,
+        4.62104648e-01, -2.28677273e-01, -5.95047355e-01, -2.71069705e-01,
+        6.27930462e-01, -8.85554433e-01, -1.79520398e-01, -3.44800770e-01],
+      dtype=float32)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;43-查看近义词&#34;&gt;4.3 查看近义词&lt;/h3&gt;
+&lt;p&gt;通过给定词语，查看其近义词，可以了解模型训练的好坏。语义捕捉的合理，说明语料合理，模型训练的好。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 列表中可以传入任意多个词，这里大邓偷懒，都只传入了一两个词&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;女汉纸&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;汉纸&amp;#39;, 0.8672055602073669),
+ (&amp;#39;腹黑&amp;#39;, 0.8662189841270447),
+ (&amp;#39;文艺清新&amp;#39;, 0.849425733089447),
+ (&amp;#39;闷骚&amp;#39;, 0.8427557945251465),
+ (&amp;#39;神经大条&amp;#39;, 0.8329920768737793),
+ (&amp;#39;汉子&amp;#39;, 0.8232208490371704),
+ (&amp;#39;宅基&amp;#39;, 0.8224843144416809),
+ (&amp;#39;猥琐大叔&amp;#39;, 0.8214939832687378),
+ (&amp;#39;偶是&amp;#39;, 0.8164061307907104),
+ (&amp;#39;腐宅&amp;#39;, 0.8117423057556152),
+ (&amp;#39;宅女腐女&amp;#39;, 0.8073472380638123),
+ (&amp;#39;软妹&amp;#39;, 0.7999386787414551),
+ (&amp;#39;萌妹&amp;#39;, 0.7999064326286316),
+ (&amp;#39;小女生&amp;#39;, 0.7998836040496826),
+ (&amp;#39;天蝎女&amp;#39;, 0.7971166372299194),
+ (&amp;#39;傲娇受&amp;#39;, 0.7964810132980347),
+ (&amp;#39;天蝎&amp;#39;, 0.7957624197006226),
+ (&amp;#39;天蝎座&amp;#39;, 0.7915034890174866),
+ (&amp;#39;女纸&amp;#39;, 0.7912994623184204),
+ (&amp;#39;双鱼座&amp;#39;, 0.7900263667106628)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;犯二&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;脱线&amp;#39;, 0.8355404734611511),
+ (&amp;#39;神经质&amp;#39;, 0.8035165667533875),
+ (&amp;#39;神经大条&amp;#39;, 0.7816897630691528),
+ (&amp;#39;发神经&amp;#39;, 0.780509352684021),
+ (&amp;#39;人来疯&amp;#39;, 0.7794896960258484),
+ (&amp;#39;精分&amp;#39;, 0.7705598473548889),
+ (&amp;#39;毒舌&amp;#39;, 0.7692195773124695),
+ (&amp;#39;犯病&amp;#39;, 0.7659722566604614),
+ (&amp;#39;闷骚&amp;#39;, 0.7620697617530823),
+ (&amp;#39;迷糊&amp;#39;, 0.7608135342597961),
+ (&amp;#39;智商在线&amp;#39;, 0.7525709867477417),
+ (&amp;#39;抽疯&amp;#39;, 0.7491970658302307),
+ (&amp;#39;欢脱&amp;#39;, 0.7444456219673157),
+ (&amp;#39;深井&amp;#39;, 0.7416326403617859),
+ (&amp;#39;抽风&amp;#39;, 0.7321327924728394),
+ (&amp;#39;精分患者&amp;#39;, 0.7319940328598022),
+ (&amp;#39;装嫩&amp;#39;, 0.7267141342163086),
+ (&amp;#39;蒙圈&amp;#39;, 0.7262043952941895),
+ (&amp;#39;神经&amp;#39;, 0.7257982492446899),
+ (&amp;#39;假正经&amp;#39;, 0.7215201258659363)]
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;内向&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;外向&amp;#39;, 0.8474423885345459),
+ (&amp;#39;慢热&amp;#39;, 0.8272333741188049),
+ (&amp;#39;不爱说话&amp;#39;, 0.8249834775924683),
+ (&amp;#39;不善言辞&amp;#39;, 0.80635666847229),
+ (&amp;#39;腼腆&amp;#39;, 0.7940059304237366),
+ (&amp;#39;孤僻&amp;#39;, 0.7929618954658508),
+ (&amp;#39;开朗&amp;#39;, 0.7585728168487549),
+ (&amp;#39;闷骚&amp;#39;, 0.745791494846344),
+ (&amp;#39;神经质&amp;#39;, 0.7454176545143127),
+ (&amp;#39;多愁善感&amp;#39;, 0.7348753809928894),
+ (&amp;#39;胆小&amp;#39;, 0.7213962078094482),
+ (&amp;#39;沉默寡言&amp;#39;, 0.7145323157310486),
+ (&amp;#39;随和&amp;#39;, 0.7115553617477417),
+ (&amp;#39;敏感&amp;#39;, 0.7103193402290344),
+ (&amp;#39;水瓶座&amp;#39;, 0.7092751264572144),
+ (&amp;#39;大大咧咧&amp;#39;, 0.7085798382759094),
+ (&amp;#39;高冷&amp;#39;, 0.7084994912147522),
+ (&amp;#39;性格开朗&amp;#39;, 0.7064590454101562),
+ (&amp;#39;耿直&amp;#39;, 0.7048951983451843),
+ (&amp;#39;做作&amp;#39;, 0.704330325126648)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;五获取资源&#34;&gt;五、获取资源&lt;/h2&gt;
+&lt;p&gt;内容整理不易， 本文内容分免费和付费部分。 免费部分可以直接下载数据、构建语料、使用word2vec模型。&lt;/p&gt;
+&lt;p&gt;付费部分主要是cntext，用于训练 word2vec 模型。 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;- 免费     1亿用户数据集 https://www.kaggle.com/datasets/beats0/bilibili-user
+
+- 免费     B站签名-Word2Vec.200.15.bin  链接: https://pan.baidu.com/s/1ILVwu6gGGGP0IHv-vsjgvw?pwd=em99 提取码: em99 
+
+- 100元   获得cntext-2.1.5-py3-none-any.whl
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;相关内容&#34;&gt;相关内容&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://cntext.readthedocs.io/&#34;&gt;文本分析库cntext2.x使用手册 https://cntext.readthedocs.io/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/&#34;&gt;实验 | 使用Stanford Glove代码训练中文语料的Glove模型&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/&#34;&gt;词向量 | 使用人民网领导留言板语料训练Word2Vec模型&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-11-20-word2vec-by-year-by-province/&#34;&gt;使用 5000w 专利申请数据集按年份(按省份)训练词向量&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-04-16-douban-movie-1000w-ratings-comments-dataset/&#34;&gt;使用 1000w 条豆瓣影评训练 Word2Vec&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/&#34;&gt;词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/&#34;&gt;转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/&#34;&gt;OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      <content:encoded><![CDATA[<h2 id="一用户签名">一、用户签名</h2>
+<p>1亿B站用户群体十分庞大，文本中蕴含着这个群体的认知信息(如兴趣、身份、座右铭等)，如果能用签名训练word2vec词向量模型，说不定就有利用这个模型，对每个用户签名进行量化,  对用户进行分类。 本文要解决</p>
+<ul>
+<li>构建语料训练出模型</li>
+<li>简单看看模型训练效果</li>
+</ul>
+<p><br><br></p>
+<h2 id="二准备语料">二、准备语料</h2>
+<p>Kaggle网有1亿B站用户数据集，下载地址</p>
+<blockquote>
+<p><a href="https://www.kaggle.com/datasets/beats0/bilibili-user">https://www.kaggle.com/datasets/beats0/bilibili-user</a></p>
+</blockquote>
+<p>之前分享过 <a href="https://textdata.cn/blog/2023-05-10-100m-bilibili-user-info-dataset/">数据集 | 哔哩哔哩 1 亿用户数据</a> ， 阅读此文可以熟悉pandas的一些基本操作，如数据读取、文本操作等。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 从kaggle下载B站1亿用户数据</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1"># 查看前5行</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;User.csv&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p>Run</p>
+<p><img loading="lazy" src="img/df2.png" alt=""  />
+</p>
+<br>
+<p>将 9093092 个非空签名汇总到 <em><strong>B站用户签名语料.txt</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;B站签名.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">raw_text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;sign&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">))</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">raw_text</span><span class="p">)</span>
+</code></pre></div><p>代码运行后，得到 320M  的 <em><strong>B站签名.txt</strong></em>  。</p>
+<p><br><br></p>
+<h2 id="三训练-word2vec">三、训练 Word2Vec</h2>
+<p>我使用的自己 <strong>未公开</strong> 的cntext 2.1.5版本， Bug频出，等调整好了再公开。</p>
+<h3 id="31-安装cntext">3.1 安装cntext</h3>
+<p>将 cntext-2.1.5-py3-none-any.whl 放置于桌面，打开 <strong>cmd</strong>  (苹果电脑打开terminal)， 输入cd desktop</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+</code></pre></div><p>之后在 <strong>cmd</strong>  (苹果电脑打开terminal) 中使用pip3 安装</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install cntext-2.1.5-py3-none-any.whl
+</code></pre></div><p>文末有 ***cntext-2.1.5-py3-none-any.whl ***获取方式</p>
+<br>
+<h3 id="32-训练word2vec">3.2 训练word2vec</h3>
+<p>cntext 训练时候Word2Vec模型参数</p>
+<ul>
+<li><em><strong>corpus_file</strong></em> 语料txt文件路径； 刚刚准备的 <em><strong>B站用户签名语料.txt</strong></em></li>
+<li><em><strong>window_size</strong></em>   上下文窗口大小(上下文语义)</li>
+<li><em><strong>vector_size</strong></em> 向量维度数</li>
+<li><em><strong>chunksize</strong></em>  每次语料txt文件中读取的行数</li>
+<li><em><strong>lang</strong></em> 语言的语言</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># cntext2.1.5未公开，获取2.1.5请阅读文末获取方式</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Word2Vec</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;B站用户签名语料.txt&#39;</span><span class="p">,</span> 
+                    <span class="n">window</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span> 
+                    <span class="n">vector_size</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span> 
+                    <span class="n">window_size</span> <span class="o">=</span> <span class="mi">15</span>
+                    <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Mac(Linux) System, Enable Parallel Processing
+Cache output/B站签名_cache.txt Not Found or Empty, Preprocessing Corpus
+
+Reading Preprocessed Corpus from output/B站签名_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 275 s. 
+Output Saved To: output/B站签名-Word2Vec.200.15.bin
+</code></pre></div><p>耗时 275s， 模型训练完成！需要注意， output文件夹内有</p>
+<ul>
+<li><em><strong>B站签名-Word2Vec.200.15.bin</strong></em>        模型文件</li>
+<li><em><strong>B站签名_cache.txt</strong></em>                  训练缓存文件</li>
+</ul>
+<p><br><br></p>
+<h2 id="四使用word2vec">四、使用word2vec</h2>
+<h3 id="41-读取模型">4.1 读取模型</h3>
+<p>使用gensim录入模型 <em><strong>B站用户签名语料-Word2Vec.100.15.bin</strong></em> ,</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">gensim.models</span> <span class="kn">import</span> <span class="n">KeyedVectors</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;output/B站签名-Word2Vec.200.15.bin&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;模型词汇量: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">w2v</span><span class="p">))</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">模型词汇量:  244491
+</code></pre></div><br>
+<h3 id="42-查询某词的词向量">4.2 查询某词的词向量</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">w2v[&#39;高冷&#39;]
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([ 1.05914783e+00,  4.51383203e-01, -1.34764791e+00, -9.42894161e-01,
+        5.28594255e-01,  8.05936933e-01, -1.59555584e-01,  2.42719814e-01,
+       -6.04722261e-01, -9.25606042e-02,  9.69056904e-01,  8.85407850e-02,
+       -1.67851341e+00,  3.26303959e-01,  6.52321458e-01,  5.77043407e-02,
+       -4.24268842e-02, -2.64299393e-01,  5.24512887e-01,  2.15208486e-01,
+       -2.09263057e-01, -4.55661058e-01,  8.78976703e-01, -1.24363959e+00,
+       -1.71196852e-02, -9.03965294e-01, -6.52690083e-02,  2.47650072e-02,
+       -2.82155067e-01,  9.09134224e-02,  9.13890541e-01, -1.40862179e+00,
+       -1.31956196e+00, -5.29659569e-01,  1.23605825e-01, -4.00647372e-01,
+        4.94630456e-01,  2.81695575e-01,  1.71391249e-01,  1.23341233e-01,
+       -7.70617545e-01,  5.81079908e-02, -4.89788234e-01,  2.14924827e-01,
+       -7.73121595e-01, -6.66803181e-01, -1.31617844e+00,  1.18301921e-01,
+        6.22543573e-01, -8.07524860e-01, -4.36694354e-01,  2.95946062e-01,
+        3.10503364e-01, -4.93252903e-01,  1.27962172e-01,  1.97043195e-01,
+        6.61175609e-01, -1.80842638e-01,  1.13270843e+00, -5.34760773e-01,
+        9.13145125e-01,  5.48191011e-01,  7.68198539e-03,  1.17955339e+00,
+       -1.96015276e-02,  9.14144278e-01, -9.06695664e-01,  4.39731702e-02,
+       -3.87832075e-01,  4.72544342e-01,  4.95476156e-01, -1.21628530e-01,
+       -4.41256445e-03,  1.82375580e-01, -7.00045705e-01,  4.34259921e-01,
+        2.00862193e+00, -5.61490715e-01, -7.67120644e-02,  5.78972995e-01,
+       -7.80492842e-01, -5.01321375e-01, -5.50926566e-01, -8.99926543e-01,
+       -1.66289490e-02,  1.77679747e-01,  4.23889339e-01,  1.40111005e+00,
+       -7.63866380e-02, -8.86032939e-01, -1.08106744e+00,  3.31989765e-01,
+        3.78885448e-01, -1.23718023e+00,  2.09680721e-01,  2.39727721e-01,
+        2.46049106e-01,  2.32866824e-01, -6.65583909e-02,  1.09542537e+00,
+       -5.44713318e-01,  7.68220305e-01, -1.56612769e-02,  3.48719925e-01,
+        2.91741371e-01,  1.88722059e-01, -2.12467611e-01,  8.20825279e-01,
+       -1.74725935e-01, -8.05535197e-01, -1.41250715e-01, -7.84179568e-01,
+       -8.00660312e-01, -1.12991728e-01, -2.16052849e-02, -1.07448053e+00,
+        2.53552765e-01, -1.28611282e-01, -1.16868567e+00, -6.08788371e-01,
+        4.30017859e-02, -5.11076570e-01,  6.43583059e-01,  3.11966389e-01,
+       -1.63116843e-01,  3.58751595e-01,  5.16831456e-03,  5.09353161e-01,
+        1.61675465e+00,  6.42039478e-01, -1.07160270e+00, -2.34255135e-01,
+       -7.27983773e-01,  1.20267116e-01, -1.11912894e+00,  1.49096262e+00,
+       -1.48015752e-01,  6.85670376e-02, -1.70197403e+00,  2.16349974e-01,
+        1.32302952e+00,  5.39037228e-01, -8.35760951e-01, -7.43441284e-01,
+        6.55625939e-01, -5.07541537e-01, -5.40877655e-02, -5.38533449e-01,
+       -2.57937461e-01,  8.67499232e-01, -6.53150141e-01, -1.32043970e+00,
+       -5.84588587e-01,  1.24599323e-01, -8.35753500e-01, -2.68954426e-01,
+        3.67542468e-02,  1.61010170e+00,  7.27127492e-01,  1.35515738e+00,
+       -2.76694775e-01,  2.69006938e-01,  4.81265247e-01, -6.30314708e-01,
+       -3.66074532e-01,  3.03934813e-01,  1.92417920e+00,  4.67498928e-01,
+       -1.83004290e-01,  1.01947844e+00, -5.52489638e-01,  1.59275869e-03,
+        4.84914184e-01,  1.33545566e+00, -9.75372076e-01,  2.25273356e-01,
+        6.02540433e-01,  7.07564950e-01,  1.36330187e-01, -4.34346311e-02,
+        4.53452200e-01,  1.58401883e+00, -6.68083191e-01, -1.30876124e+00,
+       -1.19713686e-01, -9.80615169e-02, -2.04207993e+00,  8.29822361e-01,
+       -4.08902228e-01, -4.70339246e-02,  1.00982547e+00,  1.64084151e-01,
+        4.62104648e-01, -2.28677273e-01, -5.95047355e-01, -2.71069705e-01,
+        6.27930462e-01, -8.85554433e-01, -1.79520398e-01, -3.44800770e-01],
+      dtype=float32)
+</code></pre></div><br>
+<h3 id="43-查看近义词">4.3 查看近义词</h3>
+<p>通过给定词语，查看其近义词，可以了解模型训练的好坏。语义捕捉的合理，说明语料合理，模型训练的好。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 列表中可以传入任意多个词，这里大邓偷懒，都只传入了一两个词</span>
+<span class="n">w2v</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;女汉纸&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;汉纸&#39;, 0.8672055602073669),
+ (&#39;腹黑&#39;, 0.8662189841270447),
+ (&#39;文艺清新&#39;, 0.849425733089447),
+ (&#39;闷骚&#39;, 0.8427557945251465),
+ (&#39;神经大条&#39;, 0.8329920768737793),
+ (&#39;汉子&#39;, 0.8232208490371704),
+ (&#39;宅基&#39;, 0.8224843144416809),
+ (&#39;猥琐大叔&#39;, 0.8214939832687378),
+ (&#39;偶是&#39;, 0.8164061307907104),
+ (&#39;腐宅&#39;, 0.8117423057556152),
+ (&#39;宅女腐女&#39;, 0.8073472380638123),
+ (&#39;软妹&#39;, 0.7999386787414551),
+ (&#39;萌妹&#39;, 0.7999064326286316),
+ (&#39;小女生&#39;, 0.7998836040496826),
+ (&#39;天蝎女&#39;, 0.7971166372299194),
+ (&#39;傲娇受&#39;, 0.7964810132980347),
+ (&#39;天蝎&#39;, 0.7957624197006226),
+ (&#39;天蝎座&#39;, 0.7915034890174866),
+ (&#39;女纸&#39;, 0.7912994623184204),
+ (&#39;双鱼座&#39;, 0.7900263667106628)]
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;犯二&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;脱线&#39;, 0.8355404734611511),
+ (&#39;神经质&#39;, 0.8035165667533875),
+ (&#39;神经大条&#39;, 0.7816897630691528),
+ (&#39;发神经&#39;, 0.780509352684021),
+ (&#39;人来疯&#39;, 0.7794896960258484),
+ (&#39;精分&#39;, 0.7705598473548889),
+ (&#39;毒舌&#39;, 0.7692195773124695),
+ (&#39;犯病&#39;, 0.7659722566604614),
+ (&#39;闷骚&#39;, 0.7620697617530823),
+ (&#39;迷糊&#39;, 0.7608135342597961),
+ (&#39;智商在线&#39;, 0.7525709867477417),
+ (&#39;抽疯&#39;, 0.7491970658302307),
+ (&#39;欢脱&#39;, 0.7444456219673157),
+ (&#39;深井&#39;, 0.7416326403617859),
+ (&#39;抽风&#39;, 0.7321327924728394),
+ (&#39;精分患者&#39;, 0.7319940328598022),
+ (&#39;装嫩&#39;, 0.7267141342163086),
+ (&#39;蒙圈&#39;, 0.7262043952941895),
+ (&#39;神经&#39;, 0.7257982492446899),
+ (&#39;假正经&#39;, 0.7215201258659363)]
+
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;内向&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;外向&#39;, 0.8474423885345459),
+ (&#39;慢热&#39;, 0.8272333741188049),
+ (&#39;不爱说话&#39;, 0.8249834775924683),
+ (&#39;不善言辞&#39;, 0.80635666847229),
+ (&#39;腼腆&#39;, 0.7940059304237366),
+ (&#39;孤僻&#39;, 0.7929618954658508),
+ (&#39;开朗&#39;, 0.7585728168487549),
+ (&#39;闷骚&#39;, 0.745791494846344),
+ (&#39;神经质&#39;, 0.7454176545143127),
+ (&#39;多愁善感&#39;, 0.7348753809928894),
+ (&#39;胆小&#39;, 0.7213962078094482),
+ (&#39;沉默寡言&#39;, 0.7145323157310486),
+ (&#39;随和&#39;, 0.7115553617477417),
+ (&#39;敏感&#39;, 0.7103193402290344),
+ (&#39;水瓶座&#39;, 0.7092751264572144),
+ (&#39;大大咧咧&#39;, 0.7085798382759094),
+ (&#39;高冷&#39;, 0.7084994912147522),
+ (&#39;性格开朗&#39;, 0.7064590454101562),
+ (&#39;耿直&#39;, 0.7048951983451843),
+ (&#39;做作&#39;, 0.704330325126648)]
+</code></pre></div><br>
+<br>
+<h2 id="五获取资源">五、获取资源</h2>
+<p>内容整理不易， 本文内容分免费和付费部分。 免费部分可以直接下载数据、构建语料、使用word2vec模型。</p>
+<p>付费部分主要是cntext，用于训练 word2vec 模型。 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 免费     1亿用户数据集 https://www.kaggle.com/datasets/beats0/bilibili-user
+
+- 免费     B站签名-Word2Vec.200.15.bin  链接: https://pan.baidu.com/s/1ILVwu6gGGGP0IHv-vsjgvw?pwd=em99 提取码: em99 
+
+- 100元   获得cntext-2.1.5-py3-none-any.whl
+</code></pre></div><p><br><br></p>
+<h2 id="相关内容">相关内容</h2>
+<ul>
+<li><a href="https://cntext.readthedocs.io/">文本分析库cntext2.x使用手册 https://cntext.readthedocs.io/</a></li>
+<li><a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用Stanford Glove代码训练中文语料的Glove模型</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">词向量 | 使用人民网领导留言板语料训练Word2Vec模型</a></li>
+<li><a href="https://textdata.cn/blog/2023-11-20-word2vec-by-year-by-province/">使用 5000w 专利申请数据集按年份(按省份)训练词向量</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-16-douban-movie-1000w-ratings-comments-dataset/">使用 1000w 条豆瓣影评训练 Word2Vec</a></li>
+<li><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></li>
+<li><a href="https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/">转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用</a></li>
+<li><a href="https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/">OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>资源 | 不同版本Chrome适配的chromedriver下载链接</title>
       <link>https://textdata.cn/blog/2025-03-24-setting-chromedriver-environment-for-selenium/</link>
@@ -4392,852 +5240,6 @@ Loading word2vec model...
 </ul>
 <p>两个推文中使用的语料都是好几个G的语料txt， 基本上语义捕捉的都很完美。但前几天 <a href="https://textdata.cn/blog/2023-11-12-using-100m-bilibili-user-sign-data-to-training-word2vec/">词向量 | 使用1亿B站用户签名训练word2vec词向量</a> 中语料只有302M， 但语义信息捕捉的很好。</p>
 <p><br><br></p>
-]]></content:encoded>
-    </item>
-    
-    <item>
-      <title>词向量 | 使用1亿B站用户签名训练word2vec词向量</title>
-      <link>https://textdata.cn/blog/2023-11-12-using-100m-bilibili-user-sign-data-to-training-word2vec/</link>
-      <pubDate>Sun, 12 Nov 2023 00:00:00 +0000</pubDate>
-      
-      <guid>/blog/2023-11-12-using-100m-bilibili-user-sign-data-to-training-word2vec/</guid>
-      <description>&lt;h2 id=&#34;一用户签名&#34;&gt;一、用户签名&lt;/h2&gt;
-&lt;p&gt;1亿B站用户群体十分庞大，文本中蕴含着这个群体的认知信息(如兴趣、身份、座右铭等)，如果能用签名训练word2vec词向量模型，说不定就有利用这个模型，对每个用户签名进行量化,  对用户进行分类。 本文要解决&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;构建语料训练出模型&lt;/li&gt;
-&lt;li&gt;简单看看模型训练效果&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;二准备语料&#34;&gt;二、准备语料&lt;/h2&gt;
-&lt;p&gt;Kaggle网有1亿B站用户数据集，下载地址&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;&lt;a href=&#34;https://www.kaggle.com/datasets/beats0/bilibili-user&#34;&gt;https://www.kaggle.com/datasets/beats0/bilibili-user&lt;/a&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;之前分享过 &lt;a href=&#34;https://textdata.cn/blog/2023-05-10-100m-bilibili-user-info-dataset/&#34;&gt;数据集 | 哔哩哔哩 1 亿用户数据&lt;/a&gt; ， 阅读此文可以熟悉pandas的一些基本操作，如数据读取、文本操作等。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 从kaggle下载B站1亿用户数据&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
-
-&lt;span class=&#34;c1&#34;&gt;# 查看前5行&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;User.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;nrows&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df2.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;p&gt;将 9093092 个非空签名汇总到 &lt;em&gt;&lt;strong&gt;B站用户签名语料.txt&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;B站签名.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;w&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;sign&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fillna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;代码运行后，得到 320M  的 &lt;em&gt;&lt;strong&gt;B站签名.txt&lt;/strong&gt;&lt;/em&gt;  。&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;三训练-word2vec&#34;&gt;三、训练 Word2Vec&lt;/h2&gt;
-&lt;p&gt;我使用的自己 &lt;strong&gt;未公开&lt;/strong&gt; 的cntext 2.1.5版本， Bug频出，等调整好了再公开。&lt;/p&gt;
-&lt;h3 id=&#34;31-安装cntext&#34;&gt;3.1 安装cntext&lt;/h3&gt;
-&lt;p&gt;将 cntext-2.1.5-py3-none-any.whl 放置于桌面，打开 &lt;strong&gt;cmd&lt;/strong&gt;  (苹果电脑打开terminal)， 输入cd desktop&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd desktop
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;之后在 &lt;strong&gt;cmd&lt;/strong&gt;  (苹果电脑打开terminal) 中使用pip3 安装&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install cntext-2.1.5-py3-none-any.whl
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;文末有 ***cntext-2.1.5-py3-none-any.whl ***获取方式&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;32-训练word2vec&#34;&gt;3.2 训练word2vec&lt;/h3&gt;
-&lt;p&gt;cntext 训练时候Word2Vec模型参数&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;corpus_file&lt;/strong&gt;&lt;/em&gt; 语料txt文件路径； 刚刚准备的 &lt;em&gt;&lt;strong&gt;B站用户签名语料.txt&lt;/strong&gt;&lt;/em&gt;&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;window_size&lt;/strong&gt;&lt;/em&gt;   上下文窗口大小(上下文语义)&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;vector_size&lt;/strong&gt;&lt;/em&gt; 向量维度数&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;chunksize&lt;/strong&gt;&lt;/em&gt;  每次语料txt文件中读取的行数&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;lang&lt;/strong&gt;&lt;/em&gt; 语言的语言&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# cntext2.1.5未公开，获取2.1.5请阅读文末获取方式&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;Word2Vec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;B站用户签名语料.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
-                    &lt;span class=&#34;n&#34;&gt;window&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
-                    &lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
-                    &lt;span class=&#34;n&#34;&gt;window_size&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;
-                    &lt;span class=&#34;n&#34;&gt;lang&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;chinese&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Mac(Linux) System, Enable Parallel Processing
-Cache output/B站签名_cache.txt Not Found or Empty, Preprocessing Corpus
-
-Reading Preprocessed Corpus from output/B站签名_cache.txt
-Start Training Word2Vec
-Word2Vec Training Cost 275 s. 
-Output Saved To: output/B站签名-Word2Vec.200.15.txt
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;耗时 275s， 模型训练完成！需要注意， output文件夹内有&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;B站签名-Word2Vec.200.15.txt&lt;/strong&gt;&lt;/em&gt;        模型文件&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;B站签名-Word2Vec.200.15.bin&lt;/strong&gt;&lt;/em&gt;        模型文件&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;B站签名_cache.txt&lt;/strong&gt;&lt;/em&gt;                  训练缓存文件&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;txt 和 bin 内容方面完全相同，只是格式不同。&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;四使用word2vec&#34;&gt;四、使用word2vec&lt;/h2&gt;
-&lt;h3 id=&#34;41-读取模型&#34;&gt;4.1 读取模型&lt;/h3&gt;
-&lt;p&gt;使用gensim录入模型 &lt;em&gt;&lt;strong&gt;B站用户签名语料-Word2Vec.100.15.txt&lt;/strong&gt;&lt;/em&gt; ,&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;gensim.models&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;KeyedVectors&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/B站签名-Word2Vec.200.15.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;# w2v = ct.load_w2v(&amp;#39;output/B站签名-Word2Vec.200.15.bin&amp;#39;)&lt;/span&gt;
-
-&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;模型词汇量: &amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;模型词汇量:  244491
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;42-查询某词的词向量&#34;&gt;4.2 查询某词的词向量&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;w2v[&amp;#39;高冷&amp;#39;]
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;array([ 1.05914783e+00,  4.51383203e-01, -1.34764791e+00, -9.42894161e-01,
-        5.28594255e-01,  8.05936933e-01, -1.59555584e-01,  2.42719814e-01,
-       -6.04722261e-01, -9.25606042e-02,  9.69056904e-01,  8.85407850e-02,
-       -1.67851341e+00,  3.26303959e-01,  6.52321458e-01,  5.77043407e-02,
-       -4.24268842e-02, -2.64299393e-01,  5.24512887e-01,  2.15208486e-01,
-       -2.09263057e-01, -4.55661058e-01,  8.78976703e-01, -1.24363959e+00,
-       -1.71196852e-02, -9.03965294e-01, -6.52690083e-02,  2.47650072e-02,
-       -2.82155067e-01,  9.09134224e-02,  9.13890541e-01, -1.40862179e+00,
-       -1.31956196e+00, -5.29659569e-01,  1.23605825e-01, -4.00647372e-01,
-        4.94630456e-01,  2.81695575e-01,  1.71391249e-01,  1.23341233e-01,
-       -7.70617545e-01,  5.81079908e-02, -4.89788234e-01,  2.14924827e-01,
-       -7.73121595e-01, -6.66803181e-01, -1.31617844e+00,  1.18301921e-01,
-        6.22543573e-01, -8.07524860e-01, -4.36694354e-01,  2.95946062e-01,
-        3.10503364e-01, -4.93252903e-01,  1.27962172e-01,  1.97043195e-01,
-        6.61175609e-01, -1.80842638e-01,  1.13270843e+00, -5.34760773e-01,
-        9.13145125e-01,  5.48191011e-01,  7.68198539e-03,  1.17955339e+00,
-       -1.96015276e-02,  9.14144278e-01, -9.06695664e-01,  4.39731702e-02,
-       -3.87832075e-01,  4.72544342e-01,  4.95476156e-01, -1.21628530e-01,
-       -4.41256445e-03,  1.82375580e-01, -7.00045705e-01,  4.34259921e-01,
-        2.00862193e+00, -5.61490715e-01, -7.67120644e-02,  5.78972995e-01,
-       -7.80492842e-01, -5.01321375e-01, -5.50926566e-01, -8.99926543e-01,
-       -1.66289490e-02,  1.77679747e-01,  4.23889339e-01,  1.40111005e+00,
-       -7.63866380e-02, -8.86032939e-01, -1.08106744e+00,  3.31989765e-01,
-        3.78885448e-01, -1.23718023e+00,  2.09680721e-01,  2.39727721e-01,
-        2.46049106e-01,  2.32866824e-01, -6.65583909e-02,  1.09542537e+00,
-       -5.44713318e-01,  7.68220305e-01, -1.56612769e-02,  3.48719925e-01,
-        2.91741371e-01,  1.88722059e-01, -2.12467611e-01,  8.20825279e-01,
-       -1.74725935e-01, -8.05535197e-01, -1.41250715e-01, -7.84179568e-01,
-       -8.00660312e-01, -1.12991728e-01, -2.16052849e-02, -1.07448053e+00,
-        2.53552765e-01, -1.28611282e-01, -1.16868567e+00, -6.08788371e-01,
-        4.30017859e-02, -5.11076570e-01,  6.43583059e-01,  3.11966389e-01,
-       -1.63116843e-01,  3.58751595e-01,  5.16831456e-03,  5.09353161e-01,
-        1.61675465e+00,  6.42039478e-01, -1.07160270e+00, -2.34255135e-01,
-       -7.27983773e-01,  1.20267116e-01, -1.11912894e+00,  1.49096262e+00,
-       -1.48015752e-01,  6.85670376e-02, -1.70197403e+00,  2.16349974e-01,
-        1.32302952e+00,  5.39037228e-01, -8.35760951e-01, -7.43441284e-01,
-        6.55625939e-01, -5.07541537e-01, -5.40877655e-02, -5.38533449e-01,
-       -2.57937461e-01,  8.67499232e-01, -6.53150141e-01, -1.32043970e+00,
-       -5.84588587e-01,  1.24599323e-01, -8.35753500e-01, -2.68954426e-01,
-        3.67542468e-02,  1.61010170e+00,  7.27127492e-01,  1.35515738e+00,
-       -2.76694775e-01,  2.69006938e-01,  4.81265247e-01, -6.30314708e-01,
-       -3.66074532e-01,  3.03934813e-01,  1.92417920e+00,  4.67498928e-01,
-       -1.83004290e-01,  1.01947844e+00, -5.52489638e-01,  1.59275869e-03,
-        4.84914184e-01,  1.33545566e+00, -9.75372076e-01,  2.25273356e-01,
-        6.02540433e-01,  7.07564950e-01,  1.36330187e-01, -4.34346311e-02,
-        4.53452200e-01,  1.58401883e+00, -6.68083191e-01, -1.30876124e+00,
-       -1.19713686e-01, -9.80615169e-02, -2.04207993e+00,  8.29822361e-01,
-       -4.08902228e-01, -4.70339246e-02,  1.00982547e+00,  1.64084151e-01,
-        4.62104648e-01, -2.28677273e-01, -5.95047355e-01, -2.71069705e-01,
-        6.27930462e-01, -8.85554433e-01, -1.79520398e-01, -3.44800770e-01],
-      dtype=float32)
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;43-查看近义词&#34;&gt;4.3 查看近义词&lt;/h3&gt;
-&lt;p&gt;通过给定词语，查看其近义词，可以了解模型训练的好坏。语义捕捉的合理，说明语料合理，模型训练的好。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 列表中可以传入任意多个词，这里大邓偷懒，都只传入了一两个词&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;女汉纸&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;汉纸&amp;#39;, 0.8672055602073669),
- (&amp;#39;腹黑&amp;#39;, 0.8662189841270447),
- (&amp;#39;文艺清新&amp;#39;, 0.849425733089447),
- (&amp;#39;闷骚&amp;#39;, 0.8427557945251465),
- (&amp;#39;神经大条&amp;#39;, 0.8329920768737793),
- (&amp;#39;汉子&amp;#39;, 0.8232208490371704),
- (&amp;#39;宅基&amp;#39;, 0.8224843144416809),
- (&amp;#39;猥琐大叔&amp;#39;, 0.8214939832687378),
- (&amp;#39;偶是&amp;#39;, 0.8164061307907104),
- (&amp;#39;腐宅&amp;#39;, 0.8117423057556152),
- (&amp;#39;宅女腐女&amp;#39;, 0.8073472380638123),
- (&amp;#39;软妹&amp;#39;, 0.7999386787414551),
- (&amp;#39;萌妹&amp;#39;, 0.7999064326286316),
- (&amp;#39;小女生&amp;#39;, 0.7998836040496826),
- (&amp;#39;天蝎女&amp;#39;, 0.7971166372299194),
- (&amp;#39;傲娇受&amp;#39;, 0.7964810132980347),
- (&amp;#39;天蝎&amp;#39;, 0.7957624197006226),
- (&amp;#39;天蝎座&amp;#39;, 0.7915034890174866),
- (&amp;#39;女纸&amp;#39;, 0.7912994623184204),
- (&amp;#39;双鱼座&amp;#39;, 0.7900263667106628)]
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;犯二&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;脱线&amp;#39;, 0.8355404734611511),
- (&amp;#39;神经质&amp;#39;, 0.8035165667533875),
- (&amp;#39;神经大条&amp;#39;, 0.7816897630691528),
- (&amp;#39;发神经&amp;#39;, 0.780509352684021),
- (&amp;#39;人来疯&amp;#39;, 0.7794896960258484),
- (&amp;#39;精分&amp;#39;, 0.7705598473548889),
- (&amp;#39;毒舌&amp;#39;, 0.7692195773124695),
- (&amp;#39;犯病&amp;#39;, 0.7659722566604614),
- (&amp;#39;闷骚&amp;#39;, 0.7620697617530823),
- (&amp;#39;迷糊&amp;#39;, 0.7608135342597961),
- (&amp;#39;智商在线&amp;#39;, 0.7525709867477417),
- (&amp;#39;抽疯&amp;#39;, 0.7491970658302307),
- (&amp;#39;欢脱&amp;#39;, 0.7444456219673157),
- (&amp;#39;深井&amp;#39;, 0.7416326403617859),
- (&amp;#39;抽风&amp;#39;, 0.7321327924728394),
- (&amp;#39;精分患者&amp;#39;, 0.7319940328598022),
- (&amp;#39;装嫩&amp;#39;, 0.7267141342163086),
- (&amp;#39;蒙圈&amp;#39;, 0.7262043952941895),
- (&amp;#39;神经&amp;#39;, 0.7257982492446899),
- (&amp;#39;假正经&amp;#39;, 0.7215201258659363)]
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;内向&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;外向&amp;#39;, 0.8474423885345459),
- (&amp;#39;慢热&amp;#39;, 0.8272333741188049),
- (&amp;#39;不爱说话&amp;#39;, 0.8249834775924683),
- (&amp;#39;不善言辞&amp;#39;, 0.80635666847229),
- (&amp;#39;腼腆&amp;#39;, 0.7940059304237366),
- (&amp;#39;孤僻&amp;#39;, 0.7929618954658508),
- (&amp;#39;开朗&amp;#39;, 0.7585728168487549),
- (&amp;#39;闷骚&amp;#39;, 0.745791494846344),
- (&amp;#39;神经质&amp;#39;, 0.7454176545143127),
- (&amp;#39;多愁善感&amp;#39;, 0.7348753809928894),
- (&amp;#39;胆小&amp;#39;, 0.7213962078094482),
- (&amp;#39;沉默寡言&amp;#39;, 0.7145323157310486),
- (&amp;#39;随和&amp;#39;, 0.7115553617477417),
- (&amp;#39;敏感&amp;#39;, 0.7103193402290344),
- (&amp;#39;水瓶座&amp;#39;, 0.7092751264572144),
- (&amp;#39;大大咧咧&amp;#39;, 0.7085798382759094),
- (&amp;#39;高冷&amp;#39;, 0.7084994912147522),
- (&amp;#39;性格开朗&amp;#39;, 0.7064590454101562),
- (&amp;#39;耿直&amp;#39;, 0.7048951983451843),
- (&amp;#39;做作&amp;#39;, 0.704330325126648)]
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;br&gt;
-&lt;h2 id=&#34;五获取资源&#34;&gt;五、获取资源&lt;/h2&gt;
-&lt;p&gt;内容整理不易， 本文内容分免费和付费部分。 免费部分可以直接下载数据、构建语料、使用word2vec模型。&lt;/p&gt;
-&lt;p&gt;付费部分主要是cntext，用于训练 word2vec 模型。 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;- 免费 1亿用户数据集 https://www.kaggle.com/datasets/beats0/bilibili-user
-
-- 免费 B站签名-Word2Vec.200.15.bin  链接: https://pan.baidu.com/s/1ILVwu6gGGGP0IHv-vsjgvw?pwd=em99 提取码: em99 
-
-- 100元   获得cntext-2.1.5-py3-none-any.whl
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;相关内容&#34;&gt;相关内容&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://cntext.readthedocs.io/&#34;&gt;文本分析库cntext2.x使用手册 https://cntext.readthedocs.io/&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/&#34;&gt;实验 | 使用Stanford Glove代码训练中文语料的Glove模型&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/&#34;&gt;词向量 | 使用人民网领导留言板语料训练Word2Vec模型&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-11-20-word2vec-by-year-by-province/&#34;&gt;使用 5000w 专利申请数据集按年份(按省份)训练词向量&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-04-16-douban-movie-1000w-ratings-comments-dataset/&#34;&gt;使用 1000w 条豆瓣影评训练 Word2Vec&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/&#34;&gt;词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/&#34;&gt;转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/&#34;&gt;OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-      <content:encoded><![CDATA[<h2 id="一用户签名">一、用户签名</h2>
-<p>1亿B站用户群体十分庞大，文本中蕴含着这个群体的认知信息(如兴趣、身份、座右铭等)，如果能用签名训练word2vec词向量模型，说不定就有利用这个模型，对每个用户签名进行量化,  对用户进行分类。 本文要解决</p>
-<ul>
-<li>构建语料训练出模型</li>
-<li>简单看看模型训练效果</li>
-</ul>
-<p><br><br></p>
-<h2 id="二准备语料">二、准备语料</h2>
-<p>Kaggle网有1亿B站用户数据集，下载地址</p>
-<blockquote>
-<p><a href="https://www.kaggle.com/datasets/beats0/bilibili-user">https://www.kaggle.com/datasets/beats0/bilibili-user</a></p>
-</blockquote>
-<p>之前分享过 <a href="https://textdata.cn/blog/2023-05-10-100m-bilibili-user-info-dataset/">数据集 | 哔哩哔哩 1 亿用户数据</a> ， 阅读此文可以熟悉pandas的一些基本操作，如数据读取、文本操作等。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 从kaggle下载B站1亿用户数据</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="c1"># 查看前5行</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;User.csv&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<span class="n">df</span>
-</code></pre></div><p>Run</p>
-<p><img loading="lazy" src="img/df2.png" alt=""  />
-</p>
-<br>
-<p>将 9093092 个非空签名汇总到 <em><strong>B站用户签名语料.txt</strong></em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;B站签名.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="n">raw_text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;sign&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">))</span>
-    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">raw_text</span><span class="p">)</span>
-</code></pre></div><p>代码运行后，得到 320M  的 <em><strong>B站签名.txt</strong></em>  。</p>
-<p><br><br></p>
-<h2 id="三训练-word2vec">三、训练 Word2Vec</h2>
-<p>我使用的自己 <strong>未公开</strong> 的cntext 2.1.5版本， Bug频出，等调整好了再公开。</p>
-<h3 id="31-安装cntext">3.1 安装cntext</h3>
-<p>将 cntext-2.1.5-py3-none-any.whl 放置于桌面，打开 <strong>cmd</strong>  (苹果电脑打开terminal)， 输入cd desktop</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
-</code></pre></div><p>之后在 <strong>cmd</strong>  (苹果电脑打开terminal) 中使用pip3 安装</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install cntext-2.1.5-py3-none-any.whl
-</code></pre></div><p>文末有 ***cntext-2.1.5-py3-none-any.whl ***获取方式</p>
-<br>
-<h3 id="32-训练word2vec">3.2 训练word2vec</h3>
-<p>cntext 训练时候Word2Vec模型参数</p>
-<ul>
-<li><em><strong>corpus_file</strong></em> 语料txt文件路径； 刚刚准备的 <em><strong>B站用户签名语料.txt</strong></em></li>
-<li><em><strong>window_size</strong></em>   上下文窗口大小(上下文语义)</li>
-<li><em><strong>vector_size</strong></em> 向量维度数</li>
-<li><em><strong>chunksize</strong></em>  每次语料txt文件中读取的行数</li>
-<li><em><strong>lang</strong></em> 语言的语言</li>
-</ul>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># cntext2.1.5未公开，获取2.1.5请阅读文末获取方式</span>
-<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
-
-<span class="n">model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Word2Vec</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;B站用户签名语料.txt&#39;</span><span class="p">,</span> 
-                    <span class="n">window</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span> 
-                    <span class="n">vector_size</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span> 
-                    <span class="n">window_size</span> <span class="o">=</span> <span class="mi">15</span>
-                    <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Mac(Linux) System, Enable Parallel Processing
-Cache output/B站签名_cache.txt Not Found or Empty, Preprocessing Corpus
-
-Reading Preprocessed Corpus from output/B站签名_cache.txt
-Start Training Word2Vec
-Word2Vec Training Cost 275 s. 
-Output Saved To: output/B站签名-Word2Vec.200.15.txt
-</code></pre></div><p>耗时 275s， 模型训练完成！需要注意， output文件夹内有</p>
-<ul>
-<li><em><strong>B站签名-Word2Vec.200.15.txt</strong></em>        模型文件</li>
-<li><em><strong>B站签名-Word2Vec.200.15.bin</strong></em>        模型文件</li>
-<li><em><strong>B站签名_cache.txt</strong></em>                  训练缓存文件</li>
-</ul>
-<p>txt 和 bin 内容方面完全相同，只是格式不同。</p>
-<p><br><br></p>
-<h2 id="四使用word2vec">四、使用word2vec</h2>
-<h3 id="41-读取模型">4.1 读取模型</h3>
-<p>使用gensim录入模型 <em><strong>B站用户签名语料-Word2Vec.100.15.txt</strong></em> ,</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">gensim.models</span> <span class="kn">import</span> <span class="n">KeyedVectors</span>
-<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
-
-<span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;output/B站签名-Word2Vec.200.15.txt&#39;</span><span class="p">)</span>
-<span class="c1"># w2v = ct.load_w2v(&#39;output/B站签名-Word2Vec.200.15.bin&#39;)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;模型词汇量: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">w2v</span><span class="p">))</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">模型词汇量:  244491
-</code></pre></div><br>
-<h3 id="42-查询某词的词向量">4.2 查询某词的词向量</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">w2v[&#39;高冷&#39;]
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([ 1.05914783e+00,  4.51383203e-01, -1.34764791e+00, -9.42894161e-01,
-        5.28594255e-01,  8.05936933e-01, -1.59555584e-01,  2.42719814e-01,
-       -6.04722261e-01, -9.25606042e-02,  9.69056904e-01,  8.85407850e-02,
-       -1.67851341e+00,  3.26303959e-01,  6.52321458e-01,  5.77043407e-02,
-       -4.24268842e-02, -2.64299393e-01,  5.24512887e-01,  2.15208486e-01,
-       -2.09263057e-01, -4.55661058e-01,  8.78976703e-01, -1.24363959e+00,
-       -1.71196852e-02, -9.03965294e-01, -6.52690083e-02,  2.47650072e-02,
-       -2.82155067e-01,  9.09134224e-02,  9.13890541e-01, -1.40862179e+00,
-       -1.31956196e+00, -5.29659569e-01,  1.23605825e-01, -4.00647372e-01,
-        4.94630456e-01,  2.81695575e-01,  1.71391249e-01,  1.23341233e-01,
-       -7.70617545e-01,  5.81079908e-02, -4.89788234e-01,  2.14924827e-01,
-       -7.73121595e-01, -6.66803181e-01, -1.31617844e+00,  1.18301921e-01,
-        6.22543573e-01, -8.07524860e-01, -4.36694354e-01,  2.95946062e-01,
-        3.10503364e-01, -4.93252903e-01,  1.27962172e-01,  1.97043195e-01,
-        6.61175609e-01, -1.80842638e-01,  1.13270843e+00, -5.34760773e-01,
-        9.13145125e-01,  5.48191011e-01,  7.68198539e-03,  1.17955339e+00,
-       -1.96015276e-02,  9.14144278e-01, -9.06695664e-01,  4.39731702e-02,
-       -3.87832075e-01,  4.72544342e-01,  4.95476156e-01, -1.21628530e-01,
-       -4.41256445e-03,  1.82375580e-01, -7.00045705e-01,  4.34259921e-01,
-        2.00862193e+00, -5.61490715e-01, -7.67120644e-02,  5.78972995e-01,
-       -7.80492842e-01, -5.01321375e-01, -5.50926566e-01, -8.99926543e-01,
-       -1.66289490e-02,  1.77679747e-01,  4.23889339e-01,  1.40111005e+00,
-       -7.63866380e-02, -8.86032939e-01, -1.08106744e+00,  3.31989765e-01,
-        3.78885448e-01, -1.23718023e+00,  2.09680721e-01,  2.39727721e-01,
-        2.46049106e-01,  2.32866824e-01, -6.65583909e-02,  1.09542537e+00,
-       -5.44713318e-01,  7.68220305e-01, -1.56612769e-02,  3.48719925e-01,
-        2.91741371e-01,  1.88722059e-01, -2.12467611e-01,  8.20825279e-01,
-       -1.74725935e-01, -8.05535197e-01, -1.41250715e-01, -7.84179568e-01,
-       -8.00660312e-01, -1.12991728e-01, -2.16052849e-02, -1.07448053e+00,
-        2.53552765e-01, -1.28611282e-01, -1.16868567e+00, -6.08788371e-01,
-        4.30017859e-02, -5.11076570e-01,  6.43583059e-01,  3.11966389e-01,
-       -1.63116843e-01,  3.58751595e-01,  5.16831456e-03,  5.09353161e-01,
-        1.61675465e+00,  6.42039478e-01, -1.07160270e+00, -2.34255135e-01,
-       -7.27983773e-01,  1.20267116e-01, -1.11912894e+00,  1.49096262e+00,
-       -1.48015752e-01,  6.85670376e-02, -1.70197403e+00,  2.16349974e-01,
-        1.32302952e+00,  5.39037228e-01, -8.35760951e-01, -7.43441284e-01,
-        6.55625939e-01, -5.07541537e-01, -5.40877655e-02, -5.38533449e-01,
-       -2.57937461e-01,  8.67499232e-01, -6.53150141e-01, -1.32043970e+00,
-       -5.84588587e-01,  1.24599323e-01, -8.35753500e-01, -2.68954426e-01,
-        3.67542468e-02,  1.61010170e+00,  7.27127492e-01,  1.35515738e+00,
-       -2.76694775e-01,  2.69006938e-01,  4.81265247e-01, -6.30314708e-01,
-       -3.66074532e-01,  3.03934813e-01,  1.92417920e+00,  4.67498928e-01,
-       -1.83004290e-01,  1.01947844e+00, -5.52489638e-01,  1.59275869e-03,
-        4.84914184e-01,  1.33545566e+00, -9.75372076e-01,  2.25273356e-01,
-        6.02540433e-01,  7.07564950e-01,  1.36330187e-01, -4.34346311e-02,
-        4.53452200e-01,  1.58401883e+00, -6.68083191e-01, -1.30876124e+00,
-       -1.19713686e-01, -9.80615169e-02, -2.04207993e+00,  8.29822361e-01,
-       -4.08902228e-01, -4.70339246e-02,  1.00982547e+00,  1.64084151e-01,
-        4.62104648e-01, -2.28677273e-01, -5.95047355e-01, -2.71069705e-01,
-        6.27930462e-01, -8.85554433e-01, -1.79520398e-01, -3.44800770e-01],
-      dtype=float32)
-</code></pre></div><br>
-<h3 id="43-查看近义词">4.3 查看近义词</h3>
-<p>通过给定词语，查看其近义词，可以了解模型训练的好坏。语义捕捉的合理，说明语料合理，模型训练的好。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 列表中可以传入任意多个词，这里大邓偷懒，都只传入了一两个词</span>
-<span class="n">w2v</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;女汉纸&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;汉纸&#39;, 0.8672055602073669),
- (&#39;腹黑&#39;, 0.8662189841270447),
- (&#39;文艺清新&#39;, 0.849425733089447),
- (&#39;闷骚&#39;, 0.8427557945251465),
- (&#39;神经大条&#39;, 0.8329920768737793),
- (&#39;汉子&#39;, 0.8232208490371704),
- (&#39;宅基&#39;, 0.8224843144416809),
- (&#39;猥琐大叔&#39;, 0.8214939832687378),
- (&#39;偶是&#39;, 0.8164061307907104),
- (&#39;腐宅&#39;, 0.8117423057556152),
- (&#39;宅女腐女&#39;, 0.8073472380638123),
- (&#39;软妹&#39;, 0.7999386787414551),
- (&#39;萌妹&#39;, 0.7999064326286316),
- (&#39;小女生&#39;, 0.7998836040496826),
- (&#39;天蝎女&#39;, 0.7971166372299194),
- (&#39;傲娇受&#39;, 0.7964810132980347),
- (&#39;天蝎&#39;, 0.7957624197006226),
- (&#39;天蝎座&#39;, 0.7915034890174866),
- (&#39;女纸&#39;, 0.7912994623184204),
- (&#39;双鱼座&#39;, 0.7900263667106628)]
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;犯二&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;脱线&#39;, 0.8355404734611511),
- (&#39;神经质&#39;, 0.8035165667533875),
- (&#39;神经大条&#39;, 0.7816897630691528),
- (&#39;发神经&#39;, 0.780509352684021),
- (&#39;人来疯&#39;, 0.7794896960258484),
- (&#39;精分&#39;, 0.7705598473548889),
- (&#39;毒舌&#39;, 0.7692195773124695),
- (&#39;犯病&#39;, 0.7659722566604614),
- (&#39;闷骚&#39;, 0.7620697617530823),
- (&#39;迷糊&#39;, 0.7608135342597961),
- (&#39;智商在线&#39;, 0.7525709867477417),
- (&#39;抽疯&#39;, 0.7491970658302307),
- (&#39;欢脱&#39;, 0.7444456219673157),
- (&#39;深井&#39;, 0.7416326403617859),
- (&#39;抽风&#39;, 0.7321327924728394),
- (&#39;精分患者&#39;, 0.7319940328598022),
- (&#39;装嫩&#39;, 0.7267141342163086),
- (&#39;蒙圈&#39;, 0.7262043952941895),
- (&#39;神经&#39;, 0.7257982492446899),
- (&#39;假正经&#39;, 0.7215201258659363)]
-
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;内向&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;外向&#39;, 0.8474423885345459),
- (&#39;慢热&#39;, 0.8272333741188049),
- (&#39;不爱说话&#39;, 0.8249834775924683),
- (&#39;不善言辞&#39;, 0.80635666847229),
- (&#39;腼腆&#39;, 0.7940059304237366),
- (&#39;孤僻&#39;, 0.7929618954658508),
- (&#39;开朗&#39;, 0.7585728168487549),
- (&#39;闷骚&#39;, 0.745791494846344),
- (&#39;神经质&#39;, 0.7454176545143127),
- (&#39;多愁善感&#39;, 0.7348753809928894),
- (&#39;胆小&#39;, 0.7213962078094482),
- (&#39;沉默寡言&#39;, 0.7145323157310486),
- (&#39;随和&#39;, 0.7115553617477417),
- (&#39;敏感&#39;, 0.7103193402290344),
- (&#39;水瓶座&#39;, 0.7092751264572144),
- (&#39;大大咧咧&#39;, 0.7085798382759094),
- (&#39;高冷&#39;, 0.7084994912147522),
- (&#39;性格开朗&#39;, 0.7064590454101562),
- (&#39;耿直&#39;, 0.7048951983451843),
- (&#39;做作&#39;, 0.704330325126648)]
-</code></pre></div><br>
-<br>
-<h2 id="五获取资源">五、获取资源</h2>
-<p>内容整理不易， 本文内容分免费和付费部分。 免费部分可以直接下载数据、构建语料、使用word2vec模型。</p>
-<p>付费部分主要是cntext，用于训练 word2vec 模型。 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 免费 1亿用户数据集 https://www.kaggle.com/datasets/beats0/bilibili-user
-
-- 免费 B站签名-Word2Vec.200.15.bin  链接: https://pan.baidu.com/s/1ILVwu6gGGGP0IHv-vsjgvw?pwd=em99 提取码: em99 
-
-- 100元   获得cntext-2.1.5-py3-none-any.whl
-</code></pre></div><p><br><br></p>
-<h2 id="相关内容">相关内容</h2>
-<ul>
-<li><a href="https://cntext.readthedocs.io/">文本分析库cntext2.x使用手册 https://cntext.readthedocs.io/</a></li>
-<li><a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用Stanford Glove代码训练中文语料的Glove模型</a></li>
-<li><a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">词向量 | 使用人民网领导留言板语料训练Word2Vec模型</a></li>
-<li><a href="https://textdata.cn/blog/2023-11-20-word2vec-by-year-by-province/">使用 5000w 专利申请数据集按年份(按省份)训练词向量</a></li>
-<li><a href="https://textdata.cn/blog/2024-04-16-douban-movie-1000w-ratings-comments-dataset/">使用 1000w 条豆瓣影评训练 Word2Vec</a></li>
-<li><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></li>
-<li><a href="https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/">转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用</a></li>
-<li><a href="https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/">OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息</a></li>
-</ul>
-]]></content:encoded>
-    </item>
-    
-    <item>
-      <title>词向量(付费) | 使用1985年-2025年专利申请摘要训练Word2Vec模型</title>
-      <link>https://textdata.cn/blog/2023-11-10-training-word2vec-model-using-china-3751w-patent-application-dataset/</link>
-      <pubDate>Fri, 10 Nov 2023 00:00:00 +0000</pubDate>
-      
-      <guid>/blog/2023-11-10-training-word2vec-model-using-china-3751w-patent-application-dataset/</guid>
-      <description>&lt;h2 id=&#34;一说明&#34;&gt;一、说明&lt;/h2&gt;
-&lt;p&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/&#34;&gt;&lt;strong&gt;5112万条专利申请数据集(1985-2025年)&lt;/strong&gt;&lt;/a&gt; 中随机抽取了20%的 「&lt;strong&gt;专利摘要&lt;/strong&gt;」，构成6.14G的训练语料(千万级别)， 耗时6小时，训练得到word2vec模型。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;需要注意， 100%全部语料有24G， 使用服务区内存128G，跑了20小时预处理还没完成，内存就炸了。&lt;/p&gt;
-&lt;p&gt;没办法，我不会优化代码性能，所以只能抽取20%的文本数据来训练word2vec&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;br&gt;
-&lt;p&gt;本文需要用到新cntext，因为bug较多， 直接上传到PyPi，将导致之前制作的课程和公众号推文相关内容全部重新一遍。&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;一语料构建&#34;&gt;一、语料构建&lt;/h2&gt;
-&lt;p&gt;随机抽取20%的记录，构成千万专利文本摘要训练语料。&lt;/p&gt;
-&lt;p&gt;为了防止电脑内存爆炸， 对任意单个大csv文件，分批次读取，每次读10w行。最终将专利摘要文本保存到txt文件中，编码方式为utf-8。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;如果想开发一些词典，可以跳过此部分内容，并不影响代码运行。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/screen-datasets.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#将代码放在csv数据文件夹内&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;os&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;re&lt;/span&gt;
-
-&lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;1000w专利摘要文本.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;w&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;txtf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-    &lt;span class=&#34;c1&#34;&gt;# 获得当前文件夹内所有的csv文件路径&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;csvfs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;f&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;listdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;.&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;.csv&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvfs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-        &lt;span class=&#34;c1&#34;&gt;# 分批次读取csv，每次读10w行&lt;/span&gt;
-        &lt;span class=&#34;n&#34;&gt;chunk_dfs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
-                                &lt;span class=&#34;n&#34;&gt;usecols&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;摘要文本&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; 
-                                &lt;span class=&#34;n&#34;&gt;chunksize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;100000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-        
-        &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_dfs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-            &lt;span class=&#34;c1&#34;&gt;# 剔除专利摘要为空的记录&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dropna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;inplace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;subset&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;摘要文本&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
-            &lt;span class=&#34;c1&#34;&gt;# 随机抽取28%的记录&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;sample_df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sample&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;frac&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mf&#34;&gt;0.2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sample_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;摘要文本&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;tolist&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;chinese_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;re&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sub&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;[^\u4e00-\u9fa5]&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;txtf&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chinese_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;最终得到的 &lt;strong&gt;1000w专利摘要文本.txt&lt;/strong&gt;  文件有 6.14G&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;二训练word2vec&#34;&gt;二、训练word2vec&lt;/h2&gt;
-&lt;p&gt;我使用的自己 &lt;strong&gt;未公开&lt;/strong&gt; 的cntext 2.1.4 版本， Bug频出，等调整好了再公开。&lt;/p&gt;
-&lt;h3 id=&#34;21-安装&#34;&gt;2.1 安装&lt;/h3&gt;
-&lt;p&gt;将 &lt;em&gt;&lt;strong&gt;cntext-2.1.4-py3-none-any.whl&lt;/strong&gt;&lt;/em&gt; 放置于桌面，打开 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt;  (苹果电脑打开terminal)， 输入cd desktop&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd desktop
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;之后在 &lt;em&gt;&lt;strong&gt;cmd&lt;/strong&gt;&lt;/em&gt;  (苹果电脑打开terminal) 中使用 &lt;em&gt;&lt;strong&gt;pip3&lt;/strong&gt;&lt;/em&gt; 安装&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install cntext-2.1.4-py3-none-any.whl
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;文末有 &lt;em&gt;&lt;strong&gt;cntext-2.1.4-py3-none-any.whl&lt;/strong&gt;&lt;/em&gt; 获取方式&lt;/p&gt;
-&lt;br&gt;
-&lt;p&gt;Word2Vec模型参数&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;window = 6&lt;/li&gt;
-&lt;li&gt;vector_size = 100&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#cntext为2.1.4&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;W2VModel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;1000w专利摘要文本.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
-                        &lt;span class=&#34;n&#34;&gt;lang&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;chinese&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;train&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;100&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;window_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Starting Preprocessing Corpus ...
-Starting Training! This may take a while.Please be patient...
-Traning word2vec model took 22806 seconds
-Note: The Word2Vec model hase saved to output/Word2Vec
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/model-dir.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;p&gt;cntext.W2VModel训练中考虑到了词组情况，为了将&amp;quot;科学技术&amp;quot;这类短语词(词组)也纳入到word2vec训练中， 使用到gensim.models.phrases.Phrase。&lt;/p&gt;
-&lt;p&gt;大邓不会优化性能，训练word2vec时，预处理部分占用内存很大，  我用的服务器内存128G， 训练时间6.335小时。&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;三使用词向量&#34;&gt;三、使用词向量&lt;/h2&gt;
-&lt;h3 id=&#34;31-录入模型&#34;&gt;3.1 录入模型&lt;/h3&gt;
-&lt;p&gt;需要注意， 专利模型文件是三个哦， 三个是一个整体，不要随意删除&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/model-dir.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 2.1.4 版本cntext，未公开&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;gensim.models&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;KeyedVectors&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;Word2Vec/1000w专利摘要文本.100.6.bin&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;binary&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;# 如果没有cntext就用注释掉的代码，使用gensim导入&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;# w2v = KeyedVectors.load_word2vec_format(&amp;#39;Word2Vec/1000w专利摘要文本.100.6.bin&amp;#39;, binary=True)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Loading word2vec model...
-&amp;lt;gensim.models.keyedvectors.KeyedVectors at 0x7f8f12324880&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;32-词汇量&#34;&gt;3.2 词汇量&lt;/h3&gt;
-&lt;p&gt;查看模型中的词汇量&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;#模型中词汇量
-len(w2v.key_to_index)
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;1120752
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;33-查看词向量&#34;&gt;3.3 查看词向量&lt;/h3&gt;
-&lt;p&gt;查看任意词的词向量，例如“&lt;strong&gt;创新&lt;/strong&gt;”&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#查看 ”创新” 的词向量&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;创新&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;array([-2.3267136 ,  2.3038454 ,  2.8232517 , -3.23959   , -2.9036384 ,
-       -2.0450666 , -1.5516403 ,  0.00575857, -0.64638597,  1.3585284 ,
-       -1.7491045 , -1.3659543 ,  1.9901325 , -1.5066692 ,  0.5094756 ,
-       -1.7032526 , -0.35252815, -4.00833   ,  3.5424068 , -0.0426405 ,
-       -0.24548595, -0.7675196 ,  2.366155  , -0.18583044,  0.83989865,
-        1.5965563 ,  0.30173486, -0.80054444,  2.0068777 ,  1.770656  ,
-        0.06608703, -2.5833828 ,  1.7995895 , -0.281671  ,  0.06354411,
-        1.2502885 ,  1.1960976 , -0.19735877, -2.3988242 ,  1.0004953 ,
-        0.950612  , -2.9186552 ,  2.5141885 ,  0.5993077 ,  1.2969743 ,
-       -3.7506597 ,  2.6031113 , -0.30022916, -1.0615158 , -0.2402753 ,
-       -0.29447314, -1.7101966 , -2.6812305 ,  1.1898949 , -0.34348696,
-       -1.7013234 ,  0.27328706, -0.67401695, -2.8010712 , -1.5993378 ,
-        0.55218667, -0.15136468,  0.67049694,  0.6745255 , -0.80350083,
-        2.254024  , -0.8005472 , -2.0170422 ,  2.882873  , -0.46188217,
-        0.8481421 , -1.3741239 ,  0.7432127 ,  1.1100464 , -0.64173746,
-       -1.3264686 , -1.991515  , -0.27887765, -0.62801987, -3.0960062 ,
-       -3.2658167 , -0.065689  ,  2.5853407 , -1.6554247 , -0.49887556,
-       -2.146973  , -0.45912525,  0.28037554,  1.0885888 ,  1.6503012 ,
-        1.0013059 ,  0.3194557 ,  3.0309706 , -4.5257196 ,  0.4644844 ,
-        3.0723457 ,  0.49002075,  2.4370434 , -0.7763012 ,  3.2541463 ],
-      dtype=float32)
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;p&gt;&lt;strong&gt;注意: 如果查询的词未在模型中，会出现KeyError报错&lt;/strong&gt;。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;牛逼&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/error.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;34-最相似词&#34;&gt;3.4 最相似词&lt;/h3&gt;
-&lt;p&gt;与&amp;rsquo;创新&#39;, &amp;lsquo;颠覆&amp;rsquo;最相似的20个词&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;#词语列表中可传入任意多个词，
-#大邓词穷，只想到这两个相似的种子词
-w2v.most_similar([&amp;#39;创新&amp;#39;, &amp;#39;颠覆&amp;#39;], topn=20)
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;革新&amp;#39;, 0.8313461542129517),
- (&amp;#39;变革&amp;#39;, 0.8260877728462219),
- (&amp;#39;革命性&amp;#39;, 0.79015052318573),
- (&amp;#39;从根本上改变&amp;#39;, 0.7867545485496521),
- (&amp;#39;改革&amp;#39;, 0.7788680791854858),
- (&amp;#39;技术创新&amp;#39;, 0.7715167999267578),
- (&amp;#39;核心技术&amp;#39;, 0.7679213881492615),
- (&amp;#39;独创&amp;#39;, 0.7668667435646057),
- (&amp;#39;创新型&amp;#39;, 0.7655373811721802),
- (&amp;#39;颠覆性&amp;#39;, 0.7575560212135315),
- (&amp;#39;借鉴&amp;#39;, 0.7570509910583496),
- (&amp;#39;全新&amp;#39;, 0.7496902942657471),
- (&amp;#39;有别于&amp;#39;, 0.7489079236984253),
- (&amp;#39;打破常规&amp;#39;, 0.7397119402885437),
- (&amp;#39;改变目前&amp;#39;, 0.735921323299408),
- (&amp;#39;打破传统&amp;#39;, 0.7265862226486206),
- (&amp;#39;大胆&amp;#39;, 0.7247217893600464),
- (&amp;#39;加以改进&amp;#39;, 0.7223487496376038),
- (&amp;#39;划时代&amp;#39;, 0.7221404910087585),
- (&amp;#39;改变过去&amp;#39;, 0.7220492959022522)]
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;p&gt;刚刚的运行，体现模型很好的学习到了专利摘要中的语义关系。&lt;/p&gt;
-&lt;p&gt;如果我想开发三个词典，分别是 &lt;strong&gt;创新&lt;/strong&gt;、&lt;strong&gt;成本&lt;/strong&gt;、&lt;strong&gt;质量&lt;/strong&gt; ，想直接将结果保存到txt中，可以运行如下代码&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;seeds&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;创新概念&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;创新&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;颠覆&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;
-         &lt;span class=&#34;s1&#34;&gt;&amp;#39;成本概念&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;成本&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;
-         &lt;span class=&#34;s1&#34;&gt;&amp;#39;质量概念&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;质量&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]}&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;expand_dictionary&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;       &lt;span class=&#34;c1&#34;&gt;#word2vec词向量&lt;/span&gt;
-                     &lt;span class=&#34;n&#34;&gt;seeddict&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;seeds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;#种子词字典&lt;/span&gt;
-                     &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;         &lt;span class=&#34;c1&#34;&gt;#保留20个最相似的词&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Finish! 创新概念 candidates saved to output/Word2Vec
-Finish! 成本概念 candidates saved to output/Word2Vec
-Finish! 质量概念 candidates saved to output/Word2Vec
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/similar-words.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;四获取资源&#34;&gt;四、获取资源&lt;/h2&gt;
-&lt;p&gt;内容整理不易， 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;- 100元   cntext-2.1.4-py3-none-any.whl
-- 100元   word2vec模型文件
-- 200元 获得
-  - cntext-2.1.4-py3-none-any.whl
-  - Word2Vec模型文件
-  
-  
-声明: 仅用于科研用途
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-</description>
-      <content:encoded><![CDATA[<h2 id="一说明">一、说明</h2>
-<p><a href="https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/"><strong>5112万条专利申请数据集(1985-2025年)</strong></a> 中随机抽取了20%的 「<strong>专利摘要</strong>」，构成6.14G的训练语料(千万级别)， 耗时6小时，训练得到word2vec模型。</p>
-<blockquote>
-<p>需要注意， 100%全部语料有24G， 使用服务区内存128G，跑了20小时预处理还没完成，内存就炸了。</p>
-<p>没办法，我不会优化代码性能，所以只能抽取20%的文本数据来训练word2vec</p>
-</blockquote>
-<br>
-<p>本文需要用到新cntext，因为bug较多， 直接上传到PyPi，将导致之前制作的课程和公众号推文相关内容全部重新一遍。</p>
-<p><br><br></p>
-<h2 id="一语料构建">一、语料构建</h2>
-<p>随机抽取20%的记录，构成千万专利文本摘要训练语料。</p>
-<p>为了防止电脑内存爆炸， 对任意单个大csv文件，分批次读取，每次读10w行。最终将专利摘要文本保存到txt文件中，编码方式为utf-8。</p>
-<blockquote>
-<p>如果想开发一些词典，可以跳过此部分内容，并不影响代码运行。</p>
-</blockquote>
-<p><img loading="lazy" src="img/screen-datasets.png" alt=""  />
-</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#将代码放在csv数据文件夹内</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">re</span>
-
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;1000w专利摘要文本.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">txtf</span><span class="p">:</span>
-    <span class="c1"># 获得当前文件夹内所有的csv文件路径</span>
-    <span class="n">csvfs</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.csv&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">csvf</span> <span class="ow">in</span> <span class="n">csvfs</span><span class="p">:</span>
-        <span class="c1"># 分批次读取csv，每次读10w行</span>
-        <span class="n">chunk_dfs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> 
-                                <span class="n">usecols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;摘要文本&#39;</span><span class="p">],</span> 
-                                <span class="n">chunksize</span><span class="o">=</span><span class="mi">100000</span><span class="p">)</span>
-        
-        <span class="k">for</span> <span class="n">chunk_df</span> <span class="ow">in</span> <span class="n">chunk_dfs</span><span class="p">:</span>
-            <span class="c1"># 剔除专利摘要为空的记录</span>
-            <span class="n">chunk_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;摘要文本&#39;</span><span class="p">])</span>
-            <span class="c1"># 随机抽取28%的记录</span>
-            <span class="n">sample_df</span> <span class="o">=</span> <span class="n">chunk_df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
-            <span class="n">raw_text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sample_df</span><span class="p">[</span><span class="s1">&#39;摘要文本&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
-            <span class="n">chinese_text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^\u4e00-\u9fa5]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">)</span>
-            <span class="n">txtf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chinese_text</span><span class="p">)</span>
-</code></pre></div><p>最终得到的 <strong>1000w专利摘要文本.txt</strong>  文件有 6.14G<br><br><br></p>
-<h2 id="二训练word2vec">二、训练word2vec</h2>
-<p>我使用的自己 <strong>未公开</strong> 的cntext 2.1.4 版本， Bug频出，等调整好了再公开。</p>
-<h3 id="21-安装">2.1 安装</h3>
-<p>将 <em><strong>cntext-2.1.4-py3-none-any.whl</strong></em> 放置于桌面，打开 <em><strong>cmd</strong></em>  (苹果电脑打开terminal)， 输入cd desktop</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
-</code></pre></div><p>之后在 <em><strong>cmd</strong></em>  (苹果电脑打开terminal) 中使用 <em><strong>pip3</strong></em> 安装</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install cntext-2.1.4-py3-none-any.whl
-</code></pre></div><p>文末有 <em><strong>cntext-2.1.4-py3-none-any.whl</strong></em> 获取方式</p>
-<br>
-<p>Word2Vec模型参数</p>
-<ul>
-<li>window = 6</li>
-<li>vector_size = 100</li>
-</ul>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#cntext为2.1.4</span>
-<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
-
-<span class="n">w2v_model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">W2VModel</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;1000w专利摘要文本.txt&#39;</span><span class="p">,</span>
-                        <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
-
-<span class="n">w2v_model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">vector_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Starting Preprocessing Corpus ...
-Starting Training! This may take a while.Please be patient...
-Traning word2vec model took 22806 seconds
-Note: The Word2Vec model hase saved to output/Word2Vec
-</code></pre></div><p><img loading="lazy" src="img/model-dir.png" alt=""  />
-</p>
-<p>cntext.W2VModel训练中考虑到了词组情况，为了将&quot;科学技术&quot;这类短语词(词组)也纳入到word2vec训练中， 使用到gensim.models.phrases.Phrase。</p>
-<p>大邓不会优化性能，训练word2vec时，预处理部分占用内存很大，  我用的服务器内存128G， 训练时间6.335小时。</p>
-<p><br><br></p>
-<h2 id="三使用词向量">三、使用词向量</h2>
-<h3 id="31-录入模型">3.1 录入模型</h3>
-<p>需要注意， 专利模型文件是三个哦， 三个是一个整体，不要随意删除</p>
-<p><img loading="lazy" src="img/model-dir.png" alt=""  />
-</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 2.1.4 版本cntext，未公开</span>
-<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
-<span class="kn">from</span> <span class="nn">gensim.models</span> <span class="kn">import</span> <span class="n">KeyedVectors</span>
-
-<span class="n">w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;Word2Vec/1000w专利摘要文本.100.6.bin&#39;</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="c1"># 如果没有cntext就用注释掉的代码，使用gensim导入</span>
-<span class="c1"># w2v = KeyedVectors.load_word2vec_format(&#39;Word2Vec/1000w专利摘要文本.100.6.bin&#39;, binary=True)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Loading word2vec model...
-&lt;gensim.models.keyedvectors.KeyedVectors at 0x7f8f12324880&gt;
-</code></pre></div><br>
-<h3 id="32-词汇量">3.2 词汇量</h3>
-<p>查看模型中的词汇量</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">#模型中词汇量
-len(w2v.key_to_index)
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1120752
-</code></pre></div><br>
-<h3 id="33-查看词向量">3.3 查看词向量</h3>
-<p>查看任意词的词向量，例如“<strong>创新</strong>”</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1">#查看 ”创新” 的词向量</span>
-<span class="n">w2v</span><span class="p">[</span><span class="s1">&#39;创新&#39;</span><span class="p">]</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([-2.3267136 ,  2.3038454 ,  2.8232517 , -3.23959   , -2.9036384 ,
-       -2.0450666 , -1.5516403 ,  0.00575857, -0.64638597,  1.3585284 ,
-       -1.7491045 , -1.3659543 ,  1.9901325 , -1.5066692 ,  0.5094756 ,
-       -1.7032526 , -0.35252815, -4.00833   ,  3.5424068 , -0.0426405 ,
-       -0.24548595, -0.7675196 ,  2.366155  , -0.18583044,  0.83989865,
-        1.5965563 ,  0.30173486, -0.80054444,  2.0068777 ,  1.770656  ,
-        0.06608703, -2.5833828 ,  1.7995895 , -0.281671  ,  0.06354411,
-        1.2502885 ,  1.1960976 , -0.19735877, -2.3988242 ,  1.0004953 ,
-        0.950612  , -2.9186552 ,  2.5141885 ,  0.5993077 ,  1.2969743 ,
-       -3.7506597 ,  2.6031113 , -0.30022916, -1.0615158 , -0.2402753 ,
-       -0.29447314, -1.7101966 , -2.6812305 ,  1.1898949 , -0.34348696,
-       -1.7013234 ,  0.27328706, -0.67401695, -2.8010712 , -1.5993378 ,
-        0.55218667, -0.15136468,  0.67049694,  0.6745255 , -0.80350083,
-        2.254024  , -0.8005472 , -2.0170422 ,  2.882873  , -0.46188217,
-        0.8481421 , -1.3741239 ,  0.7432127 ,  1.1100464 , -0.64173746,
-       -1.3264686 , -1.991515  , -0.27887765, -0.62801987, -3.0960062 ,
-       -3.2658167 , -0.065689  ,  2.5853407 , -1.6554247 , -0.49887556,
-       -2.146973  , -0.45912525,  0.28037554,  1.0885888 ,  1.6503012 ,
-        1.0013059 ,  0.3194557 ,  3.0309706 , -4.5257196 ,  0.4644844 ,
-        3.0723457 ,  0.49002075,  2.4370434 , -0.7763012 ,  3.2541463 ],
-      dtype=float32)
-</code></pre></div><br>
-<p><strong>注意: 如果查询的词未在模型中，会出现KeyError报错</strong>。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">w2v</span><span class="p">[</span><span class="s1">&#39;牛逼&#39;</span><span class="p">]</span>
-</code></pre></div><p><img loading="lazy" src="img/error.png" alt=""  />
-</p>
-<br>
-<h3 id="34-最相似词">3.4 最相似词</h3>
-<p>与&rsquo;创新', &lsquo;颠覆&rsquo;最相似的20个词</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">#词语列表中可传入任意多个词，
-#大邓词穷，只想到这两个相似的种子词
-w2v.most_similar([&#39;创新&#39;, &#39;颠覆&#39;], topn=20)
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;革新&#39;, 0.8313461542129517),
- (&#39;变革&#39;, 0.8260877728462219),
- (&#39;革命性&#39;, 0.79015052318573),
- (&#39;从根本上改变&#39;, 0.7867545485496521),
- (&#39;改革&#39;, 0.7788680791854858),
- (&#39;技术创新&#39;, 0.7715167999267578),
- (&#39;核心技术&#39;, 0.7679213881492615),
- (&#39;独创&#39;, 0.7668667435646057),
- (&#39;创新型&#39;, 0.7655373811721802),
- (&#39;颠覆性&#39;, 0.7575560212135315),
- (&#39;借鉴&#39;, 0.7570509910583496),
- (&#39;全新&#39;, 0.7496902942657471),
- (&#39;有别于&#39;, 0.7489079236984253),
- (&#39;打破常规&#39;, 0.7397119402885437),
- (&#39;改变目前&#39;, 0.735921323299408),
- (&#39;打破传统&#39;, 0.7265862226486206),
- (&#39;大胆&#39;, 0.7247217893600464),
- (&#39;加以改进&#39;, 0.7223487496376038),
- (&#39;划时代&#39;, 0.7221404910087585),
- (&#39;改变过去&#39;, 0.7220492959022522)]
-</code></pre></div><br>
-<p>刚刚的运行，体现模型很好的学习到了专利摘要中的语义关系。</p>
-<p>如果我想开发三个词典，分别是 <strong>创新</strong>、<strong>成本</strong>、<strong>质量</strong> ，想直接将结果保存到txt中，可以运行如下代码</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">seeds</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;创新概念&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;颠覆&#39;</span><span class="p">],</span>
-         <span class="s1">&#39;成本概念&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;成本&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">],</span>
-         <span class="s1">&#39;质量概念&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;质量&#39;</span><span class="p">]}</span>
-
-<span class="n">ct</span><span class="o">.</span><span class="n">expand_dictionary</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">w2v</span><span class="p">,</span>       <span class="c1">#word2vec词向量</span>
-                     <span class="n">seeddict</span><span class="o">=</span><span class="n">seeds</span><span class="p">,</span>  <span class="c1">#种子词字典</span>
-                     <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>         <span class="c1">#保留20个最相似的词</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Finish! 创新概念 candidates saved to output/Word2Vec
-Finish! 成本概念 candidates saved to output/Word2Vec
-Finish! 质量概念 candidates saved to output/Word2Vec
-</code></pre></div><p><img loading="lazy" src="img/similar-words.png" alt=""  />
-</p>
-<p><br><br></p>
-<h2 id="四获取资源">四、获取资源</h2>
-<p>内容整理不易， 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 100元   cntext-2.1.4-py3-none-any.whl
-- 100元   word2vec模型文件
-- 200元 获得
-  - cntext-2.1.4-py3-none-any.whl
-  - Word2Vec模型文件
-  
-  
-声明: 仅用于科研用途
-</code></pre></div><p><br><br></p>
 ]]></content:encoded>
     </item>
     
