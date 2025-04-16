@@ -6,7 +6,7 @@
     <description>Recent content in cntext on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Thu, 03 Apr 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/cntext/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 04 Apr 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/cntext/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>教程 | 使用大模型将文本数据转化为结构化数据</title>
       <link>https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/</link>
@@ -269,6 +269,946 @@ time=2025-02-14T16:00:18.577+08:00 level=INFO source=types.go:131 msg=&#34;infer
 <br></li>
 </ul>
 ]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>使用 5000w 专利申请数据集按年份(按省份)训练词向量</title>
+      <link>https://textdata.cn/blog/2023-11-20-word2vec-by-year-by-province/</link>
+      <pubDate>Fri, 04 Apr 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2023-11-20-word2vec-by-year-by-province/</guid>
+      <description>&lt;p&gt;想用 &lt;a href=&#34;https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/&#34;&gt;中国专利申请数据集&lt;/a&gt;，按年份(或按省份)训练词向量的同学，可以好好看本文，能节省你几十个小时时间。
+&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;一检查数据&#34;&gt;一、检查数据&lt;/h2&gt;
+&lt;p&gt;这个数据集很大， 如图所示，文件动辄几G&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-data-screen.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;之前分享过 &lt;a href=&#34;&#34;&gt;&lt;/a&gt; , 面对巨大csv文件，我们要了解内部有哪些字段、字段的含义， 只读取需要的字段，减轻电脑内存压力， 让你能轻松应对几倍于内存的巨大csv文件。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 以山东省.csv 为例， 只读第一行(前1行)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;山东省.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;nrows&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-shandong_df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;字段展示的不全，完整的字段应该有&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;columns&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Index([&amp;#39;专利名称&amp;#39;, &amp;#39;专利类型&amp;#39;, &amp;#39;申请人&amp;#39;, &amp;#39;申请人类型&amp;#39;, &amp;#39;申请人地址&amp;#39;, &amp;#39;申请人国家&amp;#39;, &amp;#39;申请人省份&amp;#39;, &amp;#39;申请人城市&amp;#39;,
+       &amp;#39;申请人区县&amp;#39;, &amp;#39;申请号&amp;#39;, &amp;#39;申请日&amp;#39;, &amp;#39;申请年份&amp;#39;, &amp;#39;公开公告号&amp;#39;, &amp;#39;公开公告日&amp;#39;, &amp;#39;公开公告年份&amp;#39;, &amp;#39;授权公告号&amp;#39;,
+       &amp;#39;授权公告日&amp;#39;, &amp;#39;授权公告年份&amp;#39;, &amp;#39;IPC分类号&amp;#39;, &amp;#39;IPC主分类号&amp;#39;, &amp;#39;发明人&amp;#39;, &amp;#39;摘要文本&amp;#39;, &amp;#39;主权项内容&amp;#39;, &amp;#39;当前权利人&amp;#39;,
+       &amp;#39;当前专利权人地址&amp;#39;, &amp;#39;专利权人类型&amp;#39;, &amp;#39;统一社会信用代码&amp;#39;, &amp;#39;引证次数&amp;#39;, &amp;#39;被引证次数&amp;#39;, &amp;#39;自引次数&amp;#39;, &amp;#39;他引次数&amp;#39;,
+       &amp;#39;被自引次数&amp;#39;, &amp;#39;被他引次数&amp;#39;, &amp;#39;家族引证次数&amp;#39;, &amp;#39;家族被引证次数&amp;#39;],
+      dtype=&amp;#39;object&amp;#39;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;训练词向量主要用文本数据， 在本案例中， 需要的字段 [&lt;strong&gt;专利摘要&lt;/strong&gt;] 。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二构造语料&#34;&gt;二、构造语料&lt;/h2&gt;
+&lt;p&gt;在 [5000万专利申请全量数据1985-2025年] 文件夹中，&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;新建 [province_corpus] 和 [year_corpus] 两个文件夹&lt;/li&gt;
+&lt;li&gt;新建 [code.ipynb]&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;构造语料对电脑的性能要求不高， 不论你的电脑是什么配置，基本都能运行， 而且耗时在能接受的范围。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;21-文件树结构&#34;&gt;2.1 文件树结构&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;5000万专利申请全量数据1985-2025年
+  |---中国专利数据库.csv.gz
+  |---code.ipynb
+  |---province_corpus
+     |---安徽省.txt
+     |---浙江省.txt
+     |---...
+  |---year_corpus
+     |---2025.txt
+     |---2024.txt
+     |---...
+  |---provin_w2vs
+        |---安徽省-Word2Vec.200.15.bin
+        |---山东省-Word2Vec.200.15.bin
+        |---...
+  |---year_w2vs
+        |---2025-Word2Vec.200.15.bin
+        |---2022-Word2Vec.100.6.bin.syn1neg.npy
+        |---2022-Word2Vec.100.6.bin.wv.vectors.npy
+        |---...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;22-构造语料代码&#34;&gt;2.2 构造语料代码&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pathlib&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Path&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;tqdm&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;tqdm&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 读取csv文件， 只读取需要的字段&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 按 100000 行分块读取， 避免内存溢出&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;chunk_dfs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;中国专利数据库.csv.gz&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                 &lt;span class=&#34;n&#34;&gt;compression&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;gzip&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                 &lt;span class=&#34;n&#34;&gt;usecols&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;申请人省份&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;申请日&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;专利名称&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;摘要文本&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;
+                 &lt;span class=&#34;n&#34;&gt;chunksize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;100000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;tqdm&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chunk_dfs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;申请日&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;to_datetime&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;申请日&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+
+    &lt;span class=&#34;c1&#34;&gt;# 新建 province_corpus 和 year_corpus文件夹&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;province_dir&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;province_corpus&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;province_dir&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mkdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;parents&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;exist_ok&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;year_dir&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;year_corpus&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;year_dir&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mkdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;parents&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;exist_ok&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    
+    &lt;span class=&#34;c1&#34;&gt;# 按省份和年份构造语料&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;date&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_df&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;groupby&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;Grouper&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;申请日&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;freq&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;YE&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)):&lt;/span&gt;
+        &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;date&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;year_file&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_dir&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;/&lt;/span&gt; &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;date&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;.txt&amp;#34;&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;a+&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;yf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;y_text_series&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;专利名称&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fillna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;摘要文本&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fillna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;y_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;y_text_series&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;yf&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;y_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prov&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prov_df&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;groupby&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;申请人省份&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+        &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;prov&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;prov_file&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;province_dir&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;/&lt;/span&gt; &lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;prov&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;.txt&amp;#34;&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;prov_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;a+&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;prov_text_series&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prov_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;专利名称&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fillna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prov_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;摘要文本&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fillna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;prov_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;prov_text_series&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;pf&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;prov_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2025
+2024
+...
+
+
+上海市
+云南省
+...
+安徽省
+
+CPU times: total: 27min 55s
+Wall time: 39min 10s
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;构造语料用 40 分钟时间，得到文件夹province_corpus和year_corpus。
+&lt;img loading=&#34;lazy&#34; src=&#34;img/03-province-corpus.png&#34; alt=&#34;&#34;  /&gt;
+
+&lt;img loading=&#34;lazy&#34; src=&#34;img/03-year-corpus.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三训练word2vec&#34;&gt;三、训练word2vec&lt;/h2&gt;
+&lt;p&gt;需要注意， 训练word2vec需要耗费很大的计算能力， 训练时间需要一两三。 本文使用的 &lt;em&gt;&lt;strong&gt;cntext2.1.5&lt;/strong&gt;&lt;/em&gt; 版本，需要付费获取 &lt;em&gt;&lt;strong&gt;cntext-2.1.5-py3-none-any.whl&lt;/strong&gt;&lt;/em&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;31-安装cntext&#34;&gt;3.1 安装cntext&lt;/h3&gt;
+&lt;p&gt;将 &lt;em&gt;&lt;strong&gt;cntext-2.1.5-py3-none-any.whl&lt;/strong&gt;&lt;/em&gt; 放置于电脑桌面， 打开 &lt;strong&gt;命令行cmd&lt;/strong&gt; (Mac打开&lt;strong&gt;terminal&lt;/strong&gt;)， 输入&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd desktop
+pip install cntext-2.1.5-py3-none-any.whl
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;有部分使用win的同学，如果按照操作没有安装成功，再试试&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd Desktop
+pip install cntext-2.1.5-py3-none-any.whl
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-开始训练&#34;&gt;3.2 开始训练&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;o&#34;&gt;%%&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;time&lt;/span&gt;
+
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;glob&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pathlib&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Path&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;os&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 分年份训练&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_f&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;glob&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;glob&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;year_corpus/*.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;# 训练word2vec，自动保存到output文件夹内&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;Word2Vec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                &lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                &lt;span class=&#34;n&#34;&gt;window_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                &lt;span class=&#34;n&#34;&gt;only_binary&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 将output文件夹重命名为year_w2vs&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;rename&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;year_w2vs&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+
+&lt;span class=&#34;c1&#34;&gt;# 分省份训练&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prov_f&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;glob&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;glob&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;province_corpus/*.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;# 训练word2vec，自动保存到output文件夹内&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;Word2Vec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;prov_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                &lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                &lt;span class=&#34;n&#34;&gt;window_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+                &lt;span class=&#34;n&#34;&gt;only_binary&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; 
+&lt;span class=&#34;c1&#34;&gt;# 将output文件夹重命名为province_w2vs&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;rename&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;province_w2vs&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Windows System, Unable Parallel Processing
+Cache output\1985_cache.txt Not Found or Empty, Preprocessing Corpus
+Processing Corpus: 100%|████████████████████████████████████████████████████████| 10009/10009 [00:13&amp;lt;00:00, 734.66it/s]
+Reading Preprocessed Corpus from output\1985_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 17 s. 
+Output Saved To: output\1985-Word2Vec.200.15.bin
+
+......
+......
+
+Windows System, Unable Parallel Processing
+Cache output\2025_cache.txt Not Found or Empty, Preprocessing Corpus
+Processing Corpus: 100%|████████████████████████████████████████████████████████| 10009/10009 [00:13&amp;lt;00:00, 734.66it/s]
+Reading Preprocessed Corpus from output\2025_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 17 s. 
+Output Saved To: output\2025-Word2Vec.200.15.bin
+
+
+Windows System, Unable Parallel Processing
+Cache output\上海市_cache.txt Not Found or Empty, Preprocessing Corpus
+Processing Corpus: 100%|██████████████████████████████████████████████████| 2456943/2456943 [03:42&amp;lt;00:00, 11048.35it/s]
+Reading Preprocessed Corpus from output\上海市_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 1400 s. 
+Output Saved To: output\上海市-Word2Vec.200.15.bin
+......
+......
+
+Windows System, Unable Parallel Processing
+Cache output\黑龙江省_cache.txt Not Found or Empty, Preprocessing Corpus
+Processing Corpus: 100%|█████████████████████████████████████████████████████| 544329/544329 [01:07&amp;lt;00:00, 8114.12it/s]
+Reading Preprocessed Corpus from output\黑龙江省_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 320 s. 
+Output Saved To: output\黑龙江省-Word2Vec.200.15.bin
+
+
+CPU times: total: 21354 s
+Wall time: 21758 s
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;训练省份词向量大概用了 6 小时，模型文件保存在 &lt;em&gt;&lt;strong&gt;provin_w2vs&lt;/strong&gt;&lt;/em&gt; 和 &lt;em&gt;&lt;strong&gt;year_w2vs&lt;/strong&gt;&lt;/em&gt; 文件夹内。
+&lt;img loading=&#34;lazy&#34; src=&#34;img/05-province-w2vs.png&#34; alt=&#34;&#34;  /&gt;
+
+&lt;img loading=&#34;lazy&#34; src=&#34;img/06-years-w2vs.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三使用word2vec&#34;&gt;三、使用word2vec&lt;/h2&gt;
+&lt;h3 id=&#34;31-导入模型&#34;&gt;3.1 导入模型&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;output/provin_w2vs&lt;/code&gt; 和 &lt;code&gt;output/year_w2vs&lt;/code&gt; 内有多个模型， 单个的模型文件大约几十M ~ 几百M， &lt;strong&gt;但不建议一次性导入进来&lt;/strong&gt;。大邓的电脑内存96G，为了省事，就一次性全导入了。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;glob&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;tqdm&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;tqdm&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 导入各省份词向量&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;provin_w2vs_&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;provin_w2v_fs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;glob&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;glob&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;province_w2vs/*.bin&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;provin_w2v_f&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;tqdm&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;provin_w2v_fs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;provin_w2v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;provin_w2v_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;provin_w2vs_&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;provin_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+
+&lt;span class=&#34;c1&#34;&gt;# 导入各年份词向量&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;year_w2vs_&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;year_w2v_fs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;glob&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;glob&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;year_w2vs/*.bin&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_w2v_f&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;tqdm&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_w2v_fs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;year_w2v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_w2v_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;year_w2vs_&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;  3%|██▍                                                                                | 1/34 [00:03&amp;lt;01:57,  3.57s/it]
+Loading province_w2vs\上海市-Word2Vec.200.15.bin...
+  6%|████▉                                                                              | 2/34 [00:04&amp;lt;01:11,  2.23s/it]
+Loading province_w2vs\云南省-Word2Vec.200.15.bin...
+......
+97%|███████████████████████████████████████████████████████████████████████████████▌  | 33/34 [01:07&amp;lt;00:01,  1.10s/it]
+Loading province_w2vs\香港特别行政区-Word2Vec.200.15.bin...
+100%|██████████████████████████████████████████████████████████████████████████████████| 34/34 [01:09&amp;lt;00:00,  2.04s/it]
+Loading province_w2vs\黑龙江省-Word2Vec.200.15.bin...
+
+
+  2%|██                                                                                 | 1/41 [00:00&amp;lt;00:05,  7.10it/s]
+Loading year_w2vs\1985-Word2Vec.200.15.bin...
+Loading year_w2vs\1986-Word2Vec.200.15.bin...
+ 10%|████████                                                                           | 4/41 [00:00&amp;lt;00:05,  6.80it/s]
+ ......
+ 100%|██████████████████████████████████████████████████████████████████████████████████| 41/41 [01:11&amp;lt;00:00,  1.75s/it]
+Loading year_w2vs\2025-Word2Vec.200.15.bin...
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-查看词汇量&#34;&gt;3.2 查看词汇量&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pathlib&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Path&lt;/span&gt;
+
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;省份Word2vec词汇量&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;provin_w2v_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;provin_w2v&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;zip&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;provin_w2v_fs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;provin_w2vs_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;province&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;provin_w2v_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;stem&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;-&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;province&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt; 词汇量: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;provin_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;省份Word2vec词汇量&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;上海市&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;640941&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;云南省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;205193&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;内蒙古自治区&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;138507&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;北京市&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;783162&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;台湾省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;242630&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;吉林省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;185587&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;四川省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;494241&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;天津市&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;373286&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;宁夏回族自治区&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;91592&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;安徽省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;540111&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;山东省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;722886&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;山西省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;188013&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;广东省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1010230&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;广西壮族自治区&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;190128&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;新疆维吾尔自治区&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;110063&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;江苏省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;983871&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;江西省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;256695&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;河北省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;326042&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;河南省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;415905&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;浙江省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;795041&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;海南省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;74657&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;湖北省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;412827&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;湖南省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;400262&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;澳门特别行政区&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;7806&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;甘肃省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;148753&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;福建省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;480456&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;西藏自治区&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;23115&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;贵州省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;186345&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;辽宁省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;347563&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;重庆市&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;358991&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;陕西省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;381781&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;青海省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;53325&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;香港特别行政区&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;71947&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;黑龙江省&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;词汇量&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;253129&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;年份word2vec词汇量&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_w2v_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_w2v&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;zip&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_w2v_fs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_w2vs_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;year&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_w2v_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;stem&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;-&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;index_to_key&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;年份word2vec词汇量
+1985: 15494
+1986: 17945
+1987: 23625
+1988: 27740
+1989: 27394
+1990: 32920
+1991: 37584
+1992: 45393
+1993: 48326
+1994: 46725
+1995: 46138
+1996: 50117
+1997: 53625
+1998: 57187
+1999: 65154
+2000: 78368
+2001: 95927
+2002: 123513
+2003: 145087
+2004: 158694
+2005: 185840
+2006: 215856
+2007: 240167
+2008: 279364
+2009: 334179
+2010: 382888
+2011: 449648
+2012: 508506
+2013: 621644
+2014: 625248
+2015: 685487
+2016: 732443
+2017: 760332
+2018: 776968
+2019: 789104
+2020: 817553
+2021: 799388
+2022: 734045
+2023: 596784
+2024: 516263
+2025: 21230
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;33-语义检查-省份&#34;&gt;3.3 语义检查-省份&lt;/h3&gt;
+&lt;p&gt;先检查省份， 查看与[&amp;lsquo;创新&amp;rsquo;, &amp;lsquo;新颖&amp;rsquo;]最相似的5个词，通过语义捕捉准确与否，粗略判断Word2vec训练效果的好坏。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;provin_w2v_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;provin_w2v&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;zip&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;provin_w2v_fs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;provin_w2vs_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;province&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;provin_w2v_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;stem&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;-&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;wordweigths&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;provin_w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;创新&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;新颖&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;words&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;p&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;wordweigths&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+        &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;province&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34; &amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;words&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;province&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;: NA&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;上海市: 独特 巧妙 创新性 理念 新颖结构合理
+云南省: 独特 巧妙 精巧 科学合理 新颖合理
+内蒙古自治区: 理念 独特 巧妙 合理使用方便 全新
+北京市: 巧妙 独特 全新 借鉴 新颖使用方便
+台湾省: 全新 独特 精巧 简洁 巧妙
+吉林省: 理念 思路 现代 全新 巧妙
+四川省: 巧妙 独特 全新 理念 合理使用方便
+天津市: 独特 巧妙 合理使用方便 巧妙使用方便 全新
+宁夏回族自治区: 更具 多样 丰富 性价比 市场前景
+安徽省: 巧妙 独特 巧妙使用方便 合理 合理结构紧凑
+山东省: 巧妙 精巧 新颖结构合理 巧妙结构合理 全新
+山西省: 独特 全新 科学 现代 已有
+广东省: 巧妙 独特 创新性 合理 精巧
+广西壮族自治区: 独特 巧妙 合理使用方便 精巧 合理实用性
+新疆维吾尔自治区: 合理使用方便 巧妙 简单合理 科学合理 合理
+江苏省: 巧妙 独特 合理 全新 科学
+江西省: 独特 科学合理 巧妙 简洁 精巧
+河北省: 巧妙 新颖使用方便 精巧 独特 理念
+河南省: 巧妙 科学合理 独特 新颖使用方便 巧妙使用方便
+浙江省: 独特 巧妙 科学 精巧 合理
+海南省: 思路 科学合理 人性化 科学 独特
+湖北省: 巧妙 巧妙合理 科学合理 独特 新颖结构合理
+湖南省: 巧妙 精巧 独特 新颖独特 巧妙结构合理
+澳门特别行政区: 撞击 边坡 溜槽 耐高温 材料制成
+甘肃省: 独特 全新 理念 现代 普及
+福建省: 巧妙 新颖使用方便 独特 巧妙结构合理 全新
+西藏自治区: 既能 十分 疲劳 范围广 更加人性化
+贵州省: 巧妙 独特 科学合理 合理使用方便 精巧
+辽宁省: 巧妙 巧妙结构合理 新颖结构合理 新颖独特 独创
+重庆市: 合理使用方便 科学合理 精巧 全新 新颖使用方便
+陕西省: 巧妙 独特 新颖结构合理 合理 合理使用方便
+青海省: 突破 织机 现行 经济环保 杆织机
+香港特别行政区: 全新 更具 美感 市场 丰富
+黑龙江省: 独特 精巧 科学合理 巧妙 构思
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;从上面的运行结果看， 除青海省，剩下的绝大多数的省份的Word2vec都很准确的捕捉到了专利摘要的语义信息。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;34-语义检查-年份&#34;&gt;3.4 语义检查-年份&lt;/h3&gt;
+&lt;p&gt;查看与[&amp;lsquo;创新&amp;rsquo;, &amp;lsquo;新颖&amp;rsquo;]最相似的5个词，通过语义捕捉准确与否，粗略判断Word2vec训练效果的好坏。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_w2v_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_w2v&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;zip&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_w2v_fs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_w2vs_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;year&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_w2v_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;stem&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;-&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;wordweigths&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_w2v&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;创新&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;新颖&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;words&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;p&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;wordweigths&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+        &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34; &amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;words&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;except&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;: NA&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;1985: 公知 专门 特别适用 提出一种 机器人
+1986: 植入 理发 135 婴儿车 街道
+1987: 落后 儿童智力开发 低档 胶鞋 指甲
+1988: 目前市场 低档 捕鱼 证件 普遍使用
+1989: 价廉物美 课堂教学 普及型 大众 得心应手
+1990: 单纯 精简 多方面 机等 应用领域
+1991: 普及型 前途 大众 现代 现代化
+1992: 构思 保留传统 不失为 全新 机之
+1993: 完美 现代科技 崭新 式样 边墙
+1994: 样式 别致 造型新颖 显得 华贵
+1995: 多样 结实耐用 独特 别致 高档
+1996: 花样 耐冲击浮标 极其 式样新颖 应用范围
+1997: 实用美观 室内外装饰 标准化 多变 形象逼真
+1998: 现代 改革 开发 高雅 创造
+1999: 现代 市场 越来越 款式 大方
+2000: 全新 娱乐性趣味性 多样化 多方面 各种各样
+2001: 完美 现代 新颖别致 多样化 体现
+2002: 全新 现代 实为 科学 大众
+2003: 全新 突破传统 多样化 体现 科学
+2004: 全新 科技 现代 市场 科学合理
+2005: 创意 理念 全新 科学 现代
+2006: 全新 构思 理念 新颖性 独特
+2007: 全新 突破传统 巧妙 独特 现代
+2008: 独特 巧妙 全新 新颖独特 设计理念
+2009: 独特 巧妙 全新 科学 新颖独特
+2010: 独特 新颖独特 精巧 巧妙 科学合理
+2011: 独特 精巧 新颖独特 科学合理 巧妙
+2012: 独特 巧妙 新颖独特 精巧 科学合理
+2013: 独特 新颖独特 精巧 科学合理 巧妙
+2014: 巧妙 独特 科学合理 巧妙合理 精巧
+2015: 巧妙 独特 巧妙合理 新颖结构合理 科学合理
+2016: 巧妙 结合现在 巧妙合理 独特 全新
+2017: 巧妙 科学合理 独特 科学 合理
+2018: 巧妙 独特 合理 科学 全新
+2019: 巧妙 独特 合理 全新 精巧
+2020: 巧妙 独特 合理 精巧 设计
+2021: 巧妙 精巧 合理 新颖结构合理 全新
+2022: 巧妙 全新 独特 创新性 精巧
+2023: 巧妙 独特 全新 创新性 精巧
+2024: 巧妙 创新性 独特 精巧 全新
+2025: 相结合 双重 独特 多重 优势
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;也试了其他的词语，好像 1998 年之后的捕捉的语义是准确的。&lt;/p&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;四研究潜力-语义变迁研究方法介绍&#34;&gt;四、研究潜力: 语义变迁研究方法介绍&lt;/h2&gt;
+&lt;p&gt;假设语义都很准的话， 是可以研究 &lt;strong&gt;语义变迁&lt;/strong&gt; 或者 &lt;strong&gt;语义差异&lt;/strong&gt; 的。 但需要注意， 不能直接使用两个年份或者两个省份的中word1和word2的距离来体现语义的变迁或者语义的差异。 如果想做省份间差异或者某省份随时间的变化， 需要用到 &lt;strong&gt;对齐算法&lt;/strong&gt;， 常用的算法是 &lt;strong&gt;正交Procrustes矩阵对齐&lt;/strong&gt;， 使得同省份不同年份或者通年份不同省份的word2vec都有相同的语义空间。&lt;/p&gt;
+&lt;h3 id=&#34;41-正交procrustes算法&#34;&gt;4.1 正交Procrustes算法&lt;/h3&gt;
+&lt;p&gt;正交Procrustes矩阵对齐是一种将两个预训练语言模型的词向量矩阵对齐的方法，使得它们在相同的语义空间中表示。具体来说，它通过计算一个正交矩阵，将两个词向量矩阵进行线性变换，使得它们的Frobenius范数之和最小，从而实现对齐。 在 cntext2.x中实现了Procrustes对齐函数 &lt;em&gt;&lt;strong&gt;ct.procrustes_align()&lt;/strong&gt;&lt;/em&gt;，具体可阅读 &lt;a href=&#34;https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/&#34;&gt;文本分析库cntext2.x使用手册&lt;/a&gt;&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;42-语义变迁流程图&#34;&gt;4.2 语义变迁流程图&lt;/h3&gt;
+&lt;p&gt;语义变迁类研究的流程图可参考 &lt;a href=&#34;https://github.com/Living-with-machines/DiachronicEmb-BigHistData&#34;&gt;DiachronicEmb-BigHistData&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/w2v-time-shifting-flowchart.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;大邓在 &lt;a href=&#34;https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/&#34;&gt;可视化 | 人民日报语料反映七十年文化演变&lt;/a&gt; 实现了历时语义对齐， 可以看出70 年整个中国社会的认知变迁。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;43-识别语义变化时间点&#34;&gt;4.3 识别语义变化时间点&lt;/h3&gt;
+&lt;p&gt;该项目研究了1800-1910期间， 每10年为一个单位训练词向量， 探究词语变化。以 &lt;em&gt;&lt;strong&gt;railway&lt;/strong&gt;&lt;/em&gt; 和  &lt;em&gt;&lt;strong&gt;traffic&lt;/strong&gt;&lt;/em&gt; 为例, 先用 余弦相似度(cosine-similarity)算法识别词语语义变化的时间点，如下图&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/consine-sim-cpdetection.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;44-绘制语义变化轨迹&#34;&gt;4.4 绘制语义变化轨迹&lt;/h3&gt;
+&lt;p&gt;语义变化轨迹&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/railway-time-shifting.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;五获取资源&#34;&gt;五、获取资源&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;- 免费  专利摘要-Word2Vec.200.15.bin  https://pan.baidu.com/s/1CgBjy96hDKM2GKQY4G6kYA?pwd=ba92
+
+- 免费  province_w2vs                https://pan.baidu.com/s/1eBFTIZcv2DWssLiaRnCqZQ?pwd=ikpu
+
+- 免费  year_w2vs                    https://pan.baidu.com/s/1lrVkML92cVJdHQa1HQyAwA?pwd=4gqa
+
+- 100元  cntext-2.1.5-py3-none-any.whl 如有需要，请加微信 372335839， 备注「姓名-学校-专业」
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+      <content:encoded><![CDATA[<p>想用 <a href="https://textdata.cn/blog/2023-04-13-3571w-patent-dataset-in-china-mainland/">中国专利申请数据集</a>，按年份(或按省份)训练词向量的同学，可以好好看本文，能节省你几十个小时时间。
+<br><br></p>
+<h2 id="一检查数据">一、检查数据</h2>
+<p>这个数据集很大， 如图所示，文件动辄几G</p>
+<p><img loading="lazy" src="img/01-data-screen.png" alt=""  />
+</p>
+<p>之前分享过 <a href=""></a> , 面对巨大csv文件，我们要了解内部有哪些字段、字段的含义， 只读取需要的字段，减轻电脑内存压力， 让你能轻松应对几倍于内存的巨大csv文件。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1"># 以山东省.csv 为例， 只读第一行(前1行)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;山东省.csv&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/02-shandong_df.png" alt=""  />
+</p>
+<br>
+<p>字段展示的不全，完整的字段应该有</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Index([&#39;专利名称&#39;, &#39;专利类型&#39;, &#39;申请人&#39;, &#39;申请人类型&#39;, &#39;申请人地址&#39;, &#39;申请人国家&#39;, &#39;申请人省份&#39;, &#39;申请人城市&#39;,
+       &#39;申请人区县&#39;, &#39;申请号&#39;, &#39;申请日&#39;, &#39;申请年份&#39;, &#39;公开公告号&#39;, &#39;公开公告日&#39;, &#39;公开公告年份&#39;, &#39;授权公告号&#39;,
+       &#39;授权公告日&#39;, &#39;授权公告年份&#39;, &#39;IPC分类号&#39;, &#39;IPC主分类号&#39;, &#39;发明人&#39;, &#39;摘要文本&#39;, &#39;主权项内容&#39;, &#39;当前权利人&#39;,
+       &#39;当前专利权人地址&#39;, &#39;专利权人类型&#39;, &#39;统一社会信用代码&#39;, &#39;引证次数&#39;, &#39;被引证次数&#39;, &#39;自引次数&#39;, &#39;他引次数&#39;,
+       &#39;被自引次数&#39;, &#39;被他引次数&#39;, &#39;家族引证次数&#39;, &#39;家族被引证次数&#39;],
+      dtype=&#39;object&#39;)
+</code></pre></div><br>
+<p>训练词向量主要用文本数据， 在本案例中， 需要的字段 [<strong>专利摘要</strong>] 。</p>
+<p><br><br></p>
+<h2 id="二构造语料">二、构造语料</h2>
+<p>在 [5000万专利申请全量数据1985-2025年] 文件夹中，</p>
+<ol>
+<li>新建 [province_corpus] 和 [year_corpus] 两个文件夹</li>
+<li>新建 [code.ipynb]</li>
+</ol>
+<p>构造语料对电脑的性能要求不高， 不论你的电脑是什么配置，基本都能运行， 而且耗时在能接受的范围。</p>
+<br>
+<h3 id="21-文件树结构">2.1 文件树结构</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">5000万专利申请全量数据1985-2025年
+  |---中国专利数据库.csv.gz
+  |---code.ipynb
+  |---province_corpus
+     |---安徽省.txt
+     |---浙江省.txt
+     |---...
+  |---year_corpus
+     |---2025.txt
+     |---2024.txt
+     |---...
+  |---provin_w2vs
+        |---安徽省-Word2Vec.200.15.bin
+        |---山东省-Word2Vec.200.15.bin
+        |---...
+  |---year_w2vs
+        |---2025-Word2Vec.200.15.bin
+        |---2022-Word2Vec.100.6.bin.syn1neg.npy
+        |---2022-Word2Vec.100.6.bin.wv.vectors.npy
+        |---...
+</code></pre></div><br>
+<h3 id="22-构造语料代码">2.2 构造语料代码</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="c1"># 读取csv文件， 只读取需要的字段</span>
+<span class="c1"># 按 100000 行分块读取， 避免内存溢出</span>
+<span class="n">chunk_dfs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;中国专利数据库.csv.gz&#39;</span><span class="p">,</span> 
+                 <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> 
+                 <span class="n">usecols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;申请人省份&#39;</span><span class="p">,</span> <span class="s1">&#39;申请日&#39;</span><span class="p">,</span> <span class="s1">&#39;专利名称&#39;</span><span class="p">,</span> <span class="s1">&#39;摘要文本&#39;</span><span class="p">],</span>
+                 <span class="n">chunksize</span><span class="o">=</span><span class="mi">100000</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">chunk_df</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">chunk_dfs</span><span class="p">):</span>
+    <span class="n">chunk_df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">chunk_df</span><span class="p">[</span><span class="s1">&#39;申请日&#39;</span><span class="p">])</span>
+
+    <span class="c1"># 新建 province_corpus 和 year_corpus文件夹</span>
+    <span class="n">province_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;province_corpus&#39;</span><span class="p">)</span>
+    <span class="n">province_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">year_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;year_corpus&#39;</span><span class="p">)</span>
+    <span class="n">year_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="c1"># 按省份和年份构造语料</span>
+    <span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">year_df</span> <span class="ow">in</span> <span class="n">chunk_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;申请日&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;YE&#39;</span><span class="p">)):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
+        <span class="n">year_file</span> <span class="o">=</span> <span class="n">year_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&#34;</span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s2">.txt&#34;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">year_file</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">yf</span><span class="p">:</span>
+            <span class="n">y_text_series</span> <span class="o">=</span> <span class="n">year_df</span><span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">year_df</span><span class="p">[</span><span class="s1">&#39;摘要文本&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">y_text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">y_text_series</span><span class="p">)</span>
+            <span class="n">yf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">y_text</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">prov</span><span class="p">,</span> <span class="n">prov_df</span> <span class="ow">in</span> <span class="n">chunk_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;申请人省份&#39;</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">prov</span><span class="p">)</span>
+        <span class="n">prov_file</span> <span class="o">=</span> <span class="n">province_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&#34;</span><span class="si">{</span><span class="n">prov</span><span class="si">}</span><span class="s2">.txt&#34;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">prov_file</span><span class="p">,</span> <span class="s1">&#39;a+&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pf</span><span class="p">:</span>
+            <span class="n">prov_text_series</span> <span class="o">=</span> <span class="n">prov_df</span><span class="p">[</span><span class="s1">&#39;专利名称&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">prov_df</span><span class="p">[</span><span class="s1">&#39;摘要文本&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">prov_text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">prov_text_series</span><span class="p">)</span>
+            <span class="n">pf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">prov_text</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2025
+2024
+...
+
+
+上海市
+云南省
+...
+安徽省
+
+CPU times: total: 27min 55s
+Wall time: 39min 10s
+</code></pre></div><p>构造语料用 40 分钟时间，得到文件夹province_corpus和year_corpus。
+<img loading="lazy" src="img/03-province-corpus.png" alt=""  />
+
+<img loading="lazy" src="img/03-year-corpus.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三训练word2vec">三、训练word2vec</h2>
+<p>需要注意， 训练word2vec需要耗费很大的计算能力， 训练时间需要一两三。 本文使用的 <em><strong>cntext2.1.5</strong></em> 版本，需要付费获取 <em><strong>cntext-2.1.5-py3-none-any.whl</strong></em>。</p>
+<h3 id="31-安装cntext">3.1 安装cntext</h3>
+<p>将 <em><strong>cntext-2.1.5-py3-none-any.whl</strong></em> 放置于电脑桌面， 打开 <strong>命令行cmd</strong> (Mac打开<strong>terminal</strong>)， 输入</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+pip install cntext-2.1.5-py3-none-any.whl
+</code></pre></div><p>有部分使用win的同学，如果按照操作没有安装成功，再试试</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd Desktop
+pip install cntext-2.1.5-py3-none-any.whl
+</code></pre></div><br>
+<h3 id="32-开始训练">3.2 开始训练</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1"># 分年份训练</span>
+<span class="k">for</span> <span class="n">year_f</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;year_corpus/*.txt&#39;</span><span class="p">):</span>
+    <span class="c1"># 训练word2vec，自动保存到output文件夹内</span>
+    <span class="n">ct</span><span class="o">.</span><span class="n">Word2Vec</span><span class="p">(</span><span class="n">corpus_file</span> <span class="o">=</span> <span class="n">year_f</span><span class="p">,</span> 
+                <span class="n">vector_size</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> 
+                <span class="n">window_size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> 
+                <span class="n">only_binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># 将output文件夹重命名为year_w2vs</span>
+<span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;output&#39;</span><span class="p">,</span> <span class="s1">&#39;year_w2vs&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># 分省份训练</span>
+<span class="k">for</span> <span class="n">prov_f</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;province_corpus/*.txt&#39;</span><span class="p">):</span>
+    <span class="c1"># 训练word2vec，自动保存到output文件夹内</span>
+    <span class="n">ct</span><span class="o">.</span><span class="n">Word2Vec</span><span class="p">(</span><span class="n">corpus_file</span> <span class="o">=</span> <span class="n">prov_f</span><span class="p">,</span> 
+                <span class="n">vector_size</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> 
+                <span class="n">window_size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> 
+                <span class="n">only_binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> 
+<span class="c1"># 将output文件夹重命名为province_w2vs</span>
+<span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;output&#39;</span><span class="p">,</span> <span class="s1">&#39;province_w2vs&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Windows System, Unable Parallel Processing
+Cache output\1985_cache.txt Not Found or Empty, Preprocessing Corpus
+Processing Corpus: 100%|████████████████████████████████████████████████████████| 10009/10009 [00:13&lt;00:00, 734.66it/s]
+Reading Preprocessed Corpus from output\1985_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 17 s. 
+Output Saved To: output\1985-Word2Vec.200.15.bin
+
+......
+......
+
+Windows System, Unable Parallel Processing
+Cache output\2025_cache.txt Not Found or Empty, Preprocessing Corpus
+Processing Corpus: 100%|████████████████████████████████████████████████████████| 10009/10009 [00:13&lt;00:00, 734.66it/s]
+Reading Preprocessed Corpus from output\2025_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 17 s. 
+Output Saved To: output\2025-Word2Vec.200.15.bin
+
+
+Windows System, Unable Parallel Processing
+Cache output\上海市_cache.txt Not Found or Empty, Preprocessing Corpus
+Processing Corpus: 100%|██████████████████████████████████████████████████| 2456943/2456943 [03:42&lt;00:00, 11048.35it/s]
+Reading Preprocessed Corpus from output\上海市_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 1400 s. 
+Output Saved To: output\上海市-Word2Vec.200.15.bin
+......
+......
+
+Windows System, Unable Parallel Processing
+Cache output\黑龙江省_cache.txt Not Found or Empty, Preprocessing Corpus
+Processing Corpus: 100%|█████████████████████████████████████████████████████| 544329/544329 [01:07&lt;00:00, 8114.12it/s]
+Reading Preprocessed Corpus from output\黑龙江省_cache.txt
+Start Training Word2Vec
+Word2Vec Training Cost 320 s. 
+Output Saved To: output\黑龙江省-Word2Vec.200.15.bin
+
+
+CPU times: total: 21354 s
+Wall time: 21758 s
+</code></pre></div><p>训练省份词向量大概用了 6 小时，模型文件保存在 <em><strong>provin_w2vs</strong></em> 和 <em><strong>year_w2vs</strong></em> 文件夹内。
+<img loading="lazy" src="img/05-province-w2vs.png" alt=""  />
+
+<img loading="lazy" src="img/06-years-w2vs.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="三使用word2vec">三、使用word2vec</h2>
+<h3 id="31-导入模型">3.1 导入模型</h3>
+<p><code>output/provin_w2vs</code> 和 <code>output/year_w2vs</code> 内有多个模型， 单个的模型文件大约几十M ~ 几百M， <strong>但不建议一次性导入进来</strong>。大邓的电脑内存96G，为了省事，就一次性全导入了。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="c1"># 导入各省份词向量</span>
+<span class="n">provin_w2vs_</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">provin_w2v_fs</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;province_w2vs/*.bin&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">provin_w2v_f</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">provin_w2v_fs</span><span class="p">):</span>
+    <span class="n">provin_w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">provin_w2v_f</span><span class="p">)</span>
+    <span class="n">provin_w2vs_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">provin_w2v</span><span class="p">)</span>
+
+
+<span class="c1"># 导入各年份词向量</span>
+<span class="n">year_w2vs_</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">year_w2v_fs</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;year_w2vs/*.bin&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">year_w2v_f</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">year_w2v_fs</span><span class="p">):</span>
+    <span class="n">year_w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">year_w2v_f</span><span class="p">)</span>
+    <span class="n">year_w2vs_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">year_w2v</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">  3%|██▍                                                                                | 1/34 [00:03&lt;01:57,  3.57s/it]
+Loading province_w2vs\上海市-Word2Vec.200.15.bin...
+  6%|████▉                                                                              | 2/34 [00:04&lt;01:11,  2.23s/it]
+Loading province_w2vs\云南省-Word2Vec.200.15.bin...
+......
+97%|███████████████████████████████████████████████████████████████████████████████▌  | 33/34 [01:07&lt;00:01,  1.10s/it]
+Loading province_w2vs\香港特别行政区-Word2Vec.200.15.bin...
+100%|██████████████████████████████████████████████████████████████████████████████████| 34/34 [01:09&lt;00:00,  2.04s/it]
+Loading province_w2vs\黑龙江省-Word2Vec.200.15.bin...
+
+
+  2%|██                                                                                 | 1/41 [00:00&lt;00:05,  7.10it/s]
+Loading year_w2vs\1985-Word2Vec.200.15.bin...
+Loading year_w2vs\1986-Word2Vec.200.15.bin...
+ 10%|████████                                                                           | 4/41 [00:00&lt;00:05,  6.80it/s]
+ ......
+ 100%|██████████████████████████████████████████████████████████████████████████████████| 41/41 [01:11&lt;00:00,  1.75s/it]
+Loading year_w2vs\2025-Word2Vec.200.15.bin...
+
+</code></pre></div><br>
+<h3 id="32-查看词汇量">3.2 查看词汇量</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;省份Word2vec词汇量&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">provin_w2v_f</span><span class="p">,</span> <span class="n">provin_w2v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">provin_w2v_fs</span><span class="p">,</span> <span class="n">provin_w2vs_</span><span class="p">):</span>
+    <span class="n">province</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">provin_w2v_f</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">province</span><span class="si">}</span><span class="s1"> 词汇量: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">provin_w2v</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">省份Word2vec词汇量</span>
+<span class="n">上海市</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">640941</span>
+<span class="n">云南省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">205193</span>
+<span class="n">内蒙古自治区</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">138507</span>
+<span class="n">北京市</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">783162</span>
+<span class="n">台湾省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">242630</span>
+<span class="n">吉林省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">185587</span>
+<span class="n">四川省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">494241</span>
+<span class="n">天津市</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">373286</span>
+<span class="n">宁夏回族自治区</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">91592</span>
+<span class="n">安徽省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">540111</span>
+<span class="n">山东省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">722886</span>
+<span class="n">山西省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">188013</span>
+<span class="n">广东省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">1010230</span>
+<span class="n">广西壮族自治区</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">190128</span>
+<span class="n">新疆维吾尔自治区</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">110063</span>
+<span class="n">江苏省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">983871</span>
+<span class="n">江西省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">256695</span>
+<span class="n">河北省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">326042</span>
+<span class="n">河南省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">415905</span>
+<span class="n">浙江省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">795041</span>
+<span class="n">海南省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">74657</span>
+<span class="n">湖北省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">412827</span>
+<span class="n">湖南省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">400262</span>
+<span class="n">澳门特别行政区</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">7806</span>
+<span class="n">甘肃省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">148753</span>
+<span class="n">福建省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">480456</span>
+<span class="n">西藏自治区</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">23115</span>
+<span class="n">贵州省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">186345</span>
+<span class="n">辽宁省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">347563</span>
+<span class="n">重庆市</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">358991</span>
+<span class="n">陕西省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">381781</span>
+<span class="n">青海省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">53325</span>
+<span class="n">香港特别行政区</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">71947</span>
+<span class="n">黑龙江省</span> <span class="n">词汇量</span><span class="p">:</span> <span class="mi">253129</span>
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;年份word2vec词汇量&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">year_w2v_f</span><span class="p">,</span> <span class="n">year_w2v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">year_w2v_fs</span><span class="p">,</span> <span class="n">year_w2vs_</span><span class="p">):</span>
+    <span class="n">year</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">year_w2v_f</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">year_w2v</span><span class="o">.</span><span class="n">index_to_key</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">年份word2vec词汇量
+1985: 15494
+1986: 17945
+1987: 23625
+1988: 27740
+1989: 27394
+1990: 32920
+1991: 37584
+1992: 45393
+1993: 48326
+1994: 46725
+1995: 46138
+1996: 50117
+1997: 53625
+1998: 57187
+1999: 65154
+2000: 78368
+2001: 95927
+2002: 123513
+2003: 145087
+2004: 158694
+2005: 185840
+2006: 215856
+2007: 240167
+2008: 279364
+2009: 334179
+2010: 382888
+2011: 449648
+2012: 508506
+2013: 621644
+2014: 625248
+2015: 685487
+2016: 732443
+2017: 760332
+2018: 776968
+2019: 789104
+2020: 817553
+2021: 799388
+2022: 734045
+2023: 596784
+2024: 516263
+2025: 21230
+</code></pre></div><br>
+<h3 id="33-语义检查-省份">3.3 语义检查-省份</h3>
+<p>先检查省份， 查看与[&lsquo;创新&rsquo;, &lsquo;新颖&rsquo;]最相似的5个词，通过语义捕捉准确与否，粗略判断Word2vec训练效果的好坏。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">provin_w2v_f</span><span class="p">,</span> <span class="n">provin_w2v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">provin_w2v_fs</span><span class="p">,</span> <span class="n">provin_w2vs_</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">province</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">provin_w2v_f</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">wordweigths</span> <span class="o">=</span> <span class="n">provin_w2v</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;新颖&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span><span class="n">p</span> <span class="ow">in</span> <span class="n">wordweigths</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">province</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="s2">&#34; &#34;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">province</span><span class="si">}</span><span class="s1">: NA&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">上海市: 独特 巧妙 创新性 理念 新颖结构合理
+云南省: 独特 巧妙 精巧 科学合理 新颖合理
+内蒙古自治区: 理念 独特 巧妙 合理使用方便 全新
+北京市: 巧妙 独特 全新 借鉴 新颖使用方便
+台湾省: 全新 独特 精巧 简洁 巧妙
+吉林省: 理念 思路 现代 全新 巧妙
+四川省: 巧妙 独特 全新 理念 合理使用方便
+天津市: 独特 巧妙 合理使用方便 巧妙使用方便 全新
+宁夏回族自治区: 更具 多样 丰富 性价比 市场前景
+安徽省: 巧妙 独特 巧妙使用方便 合理 合理结构紧凑
+山东省: 巧妙 精巧 新颖结构合理 巧妙结构合理 全新
+山西省: 独特 全新 科学 现代 已有
+广东省: 巧妙 独特 创新性 合理 精巧
+广西壮族自治区: 独特 巧妙 合理使用方便 精巧 合理实用性
+新疆维吾尔自治区: 合理使用方便 巧妙 简单合理 科学合理 合理
+江苏省: 巧妙 独特 合理 全新 科学
+江西省: 独特 科学合理 巧妙 简洁 精巧
+河北省: 巧妙 新颖使用方便 精巧 独特 理念
+河南省: 巧妙 科学合理 独特 新颖使用方便 巧妙使用方便
+浙江省: 独特 巧妙 科学 精巧 合理
+海南省: 思路 科学合理 人性化 科学 独特
+湖北省: 巧妙 巧妙合理 科学合理 独特 新颖结构合理
+湖南省: 巧妙 精巧 独特 新颖独特 巧妙结构合理
+澳门特别行政区: 撞击 边坡 溜槽 耐高温 材料制成
+甘肃省: 独特 全新 理念 现代 普及
+福建省: 巧妙 新颖使用方便 独特 巧妙结构合理 全新
+西藏自治区: 既能 十分 疲劳 范围广 更加人性化
+贵州省: 巧妙 独特 科学合理 合理使用方便 精巧
+辽宁省: 巧妙 巧妙结构合理 新颖结构合理 新颖独特 独创
+重庆市: 合理使用方便 科学合理 精巧 全新 新颖使用方便
+陕西省: 巧妙 独特 新颖结构合理 合理 合理使用方便
+青海省: 突破 织机 现行 经济环保 杆织机
+香港特别行政区: 全新 更具 美感 市场 丰富
+黑龙江省: 独特 精巧 科学合理 巧妙 构思
+</code></pre></div><p>从上面的运行结果看， 除青海省，剩下的绝大多数的省份的Word2vec都很准确的捕捉到了专利摘要的语义信息。</p>
+<br>
+<h3 id="34-语义检查-年份">3.4 语义检查-年份</h3>
+<p>查看与[&lsquo;创新&rsquo;, &lsquo;新颖&rsquo;]最相似的5个词，通过语义捕捉准确与否，粗略判断Word2vec训练效果的好坏。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">year_w2v_f</span><span class="p">,</span> <span class="n">year_w2v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">year_w2v_fs</span><span class="p">,</span> <span class="n">year_w2vs_</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">year</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">year_w2v_f</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">wordweigths</span> <span class="o">=</span> <span class="n">year_w2v</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;创新&#39;</span><span class="p">,</span> <span class="s1">&#39;新颖&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span><span class="n">p</span> <span class="ow">in</span> <span class="n">wordweigths</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="s2">&#34; &#34;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">: NA&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1985: 公知 专门 特别适用 提出一种 机器人
+1986: 植入 理发 135 婴儿车 街道
+1987: 落后 儿童智力开发 低档 胶鞋 指甲
+1988: 目前市场 低档 捕鱼 证件 普遍使用
+1989: 价廉物美 课堂教学 普及型 大众 得心应手
+1990: 单纯 精简 多方面 机等 应用领域
+1991: 普及型 前途 大众 现代 现代化
+1992: 构思 保留传统 不失为 全新 机之
+1993: 完美 现代科技 崭新 式样 边墙
+1994: 样式 别致 造型新颖 显得 华贵
+1995: 多样 结实耐用 独特 别致 高档
+1996: 花样 耐冲击浮标 极其 式样新颖 应用范围
+1997: 实用美观 室内外装饰 标准化 多变 形象逼真
+1998: 现代 改革 开发 高雅 创造
+1999: 现代 市场 越来越 款式 大方
+2000: 全新 娱乐性趣味性 多样化 多方面 各种各样
+2001: 完美 现代 新颖别致 多样化 体现
+2002: 全新 现代 实为 科学 大众
+2003: 全新 突破传统 多样化 体现 科学
+2004: 全新 科技 现代 市场 科学合理
+2005: 创意 理念 全新 科学 现代
+2006: 全新 构思 理念 新颖性 独特
+2007: 全新 突破传统 巧妙 独特 现代
+2008: 独特 巧妙 全新 新颖独特 设计理念
+2009: 独特 巧妙 全新 科学 新颖独特
+2010: 独特 新颖独特 精巧 巧妙 科学合理
+2011: 独特 精巧 新颖独特 科学合理 巧妙
+2012: 独特 巧妙 新颖独特 精巧 科学合理
+2013: 独特 新颖独特 精巧 科学合理 巧妙
+2014: 巧妙 独特 科学合理 巧妙合理 精巧
+2015: 巧妙 独特 巧妙合理 新颖结构合理 科学合理
+2016: 巧妙 结合现在 巧妙合理 独特 全新
+2017: 巧妙 科学合理 独特 科学 合理
+2018: 巧妙 独特 合理 科学 全新
+2019: 巧妙 独特 合理 全新 精巧
+2020: 巧妙 独特 合理 精巧 设计
+2021: 巧妙 精巧 合理 新颖结构合理 全新
+2022: 巧妙 全新 独特 创新性 精巧
+2023: 巧妙 独特 全新 创新性 精巧
+2024: 巧妙 创新性 独特 精巧 全新
+2025: 相结合 双重 独特 多重 优势
+</code></pre></div><p>也试了其他的词语，好像 1998 年之后的捕捉的语义是准确的。</p>
+<br>
+<h2 id="四研究潜力-语义变迁研究方法介绍">四、研究潜力: 语义变迁研究方法介绍</h2>
+<p>假设语义都很准的话， 是可以研究 <strong>语义变迁</strong> 或者 <strong>语义差异</strong> 的。 但需要注意， 不能直接使用两个年份或者两个省份的中word1和word2的距离来体现语义的变迁或者语义的差异。 如果想做省份间差异或者某省份随时间的变化， 需要用到 <strong>对齐算法</strong>， 常用的算法是 <strong>正交Procrustes矩阵对齐</strong>， 使得同省份不同年份或者通年份不同省份的word2vec都有相同的语义空间。</p>
+<h3 id="41-正交procrustes算法">4.1 正交Procrustes算法</h3>
+<p>正交Procrustes矩阵对齐是一种将两个预训练语言模型的词向量矩阵对齐的方法，使得它们在相同的语义空间中表示。具体来说，它通过计算一个正交矩阵，将两个词向量矩阵进行线性变换，使得它们的Frobenius范数之和最小，从而实现对齐。 在 cntext2.x中实现了Procrustes对齐函数 <em><strong>ct.procrustes_align()</strong></em>，具体可阅读 <a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">文本分析库cntext2.x使用手册</a></p>
+<br>
+<h3 id="42-语义变迁流程图">4.2 语义变迁流程图</h3>
+<p>语义变迁类研究的流程图可参考 <a href="https://github.com/Living-with-machines/DiachronicEmb-BigHistData">DiachronicEmb-BigHistData</a></p>
+<p><img loading="lazy" src="img/w2v-time-shifting-flowchart.png" alt=""  />
+</p>
+<p>大邓在 <a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/">可视化 | 人民日报语料反映七十年文化演变</a> 实现了历时语义对齐， 可以看出70 年整个中国社会的认知变迁。</p>
+<br>
+<h3 id="43-识别语义变化时间点">4.3 识别语义变化时间点</h3>
+<p>该项目研究了1800-1910期间， 每10年为一个单位训练词向量， 探究词语变化。以 <em><strong>railway</strong></em> 和  <em><strong>traffic</strong></em> 为例, 先用 余弦相似度(cosine-similarity)算法识别词语语义变化的时间点，如下图</p>
+<p><img loading="lazy" src="img/consine-sim-cpdetection.png" alt=""  />
+</p>
+<br>
+<h3 id="44-绘制语义变化轨迹">4.4 绘制语义变化轨迹</h3>
+<p>语义变化轨迹</p>
+<p><img loading="lazy" src="img/railway-time-shifting.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="五获取资源">五、获取资源</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 免费  专利摘要-Word2Vec.200.15.bin  https://pan.baidu.com/s/1CgBjy96hDKM2GKQY4G6kYA?pwd=ba92
+
+- 免费  province_w2vs                https://pan.baidu.com/s/1eBFTIZcv2DWssLiaRnCqZQ?pwd=ikpu
+
+- 免费  year_w2vs                    https://pan.baidu.com/s/1lrVkML92cVJdHQa1HQyAwA?pwd=4gqa
+
+- 100元  cntext-2.1.5-py3-none-any.whl 如有需要，请加微信 372335839， 备注「姓名-学校-专业」
+</code></pre></div>]]></content:encoded>
     </item>
     
     <item>
@@ -713,9 +1653,16 @@ gender_success_df
 </code></pre></div><p><img loading="lazy" src="img/05-responsibility.png" alt=""  />
 </p>
 <p>从图中可以看出，在大多数年份， distance是大于0的，即 提到「责任」概念时，社会更容易联想到「男性」，而不是「女性」。</p>
+<p><br><br></p>
+<h2 id="七获取资源">七、获取资源</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 免费   Word2Vec          https://pan.baidu.com/s/1Ru_wxu9egsmhM7lATjSlgQ?pwd=bcea
+
+- 免费   Aligned_Word2Vec  https://pan.baidu.com/s/1IVgP0MyQpez0hpoJyEyFdA?pwd=7qsu
+
+- 100元  cntext-2.1.5-py3-none-any.whl  如有需要，加微信 372335839 ，备注「姓名-学校-专业」
+</code></pre></div><br>
 <br>
-<br>
-<h2 id="七相关内容">七、相关内容</h2>
+<h2 id="八相关内容">八、相关内容</h2>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[1]冉雅璇,李志强,刘佳妮,张逸石.大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用[J].南开管理评论:1-27.
 [2]Hamilton, William L., Jure Leskovec, and Dan Jurafsky. &#34;Diachronic word embeddings reveal statistical laws of semantic change.&#34; arXiv preprint arXiv:1605.09096 (2016).
 [3]Garg, Nikhil, Londa Schiebinger, Dan Jurafsky, and James Zou. &#34;Word embeddings quantify 100 years of gender and ethnic stereotypes.&#34; Proceedings of the National Academy of Sciences 115, no. 16 (2018): E3635-E3644.
@@ -723,21 +1670,11 @@ gender_success_df
 [4]Kozlowski, A.C., Taddy, M. and Evans, J.A., 2019. The geometry of culture: Analyzing the meanings of class through word embeddings. American Sociological Review, 84(5), pp.905-949.
 </code></pre></div><br>
 <ul>
-<li>
-<p><a href="https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/">OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息</a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2022-04-09-literature-about-embeddings/">文献汇总 | 词嵌入 与 社会科学中的偏见(态度)</a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">词向量  | 使用<strong>人民网领导留言板</strong>语料训练Word2Vec模型</a></p>
-</li>
-<li>
-<p><a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用 Stanford Glove 代码训练中文语料的 GloVe 模型</a></p>
-</li>
+<li><a href="https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/">OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息</a></li>
+<li><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></li>
+<li><a href="https://textdata.cn/blog/2022-04-09-literature-about-embeddings/">文献汇总 | 词嵌入 与 社会科学中的偏见(态度)</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">词向量  | 使用<strong>人民网领导留言板</strong>语料训练Word2Vec模型</a></li>
+<li><a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用 Stanford Glove 代码训练中文语料的 GloVe 模型</a></li>
 </ul>
 ]]></content:encoded>
     </item>
