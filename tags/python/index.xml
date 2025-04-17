@@ -6,7 +6,725 @@
     <description>Recent content in python on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Thu, 03 Apr 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 17 Apr 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>案例 |  使用裁判文书语料训练GloVe词向量</title>
+      <link>https://textdata.cn/blog/2025-04-17-training-a-glove-model-using-china-judgements-corpus/</link>
+      <pubDate>Thu, 17 Apr 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2025-04-17-training-a-glove-model-using-china-judgements-corpus/</guid>
+      <description>&lt;p&gt;前阵子分享了 &lt;a href=&#34;https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/&#34;&gt;实验 | 使用 Stanford Glove 代码训练中文语料的 Glove 模型&lt;/a&gt; ，后来我偷偷的修改了这篇技术文， 将 C 代码封装到 cntext2.x 内， 原来训练代码行几十行， 现在只需要两行就可以训练 GloVe 模型。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;GloVe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;语料文件.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;window_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lang&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;chinese&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;一检查数据&#34;&gt;一、检查数据&lt;/h2&gt;
+&lt;p&gt;裁判文书数据集，每个月份存储到一个 csv， 每个年份有一个对应的文件夹。下图是 2021 年的文件夹截图
+&lt;img loading=&#34;lazy&#34; src=&#34;img/2021.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;csv 字段格式是一致的，我们只需要找一个文件，尝试着读取前 5 行，查看数据中有哪些字段。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2013/2013-01.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;nrows&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dropna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;subset&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;文书内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;inplace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;head&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二训练词向量&#34;&gt;二、训练词向量&lt;/h2&gt;
+&lt;h3 id=&#34;21-构造语料&#34;&gt;2.1 构造语料&lt;/h3&gt;
+&lt;p&gt;我们只从 csv 中选取 &amp;ldquo;&lt;strong&gt;文书内容&lt;/strong&gt;&amp;rdquo; ，并将其存储到语料 txt 文件中。但全部裁判文书数据量高达 300G， 我希望文本语料控制在 10G 左右。&lt;/p&gt;
+&lt;p&gt;2010/2011/2013 这三个年度的数据只有几百 M， 数据全部保留。 剩下的年份，设置不同的抽样比例，尽可能将每年生成的语料 txt 文件控制在 1G 左右。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;年份&lt;/th&gt;
+&lt;th&gt;解压后文件大小&lt;/th&gt;
+&lt;th&gt;抽样比例&lt;/th&gt;
+&lt;th&gt;语料 txt 大小&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;2010&lt;/td&gt;
+&lt;td&gt;761M&lt;/td&gt;
+&lt;td&gt;100%&lt;/td&gt;
+&lt;td&gt;684M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2011&lt;/td&gt;
+&lt;td&gt;452M&lt;/td&gt;
+&lt;td&gt;100%&lt;/td&gt;
+&lt;td&gt;396M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2012&lt;/td&gt;
+&lt;td&gt;757M&lt;/td&gt;
+&lt;td&gt;100%&lt;/td&gt;
+&lt;td&gt;665M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2013&lt;/td&gt;
+&lt;td&gt;5.13G&lt;/td&gt;
+&lt;td&gt;20%&lt;/td&gt;
+&lt;td&gt;984M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2014&lt;/td&gt;
+&lt;td&gt;23.7G&lt;/td&gt;
+&lt;td&gt;4%&lt;/td&gt;
+&lt;td&gt;905M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2015&lt;/td&gt;
+&lt;td&gt;33.6G&lt;/td&gt;
+&lt;td&gt;3%&lt;/td&gt;
+&lt;td&gt;968M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2016&lt;/td&gt;
+&lt;td&gt;39.9G&lt;/td&gt;
+&lt;td&gt;2.4%&lt;/td&gt;
+&lt;td&gt;914M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2017&lt;/td&gt;
+&lt;td&gt;44.6G&lt;/td&gt;
+&lt;td&gt;2.2%&lt;/td&gt;
+&lt;td&gt;882M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2018&lt;/td&gt;
+&lt;td&gt;24.8G&lt;/td&gt;
+&lt;td&gt;4%&lt;/td&gt;
+&lt;td&gt;875M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2019&lt;/td&gt;
+&lt;td&gt;48.3G&lt;/td&gt;
+&lt;td&gt;2%&lt;/td&gt;
+&lt;td&gt;833M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2020&lt;/td&gt;
+&lt;td&gt;91.2G&lt;/td&gt;
+&lt;td&gt;1%&lt;/td&gt;
+&lt;td&gt;779M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2021&lt;/td&gt;
+&lt;td&gt;32.3G&lt;/td&gt;
+&lt;td&gt;3%&lt;/td&gt;
+&lt;td&gt;816M&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;os&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
+&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;tqdm&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;tqdm&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;# 年份、抽样比例&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;year_fracs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2010&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2011&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2012&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2013&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2014&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.04&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2015&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.03&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2016&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.024&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2017&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.022&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2018&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.04&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2019&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.02&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2020&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.01&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2021&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.03&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+
+
+
+&lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;裁判文书.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;w&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;frac&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;tqdm&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_fracs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;csvfs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;listdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;.csv&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvfs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+            &lt;span class=&#34;c1&#34;&gt;# 为节省内存开销，&lt;/span&gt;
+            &lt;span class=&#34;c1&#34;&gt;# 只读 csv 中的 “文书内容” 一个字段，&lt;/span&gt;
+            &lt;span class=&#34;c1&#34;&gt;# 且设置 chunksize 分批次读取&lt;/span&gt;
+            &lt;span class=&#34;n&#34;&gt;chunk_dfs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;usecols&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;文书内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunksize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+            &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_dfs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+                &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dropna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;subset&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;文书内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;inplace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+                &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;文书内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;values&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+                &lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;22-训练-glove&#34;&gt;2.2 训练 GloVe&lt;/h3&gt;
+&lt;p&gt;使用 cntext2.x 对代码进行了优化， 几个 G 的语料在 cntext 内预处理时候不会一次性读取全部内容，所以一般情况不会出现内存溢出问题。&lt;/p&gt;
+&lt;p&gt;基于语料 &lt;strong&gt;&lt;em&gt;裁判文书.txt&lt;/em&gt;&lt;/strong&gt; 训练 GloVe 词嵌入语言模型 ，参数 window_size=15, vector_size=200, 结果会自动保存到 output 文件夹内。&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-corpus.png&#34; alt=&#34;&#34;  /&gt;
+&lt;/p&gt;
+&lt;p&gt;使用 &lt;strong&gt;&lt;em&gt;cntext2.1.6&lt;/em&gt;&lt;/strong&gt;， 代码如下&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;GloVe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;裁判文书.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;window_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lang&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;chinese&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Mac(Linux) System, Enable Parallel Processing
+Cache output/裁判文书_cache.txt Not Found, Preprocessing Corpus
+Processing Corpus: 100%|██████████████████| 2502938/2502938 [26:37&amp;lt;00:00, 1566.54it/s]
+Reading Preprocessed Corpus from output/裁判文书_cache.txt
+Start Training GloVe
+GloVe Training Cost 1223s.
+Output Saved To: output/裁判文书-Word2Vec.200.15.bin
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;训练总耗时 1223s， 约 20 分钟。模型保存在 &lt;strong&gt;&lt;em&gt;output/裁判文书-Word2Vec.200.15.bin&lt;/em&gt;&lt;/strong&gt;， 该模型文件大小约为 1.58G。&lt;/p&gt;
+&lt;br&gt;
+&lt;h3 id=&#34;23-评估模型&#34;&gt;2.3 评估模型&lt;/h3&gt;
+&lt;p&gt;使用近义法和类比法， 判断模型的表现。详情可查看&lt;a href=&#34;https://cntext.readthedocs.io/zh-cn/latest/model.html&#34;&gt;文档&lt;/a&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;evaluate_similarity&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;近义测试: similarity.txt
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cntext/model/evaluate_data/similarity.txt
+Processing Similarity Test: 100%|███████████| 537/537 [00:00&amp;lt;00:00, 131978.28it/s]
+
+评估结果：
++----------+------------+----------------------------+
+| 发现词语 | 未发现词语 | Spearman&amp;#39;s Rank Coeficient |
++----------+------------+----------------------------+
+|   432    |    105     |            0.37            |
++----------+------------+----------------------------+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;近义测试&lt;/strong&gt;: Spearman&amp;rsquo;s Rank Coeficient 系数取值[-1, 1], 取值越大， 说明模型表现越好。&lt;br&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;evaluate_analogy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;类比测试: analogy.txt
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cntext/model/evaluate_data/analogy.txt
+Processing Analogy Test: 100%|████████████████| 1198/1198 [00:48&amp;lt;00:00, 24.75it/s]
+
+评估结果：
++--------------------+----------+------------+------------+----------+
+|      Category      | 发现词语 | 未发现词语 | 准确率 (%) | 平均排名 |
++--------------------+----------+------------+------------+----------+
+| CapitalOfCountries |   507    |    170     |    7.69    |   4.38   |
+|   CityInProvince   |   175    |     0      |   98.86    |   1.39   |
+| FamilyRelationship |   272    |     0      |   73.53    |   1.56   |
+|   SocialScience    |    8     |     62     |   25.00    |   7.00   |
++--------------------+----------+------------+------------+----------+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;类比测试&lt;/strong&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;CapitalOfCountries 裁判文书语料在此项表现较差， 应该是数据库中涉外的案件较少。&lt;/li&gt;
+&lt;li&gt;CityInProvince 裁判文书语料在此项表现如此优异，是因为几乎全为国内案件， 而案件描述一般会交待案发的省市等信息。&lt;/li&gt;
+&lt;li&gt;FamilyRelationship 裁判文书语料中表现较好， 可能很多的案件会描述案件相关社会关系。&lt;/li&gt;
+&lt;li&gt;SocialScience 裁判文书语料在此项表现一般， 应该是语料中常见的社会科学词语提及较少。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;整体而言，语料训练的效果很不错，抓住了数据场景的独特性语义。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;三使用-glove&#34;&gt;三、使用 GloVe&lt;/h2&gt;
+&lt;h3 id=&#34;31-导入模型&#34;&gt;3.1 导入模型&lt;/h3&gt;
+&lt;p&gt;使用 cntext2.1.6 读取很简单， 代码如下&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/裁判文书-Word2Vec.200.15.bin&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;type&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;模型词汇量: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;class &amp;#39;gensim.models.keyedvectors.KeyedVectors&amp;#39;&amp;gt;
+模型词汇量: 2099102
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;32-keyedvectors-的操作方法或属性&#34;&gt;3.2 KeyedVectors 的操作方法(或属性)&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;方法&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;&lt;em&gt;KeyedVectors.index_to_key&lt;/em&gt;&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;获取词汇表中的所有单词。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;&lt;em&gt;KeyedVectors.key_to_index&lt;/em&gt;&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;获取单词到索引的映射。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;&lt;em&gt;KeyedVectors.vector_size&lt;/em&gt;&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;获取 GloVe 模型中任意词向量的维度。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;&lt;em&gt;KeyedVectors.get_vector(word)&lt;/em&gt;&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;获取给定单词的词向量。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;&lt;em&gt;KeyedVectors.similar_by_word(word, topn=10)&lt;/em&gt;&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;获取某词语最相似的 10 个近义词。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;&lt;em&gt;KeyedVectors.similar_by_vector(vector, topn=10)&lt;/em&gt;&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;获取词向量最相似的 10 个近义词。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;br&gt;
+&lt;h2 id=&#34;33-词表&#34;&gt;3.3 词表&lt;/h2&gt;
+&lt;p&gt;查看词表&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;index_to_key&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[&amp;#39;被告&amp;#39;,
+ &amp;#39;原告&amp;#39;,
+ &amp;#39;本院&amp;#39;,
+ &amp;#39;公司&amp;#39;,
+ &amp;#39;规定&amp;#39;,
+ &amp;#39;执行&amp;#39;,
+ ...
+]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;br&gt;
+&lt;p&gt;查看词汇映射表&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;key_to_index&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;{&amp;#39;被告&amp;#39;: 0,
+ &amp;#39;原告&amp;#39;: 1,
+ &amp;#39;本院&amp;#39;: 2,
+ &amp;#39;公司&amp;#39;: 3,
+ &amp;#39;规定&amp;#39;: 4,
+ &amp;#39;执行&amp;#39;: 5,
+ ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;34-查看词向量&#34;&gt;3.4 查看词向量&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 查询某词的词向量&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;get_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;经济&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;array([ 2.909250e-01,  9.074450e-01,  5.231860e-01,  5.381490e-01,
+       -2.813620e-01,  2.661690e-01,  1.045510e-01, -4.516240e-01,
+       -2.186710e-01,  1.867590e-01, -4.870700e-01, -1.803480e-01,
+       -6.361140e-01, -8.739630e-01,  3.418450e-01,  7.470900e-02,
+        ......
+        ......
+        2.636230e-01, -2.538920e-01, -2.442900e-02,  5.847510e-01,
+        5.135750e-01, -4.009650e-01, -3.629850e-01,  2.332400e-01,
+       -3.069630e-01, -4.182810e-01,  3.937240e-01, -8.510000e-01,
+        7.894350e-01,  3.969710e-01,  7.895660e-01,  4.881190e-01],
+      dtype=float32)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 查询多个词的词向量&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;get_mean_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;经济&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;犯罪&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Ruj&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;array([ 0.02923387,  0.04620265,  0.03790346,  0.01160904, -0.02162073,
+        0.01537724,  0.02025648, -0.03336571, -0.00447518, -0.00529976,
+       -0.02856204,  0.01545951,  0.00780857, -0.05398807,  0.02195465,
+        0.03140446, -0.02007412,  0.08278576, -0.027172  , -0.00272319,
+       ......
+        0.0291778 ,  0.03382879, -0.00913138,  0.04487584,  0.06375133,
+        0.032144  , -0.02788475,  0.05068161,  0.0122064 ,  0.01759091,
+       -0.05560436,  0.00272704, -0.01176615, -0.08875326,  0.00767812,
+       -0.00486504,  0.10119167, -0.01212235,  0.06018812,  0.02998512],
+      dtype=float32)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;h3 id=&#34;35-近义词&#34;&gt;3.5 近义词&lt;/h3&gt;
+&lt;p&gt;根据词语查找最相似的 10 个词&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;similar_by_word&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;动机&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;主观&amp;#39;, 0.6688777804374695),
+ (&amp;#39;意图&amp;#39;, 0.6248725652694702),
+ (&amp;#39;恶性&amp;#39;, 0.6005507111549377),
+ (&amp;#39;蓄意&amp;#39;, 0.5913136005401611),
+ (&amp;#39;卑劣&amp;#39;, 0.5908187627792358),
+ (&amp;#39;作案动机&amp;#39;, 0.5703221559524536),
+ (&amp;#39;心态&amp;#39;, 0.5640602707862854),
+ (&amp;#39;故意&amp;#39;, 0.5533956289291382),
+ (&amp;#39;显而易见&amp;#39;, 0.5524264574050903),
+ (&amp;#39;恶意&amp;#39;, 0.5509642958641052)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;根据某词的词向量查询最相似的 10 个词&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;similar_by_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;get_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;动机&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;动机&amp;#39;, 0.9999999403953552),
+ (&amp;#39;主观&amp;#39;, 0.6688777804374695),
+ (&amp;#39;意图&amp;#39;, 0.6248724460601807),
+ (&amp;#39;恶性&amp;#39;, 0.600550651550293),
+ (&amp;#39;蓄意&amp;#39;, 0.5913134813308716),
+ (&amp;#39;卑劣&amp;#39;, 0.5908187627792358),
+ (&amp;#39;作案动机&amp;#39;, 0.5703221559524536),
+ (&amp;#39;心态&amp;#39;, 0.5640602707862854),
+ (&amp;#39;故意&amp;#39;, 0.5533955693244934),
+ (&amp;#39;显而易见&amp;#39;, 0.5524263381958008)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
+&lt;p&gt;多个词求得均值向量&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;purpose_vector&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;get_mean_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;动机&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;  &lt;span class=&#34;s1&#34;&gt;&amp;#39;意图&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;目的&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;g_wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;similar_by_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;purpose_vector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;意图&amp;#39;, 0.9032057523727417),
+ (&amp;#39;目的&amp;#39;, 0.8639562726020813),
+ (&amp;#39;动机&amp;#39;, 0.8277378678321838),
+ (&amp;#39;主观&amp;#39;, 0.7455390095710754),
+ (&amp;#39;恶意&amp;#39;, 0.7291366457939148),
+ (&amp;#39;故意&amp;#39;, 0.7236210107803345),
+ (&amp;#39;客观&amp;#39;, 0.7146263122558594),
+ (&amp;#39;企图&amp;#39;, 0.7049675583839417),
+ (&amp;#39;行为&amp;#39;, 0.6962229609489441),
+ (&amp;#39;掩盖&amp;#39;, 0.6917882561683655),
+ (&amp;#39;所谓&amp;#39;, 0.6809536218643188),
+ (&amp;#39;并非&amp;#39;, 0.667915403842926),
+ (&amp;#39;手段&amp;#39;, 0.6663289666175842),
+ (&amp;#39;利益&amp;#39;, 0.6568542718887329),
+ (&amp;#39;这种&amp;#39;, 0.6558799743652344),
+ (&amp;#39;欺骗&amp;#39;, 0.6545097231864929),
+ (&amp;#39;违背&amp;#39;, 0.6538694500923157),
+ (&amp;#39;真相&amp;#39;, 0.6527130007743835),
+ (&amp;#39;显然&amp;#39;, 0.6525647640228271),
+ (&amp;#39;实质&amp;#39;, 0.6521809101104736)]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h2 id=&#34;四获取模型&#34;&gt;四、获取模型&lt;/h2&gt;
+&lt;p&gt;内容创作不易， 本文为付费内容，&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;- 裁判文书-GloVe.200.15.bin   https://pan.baidu.com/s/1a0Fisvnkl8UaQZrHP7olCQ?pwd=8w49
+
+- 更多词向量模型               https://cntext.readthedocs.io/zh-cn/latest/embeddings.html
+
+- 100元                      cntext-2.1.6-py3-none-any.whl  加微信 372335839， 备注「姓名-学校-专业」
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+      <content:encoded><![CDATA[<p>前阵子分享了 <a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用 Stanford Glove 代码训练中文语料的 Glove 模型</a> ，后来我偷偷的修改了这篇技术文， 将 C 代码封装到 cntext2.x 内， 原来训练代码行几十行， 现在只需要两行就可以训练 GloVe 模型。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="n">g_wv</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">GloVe</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;语料文件.txt&#39;</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">vector_size</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+</code></pre></div><p><br><br></p>
+<h2 id="一检查数据">一、检查数据</h2>
+<p>裁判文书数据集，每个月份存储到一个 csv， 每个年份有一个对应的文件夹。下图是 2021 年的文件夹截图
+<img loading="lazy" src="img/2021.png" alt=""  />
+</p>
+<br>
+<p>csv 字段格式是一致的，我们只需要找一个文件，尝试着读取前 5 行，查看数据中有哪些字段。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;2013/2013-01.csv&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;文书内容&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div><p><img loading="lazy" src="img/df.png" alt=""  />
+</p>
+<p><br><br></p>
+<h2 id="二训练词向量">二、训练词向量</h2>
+<h3 id="21-构造语料">2.1 构造语料</h3>
+<p>我们只从 csv 中选取 &ldquo;<strong>文书内容</strong>&rdquo; ，并将其存储到语料 txt 文件中。但全部裁判文书数据量高达 300G， 我希望文本语料控制在 10G 左右。</p>
+<p>2010/2011/2013 这三个年度的数据只有几百 M， 数据全部保留。 剩下的年份，设置不同的抽样比例，尽可能将每年生成的语料 txt 文件控制在 1G 左右。</p>
+<table>
+<thead>
+<tr>
+<th>年份</th>
+<th>解压后文件大小</th>
+<th>抽样比例</th>
+<th>语料 txt 大小</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2010</td>
+<td>761M</td>
+<td>100%</td>
+<td>684M</td>
+</tr>
+<tr>
+<td>2011</td>
+<td>452M</td>
+<td>100%</td>
+<td>396M</td>
+</tr>
+<tr>
+<td>2012</td>
+<td>757M</td>
+<td>100%</td>
+<td>665M</td>
+</tr>
+<tr>
+<td>2013</td>
+<td>5.13G</td>
+<td>20%</td>
+<td>984M</td>
+</tr>
+<tr>
+<td>2014</td>
+<td>23.7G</td>
+<td>4%</td>
+<td>905M</td>
+</tr>
+<tr>
+<td>2015</td>
+<td>33.6G</td>
+<td>3%</td>
+<td>968M</td>
+</tr>
+<tr>
+<td>2016</td>
+<td>39.9G</td>
+<td>2.4%</td>
+<td>914M</td>
+</tr>
+<tr>
+<td>2017</td>
+<td>44.6G</td>
+<td>2.2%</td>
+<td>882M</td>
+</tr>
+<tr>
+<td>2018</td>
+<td>24.8G</td>
+<td>4%</td>
+<td>875M</td>
+</tr>
+<tr>
+<td>2019</td>
+<td>48.3G</td>
+<td>2%</td>
+<td>833M</td>
+</tr>
+<tr>
+<td>2020</td>
+<td>91.2G</td>
+<td>1%</td>
+<td>779M</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>32.3G</td>
+<td>3%</td>
+<td>816M</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="c1"># 年份、抽样比例</span>
+<span class="n">year_fracs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s1">&#39;2010&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2011&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2012&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;2013&#39;</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2014&#39;</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2015&#39;</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;2016&#39;</span><span class="p">,</span> <span class="mf">0.024</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2017&#39;</span><span class="p">,</span> <span class="mf">0.022</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2018&#39;</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;2019&#39;</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2020&#39;</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2021&#39;</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">)</span>
+    <span class="p">]</span>
+
+
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;裁判文书.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">corpus_file</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">frac</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">year_fracs</span><span class="p">):</span>
+        <span class="n">csvfs</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">csvf</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">csvf</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.csv&#39;</span> <span class="ow">in</span> <span class="n">csvf</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">csvf</span> <span class="ow">in</span> <span class="n">csvfs</span><span class="p">:</span>
+            <span class="c1"># 为节省内存开销，</span>
+            <span class="c1"># 只读 csv 中的 “文书内容” 一个字段，</span>
+            <span class="c1"># 且设置 chunksize 分批次读取</span>
+            <span class="n">chunk_dfs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;文书内容&#39;</span><span class="p">],</span> <span class="n">chunksize</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">chunk_df</span> <span class="ow">in</span> <span class="n">chunk_dfs</span><span class="p">:</span>
+                <span class="n">chunk_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;文书内容&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">chunk_df</span><span class="p">[</span><span class="s1">&#39;文书内容&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+                <span class="n">corpus_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div><br>
+<h3 id="22-训练-glove">2.2 训练 GloVe</h3>
+<p>使用 cntext2.x 对代码进行了优化， 几个 G 的语料在 cntext 内预处理时候不会一次性读取全部内容，所以一般情况不会出现内存溢出问题。</p>
+<p>基于语料 <strong><em>裁判文书.txt</em></strong> 训练 GloVe 词嵌入语言模型 ，参数 window_size=15, vector_size=200, 结果会自动保存到 output 文件夹内。</p>
+<p><img loading="lazy" src="img/01-corpus.png" alt=""  />
+</p>
+<p>使用 <strong><em>cntext2.1.6</em></strong>， 代码如下</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">g_wv</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">GloVe</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;裁判文书.txt&#39;</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">vector_size</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Mac(Linux) System, Enable Parallel Processing
+Cache output/裁判文书_cache.txt Not Found, Preprocessing Corpus
+Processing Corpus: 100%|██████████████████| 2502938/2502938 [26:37&lt;00:00, 1566.54it/s]
+Reading Preprocessed Corpus from output/裁判文书_cache.txt
+Start Training GloVe
+GloVe Training Cost 1223s.
+Output Saved To: output/裁判文书-Word2Vec.200.15.bin
+</code></pre></div><p>训练总耗时 1223s， 约 20 分钟。模型保存在 <strong><em>output/裁判文书-Word2Vec.200.15.bin</em></strong>， 该模型文件大小约为 1.58G。</p>
+<br>
+<h3 id="23-评估模型">2.3 评估模型</h3>
+<p>使用近义法和类比法， 判断模型的表现。详情可查看<a href="https://cntext.readthedocs.io/zh-cn/latest/model.html">文档</a></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">evaluate_similarity</span><span class="p">(</span><span class="n">g_wv</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">近义测试: similarity.txt
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cntext/model/evaluate_data/similarity.txt
+Processing Similarity Test: 100%|███████████| 537/537 [00:00&lt;00:00, 131978.28it/s]
+
+评估结果：
++----------+------------+----------------------------+
+| 发现词语 | 未发现词语 | Spearman&#39;s Rank Coeficient |
++----------+------------+----------------------------+
+|   432    |    105     |            0.37            |
++----------+------------+----------------------------+
+</code></pre></div><p><strong>近义测试</strong>: Spearman&rsquo;s Rank Coeficient 系数取值[-1, 1], 取值越大， 说明模型表现越好。<br></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">evaluate_analogy</span><span class="p">(</span><span class="n">g_wv</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">类比测试: analogy.txt
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cntext/model/evaluate_data/analogy.txt
+Processing Analogy Test: 100%|████████████████| 1198/1198 [00:48&lt;00:00, 24.75it/s]
+
+评估结果：
++--------------------+----------+------------+------------+----------+
+|      Category      | 发现词语 | 未发现词语 | 准确率 (%) | 平均排名 |
++--------------------+----------+------------+------------+----------+
+| CapitalOfCountries |   507    |    170     |    7.69    |   4.38   |
+|   CityInProvince   |   175    |     0      |   98.86    |   1.39   |
+| FamilyRelationship |   272    |     0      |   73.53    |   1.56   |
+|   SocialScience    |    8     |     62     |   25.00    |   7.00   |
++--------------------+----------+------------+------------+----------+
+</code></pre></div><p><strong>类比测试</strong>:</p>
+<ul>
+<li>CapitalOfCountries 裁判文书语料在此项表现较差， 应该是数据库中涉外的案件较少。</li>
+<li>CityInProvince 裁判文书语料在此项表现如此优异，是因为几乎全为国内案件， 而案件描述一般会交待案发的省市等信息。</li>
+<li>FamilyRelationship 裁判文书语料中表现较好， 可能很多的案件会描述案件相关社会关系。</li>
+<li>SocialScience 裁判文书语料在此项表现一般， 应该是语料中常见的社会科学词语提及较少。</li>
+</ul>
+<p>整体而言，语料训练的效果很不错，抓住了数据场景的独特性语义。</p>
+<p><br><br></p>
+<h2 id="三使用-glove">三、使用 GloVe</h2>
+<h3 id="31-导入模型">3.1 导入模型</h3>
+<p>使用 cntext2.1.6 读取很简单， 代码如下</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">g_wv</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;output/裁判文书-Word2Vec.200.15.bin&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">g_wv</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;模型词汇量: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">g_wv</span><span class="o">.</span><span class="n">wv</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">&lt;class &#39;gensim.models.keyedvectors.KeyedVectors&#39;&gt;
+模型词汇量: 2099102
+</code></pre></div><br>
+<h3 id="32-keyedvectors-的操作方法或属性">3.2 KeyedVectors 的操作方法(或属性)</h3>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><em>KeyedVectors.index_to_key</em></strong></td>
+<td>获取词汇表中的所有单词。</td>
+</tr>
+<tr>
+<td><strong><em>KeyedVectors.key_to_index</em></strong></td>
+<td>获取单词到索引的映射。</td>
+</tr>
+<tr>
+<td><strong><em>KeyedVectors.vector_size</em></strong></td>
+<td>获取 GloVe 模型中任意词向量的维度。</td>
+</tr>
+<tr>
+<td><strong><em>KeyedVectors.get_vector(word)</em></strong></td>
+<td>获取给定单词的词向量。</td>
+</tr>
+<tr>
+<td><strong><em>KeyedVectors.similar_by_word(word, topn=10)</em></strong></td>
+<td>获取某词语最相似的 10 个近义词。</td>
+</tr>
+<tr>
+<td><strong><em>KeyedVectors.similar_by_vector(vector, topn=10)</em></strong></td>
+<td>获取词向量最相似的 10 个近义词。</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h2 id="33-词表">3.3 词表</h2>
+<p>查看词表</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">g_wv</span><span class="o">.</span><span class="n">index_to_key</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;被告&#39;,
+ &#39;原告&#39;,
+ &#39;本院&#39;,
+ &#39;公司&#39;,
+ &#39;规定&#39;,
+ &#39;执行&#39;,
+ ...
+]
+</code></pre></div><br>
+<br>
+<p>查看词汇映射表</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">g_wv</span><span class="o">.</span><span class="n">key_to_index</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;被告&#39;: 0,
+ &#39;原告&#39;: 1,
+ &#39;本院&#39;: 2,
+ &#39;公司&#39;: 3,
+ &#39;规定&#39;: 4,
+ &#39;执行&#39;: 5,
+ ...
+}
+</code></pre></div><br>
+<h3 id="34-查看词向量">3.4 查看词向量</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 查询某词的词向量</span>
+<span class="n">g_wv</span><span class="o">.</span><span class="n">get_vector</span><span class="p">(</span><span class="s1">&#39;经济&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([ 2.909250e-01,  9.074450e-01,  5.231860e-01,  5.381490e-01,
+       -2.813620e-01,  2.661690e-01,  1.045510e-01, -4.516240e-01,
+       -2.186710e-01,  1.867590e-01, -4.870700e-01, -1.803480e-01,
+       -6.361140e-01, -8.739630e-01,  3.418450e-01,  7.470900e-02,
+        ......
+        ......
+        2.636230e-01, -2.538920e-01, -2.442900e-02,  5.847510e-01,
+        5.135750e-01, -4.009650e-01, -3.629850e-01,  2.332400e-01,
+       -3.069630e-01, -4.182810e-01,  3.937240e-01, -8.510000e-01,
+        7.894350e-01,  3.969710e-01,  7.895660e-01,  4.881190e-01],
+      dtype=float32)
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 查询多个词的词向量</span>
+<span class="n">g_wv</span><span class="o">.</span><span class="n">get_mean_vector</span><span class="p">([</span><span class="s1">&#39;经济&#39;</span><span class="p">,</span> <span class="s1">&#39;犯罪&#39;</span><span class="p">])</span>
+</code></pre></div><p>Ruj</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">array([ 0.02923387,  0.04620265,  0.03790346,  0.01160904, -0.02162073,
+        0.01537724,  0.02025648, -0.03336571, -0.00447518, -0.00529976,
+       -0.02856204,  0.01545951,  0.00780857, -0.05398807,  0.02195465,
+        0.03140446, -0.02007412,  0.08278576, -0.027172  , -0.00272319,
+       ......
+        0.0291778 ,  0.03382879, -0.00913138,  0.04487584,  0.06375133,
+        0.032144  , -0.02788475,  0.05068161,  0.0122064 ,  0.01759091,
+       -0.05560436,  0.00272704, -0.01176615, -0.08875326,  0.00767812,
+       -0.00486504,  0.10119167, -0.01212235,  0.06018812,  0.02998512],
+      dtype=float32)
+</code></pre></div><br>
+<h3 id="35-近义词">3.5 近义词</h3>
+<p>根据词语查找最相似的 10 个词</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">g_wv</span><span class="o">.</span><span class="n">similar_by_word</span><span class="p">(</span><span class="s1">&#39;动机&#39;</span><span class="p">,</span> <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;主观&#39;, 0.6688777804374695),
+ (&#39;意图&#39;, 0.6248725652694702),
+ (&#39;恶性&#39;, 0.6005507111549377),
+ (&#39;蓄意&#39;, 0.5913136005401611),
+ (&#39;卑劣&#39;, 0.5908187627792358),
+ (&#39;作案动机&#39;, 0.5703221559524536),
+ (&#39;心态&#39;, 0.5640602707862854),
+ (&#39;故意&#39;, 0.5533956289291382),
+ (&#39;显而易见&#39;, 0.5524264574050903),
+ (&#39;恶意&#39;, 0.5509642958641052)]
+</code></pre></div><br>
+<p>根据某词的词向量查询最相似的 10 个词</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">g_wv</span><span class="o">.</span><span class="n">similar_by_vector</span><span class="p">(</span><span class="n">g_wv</span><span class="o">.</span><span class="n">get_vector</span><span class="p">(</span><span class="s1">&#39;动机&#39;</span><span class="p">),</span> <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;动机&#39;, 0.9999999403953552),
+ (&#39;主观&#39;, 0.6688777804374695),
+ (&#39;意图&#39;, 0.6248724460601807),
+ (&#39;恶性&#39;, 0.600550651550293),
+ (&#39;蓄意&#39;, 0.5913134813308716),
+ (&#39;卑劣&#39;, 0.5908187627792358),
+ (&#39;作案动机&#39;, 0.5703221559524536),
+ (&#39;心态&#39;, 0.5640602707862854),
+ (&#39;故意&#39;, 0.5533955693244934),
+ (&#39;显而易见&#39;, 0.5524263381958008)]
+</code></pre></div><br>
+<p>多个词求得均值向量</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">purpose_vector</span> <span class="o">=</span> <span class="n">g_wv</span><span class="o">.</span><span class="n">get_mean_vector</span><span class="p">([</span><span class="s1">&#39;动机&#39;</span><span class="p">,</span>  <span class="s1">&#39;意图&#39;</span><span class="p">,</span> <span class="s1">&#39;目的&#39;</span><span class="p">])</span>
+<span class="n">g_wv</span><span class="o">.</span><span class="n">similar_by_vector</span><span class="p">(</span><span class="n">purpose_vector</span><span class="p">,</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;意图&#39;, 0.9032057523727417),
+ (&#39;目的&#39;, 0.8639562726020813),
+ (&#39;动机&#39;, 0.8277378678321838),
+ (&#39;主观&#39;, 0.7455390095710754),
+ (&#39;恶意&#39;, 0.7291366457939148),
+ (&#39;故意&#39;, 0.7236210107803345),
+ (&#39;客观&#39;, 0.7146263122558594),
+ (&#39;企图&#39;, 0.7049675583839417),
+ (&#39;行为&#39;, 0.6962229609489441),
+ (&#39;掩盖&#39;, 0.6917882561683655),
+ (&#39;所谓&#39;, 0.6809536218643188),
+ (&#39;并非&#39;, 0.667915403842926),
+ (&#39;手段&#39;, 0.6663289666175842),
+ (&#39;利益&#39;, 0.6568542718887329),
+ (&#39;这种&#39;, 0.6558799743652344),
+ (&#39;欺骗&#39;, 0.6545097231864929),
+ (&#39;违背&#39;, 0.6538694500923157),
+ (&#39;真相&#39;, 0.6527130007743835),
+ (&#39;显然&#39;, 0.6525647640228271),
+ (&#39;实质&#39;, 0.6521809101104736)]
+</code></pre></div><p><br><br></p>
+<h2 id="四获取模型">四、获取模型</h2>
+<p>内容创作不易， 本文为付费内容，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 裁判文书-GloVe.200.15.bin   https://pan.baidu.com/s/1a0Fisvnkl8UaQZrHP7olCQ?pwd=8w49
+
+- 更多词向量模型               https://cntext.readthedocs.io/zh-cn/latest/embeddings.html
+
+- 100元                      cntext-2.1.6-py3-none-any.whl  加微信 372335839， 备注「姓名-学校-专业」
+</code></pre></div>]]></content:encoded>
+    </item>
+    
     <item>
       <title>词向量 | 使用1985年-2025年专利申请摘要训练 Word2Vec 模型</title>
       <link>https://textdata.cn/blog/2023-11-10-training-word2vec-model-using-china-3751w-patent-application-dataset/</link>
@@ -476,18 +1194,18 @@ Finish! 质量概念 candidates saved to output/质量概念.txt
       
       <guid>/blog/2023-11-12-using-100m-bilibili-user-sign-data-to-training-word2vec/</guid>
       <description>&lt;h2 id=&#34;一用户签名&#34;&gt;一、用户签名&lt;/h2&gt;
-&lt;p&gt;1亿B站用户群体十分庞大，文本中蕴含着这个群体的认知信息(如兴趣、身份、座右铭等)，如果能用签名训练word2vec词向量模型，说不定就有利用这个模型，对每个用户签名进行量化,  对用户进行分类。 本文要解决&lt;/p&gt;
+&lt;p&gt;1 亿 B 站用户群体十分庞大，文本中蕴含着这个群体的认知信息(如兴趣、身份、座右铭等)，如果能用签名训练 word2vec 词向量模型，说不定就有利用这个模型，对每个用户签名进行量化, 对用户进行分类。 本文要解决&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;构建语料训练出模型&lt;/li&gt;
 &lt;li&gt;简单看看模型训练效果&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;二准备语料&#34;&gt;二、准备语料&lt;/h2&gt;
-&lt;p&gt;Kaggle网有1亿B站用户数据集，下载地址&lt;/p&gt;
+&lt;p&gt;Kaggle 网有 1 亿 B 站用户数据集，下载地址&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;&lt;a href=&#34;https://www.kaggle.com/datasets/beats0/bilibili-user&#34;&gt;https://www.kaggle.com/datasets/beats0/bilibili-user&lt;/a&gt;&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;之前分享过 &lt;a href=&#34;https://textdata.cn/blog/2023-05-10-100m-bilibili-user-info-dataset/&#34;&gt;数据集 | 哔哩哔哩 1 亿用户数据&lt;/a&gt; ， 阅读此文可以熟悉pandas的一些基本操作，如数据读取、文本操作等。&lt;/p&gt;
+&lt;p&gt;之前分享过 &lt;a href=&#34;https://textdata.cn/blog/2023-05-10-100m-bilibili-user-info-dataset/&#34;&gt;数据集 | 哔哩哔哩 1 亿用户数据&lt;/a&gt; ， 阅读此文可以熟悉 pandas 的一些基本操作，如数据读取、文本操作等。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 从kaggle下载B站1亿用户数据&lt;/span&gt;
 &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
 
@@ -498,36 +1216,36 @@ Finish! 质量概念 candidates saved to output/质量概念.txt
 &lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df2.png&#34; alt=&#34;&#34;  /&gt;
 &lt;/p&gt;
 &lt;br&gt;
-&lt;p&gt;将 9093092 个非空签名汇总到 &lt;em&gt;&lt;strong&gt;B站用户签名语料.txt&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;将 9093092 个非空签名汇总到 &lt;strong&gt;&lt;em&gt;B 站用户签名语料.txt&lt;/em&gt;&lt;/strong&gt;&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;B站签名.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;w&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
     &lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;sign&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;fillna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
     &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;raw_text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;代码运行后，得到 320M  的 &lt;em&gt;&lt;strong&gt;B站签名.txt&lt;/strong&gt;&lt;/em&gt;  。&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;代码运行后，得到 320M 的 &lt;strong&gt;&lt;em&gt;B 站签名.txt&lt;/em&gt;&lt;/strong&gt; 。&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;三训练-word2vec&#34;&gt;三、训练 Word2Vec&lt;/h2&gt;
-&lt;p&gt;我使用的自己 &lt;strong&gt;未公开&lt;/strong&gt; 的cntext 2.1.6版本， Bug频出，等调整好了再公开。&lt;/p&gt;
-&lt;h3 id=&#34;31-安装cntext&#34;&gt;3.1 安装cntext&lt;/h3&gt;
-&lt;p&gt;将 cntext-2.1.6-py3-none-any.whl 放置于桌面，打开 &lt;strong&gt;cmd&lt;/strong&gt;  (苹果电脑打开terminal)， 输入cd desktop&lt;/p&gt;
+&lt;p&gt;我使用的自己 &lt;strong&gt;未公开&lt;/strong&gt; 的 cntext 2.1.6 版本， Bug 频出，等调整好了再公开。&lt;/p&gt;
+&lt;h3 id=&#34;31-安装-cntext&#34;&gt;3.1 安装 cntext&lt;/h3&gt;
+&lt;p&gt;将 cntext-2.1.6-py3-none-any.whl 放置于桌面，打开 &lt;strong&gt;cmd&lt;/strong&gt; (苹果电脑打开 terminal)， 输入 cd desktop&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd desktop
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;之后在 &lt;strong&gt;cmd&lt;/strong&gt;  (苹果电脑打开terminal) 中使用pip3 安装&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;之后在 &lt;strong&gt;cmd&lt;/strong&gt; (苹果电脑打开 terminal) 中使用 pip3 安装&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;pip3 install cntext-2.1.6-py3-none-any.whl
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;文末有 ***cntext-2.1.6-py3-none-any.whl ***获取方式&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;文末有 **_cntext-2.1.6-py3-none-any.whl _**获取方式&lt;/p&gt;
 &lt;br&gt;
-&lt;h3 id=&#34;32-训练word2vec&#34;&gt;3.2 训练word2vec&lt;/h3&gt;
-&lt;p&gt;cntext 训练时候Word2Vec模型参数&lt;/p&gt;
+&lt;h3 id=&#34;32-训练-word2vec&#34;&gt;3.2 训练 word2vec&lt;/h3&gt;
+&lt;p&gt;cntext 训练时候 Word2Vec 模型参数&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;corpus_file&lt;/strong&gt;&lt;/em&gt; 语料txt文件路径； 刚刚准备的 &lt;em&gt;&lt;strong&gt;B站用户签名语料.txt&lt;/strong&gt;&lt;/em&gt;&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;window_size&lt;/strong&gt;&lt;/em&gt;   上下文窗口大小(上下文语义)&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;vector_size&lt;/strong&gt;&lt;/em&gt; 向量维度数&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;chunksize&lt;/strong&gt;&lt;/em&gt;  每次语料txt文件中读取的行数&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;lang&lt;/strong&gt;&lt;/em&gt; 语言的语言&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;em&gt;corpus_file&lt;/em&gt;&lt;/strong&gt; 语料 txt 文件路径； 刚刚准备的 &lt;strong&gt;&lt;em&gt;B 站用户签名语料.txt&lt;/em&gt;&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;em&gt;window_size&lt;/em&gt;&lt;/strong&gt; 上下文窗口大小(上下文语义)&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;em&gt;vector_size&lt;/em&gt;&lt;/strong&gt; 向量维度数&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;em&gt;chunksize&lt;/em&gt;&lt;/strong&gt; 每次语料 txt 文件中读取的行数&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;em&gt;lang&lt;/em&gt;&lt;/strong&gt; 语言的语言&lt;/li&gt;
 &lt;/ul&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# cntext2.1.6未公开，获取2.1.6请阅读文末获取方式&lt;/span&gt;
 &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
 
-&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;Word2Vec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;B站用户签名语料.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
-                    &lt;span class=&#34;n&#34;&gt;window&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
-                    &lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; 
+&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;Word2Vec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;B站用户签名语料.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+                    &lt;span class=&#34;n&#34;&gt;window&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+                    &lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;200&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
                     &lt;span class=&#34;n&#34;&gt;window_size&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;15&lt;/span&gt;
                     &lt;span class=&#34;n&#34;&gt;lang&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;chinese&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
@@ -536,19 +1254,19 @@ Cache output/B站签名_cache.txt Not Found or Empty, Preprocessing Corpus
 
 Reading Preprocessed Corpus from output/B站签名_cache.txt
 Start Training Word2Vec
-Word2Vec Training Cost 275 s. 
+Word2Vec Training Cost 275 s.
 Output Saved To: output/B站签名-Word2Vec.200.15.bin
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;耗时 275s， 模型训练完成！需要注意， output文件夹内有&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;耗时 275s， 模型训练完成！需要注意， output 文件夹内有&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;B站签名-Word2Vec.200.15.bin&lt;/strong&gt;&lt;/em&gt;        模型文件&lt;/li&gt;
-&lt;li&gt;&lt;em&gt;&lt;strong&gt;B站签名_cache.txt&lt;/strong&gt;&lt;/em&gt;                  训练缓存文件&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;em&gt;B 站签名-Word2Vec.200.15.bin&lt;/em&gt;&lt;/strong&gt; 模型文件&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;em&gt;B 站签名_cache.txt&lt;/em&gt;&lt;/strong&gt; 训练缓存文件&lt;/li&gt;
 &lt;/ul&gt;
 &lt;br&gt;
 &lt;h3 id=&#34;33-评估模型&#34;&gt;3.3 评估模型&lt;/h3&gt;
 &lt;p&gt;使用近义法和类比法， 判断模型的表现。详情可查看&lt;a href=&#34;https://cntext.readthedocs.io/zh-cn/latest/model.html&#34;&gt;文档&lt;/a&gt;&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;evaluate_similarity&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;evaluate_similarity&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 
-&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;evaluate_analogy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;evaluate_analogy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;model&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;近义测试: similarity.txt
 /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cntext/model/evaluate_data/similarity.txt
@@ -574,20 +1292,20 @@ Processing Analogy Test: 100%|██████████████| 1198/1
 | FamilyRelationship |   240    |     32     |   44.17    |   1.93   |
 |   SocialScience    |    2     |     68     |    0.00    |   NaN    |
 +--------------------+----------+------------+------------+----------+
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;近义测试&lt;/strong&gt;: Spearman&amp;rsquo;s Rank Coeficient系数取值[-1, 1], 取值越大， 说明模型表现越好。&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;近义测试&lt;/strong&gt;: Spearman&amp;rsquo;s Rank Coeficient 系数取值[-1, 1], 取值越大， 说明模型表现越好。&lt;/p&gt;
 &lt;br&gt;
 &lt;p&gt;&lt;strong&gt;类比测试&lt;/strong&gt;:&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;CapitalOfCountries    B站用户签名语料在此项表现大于0，说明很多签名里会出现国家首都这类信息。&lt;/li&gt;
-&lt;li&gt;CityInProvince        B站用户签名语料在此项表现大于0，说明很多签名里会出现省份省会这类信息。考虑到用户几乎全为中国人，所以此项准确率高于CapitalOfCountries。&lt;/li&gt;
-&lt;li&gt;FamilyRelationship    B站用户签名语料体现的是一个个鲜活的中国人，签名中必然含有更多的人际关系， 所以此项准确率是四个项目中最高的。&lt;/li&gt;
-&lt;li&gt;SocialScience         B站用户签名语料在此项表现最差， 应该是语料中常见的社会科学词语提及很少。&lt;/li&gt;
+&lt;li&gt;CapitalOfCountries B 站用户签名语料在此项表现大于 0，说明很多签名里会出现国家首都这类信息。&lt;/li&gt;
+&lt;li&gt;CityInProvince B 站用户签名语料在此项表现大于 0，说明很多签名里会出现省份省会这类信息。考虑到用户几乎全为中国人，所以此项准确率高于 CapitalOfCountries。&lt;/li&gt;
+&lt;li&gt;FamilyRelationship B 站用户签名语料体现的是一个个鲜活的中国人，签名中必然含有更多的人际关系， 所以此项准确率是四个项目中最高的。&lt;/li&gt;
+&lt;li&gt;SocialScience B 站用户签名语料在此项表现最差， 应该是语料中常见的社会科学词语提及很少。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;整体而言，模型效果一般，但是不是算法代码问题，而是语料出的问题。毕竟每个用户的签名一般都是一句话，太短，信息太少。&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;四使用word2vec&#34;&gt;四、使用word2vec&lt;/h2&gt;
+&lt;h2 id=&#34;四使用-word2vec&#34;&gt;四、使用 word2vec&lt;/h2&gt;
 &lt;h3 id=&#34;41-读取模型&#34;&gt;4.1 读取模型&lt;/h3&gt;
-&lt;p&gt;使用gensim录入模型 &lt;em&gt;&lt;strong&gt;B站用户签名语料-Word2Vec.100.15.bin&lt;/strong&gt;&lt;/em&gt; ,&lt;/p&gt;
+&lt;p&gt;使用 gensim 录入模型 &lt;strong&gt;&lt;em&gt;B 站用户签名语料-Word2Vec.100.15.bin&lt;/em&gt;&lt;/strong&gt; ,&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;gensim.models&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;KeyedVectors&lt;/span&gt;
 &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
 
@@ -726,39 +1444,39 @@ Processing Analogy Test: 100%|██████████████| 1198/1
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
 &lt;br&gt;
 &lt;h2 id=&#34;五获取资源&#34;&gt;五、获取资源&lt;/h2&gt;
-&lt;p&gt;内容整理不易， 本文内容分免费和付费部分。 免费部分可以直接下载数据、构建语料、使用word2vec模型。&lt;/p&gt;
-&lt;p&gt;付费部分主要是cntext，用于训练 word2vec 模型。 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」&lt;/p&gt;
+&lt;p&gt;内容整理不易， 本文内容分免费和付费部分。 免费部分可以直接下载数据、构建语料、使用 word2vec 模型。&lt;/p&gt;
+&lt;p&gt;付费部分主要是 cntext，用于训练 word2vec 模型。 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;- 免费     1亿用户数据集 https://www.kaggle.com/datasets/beats0/bilibili-user
 
-- 免费     B站签名-Word2Vec.200.15.bin  链接: https://pan.baidu.com/s/1ILVwu6gGGGP0IHv-vsjgvw?pwd=em99 提取码: em99 
+- 免费     B站签名-Word2Vec.200.15.bin  链接: https://pan.baidu.com/s/1ILVwu6gGGGP0IHv-vsjgvw?pwd=em99 提取码: em99
 
 - 100元   获得cntext-2.1.6-py3-none-any.whl
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
 &lt;h2 id=&#34;相关内容&#34;&gt;相关内容&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://cntext.readthedocs.io/&#34;&gt;文本分析库cntext2.x使用手册 https://cntext.readthedocs.io/&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/&#34;&gt;实验 | 使用Stanford Glove代码训练中文语料的Glove模型&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/&#34;&gt;词向量 | 使用人民网领导留言板语料训练Word2Vec模型&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://cntext.readthedocs.io/&#34;&gt;文本分析库 cntext2.x 使用手册 https://cntext.readthedocs.io/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/&#34;&gt;实验 | 使用 Stanford Glove 代码训练中文语料的 Glove 模型&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/&#34;&gt;词向量 | 使用人民网领导留言板语料训练 Word2Vec 模型&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-11-20-word2vec-by-year-by-province/&#34;&gt;使用 5000w 专利申请数据集按年份(按省份)训练词向量&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2024-04-16-douban-movie-1000w-ratings-comments-dataset/&#34;&gt;使用 1000w 条豆瓣影评训练 Word2Vec&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/&#34;&gt;词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/&#34;&gt;词嵌入技术在社会科学领域进行数据挖掘常见 39 个 FAQ 汇总&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/&#34;&gt;转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/&#34;&gt;OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 </description>
       <content:encoded><![CDATA[<h2 id="一用户签名">一、用户签名</h2>
-<p>1亿B站用户群体十分庞大，文本中蕴含着这个群体的认知信息(如兴趣、身份、座右铭等)，如果能用签名训练word2vec词向量模型，说不定就有利用这个模型，对每个用户签名进行量化,  对用户进行分类。 本文要解决</p>
+<p>1 亿 B 站用户群体十分庞大，文本中蕴含着这个群体的认知信息(如兴趣、身份、座右铭等)，如果能用签名训练 word2vec 词向量模型，说不定就有利用这个模型，对每个用户签名进行量化, 对用户进行分类。 本文要解决</p>
 <ul>
 <li>构建语料训练出模型</li>
 <li>简单看看模型训练效果</li>
 </ul>
 <p><br><br></p>
 <h2 id="二准备语料">二、准备语料</h2>
-<p>Kaggle网有1亿B站用户数据集，下载地址</p>
+<p>Kaggle 网有 1 亿 B 站用户数据集，下载地址</p>
 <blockquote>
 <p><a href="https://www.kaggle.com/datasets/beats0/bilibili-user">https://www.kaggle.com/datasets/beats0/bilibili-user</a></p>
 </blockquote>
-<p>之前分享过 <a href="https://textdata.cn/blog/2023-05-10-100m-bilibili-user-info-dataset/">数据集 | 哔哩哔哩 1 亿用户数据</a> ， 阅读此文可以熟悉pandas的一些基本操作，如数据读取、文本操作等。</p>
+<p>之前分享过 <a href="https://textdata.cn/blog/2023-05-10-100m-bilibili-user-info-dataset/">数据集 | 哔哩哔哩 1 亿用户数据</a> ， 阅读此文可以熟悉 pandas 的一些基本操作，如数据读取、文本操作等。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 从kaggle下载B站1亿用户数据</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
@@ -769,36 +1487,36 @@ Processing Analogy Test: 100%|██████████████| 1198/1
 <p><img loading="lazy" src="img/df2.png" alt=""  />
 </p>
 <br>
-<p>将 9093092 个非空签名汇总到 <em><strong>B站用户签名语料.txt</strong></em></p>
+<p>将 9093092 个非空签名汇总到 <strong><em>B 站用户签名语料.txt</em></strong></p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;B站签名.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">raw_text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;sign&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">))</span>
     <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">raw_text</span><span class="p">)</span>
-</code></pre></div><p>代码运行后，得到 320M  的 <em><strong>B站签名.txt</strong></em>  。</p>
+</code></pre></div><p>代码运行后，得到 320M 的 <strong><em>B 站签名.txt</em></strong> 。</p>
 <p><br><br></p>
 <h2 id="三训练-word2vec">三、训练 Word2Vec</h2>
-<p>我使用的自己 <strong>未公开</strong> 的cntext 2.1.6版本， Bug频出，等调整好了再公开。</p>
-<h3 id="31-安装cntext">3.1 安装cntext</h3>
-<p>将 cntext-2.1.6-py3-none-any.whl 放置于桌面，打开 <strong>cmd</strong>  (苹果电脑打开terminal)， 输入cd desktop</p>
+<p>我使用的自己 <strong>未公开</strong> 的 cntext 2.1.6 版本， Bug 频出，等调整好了再公开。</p>
+<h3 id="31-安装-cntext">3.1 安装 cntext</h3>
+<p>将 cntext-2.1.6-py3-none-any.whl 放置于桌面，打开 <strong>cmd</strong> (苹果电脑打开 terminal)， 输入 cd desktop</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
-</code></pre></div><p>之后在 <strong>cmd</strong>  (苹果电脑打开terminal) 中使用pip3 安装</p>
+</code></pre></div><p>之后在 <strong>cmd</strong> (苹果电脑打开 terminal) 中使用 pip3 安装</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install cntext-2.1.6-py3-none-any.whl
-</code></pre></div><p>文末有 ***cntext-2.1.6-py3-none-any.whl ***获取方式</p>
+</code></pre></div><p>文末有 **_cntext-2.1.6-py3-none-any.whl _**获取方式</p>
 <br>
-<h3 id="32-训练word2vec">3.2 训练word2vec</h3>
-<p>cntext 训练时候Word2Vec模型参数</p>
+<h3 id="32-训练-word2vec">3.2 训练 word2vec</h3>
+<p>cntext 训练时候 Word2Vec 模型参数</p>
 <ul>
-<li><em><strong>corpus_file</strong></em> 语料txt文件路径； 刚刚准备的 <em><strong>B站用户签名语料.txt</strong></em></li>
-<li><em><strong>window_size</strong></em>   上下文窗口大小(上下文语义)</li>
-<li><em><strong>vector_size</strong></em> 向量维度数</li>
-<li><em><strong>chunksize</strong></em>  每次语料txt文件中读取的行数</li>
-<li><em><strong>lang</strong></em> 语言的语言</li>
+<li><strong><em>corpus_file</em></strong> 语料 txt 文件路径； 刚刚准备的 <strong><em>B 站用户签名语料.txt</em></strong></li>
+<li><strong><em>window_size</em></strong> 上下文窗口大小(上下文语义)</li>
+<li><strong><em>vector_size</em></strong> 向量维度数</li>
+<li><strong><em>chunksize</em></strong> 每次语料 txt 文件中读取的行数</li>
+<li><strong><em>lang</em></strong> 语言的语言</li>
 </ul>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># cntext2.1.6未公开，获取2.1.6请阅读文末获取方式</span>
 <span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 
-<span class="n">model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Word2Vec</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;B站用户签名语料.txt&#39;</span><span class="p">,</span> 
-                    <span class="n">window</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span> 
-                    <span class="n">vector_size</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span> 
+<span class="n">model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Word2Vec</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="s1">&#39;B站用户签名语料.txt&#39;</span><span class="p">,</span>
+                    <span class="n">window</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
+                    <span class="n">vector_size</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
                     <span class="n">window_size</span> <span class="o">=</span> <span class="mi">15</span>
                     <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
 </code></pre></div><p>Run</p>
@@ -807,19 +1525,19 @@ Cache output/B站签名_cache.txt Not Found or Empty, Preprocessing Corpus
 
 Reading Preprocessed Corpus from output/B站签名_cache.txt
 Start Training Word2Vec
-Word2Vec Training Cost 275 s. 
+Word2Vec Training Cost 275 s.
 Output Saved To: output/B站签名-Word2Vec.200.15.bin
-</code></pre></div><p>耗时 275s， 模型训练完成！需要注意， output文件夹内有</p>
+</code></pre></div><p>耗时 275s， 模型训练完成！需要注意， output 文件夹内有</p>
 <ul>
-<li><em><strong>B站签名-Word2Vec.200.15.bin</strong></em>        模型文件</li>
-<li><em><strong>B站签名_cache.txt</strong></em>                  训练缓存文件</li>
+<li><strong><em>B 站签名-Word2Vec.200.15.bin</em></strong> 模型文件</li>
+<li><strong><em>B 站签名_cache.txt</em></strong> 训练缓存文件</li>
 </ul>
 <br>
 <h3 id="33-评估模型">3.3 评估模型</h3>
 <p>使用近义法和类比法， 判断模型的表现。详情可查看<a href="https://cntext.readthedocs.io/zh-cn/latest/model.html">文档</a></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">evaluate_similarity</span><span class="p">(</span><span class="n">w2v_model</span><span class="p">)</span>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">evaluate_similarity</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
-<span class="n">ct</span><span class="o">.</span><span class="n">evaluate_analogy</span><span class="p">(</span><span class="n">w2v_model</span><span class="p">)</span>
+<span class="n">ct</span><span class="o">.</span><span class="n">evaluate_analogy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">近义测试: similarity.txt
 /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cntext/model/evaluate_data/similarity.txt
@@ -845,20 +1563,20 @@ Processing Analogy Test: 100%|██████████████| 1198/1
 | FamilyRelationship |   240    |     32     |   44.17    |   1.93   |
 |   SocialScience    |    2     |     68     |    0.00    |   NaN    |
 +--------------------+----------+------------+------------+----------+
-</code></pre></div><p><strong>近义测试</strong>: Spearman&rsquo;s Rank Coeficient系数取值[-1, 1], 取值越大， 说明模型表现越好。</p>
+</code></pre></div><p><strong>近义测试</strong>: Spearman&rsquo;s Rank Coeficient 系数取值[-1, 1], 取值越大， 说明模型表现越好。</p>
 <br>
 <p><strong>类比测试</strong>:</p>
 <ul>
-<li>CapitalOfCountries    B站用户签名语料在此项表现大于0，说明很多签名里会出现国家首都这类信息。</li>
-<li>CityInProvince        B站用户签名语料在此项表现大于0，说明很多签名里会出现省份省会这类信息。考虑到用户几乎全为中国人，所以此项准确率高于CapitalOfCountries。</li>
-<li>FamilyRelationship    B站用户签名语料体现的是一个个鲜活的中国人，签名中必然含有更多的人际关系， 所以此项准确率是四个项目中最高的。</li>
-<li>SocialScience         B站用户签名语料在此项表现最差， 应该是语料中常见的社会科学词语提及很少。</li>
+<li>CapitalOfCountries B 站用户签名语料在此项表现大于 0，说明很多签名里会出现国家首都这类信息。</li>
+<li>CityInProvince B 站用户签名语料在此项表现大于 0，说明很多签名里会出现省份省会这类信息。考虑到用户几乎全为中国人，所以此项准确率高于 CapitalOfCountries。</li>
+<li>FamilyRelationship B 站用户签名语料体现的是一个个鲜活的中国人，签名中必然含有更多的人际关系， 所以此项准确率是四个项目中最高的。</li>
+<li>SocialScience B 站用户签名语料在此项表现最差， 应该是语料中常见的社会科学词语提及很少。</li>
 </ul>
 <p>整体而言，模型效果一般，但是不是算法代码问题，而是语料出的问题。毕竟每个用户的签名一般都是一句话，太短，信息太少。</p>
 <p><br><br></p>
-<h2 id="四使用word2vec">四、使用word2vec</h2>
+<h2 id="四使用-word2vec">四、使用 word2vec</h2>
 <h3 id="41-读取模型">4.1 读取模型</h3>
-<p>使用gensim录入模型 <em><strong>B站用户签名语料-Word2Vec.100.15.bin</strong></em> ,</p>
+<p>使用 gensim 录入模型 <strong><em>B 站用户签名语料-Word2Vec.100.15.bin</em></strong> ,</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">gensim.models</span> <span class="kn">import</span> <span class="n">KeyedVectors</span>
 <span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 
@@ -997,22 +1715,22 @@ Processing Analogy Test: 100%|██████████████| 1198/1
 </code></pre></div><br>
 <br>
 <h2 id="五获取资源">五、获取资源</h2>
-<p>内容整理不易， 本文内容分免费和付费部分。 免费部分可以直接下载数据、构建语料、使用word2vec模型。</p>
-<p>付费部分主要是cntext，用于训练 word2vec 模型。 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」</p>
+<p>内容整理不易， 本文内容分免费和付费部分。 免费部分可以直接下载数据、构建语料、使用 word2vec 模型。</p>
+<p>付费部分主要是 cntext，用于训练 word2vec 模型。 如果对本文感兴趣，可加微信 372335839， 备注「姓名-学校-专业」</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 免费     1亿用户数据集 https://www.kaggle.com/datasets/beats0/bilibili-user
 
-- 免费     B站签名-Word2Vec.200.15.bin  链接: https://pan.baidu.com/s/1ILVwu6gGGGP0IHv-vsjgvw?pwd=em99 提取码: em99 
+- 免费     B站签名-Word2Vec.200.15.bin  链接: https://pan.baidu.com/s/1ILVwu6gGGGP0IHv-vsjgvw?pwd=em99 提取码: em99
 
 - 100元   获得cntext-2.1.6-py3-none-any.whl
 </code></pre></div><p><br><br></p>
 <h2 id="相关内容">相关内容</h2>
 <ul>
-<li><a href="https://cntext.readthedocs.io/">文本分析库cntext2.x使用手册 https://cntext.readthedocs.io/</a></li>
-<li><a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用Stanford Glove代码训练中文语料的Glove模型</a></li>
-<li><a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">词向量 | 使用人民网领导留言板语料训练Word2Vec模型</a></li>
+<li><a href="https://cntext.readthedocs.io/">文本分析库 cntext2.x 使用手册 https://cntext.readthedocs.io/</a></li>
+<li><a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用 Stanford Glove 代码训练中文语料的 Glove 模型</a></li>
+<li><a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">词向量 | 使用人民网领导留言板语料训练 Word2Vec 模型</a></li>
 <li><a href="https://textdata.cn/blog/2023-11-20-word2vec-by-year-by-province/">使用 5000w 专利申请数据集按年份(按省份)训练词向量</a></li>
 <li><a href="https://textdata.cn/blog/2024-04-16-douban-movie-1000w-ratings-comments-dataset/">使用 1000w 条豆瓣影评训练 Word2Vec</a></li>
-<li><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见39个FAQ汇总</a></li>
+<li><a href="https://textdata.cn/blog/2023-03-15-39faq-about-word-embeddings-for-social-science/">词嵌入技术在社会科学领域进行数据挖掘常见 39 个 FAQ 汇总</a></li>
 <li><a href="https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/">转载|大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用</a></li>
 <li><a href="https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/">OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息</a></li>
 </ul>
@@ -3707,734 +4425,6 @@ Wall time: 2min 40s
 <h3 id="44-使用场景">4.4 使用场景</h3>
 <p>并行化是有代价的（实例化新进程、通过共享内存发送数据、 &hellip;），只有在并行化的计算量大时才有效足够高。对于小规模的数据，使用并行化并不总是值得的。经过测试， 找了一个61kb的xlsx， 结果并行化反而还慢了。</p>
 <p><strong>pandarallel</strong> 通过使用计算机cpu所有内核来绕过此限制。 但代价是，需要两倍于标准操作的内存占用。</p>
-<p><br><br></p>
-]]></content:encoded>
-    </item>
-    
-    <item>
-      <title>失败案例 |  使用裁判文书数据集逐年训练年份词向量</title>
-      <link>https://textdata.cn/blog/2023-11-18-failure-example-show-word-meaning-shift-using-word2vec/</link>
-      <pubDate>Sat, 18 Nov 2023 00:00:00 +0000</pubDate>
-      
-      <guid>/blog/2023-11-18-failure-example-show-word-meaning-shift-using-word2vec/</guid>
-      <description>&lt;p&gt;想用裁判文书数据集，逐年训练词向量的同学，可以好好看本文，能节省你几十个小时时间。&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;一检查数据&#34;&gt;一、检查数据&lt;/h2&gt;
-&lt;p&gt;裁判文书数据集，每个月份存储到一个csv， 每个年份有一个对应的文件夹。下图是 2021 年的文件夹截图
-&lt;img loading=&#34;lazy&#34; src=&#34;img/2021.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;p&gt;csv字段格式是一致的，我们只需要找一个文件，尝试着读取前5行，查看数据中有哪些字段。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2013/2013-01.csv&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;nrows&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dropna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;subset&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;文书内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;inplace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;head&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/df.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;二构造语料&#34;&gt;二、构造语料&lt;/h2&gt;
-&lt;p&gt;我们只从csv中选取 &amp;ldquo;&lt;strong&gt;文书内容&lt;/strong&gt;&amp;rdquo; ，并将其存储到语料txt文件中。&lt;/p&gt;
-&lt;p&gt;考虑到电脑性能， 预料不要太大， 1G左右是比较适中，在电脑内存为8G的情况下，应该能跑通。&lt;/p&gt;
-&lt;p&gt;2010/2011/2013这三个年度的数据只有几百M， 数据全部保留。 剩下的年份，设置不同的抽样比例，尽可能将生成的语料txt文件控制在1G左右。下面是经过粗略计算设定的比例，实际最终数据控制在800M左右。&lt;/p&gt;
-&lt;p&gt;裁判文书数据量高达300G， 读取、抽样、存储，全部过程耗时大概6小时。&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;年份&lt;/th&gt;
-&lt;th&gt;解压后文件大小&lt;/th&gt;
-&lt;th&gt;抽样比例&lt;/th&gt;
-&lt;th&gt;语料txt大小&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;2010&lt;/td&gt;
-&lt;td&gt;761M&lt;/td&gt;
-&lt;td&gt;100%&lt;/td&gt;
-&lt;td&gt;684M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2011&lt;/td&gt;
-&lt;td&gt;452M&lt;/td&gt;
-&lt;td&gt;100%&lt;/td&gt;
-&lt;td&gt;396M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2012&lt;/td&gt;
-&lt;td&gt;757M&lt;/td&gt;
-&lt;td&gt;100%&lt;/td&gt;
-&lt;td&gt;665M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2013&lt;/td&gt;
-&lt;td&gt;5.13G&lt;/td&gt;
-&lt;td&gt;20%&lt;/td&gt;
-&lt;td&gt;984M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2014&lt;/td&gt;
-&lt;td&gt;23.7G&lt;/td&gt;
-&lt;td&gt;4%&lt;/td&gt;
-&lt;td&gt;905M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2015&lt;/td&gt;
-&lt;td&gt;33.6G&lt;/td&gt;
-&lt;td&gt;3%&lt;/td&gt;
-&lt;td&gt;968M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2016&lt;/td&gt;
-&lt;td&gt;39.9G&lt;/td&gt;
-&lt;td&gt;2.4%&lt;/td&gt;
-&lt;td&gt;914M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2017&lt;/td&gt;
-&lt;td&gt;44.6G&lt;/td&gt;
-&lt;td&gt;2.2%&lt;/td&gt;
-&lt;td&gt;882M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2018&lt;/td&gt;
-&lt;td&gt;24.8G&lt;/td&gt;
-&lt;td&gt;4%&lt;/td&gt;
-&lt;td&gt;875M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2019&lt;/td&gt;
-&lt;td&gt;48.3G&lt;/td&gt;
-&lt;td&gt;2%&lt;/td&gt;
-&lt;td&gt;833M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2020&lt;/td&gt;
-&lt;td&gt;91.2G&lt;/td&gt;
-&lt;td&gt;1%&lt;/td&gt;
-&lt;td&gt;779M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2021&lt;/td&gt;
-&lt;td&gt;32.3G&lt;/td&gt;
-&lt;td&gt;3%&lt;/td&gt;
-&lt;td&gt;816M&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;os&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pandas&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;pd&lt;/span&gt;
-
-&lt;span class=&#34;c1&#34;&gt;# 年份、抽样比例&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;year_fracs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
-    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2010&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2011&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2012&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; 
-    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2013&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2014&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.04&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2015&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.03&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
-    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2016&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.024&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2017&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.022&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2018&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.04&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
-    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2019&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.02&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2020&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.01&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;2021&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.03&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-
-
- &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;frac&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year_fracs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;正在构造 &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt; 年的语料txt文件&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;with&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;裁判文书&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;.txt&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;format&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;w&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;yf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-        &lt;span class=&#34;c1&#34;&gt;# &lt;/span&gt;
-        &lt;span class=&#34;n&#34;&gt;csvfs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;listdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;.csv&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-        &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;csvfs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-            &lt;span class=&#34;c1&#34;&gt;# 为节省内存开销， &lt;/span&gt;
-            &lt;span class=&#34;c1&#34;&gt;# 只读 csv 中的 “文书内容” 一个字段，&lt;/span&gt;
-            &lt;span class=&#34;c1&#34;&gt;# 且设置 chunksize 分批次读取&lt;/span&gt;
-            &lt;span class=&#34;n&#34;&gt;chunk_dfs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;read_csv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;csvf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;usecols&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;文书内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunksize&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10000&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-            &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_dfs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-                &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;dropna&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;subset&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;文书内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;inplace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;True&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-                &lt;span class=&#34;n&#34;&gt;mdf&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;chunk_df&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;sample&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;frac&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;frac&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-                &lt;span class=&#34;n&#34;&gt;text&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;mdf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;文书内容&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;values&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-                &lt;span class=&#34;n&#34;&gt;yf&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;text&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;三训练word2vec&#34;&gt;三、训练word2vec&lt;/h2&gt;
-&lt;p&gt;使用data内的语料txt，每个txt训练出一个对应的word2vec，结果自动存储到output/Word2Vec&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/01-corpus.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;p&gt;使用cntext2.0.0， 代码如下&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;txtfs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;f&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;listdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;data&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;.txt&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;txtf&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;txtfs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;txtf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;W2VModel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;corpus_file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;txtf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lang&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;chinese&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;train&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;vector_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;100&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;window_size&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;裁判文书年份、语料txt大小及训练时间长度汇总如下表&lt;/p&gt;
-&lt;br&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;年份&lt;/th&gt;
-&lt;th&gt;语料txt大小&lt;/th&gt;
-&lt;th&gt;训练word2vec耗时&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;2010&lt;/td&gt;
-&lt;td&gt;684M&lt;/td&gt;
-&lt;td&gt;2127s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2011&lt;/td&gt;
-&lt;td&gt;396M&lt;/td&gt;
-&lt;td&gt;1225s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2012&lt;/td&gt;
-&lt;td&gt;665M&lt;/td&gt;
-&lt;td&gt;2105s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2013&lt;/td&gt;
-&lt;td&gt;984M&lt;/td&gt;
-&lt;td&gt;2967s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2014&lt;/td&gt;
-&lt;td&gt;905M&lt;/td&gt;
-&lt;td&gt;2810s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2015&lt;/td&gt;
-&lt;td&gt;968M&lt;/td&gt;
-&lt;td&gt;3032s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2016&lt;/td&gt;
-&lt;td&gt;914M&lt;/td&gt;
-&lt;td&gt;2880s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2017&lt;/td&gt;
-&lt;td&gt;882M&lt;/td&gt;
-&lt;td&gt;2882s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2018&lt;/td&gt;
-&lt;td&gt;875M&lt;/td&gt;
-&lt;td&gt;2852s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2019&lt;/td&gt;
-&lt;td&gt;833M&lt;/td&gt;
-&lt;td&gt;2765s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2020&lt;/td&gt;
-&lt;td&gt;779M&lt;/td&gt;
-&lt;td&gt;2539s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2021&lt;/td&gt;
-&lt;td&gt;816M&lt;/td&gt;
-&lt;td&gt;2609s&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;三使用word2vec&#34;&gt;三、使用word2vec&lt;/h2&gt;
-&lt;p&gt;训练结果如下图&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; src=&#34;img/02-word2vec-models.png&#34; alt=&#34;&#34;  /&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;h3 id=&#34;31-导入模型&#34;&gt;3.1 导入模型&lt;/h3&gt;
-&lt;p&gt;output/Word2Vec中有多个年份的模型， 模型文件不大， 如果内存允许，可以同时导入。首先要获取模型文件路径&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;os&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;w2v_fs&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/Word2Vec/&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;os&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;listdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;output/Word2Vec&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;.npy&amp;#39;&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;not&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;w2v_fs&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[&amp;#39;output/Word2Vec/裁判文书2010.100.6.bin&amp;#39;,
- &amp;#39;output/Word2Vec/裁判文书2011.100.6.bin&amp;#39;,
- &amp;#39;output/Word2Vec/裁判文书2012.100.6.bin&amp;#39;,
- &amp;#39;output/Word2Vec/裁判文书2013.100.6.bin&amp;#39;,
- &amp;#39;output/Word2Vec/裁判文书2014.100.6.bin&amp;#39;,
- &amp;#39;output/Word2Vec/裁判文书2015.100.6.bin&amp;#39;,
- &amp;#39;output/Word2Vec/裁判文书2016.100.6.bin&amp;#39;,
- &amp;#39;output/Word2Vec/裁判文书2017.100.6.bin&amp;#39;,
- &amp;#39;output/Word2Vec/裁判文书2018.100.6.bin&amp;#39;,
- &amp;#39;output/Word2Vec/裁判文书2019.100.6.bin&amp;#39;,
- &amp;#39;output/Word2Vec/裁判文书2020.100.6.bin&amp;#39;,
- &amp;#39;output/Word2Vec/裁判文书2021.100.6.bin&amp;#39;]
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;cntext&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;as&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;ct&lt;/span&gt;
-&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;re&lt;/span&gt;
-
-&lt;span class=&#34;n&#34;&gt;w2v_models&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;years&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;re&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;findall&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;\d&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{4}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v_fs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v_f&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;zip&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;years&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v_fs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{year}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;w2v_models&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ct&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;load_w2v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w2v_f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2010
-Loading word2vec model...
-
-2011
-Loading word2vec model...
-
-2012
-Loading word2vec model...
-
-......
-
-
-2021
-Loading word2vec model...
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;32-模型词汇量&#34;&gt;3.2 模型词汇量&lt;/h3&gt;
-&lt;p&gt;查看不同年份模型的词汇量&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;re&lt;/span&gt;
-
-&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;zip&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;years&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v_models&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;wordnum&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;词汇量: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wordnum&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2010词汇量: 374105
-2011词汇量: 312039
-2012词汇量: 490673
-2013词汇量: 675057
-2014词汇量: 634497
-2015词汇量: 667753
-2016词汇量: 638568
-2017词汇量: 656776
-2018词汇量: 667265
-2019词汇量: 629285
-2020词汇量: 582988
-2021词汇量: 571346
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;br&gt;
-&lt;h3 id=&#34;33-语义检查&#34;&gt;3.3 语义检查&lt;/h3&gt;
-&lt;p&gt;先查看2020年的， 以 “&lt;strong&gt;犯罪&lt;/strong&gt;” 为例&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 最相似的10个词&lt;/span&gt;
-&lt;span class=&#34;n&#34;&gt;w2v_models&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;犯罪&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[(&amp;#39;认真接受&amp;#39;, 0.9499362707138062),
- (&amp;#39;民事诉讼法&amp;#39;, 0.9497376084327698),
- (&amp;#39;建设工程有限公司&amp;#39;, 0.9491338729858398),
- (&amp;#39;望春监狱&amp;#39;, 0.9488678574562073),
- (&amp;#39;人身损害赔偿&amp;#39;, 0.9487593173980713),
- (&amp;#39;判决发生&amp;#39;, 0.9485785365104675),
- (&amp;#39;本案受理费&amp;#39;, 0.9484607577323914),
- (&amp;#39;裁定准许&amp;#39;, 0.9480699896812439),
- (&amp;#39;现在宁波市&amp;#39;, 0.9479051828384399),
- (&amp;#39;温州银行&amp;#39;, 0.9478054046630859)]
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;同时检查2010-2021， 分别返回前5个最相似的词&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;与“犯罪”最相似5个词&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;end&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;zip&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;years&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v_models&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;wordtuples&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;犯罪&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;words&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39; &amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;v&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;wordtuples&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;模型: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;words&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2010模型: 认真接受 民事诉讼法 建设工程有限公司 望春监狱 人身损害赔偿
-2011模型: 欲证明 辩护意见 被告中铁 应承担 蔡某甲
-2012模型: �� 判处有期徒刑 盒 执行 黄某乙
-2013模型: 雇员受害 AFT8 箐 牛鲁敬 被告金析航
-2014模型: 齐立权 永川支公司 徐正青 万给 鲁子双
-2015模型: 蒋明良 19KM 二百一十八条 一定独创性 类型主要
-2016模型: 钧益公司 王乌旦 未予缴纳 之后离开 元系金
-2017模型: 巫山县振兴 工程承揽 立奥 会展 皖1004
-2018模型: 浙湖 公路东向西 雷德佑 福建省长汀县 辽宁成工
-2019模型: 6.2475% 郑善 陈能颂 招某 14726.91
-2020模型: 促进法 流传 四川省米易县 有奴 共有产权
-2021模型: 柳凯 张鲁 几张照片 挪走 耿正会
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;额， 每个模型不能说跟“犯罪”毫无关系，只能说是一毛钱关系都没有！难道是我选的词有问题，错怪模型，那再试试“婚姻”&lt;/p&gt;
-&lt;br&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;与“婚姻”最相似5个词&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;end&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;zip&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;years&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v_models&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;wordtuples&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w2v_model&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;wv&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;most_similar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;婚姻&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;topn&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;n&#34;&gt;words&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39; &amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;w&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;w&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;v&lt;/span&gt; &lt;span class=&#34;ow&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;wordtuples&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;])&lt;/span&gt;
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;sa&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;模型: &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;words&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;与“婚姻”最相似5个词
-
-2010模型: 签收 相关 姜明 20107 依法
-2011模型: 下列条件 连带责任保证 债务 举证质证 申请撤诉
-2012模型: 竹乐 程志街 7808292.65 乐至刑初 衢江
-2013模型: 分歧双方 孙明霞〇 裁明 孙林 多派
-2014模型: 山林土地 道成 被告肖小健 董锐 梓民初
-2015模型: 秀洲 永乐街道 此笔费用 上特阀业 唐厚洪
-2016模型: 其于2007 故予认定 千荣公司 工程验收报告 邢子
-2017模型: 拆排栅 53612 初字252 被告彭国强 鸿恒昌公司
-2018模型: 淄博分中心 三厅 临街门市 20200 科健
-2019模型: 新岗位 2006) 风险稳控 主要树种 重量价格
-2020模型: 模板款 生活用房 从轻处理建议 张春林 刘俊平
-2021模型: 时二乐 对童 黄青书 一经通知 电话问
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;哎！ 依然是彼此毫无语义关系， 种种迹象表明，这些训练出的模型就真不咋地！&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-&lt;h2 id=&#34;四原因分析&#34;&gt;四、原因分析&lt;/h2&gt;
-&lt;p&gt;如果说数据没有清洗，去停用词，可能会干扰训练效果。但是我经过去停词等数据清洗，训练得到的模型表现与之前没啥变化，依然是捕捉不到语义关系信息。&lt;br&gt;&lt;/p&gt;
-&lt;p&gt;至于数据量大小的问题， 大邓之前分享的&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-03-24-load-w2v-and-expand-your-concpet-dicitonary/&#34;&gt;预训练模型 | 金融会计类word2vec， 可扩展或构建领域内概念情感词典&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://textdata.cn/blog/2023-11-10-training-word2vec-model-using-china-3751w-patent-application-dataset/&#34;&gt;预训练模型 | 使用1000w专利摘要训练word2vec模型，可用于开发词典&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;两个推文中使用的语料都是好几个G的语料txt， 基本上语义捕捉的都很完美。但前几天 &lt;a href=&#34;https://textdata.cn/blog/2023-11-12-using-100m-bilibili-user-sign-data-to-training-word2vec/&#34;&gt;词向量 | 使用1亿B站用户签名训练word2vec词向量&lt;/a&gt; 中语料只有302M， 但语义信息捕捉的很好。&lt;/p&gt;
-&lt;p&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;
-</description>
-      <content:encoded><![CDATA[<p>想用裁判文书数据集，逐年训练词向量的同学，可以好好看本文，能节省你几十个小时时间。</p>
-<p><br><br></p>
-<h2 id="一检查数据">一、检查数据</h2>
-<p>裁判文书数据集，每个月份存储到一个csv， 每个年份有一个对应的文件夹。下图是 2021 年的文件夹截图
-<img loading="lazy" src="img/2021.png" alt=""  />
-</p>
-<br>
-<p>csv字段格式是一致的，我们只需要找一个文件，尝试着读取前5行，查看数据中有哪些字段。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;2013/2013-01.csv&#39;</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;文书内容&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</code></pre></div><p><img loading="lazy" src="img/df.png" alt=""  />
-</p>
-<p><br><br></p>
-<h2 id="二构造语料">二、构造语料</h2>
-<p>我们只从csv中选取 &ldquo;<strong>文书内容</strong>&rdquo; ，并将其存储到语料txt文件中。</p>
-<p>考虑到电脑性能， 预料不要太大， 1G左右是比较适中，在电脑内存为8G的情况下，应该能跑通。</p>
-<p>2010/2011/2013这三个年度的数据只有几百M， 数据全部保留。 剩下的年份，设置不同的抽样比例，尽可能将生成的语料txt文件控制在1G左右。下面是经过粗略计算设定的比例，实际最终数据控制在800M左右。</p>
-<p>裁判文书数据量高达300G， 读取、抽样、存储，全部过程耗时大概6小时。</p>
-<table>
-<thead>
-<tr>
-<th>年份</th>
-<th>解压后文件大小</th>
-<th>抽样比例</th>
-<th>语料txt大小</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>2010</td>
-<td>761M</td>
-<td>100%</td>
-<td>684M</td>
-</tr>
-<tr>
-<td>2011</td>
-<td>452M</td>
-<td>100%</td>
-<td>396M</td>
-</tr>
-<tr>
-<td>2012</td>
-<td>757M</td>
-<td>100%</td>
-<td>665M</td>
-</tr>
-<tr>
-<td>2013</td>
-<td>5.13G</td>
-<td>20%</td>
-<td>984M</td>
-</tr>
-<tr>
-<td>2014</td>
-<td>23.7G</td>
-<td>4%</td>
-<td>905M</td>
-</tr>
-<tr>
-<td>2015</td>
-<td>33.6G</td>
-<td>3%</td>
-<td>968M</td>
-</tr>
-<tr>
-<td>2016</td>
-<td>39.9G</td>
-<td>2.4%</td>
-<td>914M</td>
-</tr>
-<tr>
-<td>2017</td>
-<td>44.6G</td>
-<td>2.2%</td>
-<td>882M</td>
-</tr>
-<tr>
-<td>2018</td>
-<td>24.8G</td>
-<td>4%</td>
-<td>875M</td>
-</tr>
-<tr>
-<td>2019</td>
-<td>48.3G</td>
-<td>2%</td>
-<td>833M</td>
-</tr>
-<tr>
-<td>2020</td>
-<td>91.2G</td>
-<td>1%</td>
-<td>779M</td>
-</tr>
-<tr>
-<td>2021</td>
-<td>32.3G</td>
-<td>3%</td>
-<td>816M</td>
-</tr>
-</tbody>
-</table>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-
-<span class="c1"># 年份、抽样比例</span>
-<span class="n">year_fracs</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="s1">&#39;2010&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2011&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2012&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> 
-    <span class="p">(</span><span class="s1">&#39;2013&#39;</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2014&#39;</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2015&#39;</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">),</span>
-    <span class="p">(</span><span class="s1">&#39;2016&#39;</span><span class="p">,</span> <span class="mf">0.024</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2017&#39;</span><span class="p">,</span> <span class="mf">0.022</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2018&#39;</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">),</span>
-    <span class="p">(</span><span class="s1">&#39;2019&#39;</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2020&#39;</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;2021&#39;</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">)</span>
-    <span class="p">]</span>
-
-
- <span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">frac</span> <span class="ow">in</span> <span class="n">year_fracs</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;正在构造 </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1"> 年的语料txt文件&#39;</span><span class="p">)</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;裁判文书</span><span class="si">{}</span><span class="s1">.txt&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">year</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">yf</span><span class="p">:</span>
-        <span class="c1"># </span>
-        <span class="n">csvfs</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">csvf</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">csvf</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.csv&#39;</span> <span class="ow">in</span> <span class="n">csvf</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">csvf</span> <span class="ow">in</span> <span class="n">csvfs</span><span class="p">:</span>
-            <span class="c1"># 为节省内存开销， </span>
-            <span class="c1"># 只读 csv 中的 “文书内容” 一个字段，</span>
-            <span class="c1"># 且设置 chunksize 分批次读取</span>
-            <span class="n">chunk_dfs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csvf</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;文书内容&#39;</span><span class="p">],</span> <span class="n">chunksize</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">chunk_df</span> <span class="ow">in</span> <span class="n">chunk_dfs</span><span class="p">:</span>
-                <span class="n">chunk_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;文书内容&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">mdf</span> <span class="o">=</span> <span class="n">chunk_df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="n">frac</span><span class="p">)</span>
-                <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mdf</span><span class="p">[</span><span class="s1">&#39;文书内容&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-                <span class="n">yf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-</code></pre></div><p><br><br></p>
-<h2 id="三训练word2vec">三、训练word2vec</h2>
-<p>使用data内的语料txt，每个txt训练出一个对应的word2vec，结果自动存储到output/Word2Vec</p>
-<p><img loading="lazy" src="img/01-corpus.png" alt=""  />
-</p>
-<p>使用cntext2.0.0， 代码如下</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
-<span class="n">txtfs</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.txt&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
-<span class="k">for</span> <span class="n">txtf</span> <span class="ow">in</span> <span class="n">txtfs</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">txtf</span><span class="p">)</span>
-    <span class="n">w2v_model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">W2VModel</span><span class="p">(</span><span class="n">corpus_file</span><span class="o">=</span><span class="n">txtf</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
-    <span class="n">w2v_model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">vector_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
-</code></pre></div><p>裁判文书年份、语料txt大小及训练时间长度汇总如下表</p>
-<br>
-<table>
-<thead>
-<tr>
-<th>年份</th>
-<th>语料txt大小</th>
-<th>训练word2vec耗时</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>2010</td>
-<td>684M</td>
-<td>2127s</td>
-</tr>
-<tr>
-<td>2011</td>
-<td>396M</td>
-<td>1225s</td>
-</tr>
-<tr>
-<td>2012</td>
-<td>665M</td>
-<td>2105s</td>
-</tr>
-<tr>
-<td>2013</td>
-<td>984M</td>
-<td>2967s</td>
-</tr>
-<tr>
-<td>2014</td>
-<td>905M</td>
-<td>2810s</td>
-</tr>
-<tr>
-<td>2015</td>
-<td>968M</td>
-<td>3032s</td>
-</tr>
-<tr>
-<td>2016</td>
-<td>914M</td>
-<td>2880s</td>
-</tr>
-<tr>
-<td>2017</td>
-<td>882M</td>
-<td>2882s</td>
-</tr>
-<tr>
-<td>2018</td>
-<td>875M</td>
-<td>2852s</td>
-</tr>
-<tr>
-<td>2019</td>
-<td>833M</td>
-<td>2765s</td>
-</tr>
-<tr>
-<td>2020</td>
-<td>779M</td>
-<td>2539s</td>
-</tr>
-<tr>
-<td>2021</td>
-<td>816M</td>
-<td>2609s</td>
-</tr>
-</tbody>
-</table>
-<p><br><br></p>
-<h2 id="三使用word2vec">三、使用word2vec</h2>
-<p>训练结果如下图</p>
-<p><img loading="lazy" src="img/02-word2vec-models.png" alt=""  />
-</p>
-<br>
-<h3 id="31-导入模型">3.1 导入模型</h3>
-<p>output/Word2Vec中有多个年份的模型， 模型文件不大， 如果内存允许，可以同时导入。首先要获取模型文件路径</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">os</span>
-
-<span class="n">w2v_fs</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;output/Word2Vec/</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">&#39;output/Word2Vec&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;.npy&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
-<span class="n">w2v_fs</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;output/Word2Vec/裁判文书2010.100.6.bin&#39;,
- &#39;output/Word2Vec/裁判文书2011.100.6.bin&#39;,
- &#39;output/Word2Vec/裁判文书2012.100.6.bin&#39;,
- &#39;output/Word2Vec/裁判文书2013.100.6.bin&#39;,
- &#39;output/Word2Vec/裁判文书2014.100.6.bin&#39;,
- &#39;output/Word2Vec/裁判文书2015.100.6.bin&#39;,
- &#39;output/Word2Vec/裁判文书2016.100.6.bin&#39;,
- &#39;output/Word2Vec/裁判文书2017.100.6.bin&#39;,
- &#39;output/Word2Vec/裁判文书2018.100.6.bin&#39;,
- &#39;output/Word2Vec/裁判文书2019.100.6.bin&#39;,
- &#39;output/Word2Vec/裁判文书2020.100.6.bin&#39;,
- &#39;output/Word2Vec/裁判文书2021.100.6.bin&#39;]
-</code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
-<span class="kn">import</span> <span class="nn">re</span>
-
-<span class="n">w2v_models</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">years</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">f</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">w2v_fs</span><span class="p">]</span>
-<span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">w2v_f</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">w2v_fs</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{year}</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="n">w2v_models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="n">w2v_f</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">)</span>
-
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2010
-Loading word2vec model...
-
-2011
-Loading word2vec model...
-
-2012
-Loading word2vec model...
-
-......
-
-
-2021
-Loading word2vec model...
-</code></pre></div><br>
-<h3 id="32-模型词汇量">3.2 模型词汇量</h3>
-<p>查看不同年份模型的词汇量</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
-
-<span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">w2v_model</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">w2v_models</span><span class="p">):</span>
-    <span class="n">wordnum</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w2v_model</span><span class="o">.</span><span class="n">wv</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">词汇量: </span><span class="si">{</span><span class="n">wordnum</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2010词汇量: 374105
-2011词汇量: 312039
-2012词汇量: 490673
-2013词汇量: 675057
-2014词汇量: 634497
-2015词汇量: 667753
-2016词汇量: 638568
-2017词汇量: 656776
-2018词汇量: 667265
-2019词汇量: 629285
-2020词汇量: 582988
-2021词汇量: 571346
-</code></pre></div><br>
-<h3 id="33-语义检查">3.3 语义检查</h3>
-<p>先查看2020年的， 以 “<strong>犯罪</strong>” 为例</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 最相似的10个词</span>
-<span class="n">w2v_models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;犯罪&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[(&#39;认真接受&#39;, 0.9499362707138062),
- (&#39;民事诉讼法&#39;, 0.9497376084327698),
- (&#39;建设工程有限公司&#39;, 0.9491338729858398),
- (&#39;望春监狱&#39;, 0.9488678574562073),
- (&#39;人身损害赔偿&#39;, 0.9487593173980713),
- (&#39;判决发生&#39;, 0.9485785365104675),
- (&#39;本案受理费&#39;, 0.9484607577323914),
- (&#39;裁定准许&#39;, 0.9480699896812439),
- (&#39;现在宁波市&#39;, 0.9479051828384399),
- (&#39;温州银行&#39;, 0.9478054046630859)]
-</code></pre></div><p>同时检查2010-2021， 分别返回前5个最相似的词</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;与“犯罪”最相似5个词&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">()</span>
-<span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">w2v_model</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">w2v_models</span><span class="p">):</span>
-    <span class="n">wordtuples</span> <span class="o">=</span> <span class="n">w2v_model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;犯罪&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-    <span class="n">words</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">wordtuples</span><span class="p">])</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">模型: </span><span class="si">{</span><span class="n">words</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">2010模型: 认真接受 民事诉讼法 建设工程有限公司 望春监狱 人身损害赔偿
-2011模型: 欲证明 辩护意见 被告中铁 应承担 蔡某甲
-2012模型: �� 判处有期徒刑 盒 执行 黄某乙
-2013模型: 雇员受害 AFT8 箐 牛鲁敬 被告金析航
-2014模型: 齐立权 永川支公司 徐正青 万给 鲁子双
-2015模型: 蒋明良 19KM 二百一十八条 一定独创性 类型主要
-2016模型: 钧益公司 王乌旦 未予缴纳 之后离开 元系金
-2017模型: 巫山县振兴 工程承揽 立奥 会展 皖1004
-2018模型: 浙湖 公路东向西 雷德佑 福建省长汀县 辽宁成工
-2019模型: 6.2475% 郑善 陈能颂 招某 14726.91
-2020模型: 促进法 流传 四川省米易县 有奴 共有产权
-2021模型: 柳凯 张鲁 几张照片 挪走 耿正会
-</code></pre></div><p>额， 每个模型不能说跟“犯罪”毫无关系，只能说是一毛钱关系都没有！难道是我选的词有问题，错怪模型，那再试试“婚姻”</p>
-<br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;与“婚姻”最相似5个词&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">()</span>
-<span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">w2v_model</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">w2v_models</span><span class="p">):</span>
-    <span class="n">wordtuples</span> <span class="o">=</span> <span class="n">w2v_model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">([</span><span class="s1">&#39;婚姻&#39;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-    <span class="n">words</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">wordtuples</span><span class="p">])</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s1">模型: </span><span class="si">{</span><span class="n">words</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-</code></pre></div><p>Run</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">与“婚姻”最相似5个词
-
-2010模型: 签收 相关 姜明 20107 依法
-2011模型: 下列条件 连带责任保证 债务 举证质证 申请撤诉
-2012模型: 竹乐 程志街 7808292.65 乐至刑初 衢江
-2013模型: 分歧双方 孙明霞〇 裁明 孙林 多派
-2014模型: 山林土地 道成 被告肖小健 董锐 梓民初
-2015模型: 秀洲 永乐街道 此笔费用 上特阀业 唐厚洪
-2016模型: 其于2007 故予认定 千荣公司 工程验收报告 邢子
-2017模型: 拆排栅 53612 初字252 被告彭国强 鸿恒昌公司
-2018模型: 淄博分中心 三厅 临街门市 20200 科健
-2019模型: 新岗位 2006) 风险稳控 主要树种 重量价格
-2020模型: 模板款 生活用房 从轻处理建议 张春林 刘俊平
-2021模型: 时二乐 对童 黄青书 一经通知 电话问
-</code></pre></div><p>哎！ 依然是彼此毫无语义关系， 种种迹象表明，这些训练出的模型就真不咋地！</p>
-<p><br><br></p>
-<h2 id="四原因分析">四、原因分析</h2>
-<p>如果说数据没有清洗，去停用词，可能会干扰训练效果。但是我经过去停词等数据清洗，训练得到的模型表现与之前没啥变化，依然是捕捉不到语义关系信息。<br></p>
-<p>至于数据量大小的问题， 大邓之前分享的</p>
-<ul>
-<li><a href="https://textdata.cn/blog/2023-03-24-load-w2v-and-expand-your-concpet-dicitonary/">预训练模型 | 金融会计类word2vec， 可扩展或构建领域内概念情感词典</a></li>
-<li><a href="https://textdata.cn/blog/2023-11-10-training-word2vec-model-using-china-3751w-patent-application-dataset/">预训练模型 | 使用1000w专利摘要训练word2vec模型，可用于开发词典</a></li>
-</ul>
-<p>两个推文中使用的语料都是好几个G的语料txt， 基本上语义捕捉的都很完美。但前几天 <a href="https://textdata.cn/blog/2023-11-12-using-100m-bilibili-user-sign-data-to-training-word2vec/">词向量 | 使用1亿B站用户签名训练word2vec词向量</a> 中语料只有302M， 但语义信息捕捉的很好。</p>
 <p><br><br></p>
 ]]></content:encoded>
     </item>

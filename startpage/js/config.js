@@ -184,11 +184,16 @@ class Config {
 				category: 'media'
 			},
 
-
 			{
 				site: 'LetPub',
 				icon: 'letpub',
 				url: 'https://www.letpub.com.cn/index.php?page=journalapp&view=search',
+				category: 'Academic Tools'
+			},
+			{
+				site: 'alphaXiv',
+				icon: 'alphaxiv',
+				url: 'https://www.alphaxiv.org/explore',
 				category: 'Academic Tools'
 			},
 			{
