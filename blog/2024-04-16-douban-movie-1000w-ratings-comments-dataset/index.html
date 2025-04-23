@@ -120,8 +120,8 @@ import pandas as pd df = pd.read_csv(&#39;all_movies_with_id.csv&#39;) df 1.3 �
   "keywords": [
     "数据集", "经济管理", "文本分析", "豆瓣电影", "Word2Vec", "cntext"
   ],
-  "articleBody": "本文内容\n 介绍豆瓣影评数据集 构造语料训练 Word2Vec 模型 获取数据 cntext2.x \u0026 Word2Vec 模型文件  \n一、豆瓣影评数据集 1.1 数据集介绍 数据集: douba-movie-1000w 数据源: 豆瓣电影 记录数: - 电影 10269 部 - 影评 10310989 条 体积: 1.35G 该数据集正好弥补下国内公开电影数据集的空缺， 数据已经过初步清洗，可用于推荐系统、情感分析、知识图谱、新闻传播学、社会学文化变迁等多个领域(或主题)。\n1.2 读取数据 下载 douba-movie-1000w.zip 解压后，可以看到数据集中有一个 all_movies_with_id.csv 文件。\nimport pandas as pd df = pd.read_csv('all_movies_with_id.csv') df 1.3 所含字段 for col in df.columns: print(f' - {col}') Run\n- ID - Movie_Name 电影名 - Score 豆瓣电影评分(1-10) - Review_People 评论者人数 - Star_Distribution 评论评分分布(1-5, 含多个数值，数值以%间隔) - Craw_Date 爬虫运行日期 - Username 豆瓣评论者用户名 - Date 影评日期 - Star 影评评分(1-5) - Comment 影评内容 - Comment_Distribution 影评评分分布 - Like 影评获得的喜欢数 \n二、 构造语料\u0026训练Word2Vec 2.1 构造语料 将字段 Comment 中所有文本汇总到 douban-movie-1000w.txt,\nimport pandas as pd # 读取数据，只读取字段sign df = pd.read_csv('all_movies_with_id.csv', usecols=['sign']) # 将sign列中的所有文本汇总到douban-movie-1000w.txt with open('douban-movie-1000w.txt', 'w', encoding='utf-8') as f: text = '\\n'.join(df['Comment'].fillna('')) f.write(text) # 删除df和text变量，释放内存 del df del text \n2.2 配置cntext2.1.6 将 cntext-2.1.6-py3-none-any.whl 放置于桌面，打开 cmd (苹果电脑打开terminal)， 输入cd desktop\ncd desktop 之后在 cmd (苹果电脑打开terminal) 中使用 pip3 安装\npip3 install cntext-2.1.6-py3-none-any.whl 文末有 cntext-2.1.6-py3-none-any.whl 获取方式\n2.3 训练Word2Vec # cntext为2.1.6 import cntext as ct # 训练Word2Vec模型 w2v = ct.Word2Vec(corpus_file='douban-movie-1000w.txt', vector_size=200, window_size=15, min_count=5) Run\nMac(Linux) System, Enable Parallel Processing Cache output/douban-movie-1000w_cache.txt Not Found or Empty, Preprocessing Corpus Reading Preprocessed Corpus from output/douban-movie-1000w_cache.txt Start Training Word2Vec Word2Vec Training Cost 2965 s. Output Saved To: output/douban-movie-1000w.200.15.txt 经过半个小时的训练， 得到\n 模型文件 output/douban-movie-1000w-Word2Vec.200.15.txt 模型文件 output/douban-movie-1000w-Word2Vec.200.15.bin 缓存文件 output/douban-movie-1000w_cache.txt  其中模型文件有 txt 和 bin 两种格式， 信息量完全等同。 txt 可以用记事本打开查看， 而 bin 则是二进制文件， 体积更小。 已训练好的模型， 因 bin 格式体积更小， 便于分享。\n2.4 评估模型 使用近义法和类比法， 判断模型的表现。详情可查看文档\nct.evaluate_similarity(w2v_model) ct.evaluate_analogy(w2v_model) Run\n近义测试: similarity.txt /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cntext/model/evaluate_data/similarity.txt 评估结果： +----------+------------+----------------------------+ | 发现词语 | 未发现词语 | Spearman's Rank Coeficient | +----------+------------+----------------------------+ | 459 | 78 | 0.43 | +----------+------------+----------------------------+ 类比测试: analogy.txt /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cntext/model/evaluate_data/analogy.txt Processing Analogy Test: 100%|██████████████| 1198/1198 [00:11近义测试: Spearman’s Rank Coeficient系数取值[-1, 1], 取值越大， 说明模型表现越好。\n类比测试:\n CapitalOfCountries 豆瓣影评语料在此项表现尚可，可能目前电影库中有一定比例的外国素材。 CityInProvince 豆瓣影评语料在此项表现较差，不太可能是中国素材太少，可能大多数省市以类似汉东省的形式出现。这是我的猜测。 人民网留言板语料Word2Vec中，该项准确率100%。 FamilyRelationship 豆瓣影评体现的是电影相关内容，而电影永远的主题是人性， 内容少不了家长里短，七大姑八大姨，所以此项准确率高达92.65%。 以年报MD\u0026A为例，此处准确率只有10%。 SocialScience 豆瓣影评语料在此项表现一般， 应该是语料中常见的社会科学词语提及较少。  整体而言，语料训练的效果很不错，抓住了数据场景的独特性语义。\n\n四、使用Word2Vec 4.1 导入Word2Vec模型文件 import cntext as ct # 导入模型，请注意路径。 # 「当前代码」 与 「output」 同处于一个文件夹内 dm_w2v = ct.load_w2v('output/douban-movie-1000w-Word2Vec.200.15.txt') # dm_w2v = ct.load_w2v('output/douban-movie-1000w-Word2Vec.200.15.bin') dm_w2v Run\nLoading output/douban-movie-1000w-Word2Vec.200.15.txt... \n4.2 KeyedVectors的操作方法(或属性)    方法 描述     KeyedVectors.index_to_key 获取词汇表中的所有单词。   KeyedVectors.key_to_index 获取单词到索引的映射。   KeyedVectors.vector_size 获取GloVe模型中任意词向量的维度。   KeyedVectors.get_vector(word) 获取给定单词的词向量。   KeyedVectors.similar_by_word(word, topn=10) 获取某词语最相似的10个近义词。   KeyedVectors.similar_by_vector(vector, topn=10) 获取词向量最相似的10个近义词。    4.3 查看词表 查看词表所有单词\ndm_w2v.index_to_key Run\n['电影', '一个', '没有', '喜欢', ... '跟着', '意识', '态度', ...] 为了方便查看， 这里只展示部分数据。\n4.4 词表映射 查看单词到索引的映射\ndm_w2v.key_to_index Run\n{'电影': 0, '一个': 1, '没有': 2, ... '跟着': 997, '意识': 998, '态度': 999, ...} \n4.5 向量维度数 print(f'词表有 {len(dm_w2v.key_to_index)}个词') print(f'向量是 {dm_w2v.vector_size}维') Run\n词表有 426646 个词 向量是 200 维 \n4.6 获取词向量 dm_w2v.get_vector('给力') Run\narray([-1.24090052e+00, -6.79377019e-01, 1.42518425e+00, -1.46615291e+00, -9.53197628e-02, 6.50456071e-01, -2.97696137e+00, 2.20916629e+00, 6.12876177e-01, 1.63172066e+00, 4.91760701e-01, -9 ...... ...... -1.42494082e+00, 2.49131727e+00, -6.27597034e-01, -7.91438043e-01, -4.54898655e-01, 1.37747681e+00, -4.20672953e-01, -1.53694853e-01, 1.04936564e+00, 2.18786263e+00, -8.07472587e-01, -8.32003877e-02], dtype=float32) \n4.7 近义词 根据词语查看近义词\n# 近义词 dm_w2v.similar_by_word('给力', topn=10) Run\n[('相当给力', 0.6180022358894348), ('太给力', 0.6019443273544312), ('带劲', 0.5840415954589844), ('不给力', 0.5774183869361877), ('过瘾', 0.5616626739501953), ('牛叉', 0.553788959980011), ('出彩', 0.5414286851882935), ('精彩', 0.5332293510437012), ('看得过瘾', 0.5250197649002075), ('大赞', 0.5205727219581604)] \n根据向量查找最相似的近义词\nword_vector = dm_w2v.get_vector('给力') dm_w2v.similar_by_vector(word_vector, topn=10) Run\n[('给力', 1.0), ('相当给力', 0.6180021166801453), ('太给力', 0.6019443273544312), ('带劲', 0.5840415954589844), ('不给力', 0.5774183869361877), ('过瘾', 0.5616626739501953), ('牛叉', 0.5537890195846558), ('出彩', 0.5414287447929382), ('精彩', 0.5332292914390564), ('看得过瘾', 0.5250197649002075)] \n4.8 计算多个词的中心向量 我们可以计算「宇宙」、「飞船」、「战争」的宇宙语义向量（中心向量）。 并试图寻找中心向量 universe_vector 的最相似的10个词。\n# 几个词语构建的宇宙语义向量 universe_vector = ct.semantic_centroid(wv=dm_w2v, words=['宇宙', '飞船', '战争']) dm_w2v.similar_by_vector(universe_vector, topn=20) Run\n[('宇宙', 0.7568532228469849), ('星系', 0.7090039253234863), ('飞船', 0.7080673575401306), ('人类文明', 0.6973789930343628), ('战舰', 0.6890057325363159), ('母舰', 0.6864359974861145), ('星球', 0.6799622774124146), ('卫星', 0.6799139976501465), ('星际', 0.6789332032203674), ('空间站', 0.6780815124511719), ('地球', 0.6769616603851318), ('外太空', 0.6683873534202576), ('核战', 0.6669113039970398), ('外星飞船', 0.6592534780502319), ('木星', 0.6586896777153015), ('能源', 0.6562989950180054), ('战争', 0.6556441187858582), ('巨兽', 0.6544537544250488), ('月球', 0.6525537967681885), ('一艘', 0.6521110534667969)] 语义捕捉的很准哦。\n4.9 概念轴 男性概念向量由多个男性词的向量加总求均值得到，女性概念向量算法类似。当性质或方向明显相反的两个概念向量相减， 得到的新的向量，我们可以称之为概念轴向量Concept Axis。常见的概念轴，\n- 尺寸(大, 小) - 湿度(干燥,潮湿) - 性别(男, 女) - 财富(富裕, 贫穷) - 等 其实任意概念的向量也可看做概念轴，即该概念向量与0向量相减。只不过两组性质方向相反的方式得到的概念轴， 在语义上更稳定。\nimport cntext as ct import numpy as np # 定义词语列表 phy_words = ['游泳', '跑步', '篮球', '羽毛球', '马拉松', '马术', '徒步'] rich_words = [ '富裕', '财富', '金钱', '豪宅', '豪车', '奢侈品', '投资', '股票', '基金', '黄金', '钻石', '游艇', '私人飞机', '企业家', '富豪', '成功', '繁荣', '奢华', '贵族', '高收入' ] poor_words = [ '贫穷', '贫困', '饥饿', '失业', '低收入', '简陋', '破旧', '乞丐', '流浪', '欠债', '破产', '困境', '艰难', '挣扎', '匮乏', '落后', '无助', '绝望', '赤贫', '温饱' ] phy_project_on_fortune = ct.sematic_projection(wv = dm_w2v, words = phy_words, c_words1 =poor_words, c_words2 =rich_words) phy_project_on_fortune Run\n[('跑步', -1.82), ('徒步', -0.82), ('游泳', -0.19), ('羽毛球', 0.57), ('马拉松', 0.62), ('马术', 1.15), ('篮球', 4.0)] 计算结果中， 数值越大越接近于c_words2, 越小越接近于c_words1 。 可以看到在财富概念轴向量上的投影， 篮球不太准，但是其他几项基本上看出运动的贫富性。\n4.10 类比 king-man + woman ~ queen 每个词是高维向量空间中的一个点， 两个点可以组成有方向的向量，而向量可以比较方向。这里是推理过程，受限于数据，公式不一定完全成立， 但是思维可以类比。\n这两个词相减，按感觉应该得到的是性别方向，雄性-雌性。\ngender_direction_1 = vector(man)-vector(woman)\ngender_direction_2 = vector(king)-vector(queen)\n那两个性别方向应该近似，即 gender_direction_1 约等于 gender_direction_2 ，将其看做等式就得到如下公式：\nvector(理应近似queen) = vector(king)-vector(men)+vector(women)\n现在我们检查三个语义向量计算出的新的向量是否有与queen相关的语义信息。\ndef semactic_vector(wv, words): vector = ct.semantic_centroid(wv=wv, words=words) return vector men_vector = semactic_vector(dm_w2v, ['男', '男孩', '男人', '他', '父亲', '爸爸', '爷爷']) women_vector = semactic_vector(dm_w2v, ['女', '女孩', '女人', '她', '母亲', '妈妈', '奶奶']) king_vector = semactic_vector(dm_w2v, ['国王', '皇帝', '帝王', '大帝']) # 假设 king- queen 约等于 man -woman  # result 近似等于 king - queen + women result_vector = king_vector - men_vector + women_vector # 现在检查 result_vector 的语义应该与queen相关 dm_w2v.similar_by_vector(result_vector, topn=20) Run\n[('皇帝', 0.8448051810264587), ('王后', 0.8056979179382324), ('国王', 0.8004385232925415), ('帝王', 0.7693961262702942), ('君主', 0.7663125991821289), ('皇后', 0.7614380717277527), ('太后', 0.7463700175285339), ('妃子', 0.7433678507804871), ('君王', 0.7407413125038147), ('皇子', 0.7380139231681824), ('王位', 0.7319545745849609), ('皇上', 0.7215542197227478), ('登基', 0.7210745215415955), ('大臣', 0.714862048625946), ('伊丽莎白一世', 0.702217698097229), ('王朝', 0.7000151872634888), ('宫女', 0.6997070908546448), ('驾崩', 0.6992778182029724), ('王妃', 0.6981185078620911), ('昏君', 0.6974363923072815)] 可以看到三个语义向量四则运算出的 result_vector 与queen仍具有较高的相关性。\n\n五、获取资料 除了本文介绍的这个 1000w 条影评数据集， 大邓还有2个类似的豆瓣影评数据集，影评记录量 212w和442 w 条。 两个数据集下载链接我都公开，感兴趣的可以都下载下来。\n- 免费 douba-movie-1000w 链接: https://pan.baidu.com/s/15C0fn7oyYEFvuQtPO8tw8Q?pwd=1g7m 提取码: 1g7m - 免费 douban-movie-1000w-Word2Vec.200.15.bin 链接: https://pan.baidu.com/s/1fK8LhLmK4_xq-eHzNn42lg?pwd=2hwr 提取码: 2hwr - 免费 douban-movie-442w 链接: https://pan.baidu.com/s/1T_LPuxEZ_W8xfYcxV7rW5Q?pwd=a683 提取码: a683 - 免费 douban-movie-212w 链接: :https://pan.baidu.com/s/1VBwnOqfMPu_Y48bMlQ4oiw?pwd=t8id 提取码: t8id - 免费词向量 https://cntext.readthedocs.io/zh-cn/latest/embeddings.html - 100元 cntext-2.1.6-py3-none-any.whl 如有需要，加微信 ***372335839***， 备注「姓名-学校-专业」 \n相关内容  数据集 | 3394w条豆瓣书评数据集 实验 | 使用Stanford Glove代码训练中文语料的GloVe模型 可视化 | 人民日报语料反映七十年文化演变 词向量 | 使用MD\u0026A2001-2023语料训练Word2Vec模型 实验 | 使用Stanford Glove代码训练中文语料的Glove模型  ",
-  "wordCount" : "900",
+  "articleBody": "本文内容\n 介绍豆瓣影评数据集 构造语料训练 Word2Vec 模型 获取数据 cntext2.x \u0026 Word2Vec 模型文件  \n一、豆瓣影评数据集 1.1 数据集介绍 数据集: douba-movie-1000w 数据源: 豆瓣电影 记录数: - 电影 10269 部 - 影评 10310989 条 体积: 1.35G 该数据集正好弥补下国内公开电影数据集的空缺， 数据已经过初步清洗，可用于推荐系统、情感分析、知识图谱、新闻传播学、社会学文化变迁等多个领域(或主题)。\n1.2 读取数据 下载 douba-movie-1000w.zip 解压后，可以看到数据集中有一个 all_movies_with_id.csv 文件。\nimport pandas as pd df = pd.read_csv('all_movies_with_id.csv') df 1.3 所含字段 for col in df.columns: print(f' - {col}') Run\n- ID - Movie_Name 电影名 - Score 豆瓣电影评分(1-10) - Review_People 评论者人数 - Star_Distribution 评论评分分布(1-5, 含多个数值，数值以%间隔) - Craw_Date 爬虫运行日期 - Username 豆瓣评论者用户名 - Date 影评日期 - Star 影评评分(1-5) - Comment 影评内容 - Comment_Distribution 影评评分分布 - Like 影评获得的喜欢数 \n二、 构造语料\u0026训练 Word2Vec 2.1 构造语料 将字段 Comment 中所有文本汇总到 douban-movie-1000w.txt,\nimport pandas as pd # 读取数据，只读取字段sign df = pd.read_csv('all_movies_with_id.csv', usecols=['sign']) # 将sign列中的所有文本汇总到douban-movie-1000w.txt with open('douban-movie-1000w.txt', 'w', encoding='utf-8') as f: text = '\\n'.join(df['Comment'].fillna('')) f.write(text) # 删除df和text变量，释放内存 del df del text \n2.2 配置 cntext2.1.6 将 cntext-2.1.6-py3-none-any.whl 放置于桌面，打开 cmd (苹果电脑打开 terminal)， 输入 cd desktop\ncd desktop 之后在 cmd (苹果电脑打开 terminal) 中使用 pip3 安装\npip3 install cntext-2.1.6-py3-none-any.whl 文末有 cntext-2.1.6-py3-none-any.whl 获取方式\n2.3 训练 Word2Vec # cntext为2.1.6 import cntext as ct # 训练Word2Vec模型 w2v = ct.Word2Vec(corpus_file='douban-movie-1000w.txt', vector_size=200, window_size=15, min_count=5) Run\nMac(Linux) System, Enable Parallel Processing Cache output/douban-movie-1000w_cache.txt Not Found or Empty, Preprocessing Corpus Reading Preprocessed Corpus from output/douban-movie-1000w_cache.txt Start Training Word2Vec Word2Vec Training Cost 2965 s. Output Saved To: output/douban-movie-1000w.200.15.txt 经过半个小时的训练， 得到\n 模型文件 output/douban-movie-1000w-Word2Vec.200.15.txt 模型文件 output/douban-movie-1000w-Word2Vec.200.15.bin 缓存文件 output/douban-movie-1000w_cache.txt  其中模型文件有 txt 和 bin 两种格式， 信息量完全等同。 txt 可以用记事本打开查看， 而 bin 则是二进制文件， 体积更小。 已训练好的模型， 因 bin 格式体积更小， 便于分享。\n2.4 评估模型 使用近义法和类比法， 判断模型的表现。详情可查看文档\nct.evaluate_similarity(w2v_model) ct.evaluate_analogy(w2v_model) Run\n近义测试: similarity.txt /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cntext/model/evaluate_data/similarity.txt 评估结果： +----------+------------+----------------------------+ | 发现词语 | 未发现词语 | Spearman's Rank Coeficient | +----------+------------+----------------------------+ | 459 | 78 | 0.43 | +----------+------------+----------------------------+ 类比测试: analogy.txt /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cntext/model/evaluate_data/analogy.txt Processing Analogy Test: 100%|██████████████| 1198/1198 [00:11近义测试: Spearman’s Rank Coeficient 系数取值[-1, 1], 取值越大， 说明模型表现越好。\n类比测试:\n CapitalOfCountries 豆瓣影评语料在此项表现尚可，可能目前电影库中有一定比例的外国素材。 CityInProvince 豆瓣影评语料在此项表现较差，不太可能是中国素材太少，可能大多数省市以类似汉东省的形式出现。这是我的猜测。 人民网留言板语料 Word2Vec中，该项准确率 100%。 FamilyRelationship 豆瓣影评体现的是电影相关内容，而电影永远的主题是人性， 内容少不了家长里短，七大姑八大姨，所以此项准确率高达 92.65%。 以年报 MD\u0026A为例，此处准确率只有 10%。 SocialScience 豆瓣影评语料在此项表现一般， 应该是语料中常见的社会科学词语提及较少。  整体而言，语料训练的效果很不错，抓住了数据场景的独特性语义。\n\n四、使用 Word2Vec 4.1 导入 Word2Vec 模型文件 import cntext as ct # 导入模型，请注意路径。 # 「当前代码」 与 「output」 同处于一个文件夹内 dm_w2v = ct.load_w2v('output/douban-movie-1000w-Word2Vec.200.15.txt') # dm_w2v = ct.load_w2v('output/douban-movie-1000w-Word2Vec.200.15.bin') dm_w2v Run\nLoading output/douban-movie-1000w-Word2Vec.200.15.txt... \n4.2 KeyedVectors 的操作方法(或属性)    方法 描述     KeyedVectors.index_to_key 获取词汇表中的所有单词。   KeyedVectors.key_to_index 获取单词到索引的映射。   KeyedVectors.vector_size 获取 GloVe 模型中任意词向量的维度。   KeyedVectors.get_vector(word) 获取给定单词的词向量。   KeyedVectors.similar_by_word(word, topn=10) 获取某词语最相似的 10 个近义词。   KeyedVectors.similar_by_vector(vector, topn=10) 获取词向量最相似的 10 个近义词。    4.3 查看词表 查看词表所有单词\ndm_w2v.index_to_key Run\n['电影', '一个', '没有', '喜欢', ... '跟着', '意识', '态度', ...] 为了方便查看， 这里只展示部分数据。\n4.4 词表映射 查看单词到索引的映射\ndm_w2v.key_to_index Run\n{'电影': 0, '一个': 1, '没有': 2, ... '跟着': 997, '意识': 998, '态度': 999, ...} \n4.5 向量维度数 print(f'词表有 {len(dm_w2v.key_to_index)}个词') print(f'向量是 {dm_w2v.vector_size}维') Run\n词表有 426646 个词 向量是 200 维 \n4.6 获取词向量 dm_w2v.get_vector('给力') Run\narray([-1.24090052e+00, -6.79377019e-01, 1.42518425e+00, -1.46615291e+00, -9.53197628e-02, 6.50456071e-01, -2.97696137e+00, 2.20916629e+00, 6.12876177e-01, 1.63172066e+00, 4.91760701e-01, -9 ...... ...... -1.42494082e+00, 2.49131727e+00, -6.27597034e-01, -7.91438043e-01, -4.54898655e-01, 1.37747681e+00, -4.20672953e-01, -1.53694853e-01, 1.04936564e+00, 2.18786263e+00, -8.07472587e-01, -8.32003877e-02], dtype=float32) \n4.7 近义词 根据词语查看近义词\n# 近义词 dm_w2v.similar_by_word('给力', topn=10) Run\n[('相当给力', 0.6180022358894348), ('太给力', 0.6019443273544312), ('带劲', 0.5840415954589844), ('不给力', 0.5774183869361877), ('过瘾', 0.5616626739501953), ('牛叉', 0.553788959980011), ('出彩', 0.5414286851882935), ('精彩', 0.5332293510437012), ('看得过瘾', 0.5250197649002075), ('大赞', 0.5205727219581604)] \n根据向量查找最相似的近义词\nword_vector = dm_w2v.get_vector('给力') dm_w2v.similar_by_vector(word_vector, topn=10) Run\n[('给力', 1.0), ('相当给力', 0.6180021166801453), ('太给力', 0.6019443273544312), ('带劲', 0.5840415954589844), ('不给力', 0.5774183869361877), ('过瘾', 0.5616626739501953), ('牛叉', 0.5537890195846558), ('出彩', 0.5414287447929382), ('精彩', 0.5332292914390564), ('看得过瘾', 0.5250197649002075)] \n4.8 计算多个词的中心向量 我们可以计算「宇宙」、「飞船」、「战争」的宇宙语义向量（中心向量）。 并试图寻找中心向量 universe_vector 的最相似的 10 个词。\n# 几个词语构建的宇宙语义向量 universe_vector = ct.semantic_centroid(wv=dm_w2v, words=['宇宙', '飞船', '战争']) dm_w2v.similar_by_vector(universe_vector, topn=20) Run\n[('宇宙', 0.7568532228469849), ('星系', 0.7090039253234863), ('飞船', 0.7080673575401306), ('人类文明', 0.6973789930343628), ('战舰', 0.6890057325363159), ('母舰', 0.6864359974861145), ('星球', 0.6799622774124146), ('卫星', 0.6799139976501465), ('星际', 0.6789332032203674), ('空间站', 0.6780815124511719), ('地球', 0.6769616603851318), ('外太空', 0.6683873534202576), ('核战', 0.6669113039970398), ('外星飞船', 0.6592534780502319), ('木星', 0.6586896777153015), ('能源', 0.6562989950180054), ('战争', 0.6556441187858582), ('巨兽', 0.6544537544250488), ('月球', 0.6525537967681885), ('一艘', 0.6521110534667969)] 语义捕捉的很准哦。\n4.9 概念轴 男性概念向量由多个男性词的向量加总求均值得到，女性概念向量算法类似。当性质或方向明显相反的两个概念向量相减， 得到的新的向量，我们可以称之为**概念轴向量 Concept Axis**。常见的概念轴，\n- 尺寸(大, 小) - 湿度(干燥,潮湿) - 性别(男, 女) - 财富(富裕, 贫穷) - 等 其实任意概念的向量也可看做概念轴，即该概念向量与 0 向量相减。只不过两组性质方向相反的方式得到的概念轴， 在语义上更稳定。\nimport cntext as ct import numpy as np # 定义词语列表 phy_words = ['游泳', '跑步', '篮球', '羽毛球', '马拉松', '马术', '徒步'] rich_words = [ '富裕', '财富', '金钱', '豪宅', '豪车', '奢侈品', '投资', '股票', '基金', '黄金', '钻石', '游艇', '私人飞机', '企业家', '富豪', '成功', '繁荣', '奢华', '贵族', '高收入' ] poor_words = [ '贫穷', '贫困', '饥饿', '失业', '低收入', '简陋', '破旧', '乞丐', '流浪', '欠债', '破产', '困境', '艰难', '挣扎', '匮乏', '落后', '无助', '绝望', '赤贫', '温饱' ] phy_project_on_fortune = ct.sematic_projection(wv = dm_w2v, words = phy_words, poswords =rich_words, negwords =poor_words, ) phy_project_on_fortune Run\n[('跑步', -1.82), ('徒步', -0.82), ('游泳', -0.19), ('羽毛球', 0.57), ('马拉松', 0.62), ('马术', 1.15), ('篮球', 4.0)] 计算结果中， 数值越大越接近于 c_words2, 越小越接近于 c_words1 。 可以看到在财富概念轴向量上的投影， 篮球不太准，但是其他几项基本上看出运动的贫富性。\n4.10 类比 king-man + woman ~ queen 每个词是高维向量空间中的一个点， 两个点可以组成有方向的向量，而向量可以比较方向。这里是推理过程，受限于数据，公式不一定完全成立， 但是思维可以类比。\n这两个词相减，按感觉应该得到的是性别方向，雄性-雌性。\ngender_direction_1 = vector(man)-vector(woman)\ngender_direction_2 = vector(king)-vector(queen)\n那两个性别方向应该近似，即 gender_direction_1 约等于 gender_direction_2 ，将其看做等式就得到如下公式：\nvector(理应近似 queen) = vector(king)-vector(men)+vector(women)\n现在我们检查三个语义向量计算出的新的向量是否有与 queen 相关的语义信息。\ndef semactic_vector(wv, words): vector = ct.semantic_centroid(wv=wv, words=words) return vector men_vector = semactic_vector(dm_w2v, ['男', '男孩', '男人', '他', '父亲', '爸爸', '爷爷']) women_vector = semactic_vector(dm_w2v, ['女', '女孩', '女人', '她', '母亲', '妈妈', '奶奶']) king_vector = semactic_vector(dm_w2v, ['国王', '皇帝', '帝王', '大帝']) # 假设 king- queen 约等于 man -woman # result 近似等于 king - queen + women result_vector = king_vector - men_vector + women_vector # 现在检查 result_vector 的语义应该与queen相关 dm_w2v.similar_by_vector(result_vector, topn=20) Run\n[('皇帝', 0.8448051810264587), ('王后', 0.8056979179382324), ('国王', 0.8004385232925415), ('帝王', 0.7693961262702942), ('君主', 0.7663125991821289), ('皇后', 0.7614380717277527), ('太后', 0.7463700175285339), ('妃子', 0.7433678507804871), ('君王', 0.7407413125038147), ('皇子', 0.7380139231681824), ('王位', 0.7319545745849609), ('皇上', 0.7215542197227478), ('登基', 0.7210745215415955), ('大臣', 0.714862048625946), ('伊丽莎白一世', 0.702217698097229), ('王朝', 0.7000151872634888), ('宫女', 0.6997070908546448), ('驾崩', 0.6992778182029724), ('王妃', 0.6981185078620911), ('昏君', 0.6974363923072815)] 可以看到三个语义向量四则运算出的 result_vector 与 queen 仍具有较高的相关性。\n\n五、获取资料 除了本文介绍的这个 1000w 条影评数据集， 大邓还有 2 个类似的豆瓣影评数据集，影评记录量 212w 和 442 w 条。 两个数据集下载链接我都公开，感兴趣的可以都下载下来。\n- 免费 douba-movie-1000w 链接: https://pan.baidu.com/s/15C0fn7oyYEFvuQtPO8tw8Q?pwd=1g7m 提取码: 1g7m - 免费 douban-movie-1000w-Word2Vec.200.15.bin 链接: https://pan.baidu.com/s/1fK8LhLmK4_xq-eHzNn42lg?pwd=2hwr 提取码: 2hwr - 免费 douban-movie-442w 链接: https://pan.baidu.com/s/1T_LPuxEZ_W8xfYcxV7rW5Q?pwd=a683 提取码: a683 - 免费 douban-movie-212w 链接: :https://pan.baidu.com/s/1VBwnOqfMPu_Y48bMlQ4oiw?pwd=t8id 提取码: t8id - 免费词向量 https://cntext.readthedocs.io/zh-cn/latest/embeddings.html - 100元 cntext-2.1.6-py3-none-any.whl 如有需要，加微信 ***372335839***， 备注「姓名-学校-专业」 \n相关内容  数据集 | 3394w 条豆瓣书评数据集 实验 | 使用 Stanford Glove 代码训练中文语料的 GloVe 模型 可视化 | 人民日报语料反映七十年文化演变 词向量 | 使用 MD\u0026A2001-2023 语料训练 Word2Vec 模型 实验 | 使用 Stanford Glove 代码训练中文语料的 Glove 模型  ",
+  "wordCount" : "952",
   "inLanguage": "en",
   "image":"/images/blog/douban-movie.jpeg","datePublished": "2024-04-16T00:00:00Z",
   "dateModified": "2024-04-16T00:00:00Z",
@@ -343,24 +343,24 @@ onload="renderMathInElement(document.body);"></script>
                         <a href="#13-%e6%89%80%e5%90%ab%e5%ad%97%e6%ae%b5" aria-label="1.3 所含字段">1.3 所含字段</a></li></ul>
                     </li>
                     <li>
-                        <a href="#%e4%ba%8c-%e6%9e%84%e9%80%a0%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83word2vec" aria-label="二、 构造语料&amp;amp;训练Word2Vec">二、 构造语料&amp;训练Word2Vec</a><ul>
+                        <a href="#%e4%ba%8c-%e6%9e%84%e9%80%a0%e8%af%ad%e6%96%99%e8%ae%ad%e7%bb%83-word2vec" aria-label="二、 构造语料&amp;amp;训练 Word2Vec">二、 构造语料&amp;训练 Word2Vec</a><ul>
                             
                     <li>
                         <a href="#21-%e6%9e%84%e9%80%a0%e8%af%ad%e6%96%99" aria-label="2.1 构造语料">2.1 构造语料</a></li>
                     <li>
-                        <a href="#22-%e9%85%8d%e7%bd%aecntext216" aria-label="2.2 配置cntext2.1.6">2.2 配置cntext2.1.6</a></li>
+                        <a href="#22-%e9%85%8d%e7%bd%ae-cntext216" aria-label="2.2 配置 cntext2.1.6">2.2 配置 cntext2.1.6</a></li>
                     <li>
-                        <a href="#23-%e8%ae%ad%e7%bb%83word2vec" aria-label="2.3 训练Word2Vec">2.3 训练Word2Vec</a></li>
+                        <a href="#23-%e8%ae%ad%e7%bb%83-word2vec" aria-label="2.3 训练 Word2Vec">2.3 训练 Word2Vec</a></li>
                     <li>
                         <a href="#24-%e8%af%84%e4%bc%b0%e6%a8%a1%e5%9e%8b" aria-label="2.4 评估模型">2.4 评估模型</a></li></ul>
                     </li>
                     <li>
-                        <a href="#%e5%9b%9b%e4%bd%bf%e7%94%a8word2vec" aria-label="四、使用Word2Vec">四、使用Word2Vec</a><ul>
+                        <a href="#%e5%9b%9b%e4%bd%bf%e7%94%a8-word2vec" aria-label="四、使用 Word2Vec">四、使用 Word2Vec</a><ul>
                             
                     <li>
-                        <a href="#41-%e5%af%bc%e5%85%a5word2vec%e6%a8%a1%e5%9e%8b%e6%96%87%e4%bb%b6" aria-label="4.1 导入Word2Vec模型文件">4.1 导入Word2Vec模型文件</a></li>
+                        <a href="#41-%e5%af%bc%e5%85%a5-word2vec-%e6%a8%a1%e5%9e%8b%e6%96%87%e4%bb%b6" aria-label="4.1 导入 Word2Vec 模型文件">4.1 导入 Word2Vec 模型文件</a></li>
                     <li>
-                        <a href="#42-keyedvectors%e7%9a%84%e6%93%8d%e4%bd%9c%e6%96%b9%e6%b3%95%e6%88%96%e5%b1%9e%e6%80%a7" aria-label="4.2 KeyedVectors的操作方法(或属性)">4.2 KeyedVectors的操作方法(或属性)</a></li>
+                        <a href="#42-keyedvectors-%e7%9a%84%e6%93%8d%e4%bd%9c%e6%96%b9%e6%b3%95%e6%88%96%e5%b1%9e%e6%80%a7" aria-label="4.2 KeyedVectors 的操作方法(或属性)">4.2 KeyedVectors 的操作方法(或属性)</a></li>
                     <li>
                         <a href="#43-%e6%9f%a5%e7%9c%8b%e8%af%8d%e8%a1%a8" aria-label="4.3 查看词表">4.3 查看词表</a></li>
                     <li>
@@ -470,8 +470,8 @@ onload="renderMathInElement(document.body);"></script>
   <div class="post-content"><p>本文内容</p>
 <ol>
 <li>介绍豆瓣影评数据集</li>
-<li>构造语料训练 <em><strong>Word2Vec</strong></em> 模型</li>
-<li>获取数据 <em><strong>cntext2.x</strong></em> &amp; <em><strong>Word2Vec</strong></em> 模型文件</li>
+<li>构造语料训练 <strong><em>Word2Vec</em></strong> 模型</li>
+<li>获取数据 <strong><em>cntext2.x</em></strong> &amp; <strong><em>Word2Vec</em></strong> 模型文件</li>
 </ol>
 <p><br><br></p>
 <h2 id="一豆瓣影评数据集">一、豆瓣影评数据集<a hidden class="anchor" aria-hidden="true" href="#一豆瓣影评数据集">#</a></h2>
@@ -479,16 +479,16 @@ onload="renderMathInElement(document.body);"></script>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">数据集: douba-movie-1000w
 
 数据源: 豆瓣电影
-   
+
 记录数:
    - 电影 10269 部
    - 影评 10310989 条
-   
-体积: 1.35G 
+
+体积: 1.35G
 </code></pre></div><p>该数据集正好弥补下国内公开电影数据集的空缺， 数据已经过初步清洗，可用于推荐系统、情感分析、知识图谱、新闻传播学、社会学文化变迁等多个领域(或主题)。</p>
 <br>
 <h3 id="12-读取数据">1.2 读取数据<a hidden class="anchor" aria-hidden="true" href="#12-读取数据">#</a></h3>
-<p>下载 <em><strong>douba-movie-1000w.zip</strong></em> 解压后，可以看到数据集中有一个 <em><strong>all_movies_with_id.csv</strong></em> 文件。</p>
+<p>下载 <strong><em>douba-movie-1000w.zip</em></strong> 解压后，可以看到数据集中有一个 <strong><em>all_movies_with_id.csv</em></strong> 文件。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;all_movies_with_id.csv&#39;</span><span class="p">)</span>
@@ -513,9 +513,9 @@ onload="renderMathInElement(document.body);"></script>
  - Comment_Distribution 影评评分分布
  - Like 影评获得的喜欢数
 </code></pre></div><p><br><br></p>
-<h2 id="二-构造语料训练word2vec">二、 构造语料&amp;训练Word2Vec<a hidden class="anchor" aria-hidden="true" href="#二-构造语料训练word2vec">#</a></h2>
+<h2 id="二-构造语料训练-word2vec">二、 构造语料&amp;训练 Word2Vec<a hidden class="anchor" aria-hidden="true" href="#二-构造语料训练-word2vec">#</a></h2>
 <h3 id="21-构造语料">2.1 构造语料<a hidden class="anchor" aria-hidden="true" href="#21-构造语料">#</a></h3>
-<p>将字段 <em><strong>Comment</strong></em> 中所有文本汇总到 <em><strong>douban-movie-1000w.txt</strong></em>,</p>
+<p>将字段 <strong><em>Comment</em></strong> 中所有文本汇总到 <strong><em>douban-movie-1000w.txt</em></strong>,</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="c1"># 读取数据，只读取字段sign</span>
@@ -531,14 +531,14 @@ onload="renderMathInElement(document.body);"></script>
 <span class="k">del</span> <span class="n">text</span>
 
 </code></pre></div><br>
-<h3 id="22-配置cntext216">2.2 配置cntext2.1.6<a hidden class="anchor" aria-hidden="true" href="#22-配置cntext216">#</a></h3>
-<p>将 <em><strong>cntext-2.1.6-py3-none-any.whl</strong></em> 放置于桌面，打开 <em><strong>cmd</strong></em>  (苹果电脑打开terminal)， 输入cd desktop</p>
+<h3 id="22-配置-cntext216">2.2 配置 cntext2.1.6<a hidden class="anchor" aria-hidden="true" href="#22-配置-cntext216">#</a></h3>
+<p>将 <strong><em>cntext-2.1.6-py3-none-any.whl</em></strong> 放置于桌面，打开 <strong><em>cmd</em></strong> (苹果电脑打开 terminal)， 输入 cd desktop</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
-</code></pre></div><p>之后在 <em><strong>cmd</strong></em>  (苹果电脑打开terminal) 中使用 <em><strong>pip3</strong></em> 安装</p>
+</code></pre></div><p>之后在 <strong><em>cmd</em></strong> (苹果电脑打开 terminal) 中使用 <strong><em>pip3</em></strong> 安装</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install cntext-2.1.6-py3-none-any.whl
-</code></pre></div><p>文末有 <em><strong>cntext-2.1.6-py3-none-any.whl</strong></em> 获取方式</p>
+</code></pre></div><p>文末有 <strong><em>cntext-2.1.6-py3-none-any.whl</em></strong> 获取方式</p>
 <br>
-<h3 id="23-训练word2vec">2.3 训练Word2Vec<a hidden class="anchor" aria-hidden="true" href="#23-训练word2vec">#</a></h3>
+<h3 id="23-训练-word2vec">2.3 训练 Word2Vec<a hidden class="anchor" aria-hidden="true" href="#23-训练-word2vec">#</a></h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># cntext为2.1.6</span>
 <span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 
@@ -552,15 +552,15 @@ onload="renderMathInElement(document.body);"></script>
 Cache output/douban-movie-1000w_cache.txt Not Found or Empty, Preprocessing Corpus
 Reading Preprocessed Corpus from output/douban-movie-1000w_cache.txt
 Start Training Word2Vec
-Word2Vec Training Cost 2965 s. 
+Word2Vec Training Cost 2965 s.
 Output Saved To: output/douban-movie-1000w.200.15.txt
 </code></pre></div><p>经过半个小时的训练， 得到</p>
 <ul>
-<li>模型文件 <em><strong>output/douban-movie-1000w-Word2Vec.200.15.txt</strong></em></li>
-<li>模型文件 <em><strong>output/douban-movie-1000w-Word2Vec.200.15.bin</strong></em></li>
-<li>缓存文件 <em><strong>output/douban-movie-1000w_cache.txt</strong></em></li>
+<li>模型文件 <strong><em>output/douban-movie-1000w-Word2Vec.200.15.txt</em></strong></li>
+<li>模型文件 <strong><em>output/douban-movie-1000w-Word2Vec.200.15.bin</em></strong></li>
+<li>缓存文件 <strong><em>output/douban-movie-1000w_cache.txt</em></strong></li>
 </ul>
-<p>其中模型文件有 <em><strong>txt</strong></em> 和 <em><strong>bin</strong></em> 两种格式， 信息量完全等同。 <em><strong>txt</strong></em> 可以用记事本打开查看， 而 <em><strong>bin</strong></em> 则是二进制文件， 体积更小。 已训练好的模型， 因 bin 格式体积更小， 便于分享。</p>
+<p>其中模型文件有 <strong><em>txt</em></strong> 和 <strong><em>bin</em></strong> 两种格式， 信息量完全等同。 <strong><em>txt</em></strong> 可以用记事本打开查看， 而 <strong><em>bin</em></strong> 则是二进制文件， 体积更小。 已训练好的模型， 因 bin 格式体积更小， 便于分享。</p>
 <br>
 <h3 id="24-评估模型">2.4 评估模型<a hidden class="anchor" aria-hidden="true" href="#24-评估模型">#</a></h3>
 <p>使用近义法和类比法， 判断模型的表现。详情可查看<a href="https://cntext.readthedocs.io/zh-cn/latest/model.html">文档</a></p>
@@ -592,21 +592,21 @@ Processing Analogy Test: 100%|██████████████| 1198/1
 | FamilyRelationship |   272    |     0      |   92.65    |   1.48   |
 |   SocialScience    |    8     |     62     |   25.00    |   6.00   |
 +--------------------+----------+------------+------------+----------+
-</code></pre></div><p><strong>近义测试</strong>: Spearman&rsquo;s Rank Coeficient系数取值[-1, 1], 取值越大， 说明模型表现越好。</p>
+</code></pre></div><p><strong>近义测试</strong>: Spearman&rsquo;s Rank Coeficient 系数取值[-1, 1], 取值越大， 说明模型表现越好。</p>
 <br>
 <p><strong>类比测试</strong>:</p>
 <ul>
-<li>CapitalOfCountries  豆瓣影评语料在此项表现尚可，可能目前电影库中有一定比例的外国素材。</li>
-<li>CityInProvince      豆瓣影评语料在此项表现较差，不太可能是中国素材太少，可能大多数省市以类似汉东省的形式出现。这是我的猜测。 <a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">人民网留言板语料Word2Vec</a>中，该项准确率100%。</li>
-<li>FamilyRelationship  豆瓣影评体现的是电影相关内容，而电影永远的主题是人性， 内容少不了家长里短，七大姑八大姨，所以此项准确率高达92.65%。 以<a href="https://textdata.cn/blog/2023-03-24-load-w2v-and-expand-your-concpet-dicitonary/">年报MD&amp;A</a>为例，此处准确率只有10%。</li>
-<li>SocialScience       豆瓣影评语料在此项表现一般， 应该是语料中常见的社会科学词语提及较少。</li>
+<li>CapitalOfCountries 豆瓣影评语料在此项表现尚可，可能目前电影库中有一定比例的外国素材。</li>
+<li>CityInProvince 豆瓣影评语料在此项表现较差，不太可能是中国素材太少，可能大多数省市以类似汉东省的形式出现。这是我的猜测。 <a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">人民网留言板语料 Word2Vec</a>中，该项准确率 100%。</li>
+<li>FamilyRelationship 豆瓣影评体现的是电影相关内容，而电影永远的主题是人性， 内容少不了家长里短，七大姑八大姨，所以此项准确率高达 92.65%。 以<a href="https://textdata.cn/blog/2023-03-24-load-w2v-and-expand-your-concpet-dicitonary/">年报 MD&amp;A</a>为例，此处准确率只有 10%。</li>
+<li>SocialScience 豆瓣影评语料在此项表现一般， 应该是语料中常见的社会科学词语提及较少。</li>
 </ul>
 <p>整体而言，语料训练的效果很不错，抓住了数据场景的独特性语义。</p>
 <p><br><br></p>
-<h2 id="四使用word2vec">四、使用Word2Vec<a hidden class="anchor" aria-hidden="true" href="#四使用word2vec">#</a></h2>
-<h3 id="41-导入word2vec模型文件">4.1 导入Word2Vec模型文件<a hidden class="anchor" aria-hidden="true" href="#41-导入word2vec模型文件">#</a></h3>
+<h2 id="四使用-word2vec">四、使用 Word2Vec<a hidden class="anchor" aria-hidden="true" href="#四使用-word2vec">#</a></h2>
+<h3 id="41-导入-word2vec-模型文件">4.1 导入 Word2Vec 模型文件<a hidden class="anchor" aria-hidden="true" href="#41-导入-word2vec-模型文件">#</a></h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
- 
+
 <span class="c1"># 导入模型，请注意路径。</span>
 <span class="c1"># 「当前代码」 与 「output」 同处于一个文件夹内</span>
 
@@ -618,7 +618,7 @@ Processing Analogy Test: 100%|██████████████| 1198/1
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Loading output/douban-movie-1000w-Word2Vec.200.15.txt...
 &lt;gensim.models.keyedvectors.KeyedVectors at 0x314193830&gt;
 </code></pre></div><br>
-<h3 id="42-keyedvectors的操作方法或属性">4.2 KeyedVectors的操作方法(或属性)<a hidden class="anchor" aria-hidden="true" href="#42-keyedvectors的操作方法或属性">#</a></h3>
+<h3 id="42-keyedvectors-的操作方法或属性">4.2 KeyedVectors 的操作方法(或属性)<a hidden class="anchor" aria-hidden="true" href="#42-keyedvectors-的操作方法或属性">#</a></h3>
 <table>
 <thead>
 <tr>
@@ -628,28 +628,28 @@ Processing Analogy Test: 100%|██████████████| 1198/1
 </thead>
 <tbody>
 <tr>
-<td><em><strong>KeyedVectors.index_to_key</strong></em></td>
+<td><strong><em>KeyedVectors.index_to_key</em></strong></td>
 <td>获取词汇表中的所有单词。</td>
 </tr>
 <tr>
-<td><em><strong>KeyedVectors.key_to_index</strong></em></td>
+<td><strong><em>KeyedVectors.key_to_index</em></strong></td>
 <td>获取单词到索引的映射。</td>
 </tr>
 <tr>
-<td><em><strong>KeyedVectors.vector_size</strong></em></td>
-<td>获取GloVe模型中任意词向量的维度。</td>
+<td><strong><em>KeyedVectors.vector_size</em></strong></td>
+<td>获取 GloVe 模型中任意词向量的维度。</td>
 </tr>
 <tr>
-<td><em><strong>KeyedVectors.get_vector(word)</strong></em></td>
+<td><strong><em>KeyedVectors.get_vector(word)</em></strong></td>
 <td>获取给定单词的词向量。</td>
 </tr>
 <tr>
-<td><em><strong>KeyedVectors.similar_by_word(word, topn=10)</strong></em></td>
-<td>获取某词语最相似的10个近义词。</td>
+<td><strong><em>KeyedVectors.similar_by_word(word, topn=10)</em></strong></td>
+<td>获取某词语最相似的 10 个近义词。</td>
 </tr>
 <tr>
-<td><em><strong>KeyedVectors.similar_by_vector(vector, topn=10)</strong></em></td>
-<td>获取词向量最相似的10个近义词。</td>
+<td><strong><em>KeyedVectors.similar_by_vector(vector, topn=10)</em></strong></td>
+<td>获取词向量最相似的 10 个近义词。</td>
 </tr>
 </tbody>
 </table>
@@ -735,9 +735,9 @@ Processing Analogy Test: 100%|██████████████| 1198/1
  (&#39;看得过瘾&#39;, 0.5250197649002075)]
 </code></pre></div><br>
 <h3 id="48-计算多个词的中心向量">4.8 计算多个词的中心向量<a hidden class="anchor" aria-hidden="true" href="#48-计算多个词的中心向量">#</a></h3>
-<p>我们可以计算「宇宙」、「飞船」、「战争」的宇宙语义向量（中心向量）。 并试图寻找中心向量 <em><strong>universe_vector</strong></em> 的最相似的10个词。</p>
+<p>我们可以计算「宇宙」、「飞船」、「战争」的宇宙语义向量（中心向量）。 并试图寻找中心向量 <strong><em>universe_vector</em></strong> 的最相似的 10 个词。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 几个词语构建的宇宙语义向量</span>
-<span class="n">universe_vector</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">semantic_centroid</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">dm_w2v</span><span class="p">,</span> 
+<span class="n">universe_vector</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">semantic_centroid</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">dm_w2v</span><span class="p">,</span>
                                        <span class="n">words</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;宇宙&#39;</span><span class="p">,</span> <span class="s1">&#39;飞船&#39;</span><span class="p">,</span> <span class="s1">&#39;战争&#39;</span><span class="p">])</span>
 
 
@@ -765,13 +765,13 @@ Processing Analogy Test: 100%|██████████████| 1198/1
  (&#39;一艘&#39;, 0.6521110534667969)]
 </code></pre></div><p>语义捕捉的很准哦。</p>
 <h3 id="49-概念轴">4.9 概念轴<a hidden class="anchor" aria-hidden="true" href="#49-概念轴">#</a></h3>
-<p>男性概念向量由多个男性词的向量加总求均值得到，女性概念向量算法类似。当性质或方向明显相反的两个概念向量相减， 得到的新的向量，我们可以称之为<em><strong>概念轴向量Concept Axis</strong></em>。常见的概念轴，</p>
+<p>男性概念向量由多个男性词的向量加总求均值得到，女性概念向量算法类似。当性质或方向明显相反的两个概念向量相减， 得到的新的向量，我们可以称之为**<em>概念轴向量 Concept Axis</em>**。常见的概念轴，</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 尺寸(大, 小)
 - 湿度(干燥,潮湿)
 - 性别(男, 女)
 - 财富(富裕, 贫穷)
 - 等
-</code></pre></div><p>其实任意概念的向量也可看做概念轴，即该概念向量与0向量相减。只不过两组性质方向相反的方式得到的概念轴， 在语义上更稳定。</p>
+</code></pre></div><p>其实任意概念的向量也可看做概念轴，即该概念向量与 0 向量相减。只不过两组性质方向相反的方式得到的概念轴， 在语义上更稳定。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -779,23 +779,24 @@ Processing Analogy Test: 100%|██████████████| 1198/1
 <span class="n">phy_words</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;游泳&#39;</span><span class="p">,</span> <span class="s1">&#39;跑步&#39;</span><span class="p">,</span> <span class="s1">&#39;篮球&#39;</span><span class="p">,</span> <span class="s1">&#39;羽毛球&#39;</span><span class="p">,</span> <span class="s1">&#39;马拉松&#39;</span><span class="p">,</span> <span class="s1">&#39;马术&#39;</span><span class="p">,</span> <span class="s1">&#39;徒步&#39;</span><span class="p">]</span>
 
 <span class="n">rich_words</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s1">&#39;富裕&#39;</span><span class="p">,</span> <span class="s1">&#39;财富&#39;</span><span class="p">,</span> <span class="s1">&#39;金钱&#39;</span><span class="p">,</span> <span class="s1">&#39;豪宅&#39;</span><span class="p">,</span> <span class="s1">&#39;豪车&#39;</span><span class="p">,</span> 
-    <span class="s1">&#39;奢侈品&#39;</span><span class="p">,</span> <span class="s1">&#39;投资&#39;</span><span class="p">,</span> <span class="s1">&#39;股票&#39;</span><span class="p">,</span> <span class="s1">&#39;基金&#39;</span><span class="p">,</span> <span class="s1">&#39;黄金&#39;</span><span class="p">,</span> 
-    <span class="s1">&#39;钻石&#39;</span><span class="p">,</span> <span class="s1">&#39;游艇&#39;</span><span class="p">,</span> <span class="s1">&#39;私人飞机&#39;</span><span class="p">,</span> <span class="s1">&#39;企业家&#39;</span><span class="p">,</span> <span class="s1">&#39;富豪&#39;</span><span class="p">,</span> 
+    <span class="s1">&#39;富裕&#39;</span><span class="p">,</span> <span class="s1">&#39;财富&#39;</span><span class="p">,</span> <span class="s1">&#39;金钱&#39;</span><span class="p">,</span> <span class="s1">&#39;豪宅&#39;</span><span class="p">,</span> <span class="s1">&#39;豪车&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;奢侈品&#39;</span><span class="p">,</span> <span class="s1">&#39;投资&#39;</span><span class="p">,</span> <span class="s1">&#39;股票&#39;</span><span class="p">,</span> <span class="s1">&#39;基金&#39;</span><span class="p">,</span> <span class="s1">&#39;黄金&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;钻石&#39;</span><span class="p">,</span> <span class="s1">&#39;游艇&#39;</span><span class="p">,</span> <span class="s1">&#39;私人飞机&#39;</span><span class="p">,</span> <span class="s1">&#39;企业家&#39;</span><span class="p">,</span> <span class="s1">&#39;富豪&#39;</span><span class="p">,</span>
     <span class="s1">&#39;成功&#39;</span><span class="p">,</span> <span class="s1">&#39;繁荣&#39;</span><span class="p">,</span> <span class="s1">&#39;奢华&#39;</span><span class="p">,</span> <span class="s1">&#39;贵族&#39;</span><span class="p">,</span> <span class="s1">&#39;高收入&#39;</span>
 <span class="p">]</span>
 
 <span class="n">poor_words</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s1">&#39;贫穷&#39;</span><span class="p">,</span> <span class="s1">&#39;贫困&#39;</span><span class="p">,</span> <span class="s1">&#39;饥饿&#39;</span><span class="p">,</span> <span class="s1">&#39;失业&#39;</span><span class="p">,</span> <span class="s1">&#39;低收入&#39;</span><span class="p">,</span> 
-    <span class="s1">&#39;简陋&#39;</span><span class="p">,</span> <span class="s1">&#39;破旧&#39;</span><span class="p">,</span> <span class="s1">&#39;乞丐&#39;</span><span class="p">,</span> <span class="s1">&#39;流浪&#39;</span><span class="p">,</span> <span class="s1">&#39;欠债&#39;</span><span class="p">,</span> 
-    <span class="s1">&#39;破产&#39;</span><span class="p">,</span> <span class="s1">&#39;困境&#39;</span><span class="p">,</span> <span class="s1">&#39;艰难&#39;</span><span class="p">,</span> <span class="s1">&#39;挣扎&#39;</span><span class="p">,</span> <span class="s1">&#39;匮乏&#39;</span><span class="p">,</span> 
+    <span class="s1">&#39;贫穷&#39;</span><span class="p">,</span> <span class="s1">&#39;贫困&#39;</span><span class="p">,</span> <span class="s1">&#39;饥饿&#39;</span><span class="p">,</span> <span class="s1">&#39;失业&#39;</span><span class="p">,</span> <span class="s1">&#39;低收入&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;简陋&#39;</span><span class="p">,</span> <span class="s1">&#39;破旧&#39;</span><span class="p">,</span> <span class="s1">&#39;乞丐&#39;</span><span class="p">,</span> <span class="s1">&#39;流浪&#39;</span><span class="p">,</span> <span class="s1">&#39;欠债&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;破产&#39;</span><span class="p">,</span> <span class="s1">&#39;困境&#39;</span><span class="p">,</span> <span class="s1">&#39;艰难&#39;</span><span class="p">,</span> <span class="s1">&#39;挣扎&#39;</span><span class="p">,</span> <span class="s1">&#39;匮乏&#39;</span><span class="p">,</span>
     <span class="s1">&#39;落后&#39;</span><span class="p">,</span> <span class="s1">&#39;无助&#39;</span><span class="p">,</span> <span class="s1">&#39;绝望&#39;</span><span class="p">,</span> <span class="s1">&#39;赤贫&#39;</span><span class="p">,</span> <span class="s1">&#39;温饱&#39;</span>
 <span class="p">]</span>
 
 <span class="n">phy_project_on_fortune</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">sematic_projection</span><span class="p">(</span><span class="n">wv</span> <span class="o">=</span> <span class="n">dm_w2v</span><span class="p">,</span>
-                                               <span class="n">words</span> <span class="o">=</span> <span class="n">phy_words</span><span class="p">,</span> 
-                                               <span class="n">c_words1</span> <span class="o">=</span><span class="n">poor_words</span><span class="p">,</span>
-                                               <span class="n">c_words2</span> <span class="o">=</span><span class="n">rich_words</span><span class="p">)</span>
+                                               <span class="n">words</span> <span class="o">=</span> <span class="n">phy_words</span><span class="p">,</span>
+                                               <span class="n">poswords</span> <span class="o">=</span><span class="n">rich_words</span><span class="p">,</span>
+                                               <span class="n">negwords</span> <span class="o">=</span><span class="n">poor_words</span><span class="p">,</span>
+                                               <span class="p">)</span>
 
 <span class="n">phy_project_on_fortune</span>
 </code></pre></div><p>Run</p>
@@ -806,20 +807,20 @@ Processing Analogy Test: 100%|██████████████| 1198/1
  (&#39;马拉松&#39;, 0.62),
  (&#39;马术&#39;, 1.15),
  (&#39;篮球&#39;, 4.0)]
-</code></pre></div><p>计算结果中， 数值越大越接近于c_words2,  越小越接近于c_words1 。 可以看到在财富概念轴向量上的投影，  篮球不太准，但是其他几项基本上看出运动的贫富性。</p>
+</code></pre></div><p>计算结果中， 数值越大越接近于 c_words2, 越小越接近于 c_words1 。 可以看到在财富概念轴向量上的投影， 篮球不太准，但是其他几项基本上看出运动的贫富性。</p>
 <br>
 <h3 id="410-类比-king-man--woman--queen">4.10 类比 king-man + woman ~ queen<a hidden class="anchor" aria-hidden="true" href="#410-类比-king-man--woman--queen">#</a></h3>
 <p>每个词是高维向量空间中的一个点， 两个点可以组成有方向的向量，而向量可以比较方向。这里是推理过程，受限于数据，公式不一定完全成立， 但是思维可以类比。</p>
 <p><img loading="lazy" src="img/king-queen-formular.png" alt=""  />
 </p>
 <p>这两个词相减，按感觉应该得到的是性别方向，雄性-&gt;雌性。</p>
-<p><em><strong>gender_direction_1 = vector(man)-vector(woman)</strong></em></p>
-<p><em><strong>gender_direction_2 = vector(king)-vector(queen)</strong></em></p>
+<p><strong><em>gender_direction_1 = vector(man)-vector(woman)</em></strong></p>
+<p><strong><em>gender_direction_2 = vector(king)-vector(queen)</em></strong></p>
 <p>那两个性别方向应该近似，即 gender_direction_1 约等于 gender_direction_2 ，将其看做等式就得到如下公式：</p>
-<p><em><strong>vector(理应近似queen) = vector(king)-vector(men)+vector(women)</strong></em></p>
-<p>现在我们检查三个语义向量计算出的新的向量是否有与queen相关的语义信息。</p>
+<p><strong><em>vector(理应近似 queen) = vector(king)-vector(men)+vector(women)</em></strong></p>
+<p>现在我们检查三个语义向量计算出的新的向量是否有与 queen 相关的语义信息。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">semactic_vector</span><span class="p">(</span><span class="n">wv</span><span class="p">,</span> <span class="n">words</span><span class="p">):</span>
-    <span class="n">vector</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">semantic_centroid</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span> 
+    <span class="n">vector</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">semantic_centroid</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span>
                                   <span class="n">words</span><span class="o">=</span><span class="n">words</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">vector</span>
 
@@ -827,7 +828,7 @@ Processing Analogy Test: 100%|██████████████| 1198/1
 <span class="n">men_vector</span> <span class="o">=</span> <span class="n">semactic_vector</span><span class="p">(</span><span class="n">dm_w2v</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;男&#39;</span><span class="p">,</span> <span class="s1">&#39;男孩&#39;</span><span class="p">,</span> <span class="s1">&#39;男人&#39;</span><span class="p">,</span> <span class="s1">&#39;他&#39;</span><span class="p">,</span> <span class="s1">&#39;父亲&#39;</span><span class="p">,</span> <span class="s1">&#39;爸爸&#39;</span><span class="p">,</span> <span class="s1">&#39;爷爷&#39;</span><span class="p">])</span>
 <span class="n">women_vector</span> <span class="o">=</span> <span class="n">semactic_vector</span><span class="p">(</span><span class="n">dm_w2v</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;女&#39;</span><span class="p">,</span> <span class="s1">&#39;女孩&#39;</span><span class="p">,</span> <span class="s1">&#39;女人&#39;</span><span class="p">,</span> <span class="s1">&#39;她&#39;</span><span class="p">,</span> <span class="s1">&#39;母亲&#39;</span><span class="p">,</span> <span class="s1">&#39;妈妈&#39;</span><span class="p">,</span> <span class="s1">&#39;奶奶&#39;</span><span class="p">])</span>
 <span class="n">king_vector</span> <span class="o">=</span> <span class="n">semactic_vector</span><span class="p">(</span><span class="n">dm_w2v</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;国王&#39;</span><span class="p">,</span> <span class="s1">&#39;皇帝&#39;</span><span class="p">,</span> <span class="s1">&#39;帝王&#39;</span><span class="p">,</span> <span class="s1">&#39;大帝&#39;</span><span class="p">])</span>
-<span class="c1"># 假设 king- queen 约等于 man -woman </span>
+<span class="c1"># 假设 king- queen 约等于 man -woman</span>
 <span class="c1"># result 近似等于 king - queen + women</span>
 <span class="n">result_vector</span> <span class="o">=</span> <span class="n">king_vector</span> <span class="o">-</span> <span class="n">men_vector</span> <span class="o">+</span> <span class="n">women_vector</span>
 <span class="c1"># 现在检查 result_vector 的语义应该与queen相关</span>
@@ -853,16 +854,16 @@ Processing Analogy Test: 100%|██████████████| 1198/1
  (&#39;驾崩&#39;, 0.6992778182029724),
  (&#39;王妃&#39;, 0.6981185078620911),
  (&#39;昏君&#39;, 0.6974363923072815)]
-</code></pre></div><p>可以看到三个语义向量四则运算出的 result_vector 与queen仍具有较高的相关性。</p>
+</code></pre></div><p>可以看到三个语义向量四则运算出的 result_vector 与 queen 仍具有较高的相关性。</p>
 <p><br><br></p>
 <h2 id="五获取资料">五、获取资料<a hidden class="anchor" aria-hidden="true" href="#五获取资料">#</a></h2>
-<p>除了本文介绍的这个 1000w 条影评数据集， 大邓还有2个类似的豆瓣影评数据集，影评记录量 212w和442 w 条。 两个数据集下载链接我都公开，感兴趣的可以都下载下来。</p>
+<p>除了本文介绍的这个 1000w 条影评数据集， 大邓还有 2 个类似的豆瓣影评数据集，影评记录量 212w 和 442 w 条。 两个数据集下载链接我都公开，感兴趣的可以都下载下来。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 免费  douba-movie-1000w 链接: https://pan.baidu.com/s/15C0fn7oyYEFvuQtPO8tw8Q?pwd=1g7m 提取码: 1g7m
 - 免费 douban-movie-1000w-Word2Vec.200.15.bin
 链接: https://pan.baidu.com/s/1fK8LhLmK4_xq-eHzNn42lg?pwd=2hwr 提取码: 2hwr
 - 免费 douban-movie-442w 链接: https://pan.baidu.com/s/1T_LPuxEZ_W8xfYcxV7rW5Q?pwd=a683 提取码: a683
-- 免费 douban-movie-212w 链接: :https://pan.baidu.com/s/1VBwnOqfMPu_Y48bMlQ4oiw?pwd=t8id 
- 提取码: t8id 
+- 免费 douban-movie-212w 链接: :https://pan.baidu.com/s/1VBwnOqfMPu_Y48bMlQ4oiw?pwd=t8id
+ 提取码: t8id
 
 - 免费词向量      https://cntext.readthedocs.io/zh-cn/latest/embeddings.html
 
@@ -870,13 +871,14 @@ Processing Analogy Test: 100%|██████████████| 1198/1
 </code></pre></div><p><br><br></p>
 <h2 id="相关内容">相关内容<a hidden class="anchor" aria-hidden="true" href="#相关内容">#</a></h2>
 <ul>
-<li><a href="https://textdata.cn/blog/2024-04-17-douban-book-3394w-ratings-comments-dataset/">数据集 | 3394w条豆瓣书评数据集</a></li>
-<li><a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用Stanford Glove代码训练中文语料的GloVe模型</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-17-douban-book-3394w-ratings-comments-dataset/">数据集 | 3394w 条豆瓣书评数据集</a></li>
+<li><a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用 Stanford Glove 代码训练中文语料的 GloVe 模型</a></li>
 <li><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/">可视化 | 人民日报语料反映七十年文化演变</a></li>
-<li><a href="https://textdata.cn/blog/2023-03-24-load-w2v-and-expand-your-concpet-dicitonary/">词向量 | 使用MD&amp;A2001-2023语料训练Word2Vec模型</a></li>
-<li><a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用Stanford Glove代码训练中文语料的Glove模型</a></li>
+<li><a href="https://textdata.cn/blog/2023-03-24-load-w2v-and-expand-your-concpet-dicitonary/">词向量 | 使用 MD&amp;A2001-2023 语料训练 Word2Vec 模型</a></li>
+<li><a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">实验 | 使用 Stanford Glove 代码训练中文语料的 Glove 模型</a></li>
 </ul>
 <br>
+
 
   </div>
 

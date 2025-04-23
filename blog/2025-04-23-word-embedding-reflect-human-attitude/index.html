@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) | 大邓和他的PYTHON</title>
+<meta name="keywords" content="Python, word2vec, GloVe, cntext, 词向量, 中文语料" />
+<meta name="description" content="中文语料预训练模型列表， 使用 cntext2.x 训练出的预训练语言模型， 主要分 GloVe 和 Word2Vec 两种。">
+<meta name="author" content="大邓">
+<link rel="canonical" href="/blog/2025-04-23-word-embedding-reflect-human-attitude/" />
+<meta name="baidu-site-verification" content="codeva-TJUe6nOmGr" />
+<meta name="sogou-site-verification" content="dZHPIorOhK" />
+<meta name="sogou-site-verification" content="dZHPIorOhK" />
+<meta name="google-site-verification" content="0cmjnyICPwXY_UmLHzs6RRUBIFxxqieMsgTGT_kVctk" />
+<meta name="yandex-verification" content="5e672f12d3e2cacd" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.css" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.js" onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.89.4" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁)" />
+<meta property="og:description" content="中文语料预训练模型列表， 使用 cntext2.x 训练出的预训练语言模型， 主要分 GloVe 和 Word2Vec 两种。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/2025-04-23-word-embedding-reflect-human-attitude/" />
+<meta property="og:image" content="/images/blog/word2vec.png" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2025-04-23T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2025-04-23T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/images/blog/word2vec.png" />
+<meta name="twitter:title" content="文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁)"/>
+<meta name="twitter:description" content="中文语料预训练模型列表， 使用 cntext2.x 训练出的预训练语言模型， 主要分 GloVe 和 Word2Vec 两种。"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "/blog/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁)",
+      "item": "/blog/2025-04-23-word-embedding-reflect-human-attitude/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁)",
+  "name": "文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁)",
+  "description": "中文语料预训练模型列表， 使用 cntext2.x 训练出的预训练语言模型， 主要分 GloVe 和 Word2Vec 两种。",
+  "keywords": [
+    "Python", "word2vec", "GloVe", "cntext", "词向量", "中文语料"
+  ],
+  "articleBody": "人类在留下语言、文字的过程中，也留下了自己的偏见、态度等主观认知信息（偏见、态度）。词嵌入做为一种词向量模型，可以隐含上下文的情景信息，态度及偏见很容易保留在词向量的某些维度中。通过词向量距离的测算，就可以间接测得不同群体 对 某概念(组织、群体、品牌、地域等)的态度偏见。\n OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息 转载 | 大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用  虽然现在LLM(大语言模型)很火，但其底层架构Transformer正是基于词向量(分布式语义表示)发展而来。LLM虽然能生成流畅的文本，但其\"黑箱\"特性使得我们难以直接分析其中蕴含的社会偏见。相比之下，传统的词嵌入模型(维度通常在50-300之间)虽然维度较高难以直观理解，但通过线性代数等数学工具，我们可以精确测量和分析词向量空间中的文化偏见和态度倾向。\n下图所示， 在大众点评语料的词向量中蕴含着一些文化(态度或刻板印象)， 如提起旅行这件事， 大家脑海里首先想到的是一群年轻女性探索有趣的世界，世界那么大我想去看看。 而 高尔夫球， 在大家认知里是一群男性老板通过该活动社交谈生意。 一、文献 这篇文献挺老的，但是算法思路目前很有启发。\nKozlowski, Austin C., Matt Taddy, and James A. Evans. \"The geometry of culture: Analyzing the meanings of class through word embeddings.\" American Sociological Review 84, no. 5 (2019): 905-949. 摘要 词嵌入模型是研究文化的有效工具，并以历史分析中对社会阶级的共同理解为实证案例。词嵌入模型通过将语义关系表示为高维空间中的向量关系，提供了一种与当代文化理论一致的关系模型。在这些空间中，词差异（如“富裕-贫穷”）所诱导的维度对应于文化意义的维度，而词在这些维度上的投影反映了广泛共享的文化关联——我们通过调查验证了这一点。通过分析过去一百年来出版的数百万本书籍的文本，我们发现阶级的标志在经济转型中不断变化，但阶级的基本文化维度保持显著稳定。值得注意的是，教育成为与富裕紧密相关的因素，独立于其与高雅品味的关联。\n研究目的 验证词嵌入模型是否能够准确捕捉文化维度（如富裕、性别、种族等），并通过与人类评估的文化关联数据进行对比，证明其在社会学分析中的有效性。\n研究设计  语料准备: 基于Google Ngram语料库训练，包含1900-2012年间出版的数百万本书籍的文本数据。 ​词嵌入模型​​: 基于语料训练词嵌入模型(GloVe或Word2Vec），这篇文章使用的Word2Vec。 词嵌入算法将文本中的单词表示为高维空间中的向量。这些向量基于单词在文本中的上下文关系，共享相似上下文的单词在空间中位置相近。 ​文化维度的识别​​: 通过计算反义词对的平均值来识别文化维度。例如，通过计算“rich”和“poor”等反义词对的差值，构建“富裕-贫穷”这一文化维度。 词向量投影​​: 将单词对应的词向量投影到特定的概念轴（文化维度，如性别、财富）向量上，计算其在该维度上的关联强度。 投影值通过余弦相似度衡量，正值表示与某一文化维度（如富裕）的正向关联，负值表示负向关联。 验证方法​​: 要求受访者对59个词汇（如“banker”“jazz”“nurse”）在三个维度（阶级、种族、性别）上进行评分(0~100)。例如“在0到100的范围内，您认为‘芭蕾舞’在多大程度上属于上层阶级？”； 通过调查数据验证词嵌入模型在捕捉文化关联方面的有效性。比较词嵌入模型与人类评估的文化关联数据，计算Pearson相关系数。 ​静态​结果可视化​​: 通过图表展示运动词在不同文化维度(性别维度、财富维度)上的投影结果。  以上步骤证明了词嵌入投影算法捕捉人类社会文化(文本中蕴含的文化线索)的有效性，接下来按每10年构建一个语料(1900~2010)， 训练出不同年代的词向量。财富维度与六种阶级维度(教育、培养、地位、道德、职业、性别)余弦相似度的关系。 下图是六个维度的正反义词对儿。\n研究结果  ​文化维度的有效性​​: 词嵌入模型在捕捉文化关联方面表现出色，与人类评估的相关系数在0.53到0.90之间。性别维度的关联最强，种族维度的关联较弱。 多维度的阶级结构​​: 阶级的文化维度形成了一个复杂但稳定的语义结构，包括财富、地位、教育、道德等维度。这些维度在高维空间中相互关联，无法通过低维空间准确表示。 社会阶级的文化维度演变​​: 分析结果显示，社会阶级的文化维度在二十世纪保持稳定，但具体的文化标记（如职业名称）发生了显著变化。教育和富裕之间的关联逐渐增强，成为阶级划分的重要标志。   \n二、实验准备 2.1 训练模型 使用 cntext2.x 训练出的预训练语言模型， 具体可参考\n不考虑时间(语义演变)， 只训练一个模型 词向量 | 使用1亿B站用户签名训练word2vec词向量 词向量 | 使用Stanford Glove代码训练中文语料的Glove模型 词向量 | 使用1985年-2025年专利申请摘要训练 Word2Vec 模型 词向量 | 使用 MD\u0026A2001-2023 语料训练 Word2Vec/GloVe 模型 词向量 | 使用人民网领导留言板语料训练 Word2Vec 模型\n考虑时间因素， 按某个时间间隔(如每10年)，训练一个年代向量\n可视化 | 人民日报语料反映七十年文化演变\n如果觉得训练太麻烦， 大邓将已经训练好的模型免费提供给大家。 免费资源 | cntext2.x 训练出的免费公开词向量\n2.2 读取模型 import cntext as ct # 模型下载地址 # https://github.com/hiDaDeng/Chinese-Pretrained-Word-Embeddings wv = ct.load_w2v('大众点评-评论-GloVe.200.15.bin') \n2.3 获取词向量 print(f'模型词汇量: {len(wv)}') Run\n模型词汇量: 278565 \nprint(wv['富有'].shape) print(wv['富有']) Run\n(200,) array([-0.52744 , -0.108866, -0.119827, -0.644396, -0.342953, -0.503506, -0.453796, -0.213651, 0.041335, 0.345231, 0.4752 , -0.026904, -0.026971, -0.249429, -1.115758, 0.351041, -0.304552, 0.40272 , ...... ...... -0.061966, 0.384454, 0.280508, -0.005171, -0.236791, 0.171627, 0.151691, -0.295215, 0.233423, -0.146419, -0.210322, -0.338783, 0.214728, -0.101312, 0.489487, -0.257294, 0.732999, 0.057721, -0.286473, 0.394552], dtype=float32) 词向量的维度是200，即每个词的语义是由200个数字组成的向量所表示。\n2.4 计算概念轴向量 概念轴向量为例，如何计算呢？以性别为例，\n1. 先找出性别(男、女)的正反义词对儿 2. 分别计算正词的多个向量、负词的多个词向量 3. 求得正均值向量、负均值向量 4. 两者相减、归一化处理后得到性别概念向量。 大邓将这些步骤封装到cntext2.x中，只需要将词语传入即可\n# 性别概念轴向量 gender_poss = ['男人', '男性', '丈夫', '他', '爷爷', '祖父', '爸爸', '父亲', '儿子', '兄弟'] gender_negs = ['女人', '女性', '妻子', '她', '奶奶', '祖母', '妈妈', '母亲', '女儿', '姐妹'] gender_vector = ct.generate_concept_axis(wv=wv, poswords=gender_poss, negwords=gender_negs) # 财富概念轴向量 affluence_poss =['富有', '有钱', '成功', '发达', '富裕', '优势', '高贵', '高端', '昂贵', '华丽', '精致', '奢侈', '奢华', '充裕', '豪华'] affluence_negs = ['贫穷', '没钱', '失败', '落后', '贫困', '劣势', '卑贱', '低端', '廉价', '朴素', '粗糙', '廉价', '节俭', '匮乏', '破旧'] affluence_vector = ct.generate_concept_axis(wv=wv, poswords=affluence_poss, negwords=affluence_negs) # 查看性别概念轴向量 print(gender_vector.shape) print(gender_vector) Run\n(200,) [-0.11656909 -0.19618881 -0.01077267 0.04915987 0.00569247 0.05462526 -0.009799 0.00770712 0.05658354 0.04547084 0.03688154 -0.02133968 -0.0706896 0.08739712 0.11174724 -0.02057768 0.03183764 0.01165388 ...... ...... 0.0101583 0.09426635 -0.09078085 -0.13099451 -0.02234778 0.03765206 0.1083525 0.07751778 0.04983377 0.03304265 -0.05442946 0.11609897 -0.10463558 0.00224418 0.00210647 -0.04888193 0.01931083 0.07366373 -0.01534469 0.06682201] 注意:\n 词向量、 概念轴向量维度是相同的，在本文案例中都是200. 注意概念正反义词对方向的确定， 方向决定了对计算结果正负号数字的解读。 例如性别概念轴维度，将男性确定为正义词， 任意词的词向量与性别概念轴计算投影(或余弦相似度)， 数值越大， 说明该词与男性的相关性越大。  2.5 计算投影 cntext2.x封装了投影计算，只需要传入词语或词向量即可。\nproject_word(wv, a, b, cosine=False) 在向量空间中， 计算词语 a 在词语 b 上的投影。\n wv 语料 txt 文件路径 a 词语 a 字符串或列表 b 词语字符串、词语列表、或某概念向量 cosine 是否使用余弦相似度， 默认为False， 函数计算结果为a在b上的投影值。 如果为True， 函数计算结果为a与b的余弦相似度。  import cntext as ct # 获取词向量文件 # https://github.com/hiDaDeng/Chinese-Pretrained-Word-Embeddings dm_w2v = ct.load_w2v('douban-movie-1000w-Word2Vec.200.15.bin') b='苗条' for a in ['性感','美丽', '可爱', '丑陋']: proj = ct.project_word(dm_w2v, a, b) print(f'[{a}]在[{b}]投影值: {proj}') b='修长' for a in ['性感','美丽', '可爱', '丑陋']: proj = ct.project_word(dm_w2v, a, b) print(f'[{a}]在[{b}]投影值: {proj}') Run\n[性感]在[苗条]投影值: 14.172947883605957 [美丽]在[苗条]投影值: 7.0944623947143555 [可爱]在[苗条]投影值: 6.935092926025391 [丑陋]在[苗条]投影值: 1.235807180404663 [性感]在[修长]投影值: 14.599699974060059 [美丽]在[修长]投影值: 9.360642433166504 [可爱]在[修长]投影值: 4.740543842315674 [丑陋]在[修长]投影值: 4.010622501373291 可以看到， 在豆瓣电影语料中， 在[苗条、修长]维度的认知中，都认为\n [性感]意味着身材最瘦长 [美丽]次之、[可爱]略显不那么修长苗条 [丑陋]意味着基本与[苗条、修长]无关，数值最小。  三、实验可视化 3.1 静态可视化 不考虑时间因素，将所有语料训练得出一个词向量， 在这个词向量基础上进行语义投影可视化。\n这里用大众点评评论语料训练出的词向量为例，进行爱好词、品牌词、美食词在性别维度、财富维度的投影。看看这些词（爱好词、品牌词、美食词）是否体现出性别差异、财富差异。\nimport cntext as ct import numpy as np import matplotlib.pyplot as plt ct.matplotlib_chinese() # 确保中文显示 plt.style.use('ggplot') # 使用内置的 ggplot 风格作为基础 # ====== 用户已经完成的数据准备部分（假设已运行）====== wv = ct.load_w2v('大众点评-评论-GloVe.200.15.bin') gender_vector = ct.generate_concept_axis(wv=wv, poswords=['男人', '男性', '丈夫', '他', '爷爷', '祖父', '爸爸', '父亲', '儿子', '兄弟'], negwords=['女人', '女性', '妻子', '她', '奶奶', '祖母', '妈妈', '母亲', '女儿', '姐妹']) affluence_vector = ct.generate_concept_axis(wv=wv, poswords=['富有', '有钱', '成功', '发达', '富裕', '优势', '高贵', '高端', '昂贵', '华丽', '精致', '奢侈', '奢华', '充裕', '豪华'], negwords=['贫穷', '没钱', '失败', '落后', '贫困', '劣势', '卑贱', '低端', '廉价', '朴素', '粗糙', '廉价', '节俭', '匮乏', '破旧']) words = [\"象棋\", \"麻将\", \"围棋\", \"高尔夫\", \"武术\", \"潜水\", \"书法\", \"瑜伽\", \"羽毛球\", \"马术\", \"网球\", \"美妆\", \"旅行\"] # words = [\"烧烤\", \"寿司\", \"牛排\", \"白酒\", \"啤酒\", \"麻辣烫\", \"汉堡\", \"煎饼\", \"包子\", \"小米粥\", \"沙拉\", \"披萨\"] # words = [\"阿玛尼\", \"coach\", \"lv\", \"耐克\", \"阿迪\", \"爱马仕\", \"优衣库\", \"海澜\"] gender_proj = [ct.project_word(wv=wv, a=word, b=gender_vector) for word in words] affluence_proj = [ct.project_word(wv=wv, a=word, b=affluence_vector) for word in words] # ======================================================== # ====== 绘图部分 ====== plt.figure(figsize=(10, 8)) ax = plt.gca() # 获取当前 axes 对象，方便后续操作，特别是设置限制 plt.title('爱好的(性别-财富)刻板印象', pad=15, size=plt.rcParams['axes.titlesize']) # 使用样式中定义的标题字号和 padding # 设置图表显示范围，略大于数据范围，为轴标签和箭头留出空间 # 先根据数据计算一个合理的范围，再根据需求调整 x_data_min, x_data_max = min(affluence_proj), max(affluence_proj) y_data_min, y_data_max = min(gender_proj), max(gender_proj) x_range = x_data_max - x_data_min y_range = y_data_max - y_data_min # 可以设置固定范围，或者根据数据范围动态计算 x_lims = (x_data_min - x_range * 0.2, x_data_max + x_range * 0.2) y_lims = (y_data_min - y_range * 0.2, y_data_max + y_range * 0.2) # 或者设置一个固定的、对称的范围，例如： max_abs_x = max(abs(x_data_min), abs(x_data_max)) max_abs_y = max(abs(y_data_min), abs(y_data_max)) plot_lim = max(max_abs_x, max_abs_y) * 1.3 # 确保范围包含所有点并有余量 x_lims = (-plot_lim, plot_lim) y_lims = (-plot_lim, plot_lim) ax.set_xlim(x_lims) ax.set_ylim(y_lims) # 绘制散点 plt.scatter(affluence_proj, gender_proj, s=150, edgecolor='black', facecolor='lightgray', alpha=0.7) # 调整点大小和颜色，使其清晰 # 绘制中心轴线 (0,0) plt.axhline(0, color='black', linestyle='-', linewidth=1) plt.axvline(0, color='black', linestyle='-', linewidth=1) # 生成网格线 (使用更新后的图表限制) xx, yy = np.meshgrid(np.linspace(-1.2, 1.2, 10), np.linspace(-1.2, 1.2, 10)) plt.contourf(xx, yy, xx**2 + yy**2, levels=10, cmap='gray_r', alpha=0.1) # 添加轴端点标签和箭头 (更像图 3 的风格) arrow_length_x = ax.get_xlim()[1] * 0.95 # 箭头长度为范围的 90% arrow_length_y = ax.get_ylim()[1] * 0.95 head_width_x = (ax.get_xlim()[1] - ax.get_xlim()[0]) * 0.015 # 箭头头部宽度根据轴范围调整 head_width_y = (ax.get_ylim()[1] - ax.get_ylim()[0]) * 0.015 # Affluence 轴 (X) - 贫穷到富有 plt.arrow(0, 0, arrow_length_x, 0, head_width=head_width_y, head_length=head_width_x, fc='black', ec='black', length_includes_head=True, linewidth=0.8) plt.arrow(0, 0, -arrow_length_x, 0, head_width=head_width_y, head_length=head_width_x, fc='black', ec='black', length_includes_head=True, linewidth=0.8) # Gender 轴 (Y) - 女性到男性 plt.arrow(0, 0, 0, arrow_length_y, head_width=head_width_x, head_length=head_width_y, fc='black', ec='black', length_includes_head=True, linewidth=0.8) plt.arrow(0, 0, 0, -arrow_length_y, head_width=head_width_x, head_length=head_width_y, fc='black', ec='black', length_includes_head=True, linewidth=0.8) # 添加词语标签 # 遍历数据点和词语 for i, (x, y, word) in enumerate(zip(affluence_proj, gender_proj, words)): # 可以尝试 xytext 偏移来控制标签位置 plt.annotate(word, (x, y), textcoords=\"offset points\", xytext=(5, 5), ha='left', va='bottom', fontsize=plt.rcParams['font.size']) # 设置轴标题 ax.set_xlabel(f'Affluence ({chr(8592)}贫穷 | 富有 {chr(8594)})', fontsize=plt.rcParams['axes.labelsize']) # 使用箭头符号更直观 ax.set_ylabel(f'Gender ({chr(8595)}女性化程度 | 男性化程度 {chr(8593)})', fontsize=plt.rcParams['axes.labelsize']) # 使用箭头符号更直观 # 样式中已经设置了网格，如果想自定义，可以取消注释下一行 #plt.grid(True, linestyle='--', alpha=0.5) # 确保图表元素的布局紧凑 plt.tight_layout() # 显示图表 plt.show() 爱好词在性别维度向量、财富维度向量投影结果解读。\n 性别维度，旅行、瑜伽、美妆这几个爱好词与女性强相关。高尔夫、网球、羽毛球、麻将、书法与男性强相关。 财富维度， 富裕的爱好有瑜伽、高尔夫、旅行、网球、麻将、羽毛球。而贫穷的爱好有象棋、美妆、武术、围棋，似乎不用太花钱。  美食词在性别维度向量、财富维度向量投影结果解读。饮食方面投影主要分布在图的右侧。\n 性别维度，啤酒、白酒、烧烤很男性； 而披萨、沙拉、寿司、牛排很女性。 财富维度，牛排、寿计较富裕， 而小米粥很贫穷。 食物的财富维度区分度较低。  总的来说， 食物中，好吃的、贵的跟女性关联度远大于男性。\n品牌词在性别维度向量、财富维度向量投影结果解读。\n 性别维度, 耐克、阿迪、海澜之家、阿玛尼与男性关联度更高。而优衣库、lv、爱马仕、coach与女性的关联度更高。 财富维度, lv、coach、爱马仕在语义上与富裕强相关，而耐克、阿迪、海澜之家与贫穷强相关。  总之，静态的分析，通过大众点评评论语料， 可以体现出目前社会消费领域中， 对于品牌、美食、爱好的认知、文化、刻板印象。 如果有不同年代的语料， 就可以挖掘文化的变化。\n3.2 考虑时间因素 以人民日报语料为例， 每10年训练一个词向量， 观察不同年份的语义的变化。 训练代码可阅读 可视化 | 人民日报语料反映七十年文化演变 。 文中以语义距离来刻画文化，即\ndistance = distance(女, 成功) - distance(男, 成功)  如果distance趋近于0， 男女在成功概念上语义接近， 无明显刻板印象。 但是当distance明显大于0， 当人们聊到成功概念时，更容易联想到男性，而不是女性。  性别与成就\n从图中可以看到， 新中国初期， 我国的女性解放运动在全世界都是领先的，成果十分卓著。 而今耳熟能详的口号恰好说明当时的宣传已经刻入每个中国人的认知中，如\n- 谁说女子不如男 - 不爱红装爱武装 - 女人撑起半边天 ... 提到「成功概念」时，在新中国初期，由于破除性别刻板印象，宣传更加中性， 立榜样考虑了性别的平衡。而随着时间推移，口号式的宣传运动沉寂后， 历史的惯性(传统文化的基因)可能会重新复活， 提到「成功概念」时，社会更容易将「成功」与「男性」联系起来。\n性别与责任\n成就与男性有更高的关联， 背后是否意味着传统文化建构的社会要求男性承担远多于女性的责任。\n从图中可以看出，在大多数年份， distance是大于0的，即 提到「责任」概念时，社会更容易联想到「男性」，而不是「女性」。\n\n相关资料  视频课 | Python 实证指标构建与文本分析 LIST | 社科(经管)数据挖掘文献资料汇总 LIST | 可供社科(经管)领域使用的数据集汇总 教程 | 使用 Ollama 与大模型将文本数据转化为结构化数据 https://textdata.cn/  ",
+  "wordCount" : "936",
+  "inLanguage": "en",
+  "image":"/images/blog/word2vec.png","datePublished": "2025-04-23T00:00:00Z",
+  "dateModified": "2025-04-23T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "大邓"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/blog/2025-04-23-word-embedding-reflect-human-attitude/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "大邓和他的PYTHON",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LEXKZ8MRX7"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-LEXKZ8MRX7');
+</script>
+
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif" rel="stylesheet">
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="大邓和他的PYTHON (Alt + H)" target="_blank">大邓和他的PYTHON</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="关于" target="_blank">
+                    <span>关于</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/" title="博文" target="_blank">
+                    <span>博文</span>
+                </a>
+            </li>
+            <li>
+                <a href="/search/" title="搜索" target="_blank">
+                    <span>搜索</span>
+                </a>
+            </li>
+            <li>
+                <a href="/archives/" title="归档" target="_blank">
+                    <span>归档</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tags/" title="标签" target="_blank">
+                    <span>标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/management_python_course/" title="课程" target="_blank">
+                    <span>课程</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/the_text_analysis_list_about_ms/" title="文献" target="_blank">
+                    <span>文献</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/datasets_available_for_management_science/" title="数据" target="_blank">
+                    <span>数据</span>
+                </a>
+            </li>
+            <li>
+                <a href="/blog/2024-04-27-cntext2x-usage-tutorial/" title="cntext2.x" target="_blank">
+                    <span>cntext2.x</span>
+                </a>
+            </li>
+            <li>
+                <a href="/index.xml" title="RSS" target="_blank">
+                    <span>RSS</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+
+
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <div class="breadcrumbs"><a href="/" target="_blank">Home</a>&nbsp;»&nbsp;<a href="/blog/" target="_blank">Blogs</a></div>
+    <h1 class="post-title">
+      文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁)
+    </h1>
+    <div class="post-meta"><span title='2025-04-23 00:00:00 +0000 UTC'>2025-04-23</span>&nbsp;·&nbsp;5 min&nbsp;·&nbsp;大邓
+
+</div>
+  </header> 
+<figure class="entry-cover"><a href="/images/blog/word2vec.png" target="_blank"
+            rel="noopener noreferrer"><img loading="lazy" src="/images/blog/word2vec.png" alt=""></a>
+        
+</figure>
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29&amp;url=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f&amp;hashtags=%e6%95%b0%e6%8d%ae%e9%9b%86%2c%e8%af%8d%e5%90%91%e9%87%8f%2ccntext">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f&amp;title=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29&amp;summary=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29&amp;source=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f&title=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29%20-%20%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on telegram"
+        href="https://telegram.me/share/url?text=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29&amp;url=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+<aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#%e4%b8%80%e6%96%87%e7%8c%ae" aria-label="一、文献">一、文献</a><ul>
+                            
+                    <li>
+                        <a href="#%e6%91%98%e8%a6%81" aria-label="摘要">摘要</a></li>
+                    <li>
+                        <a href="#%e7%a0%94%e7%a9%b6%e7%9b%ae%e7%9a%84" aria-label="研究目的">研究目的</a></li>
+                    <li>
+                        <a href="#%e7%a0%94%e7%a9%b6%e8%ae%be%e8%ae%a1" aria-label="研究设计">研究设计</a></li>
+                    <li>
+                        <a href="#%e7%a0%94%e7%a9%b6%e7%bb%93%e6%9e%9c" aria-label="研究结果">研究结果</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e4%ba%8c%e5%ae%9e%e9%aa%8c%e5%87%86%e5%a4%87" aria-label="二、实验准备">二、实验准备</a><ul>
+                            
+                    <li>
+                        <a href="#21-%e8%ae%ad%e7%bb%83%e6%a8%a1%e5%9e%8b" aria-label="2.1 训练模型">2.1 训练模型</a></li>
+                    <li>
+                        <a href="#22-%e8%af%bb%e5%8f%96%e6%a8%a1%e5%9e%8b" aria-label="2.2 读取模型">2.2 读取模型</a></li>
+                    <li>
+                        <a href="#23-%e8%8e%b7%e5%8f%96%e8%af%8d%e5%90%91%e9%87%8f" aria-label="2.3 获取词向量">2.3 获取词向量</a></li>
+                    <li>
+                        <a href="#24-%e8%ae%a1%e7%ae%97%e6%a6%82%e5%bf%b5%e8%bd%b4%e5%90%91%e9%87%8f" aria-label="2.4 计算概念轴向量">2.4 计算概念轴向量</a></li>
+                    <li>
+                        <a href="#25-%e8%ae%a1%e7%ae%97%e6%8a%95%e5%bd%b1" aria-label="2.5 计算投影">2.5 计算投影</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e4%b8%89%e5%ae%9e%e9%aa%8c%e5%8f%af%e8%a7%86%e5%8c%96" aria-label="三、实验可视化">三、实验可视化</a><ul>
+                            
+                    <li>
+                        <a href="#31-%e9%9d%99%e6%80%81%e5%8f%af%e8%a7%86%e5%8c%96" aria-label="3.1 静态可视化">3.1 静态可视化</a></li>
+                    <li>
+                        <a href="#32-%e8%80%83%e8%99%91%e6%97%b6%e9%97%b4%e5%9b%a0%e7%b4%a0" aria-label="3.2 考虑时间因素">3.2 考虑时间因素</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#%e7%9b%b8%e5%85%b3%e8%b5%84%e6%96%99" aria-label="相关资料">相关资料</a>
+                    </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者: 大邓
+        <p>本文标题: 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁)
+        <p>本文链接: https://textdata.cn/blog/2025-04-23-word-embedding-reflect-human-attitude/
+        <p>版权声明: <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+  <br>
+
+
+
+  
+  <div class="post-content"><p>人类在留下语言、文字的过程中，也留下了自己的偏见、态度等主观认知信息（偏见、态度）。词嵌入做为一种词向量模型，可以隐含上下文的情景信息，态度及偏见很容易保留在词向量的某些维度中。通过词向量距离的测算，就可以间接测得不同群体 对 某概念(组织、群体、品牌、地域等)的态度偏见。</p>
+<ul>
+<li><a href="https://textdata.cn/blog/2023-11-03-organization-science-with-word-embeddings/">OS2022 | 概念空间 | 词嵌入模型如何为组织科学中的测量和理论提供信息</a></li>
+<li><a href="https://textdata.cn/blog/2022-04-07-word-embeddings-in-social-science/">转载 | 大数据时代下社会科学研究方法的拓展——基于词嵌入技术的文本分析的应用</a></li>
+</ul>
+<p>虽然现在LLM(大语言模型)很火，但其底层架构Transformer正是基于词向量(分布式语义表示)发展而来。LLM虽然能生成流畅的文本，但其&quot;黑箱&quot;特性使得我们难以直接分析其中蕴含的社会偏见。相比之下，传统的词嵌入模型(维度通常在50-300之间)虽然维度较高难以直观理解，但通过线性代数等数学工具，我们可以精确测量和分析词向量空间中的文化偏见和态度倾向。</p>
+<p>下图所示， 在大众点评语料的词向量中蕴含着一些文化(态度或刻板印象)， 如提起<strong>旅行</strong>这件事， 大家脑海里首先想到的是一群年轻女性探索有趣的世界，世界那么大我想去看看。 而 <strong>高尔夫球</strong>， 在大家认知里是一群男性老板通过该活动社交谈生意。 </p>
+<p><img loading="lazy" src="img/04-hobby.png" alt=""  />
+</p>
+<br>
+<h2 id="一文献">一、文献<a hidden class="anchor" aria-hidden="true" href="#一文献">#</a></h2>
+<p>这篇文献挺老的，但是算法思路目前很有启发。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Kozlowski, Austin C., Matt Taddy, and James A. Evans. &#34;The geometry of culture: Analyzing the meanings of class through word embeddings.&#34; American Sociological Review 84, no. 5 (2019): 905-949.
+</code></pre></div><h3 id="摘要">摘要<a hidden class="anchor" aria-hidden="true" href="#摘要">#</a></h3>
+<p>词嵌入模型是研究文化的有效工具，并以历史分析中对社会阶级的共同理解为实证案例。词嵌入模型通过将语义关系表示为高维空间中的向量关系，提供了一种与当代文化理论一致的关系模型。在这些空间中，词差异（如“富裕-贫穷”）所诱导的维度对应于文化意义的维度，而词在这些维度上的投影反映了广泛共享的文化关联——我们通过调查验证了这一点。通过分析过去一百年来出版的数百万本书籍的文本，我们发现阶级的标志在经济转型中不断变化，但阶级的基本文化维度保持显著稳定。值得注意的是，教育成为与富裕紧密相关的因素，独立于其与高雅品味的关联。</p>
+<br>
+<h3 id="研究目的">研究目的<a hidden class="anchor" aria-hidden="true" href="#研究目的">#</a></h3>
+<p>验证词嵌入模型是否能够准确捕捉文化维度（如富裕、性别、种族等），并通过与人类评估的文化关联数据进行对比，证明其在社会学分析中的有效性。</p>
+<br>
+<h3 id="研究设计">研究设计<a hidden class="anchor" aria-hidden="true" href="#研究设计">#</a></h3>
+<ol>
+<li><strong>语料准备</strong>:  基于Google Ngram语料库训练，包含1900-2012年间出版的数百万本书籍的文本数据。</li>
+<li><strong>​词嵌入模型</strong>​​: 基于语料训练词嵌入模型(GloVe或Word2Vec），这篇文章使用的Word2Vec。 词嵌入算法将文本中的单词表示为高维空间中的向量。这些向量基于单词在文本中的上下文关系，共享相似上下文的单词在空间中位置相近。</li>
+<li><strong>​文化维度的识别</strong>​​: 通过计算反义词对的平均值来识别文化维度。例如，通过计算“rich”和“poor”等反义词对的差值，构建“富裕-贫穷”这一文化维度。</li>
+<li><strong>词向量投影</strong>​​: 将单词对应的词向量投影到特定的概念轴（文化维度，如性别、财富）向量上，计算其在该维度上的关联强度。 投影值通过余弦相似度衡量，正值表示与某一文化维度（如富裕）的正向关联，负值表示负向关联。</li>
+<li><strong>验证方法</strong>​​: 要求受访者对59个词汇（如“banker”“jazz”“nurse”）在三个维度（阶级、种族、性别）上进行评分(0~100)。例如“在0到100的范围内，您认为‘芭蕾舞’在多大程度上属于上层阶级？”； 通过调查数据验证词嵌入模型在捕捉文化关联方面的有效性。比较词嵌入模型与人类评估的文化关联数据，计算Pearson相关系数。</li>
+<li>​<strong>静态​结果可视化​</strong>​: 通过图表展示运动词在不同文化维度(性别维度、财富维度)上的投影结果。</li>
+</ol>
+<p>以上步骤证明了词嵌入投影算法捕捉人类社会文化(文本中蕴含的文化线索)的有效性，接下来按每10年构建一个语料(1900~2010)， 训练出不同年代的词向量。财富维度与六种阶级维度(教育、培养、地位、道德、职业、性别)余弦相似度的关系。 下图是六个维度的正反义词对儿。</p>
+<p><img loading="lazy" src="img/01-word-pairs.png" alt=""  />
+</p>
+<br>
+<h3 id="研究结果">研究结果<a hidden class="anchor" aria-hidden="true" href="#研究结果">#</a></h3>
+<ol>
+<li><strong>​文化维度的有效性​</strong>​: 词嵌入模型在捕捉文化关联方面表现出色，与人类评估的相关系数在0.53到0.90之间。性别维度的关联最强，种族维度的关联较弱。</li>
+<li><strong>多维度的阶级结构</strong>​​: 阶级的文化维度形成了一个复杂但稳定的语义结构，包括财富、地位、教育、道德等维度。这些维度在高维空间中相互关联，无法通过低维空间准确表示。</li>
+<li><strong>社会阶级的文化维度演变​</strong>​: 分析结果显示，社会阶级的文化维度在二十世纪保持稳定，但具体的文化标记（如职业名称）发生了显著变化。教育和富裕之间的关联逐渐增强，成为阶级划分的重要标志。
+<img loading="lazy" src="img/02-apa-proj.png" alt=""  />
+
+<img loading="lazy" src="img/03-evolution.png" alt=""  />
+</li>
+</ol>
+<p><br><br></p>
+<h2 id="二实验准备">二、实验准备<a hidden class="anchor" aria-hidden="true" href="#二实验准备">#</a></h2>
+<h3 id="21-训练模型">2.1 训练模型<a hidden class="anchor" aria-hidden="true" href="#21-训练模型">#</a></h3>
+<p>使用 <a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">cntext2.x</a> 训练出的预训练语言模型， 具体可参考</p>
+<p>不考虑时间(语义演变)， 只训练一个模型
+<a href="https://textdata.cn/blog/2023-11-12-using-100m-bilibili-user-sign-data-to-training-word2vec/">词向量 | 使用1亿B站用户签名训练word2vec词向量</a>
+<a href="https://textdata.cn/blog/2025-03-28-train_a_glove_model_on_chinese_corpus_using_stanfordnlp/">词向量 | 使用Stanford Glove代码训练中文语料的Glove模型</a>
+<a href="https://textdata.cn/blog/2023-11-10-training-word2vec-model-using-china-3751w-patent-application-dataset/">词向量 | 使用1985年-2025年专利申请摘要训练 Word2Vec 模型</a>
+<a href="https://textdata.cn/blog/2023-03-24-load-w2v-and-expand-your-concpet-dicitonary/">词向量 | 使用 MD&amp;A2001-2023 语料训练 Word2Vec/GloVe 模型</a>
+<a href="https://textdata.cn/blog/2023-12-28-train-word2vec-using-renmin-gov-leader-board-dataset/">词向量 | 使用人民网领导留言板语料训练 Word2Vec 模型</a></p>
+<br>
+<p>考虑时间因素， 按某个时间间隔(如每10年)，训练一个年代向量</p>
+<p><a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/">可视化 | 人民日报语料反映七十年文化演变</a></p>
+<br>
+<p>如果觉得训练太麻烦， 大邓将已经训练好的模型免费提供给大家。
+<a href="https://github.com/hiDaDeng/Chinese-Pretrained-Word-Embeddings">免费资源 | cntext2.x 训练出的免费公开词向量</a></p>
+<h3 id="22-读取模型">2.2 读取模型<a hidden class="anchor" aria-hidden="true" href="#22-读取模型">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="c1"># 模型下载地址</span>
+<span class="c1"># https://github.com/hiDaDeng/Chinese-Pretrained-Word-Embeddings</span>
+<span class="n">wv</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;大众点评-评论-GloVe.200.15.bin&#39;</span><span class="p">)</span>
+</code></pre></div><br>
+<h3 id="23-获取词向量">2.3 获取词向量<a hidden class="anchor" aria-hidden="true" href="#23-获取词向量">#</a></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;模型词汇量: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">wv</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">模型词汇量: 278565
+</code></pre></div><br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="nb">print</span><span class="p">(</span><span class="n">wv</span><span class="p">[</span><span class="s1">&#39;富有&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">wv</span><span class="p">[</span><span class="s1">&#39;富有&#39;</span><span class="p">])</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(200,)
+array([-0.52744 , -0.108866, -0.119827, -0.644396, -0.342953, -0.503506,
+       -0.453796, -0.213651,  0.041335,  0.345231,  0.4752  , -0.026904,
+       -0.026971, -0.249429, -1.115758,  0.351041, -0.304552,  0.40272 ,
+       ......
+       ......
+       -0.061966,  0.384454,  0.280508, -0.005171, -0.236791,  0.171627,
+        0.151691, -0.295215,  0.233423, -0.146419, -0.210322, -0.338783,
+        0.214728, -0.101312,  0.489487, -0.257294,  0.732999,  0.057721,
+       -0.286473,  0.394552], dtype=float32)
+</code></pre></div><p>词向量的维度是200，即每个词的语义是由200个数字组成的向量所表示。</p>
+<br>
+<h3 id="24-计算概念轴向量">2.4 计算概念轴向量<a hidden class="anchor" aria-hidden="true" href="#24-计算概念轴向量">#</a></h3>
+<p>概念轴向量为例，如何计算呢？以性别为例，</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">1. 先找出性别(男、女)的正反义词对儿
+2. 分别计算正词的多个向量、负词的多个词向量
+3. 求得正均值向量、负均值向量
+4. 两者相减、归一化处理后得到性别概念向量。  
+</code></pre></div><p>大邓将这些步骤封装到cntext2.x中，只需要将词语传入即可</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 性别概念轴向量</span>
+<span class="n">gender_poss</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;男人&#39;</span><span class="p">,</span> <span class="s1">&#39;男性&#39;</span><span class="p">,</span> <span class="s1">&#39;丈夫&#39;</span><span class="p">,</span> <span class="s1">&#39;他&#39;</span><span class="p">,</span> <span class="s1">&#39;爷爷&#39;</span><span class="p">,</span> <span class="s1">&#39;祖父&#39;</span><span class="p">,</span> <span class="s1">&#39;爸爸&#39;</span><span class="p">,</span> <span class="s1">&#39;父亲&#39;</span><span class="p">,</span> <span class="s1">&#39;儿子&#39;</span><span class="p">,</span> <span class="s1">&#39;兄弟&#39;</span><span class="p">]</span>
+<span class="n">gender_negs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;女人&#39;</span><span class="p">,</span> <span class="s1">&#39;女性&#39;</span><span class="p">,</span> <span class="s1">&#39;妻子&#39;</span><span class="p">,</span> <span class="s1">&#39;她&#39;</span><span class="p">,</span> <span class="s1">&#39;奶奶&#39;</span><span class="p">,</span> <span class="s1">&#39;祖母&#39;</span><span class="p">,</span> <span class="s1">&#39;妈妈&#39;</span><span class="p">,</span> <span class="s1">&#39;母亲&#39;</span><span class="p">,</span> <span class="s1">&#39;女儿&#39;</span><span class="p">,</span> <span class="s1">&#39;姐妹&#39;</span><span class="p">]</span>
+<span class="n">gender_vector</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">generate_concept_axis</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span> 
+                                         <span class="n">poswords</span><span class="o">=</span><span class="n">gender_poss</span><span class="p">,</span> 
+                                         <span class="n">negwords</span><span class="o">=</span><span class="n">gender_negs</span><span class="p">)</span>
+
+
+<span class="c1"># 财富概念轴向量</span>
+<span class="n">affluence_poss</span> <span class="o">=</span><span class="p">[</span><span class="s1">&#39;富有&#39;</span><span class="p">,</span> <span class="s1">&#39;有钱&#39;</span><span class="p">,</span> <span class="s1">&#39;成功&#39;</span><span class="p">,</span> <span class="s1">&#39;发达&#39;</span><span class="p">,</span> <span class="s1">&#39;富裕&#39;</span><span class="p">,</span> <span class="s1">&#39;优势&#39;</span><span class="p">,</span> <span class="s1">&#39;高贵&#39;</span><span class="p">,</span> <span class="s1">&#39;高端&#39;</span><span class="p">,</span> <span class="s1">&#39;昂贵&#39;</span><span class="p">,</span> <span class="s1">&#39;华丽&#39;</span><span class="p">,</span> <span class="s1">&#39;精致&#39;</span><span class="p">,</span> <span class="s1">&#39;奢侈&#39;</span><span class="p">,</span> <span class="s1">&#39;奢华&#39;</span><span class="p">,</span> <span class="s1">&#39;充裕&#39;</span><span class="p">,</span> <span class="s1">&#39;豪华&#39;</span><span class="p">]</span>
+<span class="n">affluence_negs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;贫穷&#39;</span><span class="p">,</span> <span class="s1">&#39;没钱&#39;</span><span class="p">,</span> <span class="s1">&#39;失败&#39;</span><span class="p">,</span> <span class="s1">&#39;落后&#39;</span><span class="p">,</span> <span class="s1">&#39;贫困&#39;</span><span class="p">,</span> <span class="s1">&#39;劣势&#39;</span><span class="p">,</span> <span class="s1">&#39;卑贱&#39;</span><span class="p">,</span> <span class="s1">&#39;低端&#39;</span><span class="p">,</span> <span class="s1">&#39;廉价&#39;</span><span class="p">,</span> <span class="s1">&#39;朴素&#39;</span><span class="p">,</span> <span class="s1">&#39;粗糙&#39;</span><span class="p">,</span> <span class="s1">&#39;廉价&#39;</span><span class="p">,</span> <span class="s1">&#39;节俭&#39;</span><span class="p">,</span> <span class="s1">&#39;匮乏&#39;</span><span class="p">,</span> <span class="s1">&#39;破旧&#39;</span><span class="p">]</span>
+<span class="n">affluence_vector</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">generate_concept_axis</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span> 
+                                            <span class="n">poswords</span><span class="o">=</span><span class="n">affluence_poss</span><span class="p">,</span> 
+                                            <span class="n">negwords</span><span class="o">=</span><span class="n">affluence_negs</span><span class="p">)</span>
+
+<span class="c1"># 查看性别概念轴向量</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">gender_vector</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">gender_vector</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">(200,)
+[-0.11656909 -0.19618881 -0.01077267  0.04915987  0.00569247  0.05462526
+ -0.009799    0.00770712  0.05658354  0.04547084  0.03688154 -0.02133968
+ -0.0706896   0.08739712  0.11174724 -0.02057768  0.03183764  0.01165388
+  ......
+  ......
+  0.0101583   0.09426635 -0.09078085 -0.13099451 -0.02234778  0.03765206
+  0.1083525   0.07751778  0.04983377  0.03304265 -0.05442946  0.11609897
+ -0.10463558  0.00224418  0.00210647 -0.04888193  0.01931083  0.07366373
+ -0.01534469  0.06682201]
+</code></pre></div><p>注意:</p>
+<ol>
+<li>词向量、 概念轴向量维度是相同的，在本文案例中都是200.</li>
+<li>注意概念正反义词对方向的确定， 方向决定了对计算结果正负号数字的解读。 例如性别概念轴维度，将男性确定为正义词， 任意词的词向量与性别概念轴计算投影(或余弦相似度)， 数值越大， 说明该词与男性的相关性越大。</li>
+</ol>
+<h3 id="25-计算投影">2.5 计算投影<a hidden class="anchor" aria-hidden="true" href="#25-计算投影">#</a></h3>
+<p>cntext2.x封装了投影计算，只需要传入词语或词向量即可。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">project_word</span><span class="p">(</span><span class="n">wv</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">cosine</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div><p>在向量空间中， 计算词语 a 在词语 b 上的投影。</p>
+<ul>
+<li><strong>wv</strong> 语料 txt 文件路径</li>
+<li><strong>a</strong> 词语 a 字符串或列表</li>
+<li><strong>b</strong> 词语字符串、词语列表、或某概念向量</li>
+<li><strong>cosine</strong> 是否使用余弦相似度， 默认为False， 函数计算结果为a在b上的投影值。 如果为True， 函数计算结果为a与b的余弦相似度。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="c1"># 获取词向量文件</span>
+<span class="c1"># https://github.com/hiDaDeng/Chinese-Pretrained-Word-Embeddings</span>
+<span class="n">dm_w2v</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;douban-movie-1000w-Word2Vec.200.15.bin&#39;</span><span class="p">)</span>
+
+<span class="n">b</span><span class="o">=</span><span class="s1">&#39;苗条&#39;</span>
+<span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;性感&#39;</span><span class="p">,</span><span class="s1">&#39;美丽&#39;</span><span class="p">,</span> <span class="s1">&#39;可爱&#39;</span><span class="p">,</span> <span class="s1">&#39;丑陋&#39;</span><span class="p">]:</span>
+    <span class="n">proj</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">project_word</span><span class="p">(</span><span class="n">dm_w2v</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1">]在[</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">]投影值: </span><span class="si">{</span><span class="n">proj</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+<span class="n">b</span><span class="o">=</span><span class="s1">&#39;修长&#39;</span>
+<span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;性感&#39;</span><span class="p">,</span><span class="s1">&#39;美丽&#39;</span><span class="p">,</span> <span class="s1">&#39;可爱&#39;</span><span class="p">,</span> <span class="s1">&#39;丑陋&#39;</span><span class="p">]:</span>
+    <span class="n">proj</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">project_word</span><span class="p">(</span><span class="n">dm_w2v</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1">]在[</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">]投影值: </span><span class="si">{</span><span class="n">proj</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[性感]在[苗条]投影值: 14.172947883605957
+[美丽]在[苗条]投影值: 7.0944623947143555
+[可爱]在[苗条]投影值: 6.935092926025391
+[丑陋]在[苗条]投影值: 1.235807180404663
+
+[性感]在[修长]投影值: 14.599699974060059
+[美丽]在[修长]投影值: 9.360642433166504
+[可爱]在[修长]投影值: 4.740543842315674
+[丑陋]在[修长]投影值: 4.010622501373291
+</code></pre></div><p>可以看到， 在豆瓣电影语料中， 在[苗条、修长]维度的认知中，都认为</p>
+<ul>
+<li>[性感]意味着身材最瘦长</li>
+<li>[美丽]次之、[可爱]略显不那么修长苗条</li>
+<li>[丑陋]意味着基本与[苗条、修长]无关，数值最小。</li>
+</ul>
+<br>
+<h2 id="三实验可视化">三、实验可视化<a hidden class="anchor" aria-hidden="true" href="#三实验可视化">#</a></h2>
+<h3 id="31-静态可视化">3.1 静态可视化<a hidden class="anchor" aria-hidden="true" href="#31-静态可视化">#</a></h3>
+<p>不考虑时间因素，将所有语料训练得出一个词向量， 在这个词向量基础上进行语义投影可视化。</p>
+<p>这里用大众点评评论语料训练出的词向量为例，进行爱好词、品牌词、美食词在性别维度、财富维度的投影。看看这些词（爱好词、品牌词、美食词）是否体现出性别差异、财富差异。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">ct</span><span class="o">.</span><span class="n">matplotlib_chinese</span><span class="p">()</span> <span class="c1"># 确保中文显示</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;ggplot&#39;</span><span class="p">)</span>  <span class="c1"># 使用内置的 ggplot 风格作为基础</span>
+
+
+
+<span class="c1"># ====== 用户已经完成的数据准备部分（假设已运行）======</span>
+<span class="n">wv</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;大众点评-评论-GloVe.200.15.bin&#39;</span><span class="p">)</span>
+<span class="n">gender_vector</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">generate_concept_axis</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span>
+                                          <span class="n">poswords</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;男人&#39;</span><span class="p">,</span> <span class="s1">&#39;男性&#39;</span><span class="p">,</span> <span class="s1">&#39;丈夫&#39;</span><span class="p">,</span> <span class="s1">&#39;他&#39;</span><span class="p">,</span> <span class="s1">&#39;爷爷&#39;</span><span class="p">,</span> <span class="s1">&#39;祖父&#39;</span><span class="p">,</span> <span class="s1">&#39;爸爸&#39;</span><span class="p">,</span> <span class="s1">&#39;父亲&#39;</span><span class="p">,</span> <span class="s1">&#39;儿子&#39;</span><span class="p">,</span> <span class="s1">&#39;兄弟&#39;</span><span class="p">],</span>
+                                          <span class="n">negwords</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;女人&#39;</span><span class="p">,</span> <span class="s1">&#39;女性&#39;</span><span class="p">,</span> <span class="s1">&#39;妻子&#39;</span><span class="p">,</span> <span class="s1">&#39;她&#39;</span><span class="p">,</span> <span class="s1">&#39;奶奶&#39;</span><span class="p">,</span> <span class="s1">&#39;祖母&#39;</span><span class="p">,</span> <span class="s1">&#39;妈妈&#39;</span><span class="p">,</span> <span class="s1">&#39;母亲&#39;</span><span class="p">,</span> <span class="s1">&#39;女儿&#39;</span><span class="p">,</span> <span class="s1">&#39;姐妹&#39;</span><span class="p">])</span>
+<span class="n">affluence_vector</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">generate_concept_axis</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span>
+                                          <span class="n">poswords</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;富有&#39;</span><span class="p">,</span> <span class="s1">&#39;有钱&#39;</span><span class="p">,</span> <span class="s1">&#39;成功&#39;</span><span class="p">,</span> <span class="s1">&#39;发达&#39;</span><span class="p">,</span> <span class="s1">&#39;富裕&#39;</span><span class="p">,</span> <span class="s1">&#39;优势&#39;</span><span class="p">,</span> <span class="s1">&#39;高贵&#39;</span><span class="p">,</span> <span class="s1">&#39;高端&#39;</span><span class="p">,</span> <span class="s1">&#39;昂贵&#39;</span><span class="p">,</span> <span class="s1">&#39;华丽&#39;</span><span class="p">,</span> <span class="s1">&#39;精致&#39;</span><span class="p">,</span> <span class="s1">&#39;奢侈&#39;</span><span class="p">,</span> <span class="s1">&#39;奢华&#39;</span><span class="p">,</span> <span class="s1">&#39;充裕&#39;</span><span class="p">,</span> <span class="s1">&#39;豪华&#39;</span><span class="p">],</span>
+                                          <span class="n">negwords</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;贫穷&#39;</span><span class="p">,</span> <span class="s1">&#39;没钱&#39;</span><span class="p">,</span> <span class="s1">&#39;失败&#39;</span><span class="p">,</span> <span class="s1">&#39;落后&#39;</span><span class="p">,</span> <span class="s1">&#39;贫困&#39;</span><span class="p">,</span> <span class="s1">&#39;劣势&#39;</span><span class="p">,</span> <span class="s1">&#39;卑贱&#39;</span><span class="p">,</span> <span class="s1">&#39;低端&#39;</span><span class="p">,</span> <span class="s1">&#39;廉价&#39;</span><span class="p">,</span> <span class="s1">&#39;朴素&#39;</span><span class="p">,</span> <span class="s1">&#39;粗糙&#39;</span><span class="p">,</span> <span class="s1">&#39;廉价&#39;</span><span class="p">,</span> <span class="s1">&#39;节俭&#39;</span><span class="p">,</span> <span class="s1">&#39;匮乏&#39;</span><span class="p">,</span> <span class="s1">&#39;破旧&#39;</span><span class="p">])</span>
+
+
+<span class="n">words</span> <span class="o">=</span>  <span class="p">[</span><span class="s2">&#34;象棋&#34;</span><span class="p">,</span> <span class="s2">&#34;麻将&#34;</span><span class="p">,</span> <span class="s2">&#34;围棋&#34;</span><span class="p">,</span> <span class="s2">&#34;高尔夫&#34;</span><span class="p">,</span> <span class="s2">&#34;武术&#34;</span><span class="p">,</span> <span class="s2">&#34;潜水&#34;</span><span class="p">,</span> <span class="s2">&#34;书法&#34;</span><span class="p">,</span> <span class="s2">&#34;瑜伽&#34;</span><span class="p">,</span> <span class="s2">&#34;羽毛球&#34;</span><span class="p">,</span> <span class="s2">&#34;马术&#34;</span><span class="p">,</span> <span class="s2">&#34;网球&#34;</span><span class="p">,</span> <span class="s2">&#34;美妆&#34;</span><span class="p">,</span> <span class="s2">&#34;旅行&#34;</span><span class="p">]</span>
+<span class="c1"># words =  [&#34;烧烤&#34;, &#34;寿司&#34;, &#34;牛排&#34;, &#34;白酒&#34;, &#34;啤酒&#34;, &#34;麻辣烫&#34;, &#34;汉堡&#34;, &#34;煎饼&#34;, &#34;包子&#34;, &#34;小米粥&#34;, &#34;沙拉&#34;, &#34;披萨&#34;]</span>
+<span class="c1"># words =  [&#34;阿玛尼&#34;, &#34;coach&#34;, &#34;lv&#34;, &#34;耐克&#34;, &#34;阿迪&#34;, &#34;爱马仕&#34;, &#34;优衣库&#34;, &#34;海澜&#34;]</span>
+
+<span class="n">gender_proj</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span><span class="o">.</span><span class="n">project_word</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">word</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">gender_vector</span><span class="p">)</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">]</span>
+<span class="n">affluence_proj</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span><span class="o">.</span><span class="n">project_word</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">word</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">affluence_vector</span><span class="p">)</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">]</span>
+<span class="c1"># ========================================================</span>
+
+
+<span class="c1"># ====== 绘图部分 ======</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span> <span class="c1"># 获取当前 axes 对象，方便后续操作，特别是设置限制</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;爱好的(性别-财富)刻板印象&#39;</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.titlesize&#39;</span><span class="p">])</span> <span class="c1"># 使用样式中定义的标题字号和 padding</span>
+
+<span class="c1"># 设置图表显示范围，略大于数据范围，为轴标签和箭头留出空间</span>
+<span class="c1"># 先根据数据计算一个合理的范围，再根据需求调整</span>
+<span class="n">x_data_min</span><span class="p">,</span> <span class="n">x_data_max</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">affluence_proj</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">affluence_proj</span><span class="p">)</span>
+<span class="n">y_data_min</span><span class="p">,</span> <span class="n">y_data_max</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">gender_proj</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">gender_proj</span><span class="p">)</span>
+<span class="n">x_range</span> <span class="o">=</span> <span class="n">x_data_max</span> <span class="o">-</span> <span class="n">x_data_min</span>
+<span class="n">y_range</span> <span class="o">=</span> <span class="n">y_data_max</span> <span class="o">-</span> <span class="n">y_data_min</span>
+
+<span class="c1"># 可以设置固定范围，或者根据数据范围动态计算</span>
+<span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_data_min</span> <span class="o">-</span> <span class="n">x_range</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">x_data_max</span> <span class="o">+</span> <span class="n">x_range</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="n">y_lims</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_data_min</span> <span class="o">-</span> <span class="n">y_range</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">y_data_max</span> <span class="o">+</span> <span class="n">y_range</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="c1"># 或者设置一个固定的、对称的范围，例如：</span>
+<span class="n">max_abs_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x_data_min</span><span class="p">),</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x_data_max</span><span class="p">))</span>
+<span class="n">max_abs_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">y_data_min</span><span class="p">),</span> <span class="nb">abs</span><span class="p">(</span><span class="n">y_data_max</span><span class="p">))</span>
+<span class="n">plot_lim</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_abs_x</span><span class="p">,</span> <span class="n">max_abs_y</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.3</span> <span class="c1"># 确保范围包含所有点并有余量</span>
+<span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">plot_lim</span><span class="p">,</span> <span class="n">plot_lim</span><span class="p">)</span>
+<span class="n">y_lims</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">plot_lim</span><span class="p">,</span> <span class="n">plot_lim</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">x_lims</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">y_lims</span><span class="p">)</span>
+
+
+<span class="c1"># 绘制散点</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">affluence_proj</span><span class="p">,</span> <span class="n">gender_proj</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;lightgray&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span> <span class="c1"># 调整点大小和颜色，使其清晰</span>
+
+<span class="c1"># 绘制中心轴线 (0,0)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># 生成网格线 (使用更新后的图表限制)</span>
+<span class="n">xx</span><span class="p">,</span> <span class="n">yy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">contourf</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">yy</span><span class="p">,</span> <span class="n">xx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">yy</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray_r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+
+
+<span class="c1"># 添加轴端点标签和箭头 (更像图 3 的风格)</span>
+<span class="n">arrow_length_x</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xlim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.95</span> <span class="c1"># 箭头长度为范围的 90%</span>
+<span class="n">arrow_length_y</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.95</span>
+<span class="n">head_width_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">get_xlim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xlim</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="mf">0.015</span> <span class="c1"># 箭头头部宽度根据轴范围调整</span>
+<span class="n">head_width_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="mf">0.015</span>
+
+<span class="c1"># Affluence 轴 (X) - 贫穷到富有</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">arrow</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">arrow_length_x</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">head_width</span><span class="o">=</span><span class="n">head_width_y</span><span class="p">,</span> <span class="n">head_length</span><span class="o">=</span><span class="n">head_width_x</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">ec</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">length_includes_head</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">arrow</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">arrow_length_x</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">head_width</span><span class="o">=</span><span class="n">head_width_y</span><span class="p">,</span> <span class="n">head_length</span><span class="o">=</span><span class="n">head_width_x</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">ec</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">length_includes_head</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+
+<span class="c1"># Gender 轴 (Y) - 女性到男性</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">arrow</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">arrow_length_y</span><span class="p">,</span> <span class="n">head_width</span><span class="o">=</span><span class="n">head_width_x</span><span class="p">,</span> <span class="n">head_length</span><span class="o">=</span><span class="n">head_width_y</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">ec</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">length_includes_head</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">arrow</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">arrow_length_y</span><span class="p">,</span> <span class="n">head_width</span><span class="o">=</span><span class="n">head_width_x</span><span class="p">,</span> <span class="n">head_length</span><span class="o">=</span><span class="n">head_width_y</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">ec</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">length_includes_head</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+
+
+<span class="c1"># 添加词语标签</span>
+<span class="c1"># 遍历数据点和词语</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">word</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">affluence_proj</span><span class="p">,</span> <span class="n">gender_proj</span><span class="p">,</span> <span class="n">words</span><span class="p">)):</span>
+     <span class="c1"># 可以尝试 xytext 偏移来控制标签位置</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">textcoords</span><span class="o">=</span><span class="s2">&#34;offset points&#34;</span><span class="p">,</span> <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;font.size&#39;</span><span class="p">])</span>
+
+
+<span class="c1"># 设置轴标题</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Affluence (</span><span class="si">{</span><span class="nb">chr</span><span class="p">(</span><span class="mi">8592</span><span class="p">)</span><span class="si">}</span><span class="s1"> 贫穷 | 富有 </span><span class="si">{</span><span class="nb">chr</span><span class="p">(</span><span class="mi">8594</span><span class="p">)</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.labelsize&#39;</span><span class="p">])</span> <span class="c1"># 使用箭头符号更直观</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Gender (</span><span class="si">{</span><span class="nb">chr</span><span class="p">(</span><span class="mi">8595</span><span class="p">)</span><span class="si">}</span><span class="s1"> 女性化程度 | 男性化程度 </span><span class="si">{</span><span class="nb">chr</span><span class="p">(</span><span class="mi">8593</span><span class="p">)</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.labelsize&#39;</span><span class="p">])</span> <span class="c1"># 使用箭头符号更直观</span>
+
+
+<span class="c1"># 样式中已经设置了网格，如果想自定义，可以取消注释下一行</span>
+<span class="c1">#plt.grid(True, linestyle=&#39;--&#39;, alpha=0.5)</span>
+
+<span class="c1"># 确保图表元素的布局紧凑</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+<span class="c1"># 显示图表</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div><p><img loading="lazy" src="img/04-hobby.png" alt=""  />
+
+爱好词在性别维度向量、财富维度向量投影结果解读。</p>
+<ul>
+<li>性别维度，旅行、瑜伽、美妆这几个爱好词与女性强相关。高尔夫、网球、羽毛球、麻将、书法与男性强相关。</li>
+<li>财富维度， 富裕的爱好有瑜伽、高尔夫、旅行、网球、麻将、羽毛球。而贫穷的爱好有象棋、美妆、武术、围棋，似乎不用太花钱。</li>
+</ul>
+<p><img loading="lazy" src="img/05-food.png" alt=""  />
+</p>
+<p>美食词在性别维度向量、财富维度向量投影结果解读。饮食方面投影主要分布在图的右侧。</p>
+<ul>
+<li>性别维度，啤酒、白酒、烧烤很男性； 而披萨、沙拉、寿司、牛排很女性。</li>
+<li>财富维度，牛排、寿计较富裕， 而小米粥很贫穷。 食物的财富维度区分度较低。</li>
+</ul>
+<p>总的来说， 食物中，好吃的、贵的跟女性关联度远大于男性。</p>
+<p><img loading="lazy" src="img/06-brand.png" alt=""  />
+
+品牌词在性别维度向量、财富维度向量投影结果解读。</p>
+<ul>
+<li>性别维度, 耐克、阿迪、海澜之家、阿玛尼与男性关联度更高。而优衣库、lv、爱马仕、coach与女性的关联度更高。</li>
+<li>财富维度, lv、coach、爱马仕在语义上与富裕强相关，而耐克、阿迪、海澜之家与贫穷强相关。</li>
+</ul>
+<p>总之，静态的分析，通过大众点评评论语料， 可以体现出目前社会消费领域中， 对于品牌、美食、爱好的认知、文化、刻板印象。  如果有不同年代的语料， 就可以挖掘文化的变化。</p>
+<br>
+<h3 id="32-考虑时间因素">3.2 考虑时间因素<a hidden class="anchor" aria-hidden="true" href="#32-考虑时间因素">#</a></h3>
+<p>以人民日报语料为例， 每10年训练一个词向量， 观察不同年份的语义的变化。 训练代码可阅读 <a href="https://textdata.cn/blog/2023-12-28-visualize-the-culture-change-using-people-daily-dataset/">可视化 | 人民日报语料反映七十年文化演变</a> 。  文中以语义距离来刻画文化，即</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">distance = distance(女, 成功) - distance(男, 成功)
+</code></pre></div><ul>
+<li>如果distance趋近于0， 男女在成功概念上语义接近， 无明显刻板印象。</li>
+<li>但是当distance明显大于0， 当人们聊到成功概念时，更容易联想到男性，而不是女性。</li>
+</ul>
+<br>
+<p><strong>性别与成就</strong></p>
+<p><img loading="lazy" src="img/07-gender.png" alt=""  />
+</p>
+<p>从图中可以看到， 新中国初期， 我国的女性解放运动在全世界都是领先的，成果十分卓著。 而今耳熟能详的口号恰好说明当时的宣传已经刻入每个中国人的认知中，如</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- 谁说女子不如男
+- 不爱红装爱武装
+- 女人撑起半边天
+...
+</code></pre></div><p>提到「成功概念」时，在新中国初期，由于破除性别刻板印象，宣传更加中性， 立榜样考虑了性别的平衡。而随着时间推移，口号式的宣传运动沉寂后， 历史的惯性(传统文化的基因)可能会重新复活， 提到「成功概念」时，社会更容易将「成功」与「男性」联系起来。</p>
+<br>
+<p><strong>性别与责任</strong></p>
+<p>成就与男性有更高的关联， 背后是否意味着传统文化建构的社会要求男性承担远多于女性的责任。</p>
+<p><img loading="lazy" src="img/08-responsibility.png" alt=""  />
+</p>
+<p>从图中可以看出，在大多数年份， distance是大于0的，即 提到「责任」概念时，社会更容易联想到「男性」，而不是「女性」。</p>
+<p><br><br></p>
+<h2 id="相关资料">相关资料<a hidden class="anchor" aria-hidden="true" href="#相关资料">#</a></h2>
+<ul>
+<li><a href="https://textdata.cn/blog/management_python_course/">视频课 | Python 实证指标构建与文本分析</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/">教程 | 使用 Ollama 与大模型将文本数据转化为结构化数据</a></li>
+<li><a href="https://textdata.cn/blog/">https://textdata.cn/</a></li>
+</ul>
+
+
+  </div>
+
+
+  <br>
+
+  <div style="text-align: center;">
+    <figure >
+        <a href="https://textdata.cn/blog/management_python_course/">
+            <img src="/images/bg/management_data_mining_with_python_course2.png" width="100%" />
+        </a>
+        <figcaption><small><i>点击了解课程详情</i></small></figcaption>
+    </figure>
+  </div>
+
+  <br>
+
+
+  <div style="margin-top:2em;padding:0 0.5em;font-size:.875rem">
+    <hr>
+    <div style="padding-bottom:1em;">
+        <p>本文作者: 大邓
+        <p>本文标题: 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁)
+        <p>本文链接: https://textdata.cn/blog/2025-04-23-word-embedding-reflect-human-attitude/ 
+        <p>版权声明: <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际</a></p>
+    </div>
+    <hr>
+  </div>
+
+
+
+
+
+
+  <footer class="post-footer">
+      <ul class="post-tags">
+        <b>Tags:  &nbsp;</b>
+        <li><a href="/tags/%E6%95%B0%E6%8D%AE%E9%9B%86/" target='_blank'>数据集</a></li>
+        <li><a href="/tags/%E8%AF%8D%E5%90%91%E9%87%8F/" target='_blank'>词向量</a></li>
+        <li><a href="/tags/cntext/" target='_blank'>cntext</a></li>
+      </ul>
+
+
+<div class="share-buttons">
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on twitter"
+        href="https://twitter.com/intent/tweet/?text=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29&amp;url=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f&amp;hashtags=%e6%95%b0%e6%8d%ae%e9%9b%86%2c%e8%af%8d%e5%90%91%e9%87%8f%2ccntext">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-253.927,424.544c135.939,0 210.268,-112.643 210.268,-210.268c0,-3.218 0,-6.437 -0.153,-9.502c14.406,-10.421 26.973,-23.448 36.935,-38.314c-13.18,5.824 -27.433,9.809 -42.452,11.648c15.326,-9.196 26.973,-23.602 32.49,-40.92c-14.252,8.429 -30.038,14.56 -46.896,17.931c-13.487,-14.406 -32.644,-23.295 -53.946,-23.295c-40.767,0 -73.87,33.104 -73.87,73.87c0,5.824 0.613,11.494 1.992,16.858c-61.456,-3.065 -115.862,-32.49 -152.337,-77.241c-6.284,10.881 -9.962,23.601 -9.962,37.088c0,25.594 13.027,48.276 32.95,61.456c-12.107,-0.307 -23.448,-3.678 -33.41,-9.196l0,0.92c0,35.862 25.441,65.594 59.311,72.49c-6.13,1.686 -12.72,2.606 -19.464,2.606c-4.751,0 -9.348,-0.46 -13.946,-1.38c9.349,29.426 36.628,50.728 68.965,51.341c-25.287,19.771 -57.164,31.571 -91.8,31.571c-5.977,0 -11.801,-0.306 -17.625,-1.073c32.337,21.15 71.264,33.41 112.95,33.41Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on linkedin"
+        href="https://www.linkedin.com/shareArticle?mini=true&amp;url=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f&amp;title=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29&amp;summary=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29&amp;source=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on reddit"
+        href="https://reddit.com/submit?url=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f&title=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on facebook"
+        href="https://facebook.com/sharer/sharer.php?u=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on whatsapp"
+        href="https://api.whatsapp.com/send?text=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29%20-%20%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f">
+        <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+            <path
+                d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+        </svg>
+    </a>
+    <a target="_blank" rel="noopener noreferrer" aria-label="share 文化几何学：通过词嵌入分析反映文本背后的社会文化(变迁) on telegram"
+        href="https://telegram.me/share/url?text=%e6%96%87%e5%8c%96%e5%87%a0%e4%bd%95%e5%ad%a6%ef%bc%9a%e9%80%9a%e8%bf%87%e8%af%8d%e5%b5%8c%e5%85%a5%e5%88%86%e6%9e%90%e5%8f%8d%e6%98%a0%e6%96%87%e6%9c%ac%e8%83%8c%e5%90%8e%e7%9a%84%e7%a4%be%e4%bc%9a%e6%96%87%e5%8c%96%28%e5%8f%98%e8%bf%81%29&amp;url=%2fblog%2f2025-04-23-word-embedding-reflect-human-attitude%2f">
+        <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28">
+            <path
+                d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+        </svg>
+    </a>
+    
+</div>
+
+
+
+
+  </footer><script src="https://utteranc.es/client.js"
+        repo="hiDaDeng/hidadeng.github.io"
+        issue-term="pathname"
+        theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2025 <a href="/">大邓和他的PYTHON</a></span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerText = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerText = 'Copied!';
+            setTimeout(() => {
+                copybutton.innerText = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+
+
+    
+    
+</body>
+
+</html>

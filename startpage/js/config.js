@@ -372,6 +372,12 @@ class Config {
 				icon: 'cnki翻译',
 				url: 'https://dict.cnki.net/index',
 				category: 'Academic Tools'
+			},  
+			{
+				site: 'doi2bib',
+				icon: 'doi2bib',
+				url: 'https://www.doi2bib.org/',
+				category: 'Academic Tools'
 			},
 			{
 				site: 'Grammarly',
@@ -786,7 +792,6 @@ class Config {
 				icon: 'google-scholar',
 				url: 'https://scholar.google.com/'
 			},
-
 			{
 				site: 'Consensus',
 				icon: 'consensus',
@@ -821,6 +826,11 @@ class Config {
 				site: '哈工大图书馆',
 				icon: 'hit',
 				url: 'http://lib-hit-edu-cn.ivpn.hit.edu.cn:1080/'
+			},
+			{
+				site: 'doi2bib',
+				icon: 'doi2bib',
+				url: 'https://www.doi2bib.org/'
 			},
 
 
