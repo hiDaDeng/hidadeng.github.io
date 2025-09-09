@@ -6,7 +6,192 @@
     <description>Recent content in LLM on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 22 Feb 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 09 Sep 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/llm/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>教程 | 使用大模型将文本数据转化为结构化数据(LMstudio篇)</title>
+      <link>https://textdata.cn/blog/2025-09-09-transform-text-data-into-structured-data-with-lmstudio-and-cntext/</link>
+      <pubDate>Tue, 09 Sep 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2025-09-09-transform-text-data-into-structured-data-with-lmstudio-and-cntext/</guid>
+      <description>实验数据为外卖评论， 今天咱们做个有难度的文本分析任务，从不同维度(味道、速度、服务)对外卖评论进行打分(-1.0~1.0)文本分析（也称为文本挖掘或自然语言处理，NLP）是指使用计算机算法和技术从大量文本数据中提取有价值信息的过程。文本分析的目标是从非结构化的文本数据中识别模式、提取关键信息、理解语义，并将其转化为结构化数据以便进一步分析和应用。</description>
+      <content:encoded><![CDATA[<h2 id="一任务">一、任务</h2>
+<p>之前分享 <a href="https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/">教程 | 使用大模型将文本编码为结构化数据(Ollma偏)</a> 是基于Ollma的使用的大模型标注教程。 今天咱们换个新工具-<a href="https://lmstudio.ai/">LM Studio</a></p>
+<p>使用 LM Studio 和 cntext2x 进行文本分析。</p>
+<p><br><br></p>
+<h2 id="二配置环境">二、配置环境</h2>
+<h3 id="21-安装cntext2x">2.1 安装cntext2x</h3>
+<p>将 cntext2的 <em><strong>.whl</strong></em> 文件放置于桌面， 以版本为 <em><strong>cntext-2.1.7-py3-none-any.whl</strong></em> 为例，打开命令行cmd(Mac打开terminal)，依次执行命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+pip install cntext-2.1.7-py3-none-any.whl
+</code></pre></div><br>
+<h3 id="22-安装lm-studio">2.2 安装LM Studio</h3>
+<p>在官网 <a href="https://lmstudio.ai/">LM Studio</a> 点击下载， 该软件支持Win、Mac。</p>
+<p><img loading="lazy" src="img/01-cover.png" alt=""  />
+</p>
+<br>
+<h3 id="23-配置lms命令行工具">2.3 配置lms命令行工具</h3>
+<p>为方便调试，需要配置lms命令行工具。</p>
+<ul>
+<li>window打开cmd， 执行命令
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">/c %USERPROFILE%/.lmstudio/bin/lms.exe bootstrap
+</code></pre></div></li>
+<li>mac打开terminal， 执行命令
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">~/.lmstudio/bin/lms bootstrap
+</code></pre></div></li>
+</ul>
+<br>
+<h3 id="24-安装模型">2.4 安装模型</h3>
+<p>模型可以选择点击操作安装，也可通过命令行安装。</p>
+<p><img loading="lazy" src="img/02-model-install.png" alt=""  />
+</p>
+<p>打开<a href="https://lmstudio.ai/models/">LM Studio模型列表</a>， 选择个小的模型进行安装。 可以找到 <strong>qwen3-4b</strong>。打开命令行cmd (Mac打开terminal)， 执行安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">lms get qwen/qwen3-4b
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">
+   🡇 To download: model qwen/qwen3-4b - 170.89 KB
+   └─ 🡇 To download: Qwen3 4B 4BIT [MLX] - 2.28 GB
+
+About to download 2.28 GB.
+Continue? (Y/N): Y
+⠦ [▏                     ] 0.00% |  707 B / 2.28 GB | 837.6777251184834 B/s | ETA 755:46:24        ⠦ [▏                     ] 0.00% |  707 B / 2.28 GB |                 0 B/s | ETA Infinity:NaN:NaN ⠦ [▏                     ] 0.00% |  707 B / 2.28 GB |                 0 B/s | ETA Infinity:NaN:NaN 
+⠇ [██████████████████████] 99.87% |   2.28 GB / 2.28 GB |             7.31 MB/s | ETA 00:00        ⠏ [██████████████████████] 99.87% |   2.28 GB / 2.28 GB |             7.31 MB/s | ETA 00:00        Finalizing download...
+Download completed.
+</code></pre></div><p>大概 10 分钟安装完成， 模型体积约 2.2GB。</p>
+<br>
+<p>当然了也可选择图形化安装，如图</p>
+<p><img loading="lazy" src="img/03-ui-install.png" alt=""  />
+</p>
+<br>
+<h3 id="25-查看已安装模型">2.5 查看已安装模型</h3>
+<p>查看电脑内已安装的模型，打开cmd(Mac打开terminal)， 执行安装命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">lms ls
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">You have 5 models, taking up 26.42 GB of disk space.
+
+LLM               PARAMS    ARCH     SIZE                 
+qwen/qwen3-4b               qwen3    2.28 GB              
+qwen3-1.7b-mlx              qwen3    984.01 MB            
+qwen3-32b-mlx               qwen3    18.45 GB             
+qwen3-8b-mlx                qwen3    4.62 GB      ✓ LOADED
+
+EMBEDDING                               PARAMS    ARCH          SIZE        
+text-embedding-nomic-embed-text-v1.5              Nomic BERT    84.11 MB  
+</code></pre></div><p>图形化查看已经安装的模型</p>
+<p><img loading="lazy" src="img/04-model-ls.png" alt=""  />
+</p>
+<br>
+<br>
+<h2 id="三使用lm-studio">三、使用LM Studio</h2>
+<h3 id="31-ui界面尝试">3.1 UI界面尝试</h3>
+<p><img loading="lazy" src="img/05-ui-chat.png" alt=""  />
+
+<img loading="lazy" src="img/06ui-chat.png" alt=""  />
+</p>
+<br>
+<h3 id="32-启动lm-studio服务">3.2 启动LM Studio服务</h3>
+<p>启动服务，方便Python调用LM Studio。 打开cmd(Mac打开terminal)， 启动服务</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">lms server start
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Success! Server is now running on port 1234
+</code></pre></div><p>注意: 后续如果想关闭服务， 执行命令 <code>lms server stop</code></p>
+<br>
+<h3 id="33-初次尝试">3.3 初次尝试</h3>
+<p>使用cntext内置的sentiment提示词模板,启用lmstudio服务，调用qwen/qwen3-4b模型。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;服务很棒！&#34;</span><span class="p">,</span> <span class="s2">&#34;服务一般！&#34;</span><span class="p">,</span> <span class="s2">&#34;服务很差！&#34;</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">:</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> 
+                   <span class="n">task</span><span class="o">=</span><span class="s2">&#34;sentiment&#34;</span><span class="p">,</span> 
+                   <span class="n">backend</span><span class="o">=</span><span class="s2">&#34;lmstudio&#34;</span><span class="p">,</span>  
+                   <span class="n">model_name</span><span class="o">=</span><span class="s2">&#34;qwen/qwen3-4b&#34;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[cntext2x] ✅ 连接模型服务: http://localhost:1234/v1
+
+服务很棒！ {&#39;label&#39;: &#39;pos&#39;, &#39;score&#39;: 0.9}
+服务一般！ {&#39;label&#39;: &#39;neutral&#39;, &#39;score&#39;: 0.0}
+服务很差！ {&#39;label&#39;: &#39;neg&#39;, &#39;score&#39;: -0.95}
+
+CPU times: user 110 ms, sys: 8.3 ms, total: 119 ms
+Wall time: 9.14 s
+</code></pre></div><br>
+<h3 id="34-内置提示词模板">3.4 内置提示词模板</h3>
+<p>cntext2x 内置提示词模板不止支持sentiment，还有其他任务，如分类、实体识别等。具体如下</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">tasks_list</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;sentiment&#39;,
+ &#39;emotion&#39;,
+ &#39;classify&#39;,
+ &#39;intent&#39;,
+ &#39;keywords&#39;,
+ &#39;entities&#39;,
+ &#39;summarize&#39;,
+ &#39;rewrite&#39;,
+ &#39;quality&#39;,
+ &#39;similarity&#39;]
+</code></pre></div><br>
+<p>查看模板内容</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">tasks_get</span><span class="p">(</span><span class="s1">&#39;emotion&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;prompt&#39;: &#39;识别文本中的主要情绪类型：从 [开心, 愤怒, 悲伤, 惊讶, 厌恶, 恐惧, 中性] 中选择最匹配的一项，返回情绪类型 emotion 和置信度 confidence（0~1）&#39;,
+ &#39;output_format&#39;: {&#39;emotion&#39;: &#39;str&#39;, &#39;confidence&#39;: &#39;float&#39;}}
+</code></pre></div><br>
+<h3 id="35-自定义提示词模板">3.5 自定义提示词模板</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="n">PROMPT</span> <span class="o">=</span> <span class="s1">&#39;从口味taste、速度speed、服务service三个维度， 对外卖评论内容进行文本分析， 分别返回不同维度的分值(分值范围-1.0 ~ 1.0)&#39;</span>
+<span class="n">OUTPUT</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;taste&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;speed&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;service&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">}</span>
+
+<span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;服务很棒！&#34;</span><span class="p">,</span> <span class="s2">&#34;服务一般！&#34;</span><span class="p">,</span> <span class="s2">&#34;服务很差！&#34;</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">:</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&#34;服务很棒&#34;</span><span class="p">,</span>
+           <span class="n">prompt</span><span class="o">=</span><span class="n">PROMPT</span> <span class="p">,</span>
+           <span class="n">output_format</span><span class="o">=</span><span class="n">OUTPUT</span><span class="p">,</span>
+           <span class="n">backend</span><span class="o">=</span><span class="s2">&#34;lmstudio&#34;</span><span class="p">,</span>  
+           <span class="n">model_name</span><span class="o">=</span><span class="s2">&#34;qwen/qwen3-4b&#34;</span><span class="p">)</span>
+    <span class="n">score</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;taste&#39;: 0.0, &#39;speed&#39;: 0.0, &#39;service&#39;: 1.0, &#39;text&#39;: &#39;服务很棒！&#39;}
+{&#39;taste&#39;: 0.0, &#39;speed&#39;: 0.0, &#39;service&#39;: 1.0, &#39;text&#39;: &#39;服务一般！&#39;}
+{&#39;taste&#39;: 0.0, &#39;speed&#39;: 0.0, &#39;service&#39;: 1.0, &#39;text&#39;: &#39;服务很差！&#39;}
+CPU times: user 114 ms, sys: 8.12 ms, total: 122 ms
+Wall time: 8.79 s
+</code></pre></div><p>速度有点慢， 如果想加速， 可以考虑使用qwen3-1.7b模型(b的数字越小，模型运行速度越快，但是质量越差)。</p>
+<br>
+<br>
+<h2 id="五获取-cntext2x">五、获取 cntext2.x</h2>
+<p>安装包<strong>cntext-2.1.7-py3-none-any.whl</strong> 是付费内容(<strong><em>100 元</em></strong>)， 如需使用<strong>加微信: 372335839</strong>，备注「<strong>姓名-学校-专业-cntext</strong>」</p>
+<p><br><br></p>
+<h2 id="相关内容">相关内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/2025-02-17-gpt-is-an-effective-tool-for-multilingual-psychological-text-analysis/"><strong>PNAS | GPT 是多语言心理文本分析的有效工具</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/"><strong>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-06-using-the-ollama-local-large-model-to-predict-the-sentiment-category-of-online-comments/"><strong>实验 | 使用本地大模型预测在线评论情感类别和分值</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-07-structured-outputs-with-ollama/"><strong>实验 | 如何使 Ollama 结构化输出 JSON 样式的结果</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/"><strong>推荐 | 文本分析库 cntext2.x 使用手册</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/"><strong>实验 | 使用本地大模型从文本中提取结构化信息</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/">实验 | 使用 Ollama 本地大模型 DIY 制作单词书教案 PDF</a></li>
+<li><a href="https://textdata.cn/blog/2024-08-05-create-a-blog-writer-multi-agent-system-using-crewai-and-ollama/">实验 | 使用 Crewai 和 Ollama 构建智能体(AI Agent)帮我撰写博客文章</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></li>
+<li><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用 scrapegraph-ai(大模型方案)自动采集网页数据</a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库 cntext2.x 使用手册</a></li>
+<li><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python 实证指标构建与文本分析</a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a>
+<br>
+<br></li>
+</ul>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>实验 | 使用大模型从图片中提取结构化数据</title>
       <link>https://textdata.cn/blog/2025-02-22-extracting-structured-data-from-images-with-ollama-and-large-language-models/</link>
@@ -317,7 +502,7 @@ ollama pull minicpm-v:8b
     </item>
     
     <item>
-      <title>教程 | 使用大模型将文本编码为结构化数据</title>
+      <title>教程 | 使用大模型将文本编码为结构化数据(Ollama篇)</title>
       <link>https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/</link>
       <pubDate>Fri, 14 Feb 2025 00:00:00 +0000</pubDate>
       
@@ -587,6 +772,7 @@ ct.llm(&#34;服务很棒！&#34;, task=&#34;sentiment&#34;, backend=&#34;ollama&
 <p><br><br></p>
 <h2 id="相关内容">相关内容</h2>
 <ul>
+<li><a href="https://textdata.cn/2025-09-09-transform-text-data-into-structured-data-with-lmstudio-and-cntext/"><strong>教程 | 使用大模型将文本数据转化为结构化数据(LMstudio篇)</strong></a></li>
 <li><a href="https://textdata.cn/blog/2025-02-17-gpt-is-an-effective-tool-for-multilingual-psychological-text-analysis/"><strong>PNAS | GPT 是多语言心理文本分析的有效工具</strong></a></li>
 <li><a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/"><strong>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</strong></a></li>
 <li><a href="https://textdata.cn/blog/2024-08-06-using-the-ollama-local-large-model-to-predict-the-sentiment-category-of-online-comments/"><strong>实验 | 使用本地大模型预测在线评论情感类别和分值</strong></a></li>
