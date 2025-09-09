@@ -2564,7 +2564,69 @@ dist(female, engineer) = distance(female_concept,  engineer_concept)
 [可爱]在[修长，苗条]投影值: 6.414511203765869
 [丑陋]在[修长，苗条]投影值: 2.882350444793701
 </code></pre></div><br>
-<h3 id="56-divergent_association_task">5.6 divergent_association_task()</h3>
+<h3 id="56-project_text">5.6 project_text()</h3>
+<p>在向量空间中，计算文本在概念轴向量上的投影值。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">project_text</span><span class="p">(</span><span class="n">wv</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">,</span> <span class="n">cosine</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div><ul>
+<li><strong>wv</strong>: 语言模型的KeyedVectors</li>
+<li><strong>text</strong>: 文本字符串</li>
+<li><strong>lang</strong>:  语言,有chinese和english两种; 默认&quot;chinese&quot;</li>
+<li><strong>axis</strong>:  概念向量</li>
+<li><strong>cosine</strong>: 投影值是否使用余弦相似度， 默认为False，返回text在axis上的投影值； True时，返回text与axis的余弦相似度。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="c1"># 1. 读取词嵌入模型文件</span>
+<span class="n">embeddings_model</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s1">&#39;cntext2x训练得到的模型文件路径&#39;</span><span class="p">)</span>
+<span class="c1">#dm_w2v = ct.load_w2v(&#39;douban-movie-1000w-Word2Vec.200.15.bin&#39;)</span>
+
+<span class="c1"># 2. 定义情绪正负词语，确定情绪概念轴向量sentiment_axis</span>
+<span class="n">sentiment_pos</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;快乐&#39;</span><span class="p">,</span> <span class="s1">&#39;幸福&#39;</span><span class="p">,</span> <span class="s1">&#39;喜悦&#39;</span><span class="p">,</span> <span class="s1">&#39;满足&#39;</span><span class="p">,</span> <span class="s1">&#39;欣慰&#39;</span><span class="p">,</span> <span class="s1">&#39;激动&#39;</span><span class="p">,</span> <span class="s1">&#39;兴奋&#39;</span><span class="p">,</span> <span class="s1">&#39;感恩&#39;</span><span class="p">,</span> <span class="s1">&#39;热爱&#39;</span><span class="p">,</span> <span class="s1">&#39;赞美&#39;</span><span class="p">]</span>
+<span class="n">sentiment_neg</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;痛苦&#39;</span><span class="p">,</span> <span class="s1">&#39;悲伤&#39;</span><span class="p">,</span> <span class="s1">&#39;难过&#39;</span><span class="p">,</span> <span class="s1">&#39;失望&#39;</span><span class="p">,</span> <span class="s1">&#39;愤怒&#39;</span><span class="p">,</span> <span class="s1">&#39;怨恨&#39;</span><span class="p">,</span> <span class="s1">&#39;绝望&#39;</span><span class="p">,</span> <span class="s1">&#39;恐惧&#39;</span><span class="p">,</span> <span class="s1">&#39;焦虑&#39;</span><span class="p">,</span> <span class="s1">&#39;压抑&#39;</span><span class="p">]</span>
+<span class="n">sentiment_axis</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">generate_concept_axis</span><span class="p">(</span><span class="n">wv</span> <span class="o">=</span> <span class="n">embeddings_model</span><span class="p">,</span> 
+                                         <span class="n">poswords</span><span class="o">=</span><span class="n">sentiment_pos</span><span class="p">,</span>
+                                         <span class="n">negwords</span><span class="o">=</span><span class="n">sentiment_neg</span><span class="p">)</span>
+<span class="c1"># 3. 创建实验文本（从正面到负面）</span>
+<span class="n">texts</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&#34;今天阳光明媚，我和家人一起出游，感到无比幸福和快乐。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;工作有了新进展，得到了领导的表扬，内心充满成就感。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;虽然遇到了小挫折，但我依然保持乐观，相信明天会更好。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;生活平淡，没什么特别的事发生，心情一般。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;最近压力有点大，睡眠不好，感觉有点焦虑和疲惫。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;项目失败了，还被领导批评，心里非常难过和失望。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;亲人离世，我感到极度悲伤和痛苦，世界仿佛失去了颜色。&#34;</span>
+<span class="p">]</span>
+
+
+<span class="c1"># 4. 计算每条文本在情绪轴上的投影</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&#34;文本情绪投影分析（越大越正面）：</span><span class="se">\n</span><span class="s2">&#34;</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">texts</span><span class="p">):</span>
+    <span class="c1"># 使用投影函数（返回在 axis 方向上的投影值）</span>
+    <span class="c1">#project_text(wv, text, axis, lang=&#39;chinese&#39;, cosine=False)</span>
+    <span class="n">proj_value</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">project_text</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">embeddings_model</span><span class="p">,</span> 
+                                 <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> 
+                                 <span class="n">axis</span><span class="o">=</span><span class="n">sentiment_axis</span><span class="p">,</span> 
+                                 <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;chinese&#39;</span><span class="p">)</span>
+    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">proj_value</span><span class="p">,</span> <span class="n">text</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;[</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">] 投影值: </span><span class="si">{</span><span class="n">proj_value</span><span class="si">:</span><span class="s2">+.4f</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="se">\n</span><span class="s2">&#34;</span><span class="p">)</span>
+
+<span class="c1"># 5. 按投影值排序，查看情绪强度排序</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&#34;</span><span class="se">\n</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="s2">&#34;=&#34;</span><span class="o">*</span><span class="mi">60</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&#34;按情绪正面性排序（从高到低）：&#34;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&#34;=&#34;</span><span class="o">*</span><span class="mi">60</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">value</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">+.4f</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[1] 投影值: +0.8213 | 今天阳光明媚，我和家人一起出游，感到无比幸福和快乐。
+[2] 投影值: +0.5641 | 工作有了新进展，得到了领导的表扬，内心充满成就感。
+[3] 投影值: +0.1205 | 虽然遇到了小挫折，但我依然保持乐观，相信明天会更好。
+[4] 投影值: -0.0321 | 生活平淡，没什么特别的事发生，心情一般。
+[5] 投影值: -0.3178 | 最近压力有点大，睡眠不好，感觉有点焦虑和疲惫。
+[6] 投影值: -0.6124 | 项目失败了，还被领导批评，心里非常难过和失望。
+[7] 投影值: -0.9012 | 亲人离世，我感到极度悲伤和痛苦，世界仿佛失去了颜色。
+</code></pre></div><br>
+<h3 id="57-divergent_association_task">5.7 divergent_association_task()</h3>
 <p><a href="https://textdata.cn/blog/2022-11-14-pnas_naming_unrelated_words_predicts_creativity/">PNAS | 使用语义距离测量一个人的创新力(发散思维)得分</a>。一些理论认为，有 创造力 的人能够产生更多 发散性 的想法。如果这是正确的，简单地让被试写 N 个不相关的单词，然后测量这 N 个词的语义距离， 作为发散思维的客观衡量标准。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.divergent_association_task(wv, words)
 </code></pre></div><ul>
@@ -2587,7 +2649,7 @@ print(ct.divergent_association_task(wv, high_words)) # 95
 78
 95
 </code></pre></div><br>
-<h3 id="57-discursive_diversity_score">5.7 discursive_diversity_score()</h3>
+<h3 id="58-discursive_diversity_score">5.8 discursive_diversity_score()</h3>
 <p><a href="https://textdata.cn/blog/2023-11-02-measure-cognitive-diversity-through-language-discursive-diversity/">MS2022 | 使用语言差异性测量团队认知差异性</a></p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.discursive_diversity_score(wv, words)
 </code></pre></div><ul>
@@ -2631,8 +2693,8 @@ print(ct.divergent_association_task(wv, high_words)) # 95
 <h3 id="61-ctllm">6.1 ct.llm()</h3>
 <p>使用大模型（本地或 API）进行文本分析，从非结构化的文本数据中识别模式、提取关键信息、理解语义，并将其转化为结构化数据以便进一步分析和应用。</p>
 <br>
-<p><strong>ct.llm(text, prompt, output_format, task, backend, base_url, api_key, model_name, temperature)</strong></p>
-<ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">output_format</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">backend</span><span class="p">,</span> <span class="n">base_url</span><span class="p">,</span> <span class="n">api_key</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">temperature</span><span class="p">)</span>
+</code></pre></div><ul>
 <li><strong>text</strong>: 待分析的文本内容</li>
 <li><strong>task</strong>: 预设任务名称，默认为 &lsquo;sentiment&rsquo;。</li>
 <li><strong>prompt</strong>: 自定义系统提示语</li>
@@ -2682,36 +2744,36 @@ print(ct.divergent_association_task(wv, high_words)) # 95
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;taste&#39;: -1.0, &#39;speed&#39;: 0.0, &#39;service&#39;: 0.0}
 </code></pre></div><br>
 <p>批量运算</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">import pandas as pd
-import cntext as ct
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 
 
-# 构造实验数据
-data = [&#39;速度非常快，口味非常好， 服务非常棒！&#39;,
-        &#39;送餐时间还是比较久&#39;,
-        &#39;送单很快，菜也不错赞&#39;,
-        &#39;太难吃了&#39;]
-df = pd.DataFrame(data, columns=[&#39;comment&#39;])
+<span class="c1"># 构造实验数据</span>
+<span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;速度非常快，口味非常好， 服务非常棒！&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;送餐时间还是比较久&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;送单很快，菜也不错赞&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;太难吃了&#39;</span><span class="p">]</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;comment&#39;</span><span class="p">])</span>
 
 
-# 分析函数
-def llm_analysis(text):
-    result = ct.llm(text=text,
-                    prompt= &#39;从口味taste、速度speed、服务service三个维度， 对外卖评论内容进行文本分析， 分别返回不同维度的分值(分值范围-1.0 ~ 1.0)&#39;,
-                    base_url=&#39;https://dashscope.aliyuncs.com/compatible-mode/v1&#39;,
-                    api_key=&#39;你的API-KEY&#39;,
-                    model_name=&#39;qwen-max&#39;,
-                    output_format={&#39;taste&#39;: float, &#39;speed&#39;: float, &#39;service&#39;: float}
-                               )
-    return pd.Series(result)
+<span class="c1"># 分析函数</span>
+<span class="k">def</span> <span class="nf">llm_analysis</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span>
+                    <span class="n">prompt</span><span class="o">=</span> <span class="s1">&#39;从口味taste、速度speed、服务service三个维度， 对外卖评论内容进行文本分析， 分别返回不同维度的分值(分值范围-1.0 ~ 1.0)&#39;</span><span class="p">,</span>
+                    <span class="n">base_url</span><span class="o">=</span><span class="s1">&#39;https://dashscope.aliyuncs.com/compatible-mode/v1&#39;</span><span class="p">,</span>
+                    <span class="n">api_key</span><span class="o">=</span><span class="s1">&#39;你的API-KEY&#39;</span><span class="p">,</span>
+                    <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;qwen-max&#39;</span><span class="p">,</span>
+                    <span class="n">output_format</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;taste&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;speed&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;service&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">}</span>
+                               <span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
 
-# 批量运算
-df2 = df[&#39;comment&#39;].apply(llm_analysis)
-res_df = pd.concat([df, df2], axis=1)
-# 保存分析结果
-res_df.to_csv(&#39;result.csv&#39;, index=False)
-res_df
+<span class="c1"># 批量运算</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;comment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">llm_analysis</span><span class="p">)</span>
+<span class="n">res_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">df2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1"># 保存分析结果</span>
+<span class="n">res_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;result.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">res_df</span>
 </code></pre></div><p><img loading="lazy" src="img/28-llm-analysis.png" alt=""  />
 </p>
 <br>
@@ -2719,7 +2781,7 @@ res_df
 <br>
 <h3 id="62-内置prompt">6.2 内置prompt</h3>
 <p>cntext</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.llm.tasks_list()
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">tasks_list</span><span class="p">()</span>
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;sentiment&#39;,
  &#39;emotion&#39;,
@@ -2738,9 +2800,9 @@ res_df
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#39;prompt&#39;: &#39;分析评论的情感倾向：返回情感类别 label（pos 表示正面，neg 表示负面，neutral 表示中性）和情感分值 score（取值范围 -1~1，负数为负面）&#39;,
  &#39;output_format&#39;: {&#39;label&#39;: &#39;str&#39;, &#39;score&#39;: &#39;float&#39;}}
 </code></pre></div><br>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"># 使用sentiment提示词模板。
-# 启用Ollama服务，调用qwen2.5:7b模型
-ct.llm(&#34;服务很棒！&#34;, task=&#34;sentiment&#34;, backend=&#34;ollama&#34;,  model_name=&#34;qwen2.5:7b&#34;)
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 使用sentiment提示词模板。</span>
+<span class="c1"># 启用Ollama服务，调用qwen2.5:7b模型</span>
+<span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="s2">&#34;服务很棒！&#34;</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="s2">&#34;sentiment&#34;</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&#34;ollama&#34;</span><span class="p">,</span>  <span class="n">model_name</span><span class="o">=</span><span class="s2">&#34;qwen2.5:7b&#34;</span><span class="p">)</span>
 </code></pre></div><p>Run</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[cntext2x] ✅ 连接模型服务: http://127.0.0.1:11434/v1
 {&#39;label&#39;: &#39;pos&#39;, &#39;score&#39;: 0.8}
