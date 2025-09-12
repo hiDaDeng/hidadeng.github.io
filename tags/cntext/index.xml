@@ -6,7 +6,7 @@
     <description>Recent content in cntext on 大邓和他的PYTHON</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 09 Sep 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/cntext/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 12 Sep 2025 00:00:00 +0000</lastBuildDate><atom:link href="/tags/cntext/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>资源 | 中文 GloVe&amp;Word2Vec 词向量模型列表</title>
       <link>https://textdata.cn/blog/2025-04-18-chinese-pretrained-word-embeddings/</link>
@@ -556,14 +556,409 @@ KeyError: &#34;Key &#39;这是一个不存在的词&#39; not present&#34;
     </item>
     
     <item>
-      <title>教程 | 使用大模型将文本数据转化为结构化数据(LMstudio篇)</title>
+      <title>教程 | 使用大模型将文本数据转化为结构化数据(阿里云百炼)</title>
+      <link>https://textdata.cn/blog/2025-09-12-text-analysis-with-qwen-and-cntext/</link>
+      <pubDate>Fri, 12 Sep 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/2025-09-12-text-analysis-with-qwen-and-cntext/</guid>
+      <description>实验数据为外卖评论， 今天咱们做个有难度的文本分析任务，从不同维度(味道、速度、服务)对外卖评论进行打分(-1.0~1.0)文本分析（也称为文本挖掘或自然语言处理，NLP）是指使用计算机算法和技术从大量文本数据中提取有价值信息的过程。文本分析的目标是从非结构化的文本数据中识别模式、提取关键信息、理解语义，并将其转化为结构化数据以便进一步分析和应用。</description>
+      <content:encoded><![CDATA[<h2 id="一任务">一、任务</h2>
+<p>之前分享了本地部署的文本编码教程</p>
+<ul>
+<li><a href="https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/">教程 | 使用大模型将文本编码为结构化数据(本地Ollma篇)</a></li>
+<li><a href="https://textdata.cn/blog/2025-09-09-transform-text-data-into-structured-data-with-lmstudio-and-cntext/">教程 | 使用大模型将文本编码为结构化数据(本地LM-Studio篇)</a></li>
+</ul>
+<p>经过实验，发现本地编码速度实在感人(3s一条)， cntext2x未优化，只能同步依次对每条文本进行编码， 分析 1000 条至少需要 3000 秒，速度实在太慢。</p>
+<p>经过这几天打磨，ct.llm内置异步处理机制，调用云服务器(阿里云百炼模型平台为例)， 1000 条耗时 20 秒。 今天将实验代码分享给大家</p>
+<p><br><br></p>
+<h2 id="二配置环境">二、配置环境</h2>
+<h3 id="21-安装cntext2x">2.1 安装cntext2x</h3>
+<p>将 cntext2的 <em><strong>.whl</strong></em> 文件放置于桌面， 以版本为 <em><strong>cntext-2.1.7-py3-none-any.whl</strong></em> 为例，打开命令行cmd(Mac打开terminal)，依次执行命令</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">cd desktop
+pip install cntext-2.1.7-py3-none-any.whl
+</code></pre></div><blockquote>
+<p>cntext2.1.7版本llm支持异步处理多条文本。</p>
+</blockquote>
+<br>
+<h3 id="22-阿里云">2.2 阿里云</h3>
+<h4 id="221-平台介绍">2.2.1 平台介绍</h4>
+<p>使用阿里云百炼平台，只需几行Python代码即可轻松调用通义千问Qwen大模型。它提供简洁API接口，支持快速集成到应用中，实现高效文本生成与对话能力。无需复杂配置，适合快速原型开发与轻量级AI应用部署。</p>
+<p>初次使用</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">from</span> <span class="nn">openai</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+<span class="n">api_key</span><span class="o">=</span> <span class="s1">&#39;你自己的api_key&#39;</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span>
+    <span class="c1"># 如何获取API Key：https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key</span>
+    <span class="n">api_key</span><span class="o">=</span><span class="n">api_key</span><span class="p">,</span> 
+    <span class="n">base_url</span><span class="o">=</span><span class="s2">&#34;https://dashscope.aliyuncs.com/compatible-mode/v1&#34;</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="n">completion</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="c1"># 模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&#34;qwen-plus&#34;</span><span class="p">,</span>  
+    <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;你是文本编码的专家, 现在需要你将收到的文本编码情感值，情感值范围为-1.0~1.0，-1.0表示负面情感，1.0表示正面情感，0.0表示中性情感。结果返回JSON格式，格式为{&#34;score&#34;: 0.0}&#39;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;今天很开心啊， 我很喜欢这个国家&#39;</span><span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">completion</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{&#34;score&#34;: 0.8}
+CPU times: user 31.8 ms, sys: 5.82 ms, total: 37.6 ms
+Wall time: 554 ms
+</code></pre></div><p>使用qwen-plus 单次编码的时间是 554毫秒。我整理了通义千问目前的模型定位、速度与价格。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">模型名</th>
+<th style="text-align:left">定位</th>
+<th style="text-align:left">输入成本(每千token)</th>
+<th style="text-align:left">输出成本(每千token)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">qwen-max</td>
+<td style="text-align:left">最强综合能力</td>
+<td style="text-align:left">0.0024</td>
+<td style="text-align:left">0.0096</td>
+</tr>
+<tr>
+<td style="text-align:left">qwen-plus</td>
+<td style="text-align:left">平衡性能与成本</td>
+<td style="text-align:left">0.0008</td>
+<td style="text-align:left">0.002</td>
+</tr>
+<tr>
+<td style="text-align:left">qwen-turbo</td>
+<td style="text-align:left">快速响应</td>
+<td style="text-align:left">0.0003</td>
+<td style="text-align:left">0.003</td>
+</tr>
+<tr>
+<td style="text-align:left">qwen-flash</td>
+<td style="text-align:left">极致速度与低成本</td>
+<td style="text-align:left">0.00015</td>
+<td style="text-align:left">0.0015</td>
+</tr>
+</tbody>
+</table>
+<br>
+<h4 id="222-如何配置阿里云">2.2.2 如何配置阿里云</h4>
+<p>配置起来应该不难，大致有充值、申请api-key、选择一个模型。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">- api-key https://bailian.console.aliyun.com/?tab=model#/api-key
+- 账单详情 https://billing-cost.console.aliyun.com/finance/expense-report/expense-detail-by-instance
+- 充值 https://billing-cost.console.aliyun.com/fortune/fund-management/recharge
+- 模型列表 https://bailian.console.aliyun.com/?tab=model#/model-market
+</code></pre></div><p><img loading="lazy" src="img/01-api-key.png" alt=""  />
+
+<img loading="lazy" src="img/02-model-list.png" alt=""  />
+
+<img loading="lazy" src="img/03-billings.png" alt=""  />
+</p>
+<br>
+<br>
+<h2 id="三cntext2x介绍">三、cntext2x介绍</h2>
+<h3 id="31-内置提示词模板">3.1 内置提示词模板</h3>
+<p>cntext2x 内置提示词模板不止支持sentiment，还有其他任务，如分类、实体识别等。具体如下</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">tasks_list</span><span class="p">()</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[&#39;sentiment&#39;,
+ &#39;emotion&#39;,
+ &#39;classify&#39;,
+ &#39;intent&#39;,
+ &#39;keywords&#39;,
+ &#39;entities&#39;,
+ &#39;summarize&#39;,
+ &#39;rewrite&#39;,
+ &#39;quality&#39;,
+ &#39;similarity&#39;]
+</code></pre></div><br>
+<p>查看模板内容</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">tasks_get</span><span class="p">(</span><span class="s1">&#39;sentiment&#39;</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">{
+  &#34;prompt&#34;: &#34;分析评论的情感倾向：返回情感类别 label（pos 表示正面，neg 表示负面，neutral 表示中性）和情感分值 score（取值范围 -1~1，负数为负面）。结果返回JSON格式，格式为{&#39;label&#39;: &#39;pos&#39;, &#39;score&#39;: 0.5}&#34;,
+  &#34;output_format&#34;: {&#34;label&#34;: &#34;str&#34;, &#34;score&#34;: &#34;float&#34;}
+}
+</code></pre></div><p>内置模板设计是通用型，不够聚焦具体场景， 各位可根据自己研究问题、数据场景， 设计适合自己的提示词。</p>
+<br>
+<h3 id="32-自定义提示词模板">3.2 自定义提示词模板</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="n">PROMPT</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;
+</span><span class="s1">请从以下三个维度对外卖评论进行分析，每个维度打分范围为 0.0 ~ 1.0：
+</span><span class="s1">- 口味（taste）：食物的味道、质量如何。
+</span><span class="s1">- 速度（speed）：配送是否及时，出餐快不快。
+</span><span class="s1">- 服务（service）：骑手态度、商家沟通、售后等服务体验。
+</span><span class="s1">
+</span><span class="s1">请返回 JSON 格式结果，形如：
+</span><span class="s1">{&#34;taste&#34;: 0.8, &#34;speed&#34;: 0.5, &#34;service&#34;: 0.9}
+</span><span class="s1">&#39;&#39;&#39;</span>
+
+<span class="n">OUTPUT</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;taste&#39;</span><span class="p">:</span> <span class="s2">&#34;float&#34;</span><span class="p">,</span> <span class="s1">&#39;speed&#39;</span><span class="p">:</span> <span class="s2">&#34;float&#34;</span><span class="p">,</span> <span class="s1">&#39;service&#39;</span><span class="p">:</span> <span class="s2">&#34;float&#34;</span><span class="p">}</span>
+
+
+<span class="n">score</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&#34;服务很棒&#34;</span><span class="p">,</span>
+               <span class="n">prompt</span><span class="o">=</span><span class="n">PROMPT</span> <span class="p">,</span>
+               <span class="n">output_format</span><span class="o">=</span><span class="n">OUTPUT</span><span class="p">,</span>
+               <span class="n">base_url</span><span class="o">=</span><span class="s2">&#34;https://dashscope.aliyuncs.com/compatible-mode/v1&#34;</span><span class="p">,</span> <span class="c1">#阿里云百炼base_url</span>
+               <span class="n">api_key</span><span class="o">=</span><span class="s2">&#34;你自己的api_key&#34;</span><span class="p">,</span> <span class="c1">#更改自己的阿里云百炼的api_key</span>
+               <span class="n">model_name</span> <span class="o">=</span> <span class="s1">&#39;qwen-plus&#39;</span><span class="p">)</span>
+
+<span class="n">score</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 41.1 ms, sys: 4.74 ms, total: 45.8 ms
+Wall time: 1.26 s
+
+{&#39;taste&#39;: 0.0, &#39;speed&#39;: 0.0, &#39;service&#39;: 1.0}
+</code></pre></div><p>使用不同的模型，结果会有不同， 建议使用qwen-plus模型，该模型兼顾了性能与成本，速度也不慢。</p>
+<br>
+<h3 id="33-批量处理">3.3 批量处理</h3>
+<p>ct.llm()支持处理单条文本，也支持异步批处理多条文本。在上一节已经展示了单条处理能力，接下来介绍如何批量处理多条文本。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">#构造实验数据， 或者直接读取data.csv(含text字段)</span>
+
+<span class="n">texts</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&#34;这家的红烧肉简直入口即化，米饭香喷喷的，就是外卖盒没盖紧，汤洒了一半，心痛！&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;从下单到敲门只用了18分钟，骑手小哥飞毛腿啊！不过面有点坨了，汤也不够热。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;连续下雨天都点它家，每次送来的饭都是热的，还贴心地放了暖宝宝，服务太暖了，菜也好吃！&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;等了快一个小时，客服说骑手摔了，挺担心的，但最后饭送来时都凉透了，味道还行，就是体验差。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;螺蛳粉味道正宗，酸笋够味，还多给了一份炸蛋！就是包装没封好，电梯里一股味儿，社死现场……&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;披萨送到时歪了，芝士都滑到一边，颜值崩塌！但味道确实香，骑手态度也好，下次希望改进包装。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;深夜加班点的馄饨，没想到25分钟就到了，感动哭了！热汤下肚瞬间回血，五星好评送温暖。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;咖喱鸡里的土豆没煮熟，硬的！反馈给商家，人家说‘下次注意’就完了？这服务也太敷衍了吧。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;味道普普通通，不难吃也不惊艳，但配送准时，包装严实，骑手还发消息说放门口了，很省心。&#34;</span><span class="p">,</span>
+    <span class="s2">&#34;生日点的蛋糕，商家写了祝福语还送了小蜡烛，仪式感拉满！就是配送稍慢，路上奶油有点化了。&#34;</span>
+<span class="p">]</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">texts</span><span class="p">})</span>
+<span class="c1">#df = pd.read_csv(&#39;data.csv&#39;)</span>
+<span class="n">df</span>
+</code></pre></div><p><img loading="lazy" src="img/04-df.png" alt=""  />
+</p>
+<br>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+
+<span class="c1"># 定义提示词：要求模型从三个维度打分</span>
+<span class="n">PROMPT</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;
+</span><span class="s1">请从以下三个维度对外卖评论进行分析，每个维度打分范围为 0.0 ~ 1.0：
+</span><span class="s1">- 口味（taste）：食物的味道、质量如何。
+</span><span class="s1">- 速度（speed）：配送是否及时，出餐快不快。
+</span><span class="s1">- 服务（service）：骑手态度、商家沟通、售后等服务体验。
+</span><span class="s1">
+</span><span class="s1">请返回 JSON 格式结果，形如：
+</span><span class="s1">{&#34;taste&#34;: 0.8, &#34;speed&#34;: 0.5, &#34;service&#34;: 0.9}
+</span><span class="s1">&#39;&#39;&#39;</span>
+
+<span class="c1"># 定义期望的输出格式</span>
+<span class="n">OUTPUT</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;taste&#39;</span><span class="p">:</span> <span class="s2">&#34;float&#34;</span><span class="p">,</span> <span class="s1">&#39;speed&#39;</span><span class="p">:</span> <span class="s2">&#34;float&#34;</span><span class="p">,</span> <span class="s1">&#39;service&#39;</span><span class="p">:</span> <span class="s2">&#34;float&#34;</span><span class="p">}</span>
+
+<span class="n">result_df</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>   <span class="c1">#传入文本列表</span>
+                   <span class="n">prompt</span><span class="o">=</span><span class="n">PROMPT</span> <span class="p">,</span>
+                   <span class="n">output_format</span><span class="o">=</span><span class="n">OUTPUT</span><span class="p">,</span>
+                   <span class="n">base_url</span><span class="o">=</span><span class="s2">&#34;https://dashscope.aliyuncs.com/compatible-mode/v1&#34;</span><span class="p">,</span> <span class="c1">#阿里云百炼base_url</span>
+                   <span class="n">api_key</span><span class="o">=</span><span class="s2">&#34;你自己的api_key&#34;</span><span class="p">,</span> <span class="c1">#更改自己的阿里云百炼的api_key</span>
+                   <span class="n">model_name</span> <span class="o">=</span> <span class="s1">&#39;qwen-plus&#39;</span><span class="p">,</span> 
+                   <span class="c1">#rate_limit参数， 控制访问速度。注意整数和浮点数含义不同。 整数是一分钟访问次数， 浮点数是一秒钟访问次数。</span>
+                   <span class="c1">#rate_limit=10.0,  #控制速度，一秒10次请求。</span>
+                   <span class="n">return_df</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1">#结果返回dataframe</span>
+
+<span class="c1">#结果中加入原始数据text字段</span>
+<span class="c1">#注意，一定要有 .tolist()</span>
+<span class="n">result_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+<span class="c1">#保存结果。</span>
+<span class="n">result_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;result.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">result_df</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 95.1 ms, sys: 20.3 ms, total: 115 ms
+Wall time: 2.69 s
+</code></pre></div><p><img loading="lazy" src="img/05-df.png" alt=""  />
+</p>
+<br>
+<h3 id="34-耗时对比">3.4 耗时对比</h3>
+<p>10条的编码耗时2.69秒，速度还是很快的。那么编码1000条是多久？</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="n">result_df</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="o">*</span><span class="mi">100</span><span class="p">,</span>   <span class="c1">#传入1000条文本(重复100次的列表)</span>
+                   <span class="n">prompt</span><span class="o">=</span><span class="n">PROMPT</span> <span class="p">,</span>
+                   <span class="n">output_format</span><span class="o">=</span><span class="n">OUTPUT</span><span class="p">,</span>
+                   <span class="n">base_url</span><span class="o">=</span><span class="s2">&#34;https://dashscope.aliyuncs.com/compatible-mode/v1&#34;</span><span class="p">,</span> <span class="c1">#阿里云百炼base_url</span>
+                   <span class="n">api_key</span><span class="o">=</span><span class="s2">&#34;你自己的api_key&#34;</span><span class="p">,</span> <span class="c1">#更改自己的阿里云百炼的api_key</span>
+                   <span class="n">model_name</span> <span class="o">=</span> <span class="s1">&#39;qwen-plus&#39;</span><span class="p">,</span> 
+                   <span class="c1">#rate_limit参数， 控制访问速度。注意整数和浮点数含义不同。 整数是一分钟访问次数， 浮点数是一秒钟访问次数。</span>
+                   <span class="c1">#rate_limit=10.0,  #控制速度，一秒10次请求。</span>
+                   <span class="n">return_df</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1">#结果返回dataframe</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">CPU times: user 6.01 s, sys: 1.18 s, total: 7.19 s
+Wall time: 20.9 s
+</code></pre></div><p>可以看到1000条编码所耗时间并不是10条的100倍， 之所以如此快，得益于ct.llm内部支持了异步处理， 可以同时处理多条文本， 提高编码效率。</p>
+<p><br><br></p>
+<h2 id="四实战代码模板">四、实战代码模板</h2>
+<p>如果需要处理的数据量特别大， 处理技巧:</p>
+<ol>
+<li>先用少量数据测试， 确保所选择模型的速度、性能(编码质量)。</li>
+<li>分批次编码、保存结果，避免断网、服务器异常，导致丢失数据。</li>
+</ol>
+<p>假设data.csv 含字段reviewid、rating、text。 分析结果csv也要含 reviewid、rating、text。以下是分批次处理、依次保存编码结果的代码。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="o">%%</span><span class="n">time</span>
+<span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+
+<span class="c1">#读取提示工程</span>
+
+<span class="n">PROMPT</span> <span class="o">=</span> <span class="s1">&#39;你设计的PROMPT&#39;</span>
+<span class="n">OUTPUT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;你设计的output_format&#39;</span>
+<span class="n">BASE_URL</span> <span class="o">=</span> <span class="s2">&#34;https://dashscope.aliyuncs.com/compatible-mode/v1&#34;</span> <span class="c1">#选择服务器，这里是阿里云百炼的base_url</span>
+<span class="n">API_KEY</span> <span class="o">=</span> <span class="s1">&#39;你的api_key&#39;</span>  <span class="c1">#你的阿里云百炼的api_key</span>
+<span class="n">MAX_RETRY</span> <span class="o">=</span> <span class="mi">3</span> <span class="c1">#重复次数(编码失败后的异常处理)</span>
+<span class="n">TEMPERATURE</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1">#数字越小，回答越靠谱(随机性小)。</span>
+<span class="n">MODEL</span> <span class="o">=</span> <span class="s1">&#39;qwen-plus&#39;</span> <span class="c1">#选择兼顾质量、速度的模型</span>
+<span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;</span><span class="se">\n</span><span class="s2">🚀 开始处理模型: </span><span class="si">{</span><span class="n">model</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+
+
+<span class="c1">#每批次100条。使用chunksize后，可以不用设置rate_limit。</span>
+<span class="n">chunk_dfs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data.csv&#39;</span><span class="p">,</span> <span class="n">chunksize</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">chunk_df</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chunk_dfs</span><span class="p">):</span>
+    <span class="n">batch_texts</span> <span class="o">=</span> <span class="n">chunk_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">batch_df</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="n">text</span> <span class="o">=</span> <span class="n">batch_texts</span><span class="p">,</span> 
+                      <span class="n">prompt</span> <span class="o">=</span> <span class="n">PROMPT</span><span class="p">,</span> 
+                      <span class="n">output_format</span> <span class="o">=</span> <span class="n">OUTPUT_FORMAT</span><span class="p">,</span> 
+                      <span class="n">base_url</span> <span class="o">=</span> <span class="n">BASE_URL</span><span class="p">,</span> 
+                      <span class="n">api_key</span> <span class="o">=</span> <span class="n">API_KEY</span><span class="p">,</span> 
+                      <span class="n">model_name</span> <span class="o">=</span> <span class="n">MODEL</span><span class="p">,</span> 
+                      <span class="n">temperature</span> <span class="o">=</span> <span class="n">TEMPERATURE</span><span class="p">,</span> 
+                      <span class="n">max_retries</span> <span class="o">=</span> <span class="n">MAX_RETRY</span><span class="p">,</span> 
+                      <span class="n">return_df</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> 
+                      <span class="n">verbose</span><span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="c1">#保存原始信息reviewid、rating</span>
+    <span class="n">batch_df</span><span class="p">[</span><span class="s1">&#39;reviewid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunk_df</span><span class="p">[</span><span class="s1">&#39;reviewid&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">batch_df</span><span class="p">[</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunk_df</span><span class="p">[</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">batch_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunk_df</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="c1">#分批次存入新的csv</span>
+    <span class="k">if</span> <span class="n">idx</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">header</span><span class="o">=</span><span class="kc">True</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">header</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;a&#39;</span>
+    <span class="n">batch_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">MODEL</span><span class="si">}</span><span class="s1">-result.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
+        
+<span class="n">now_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">duration</span> <span class="o">=</span> <span class="nb">round</span><span class="p">((</span><span class="n">now_time</span><span class="o">-</span><span class="n">start_time</span><span class="p">)</span><span class="o">/</span><span class="mi">60</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;✅ </span><span class="si">{</span><span class="n">MODEL</span><span class="si">}</span><span class="s2"> 处理完成，耗时 </span><span class="si">{</span><span class="n">duration</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> 分钟&#34;</span><span class="p">)</span>
+</code></pre></div><br>
+<p>上面的代码，我在 10000 条的在线评论数据中进行了实验，选择了qwen-flash/qwen-turbo/qwen-plus/qwen-max 4个模型。耗时统计</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">🚀 开始处理模型: qwen-flash
+🚀 开始处理模型: qwen-flash
+✅ qwen-flash 处理完成，耗时 13.72 分钟
+
+🚀 开始处理模型: qwen-turbo
+✅ qwen-turbo 处理完成，耗时 17.23 分钟
+
+🚀 开始处理模型: qwen-plus
+✅ qwen-plus 处理完成，耗时 34.29 分钟
+
+🚀 开始处理模型: qwen-max
+✅ qwen-plus 处理完成，耗时 48.79 分钟
+</code></pre></div><p>标注质量方面， max最好， plus其次，flash、turbo的质量都一般，最终均衡考虑下推荐qwen-plus。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">模型名</th>
+<th style="text-align:left">定位</th>
+<th style="text-align:left">输入成本(每千token)</th>
+<th style="text-align:left">输出成本(每千token)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">qwen-max</td>
+<td style="text-align:left">最强综合能力</td>
+<td style="text-align:left">0.0024</td>
+<td style="text-align:left">0.0096</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>qwen-plus</strong></td>
+<td style="text-align:left">平衡性能与成本</td>
+<td style="text-align:left">0.0008</td>
+<td style="text-align:left">0.002</td>
+</tr>
+<tr>
+<td style="text-align:left">qwen-turbo</td>
+<td style="text-align:left">快速响应</td>
+<td style="text-align:left">0.0003</td>
+<td style="text-align:left">0.003</td>
+</tr>
+<tr>
+<td style="text-align:left">qwen-flash</td>
+<td style="text-align:left">极致速度与低成本</td>
+<td style="text-align:left">0.00015</td>
+<td style="text-align:left">0.0015</td>
+</tr>
+</tbody>
+</table>
+<p><br><br></p>
+<h2 id="五获取-cntext2x">五、获取 cntext2.x</h2>
+<p>安装包<strong>cntext-2.1.7-py3-none-any.whl</strong> 是付费内容(<strong><em>100 元</em></strong>)， 如需使用<strong>加微信: 372335839</strong>，备注「<strong>姓名-学校-专业-cntext</strong>」</p>
+<p><br><br></p>
+<h2 id="相关内容">相关内容</h2>
+<ul>
+<li><a href="https://textdata.cn/blog/2025-02-17-gpt-is-an-effective-tool-for-multilingual-psychological-text-analysis/"><strong>PNAS | GPT 是多语言心理文本分析的有效工具</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-how-to-download-large-language-model-with-ollama/"><strong>教程 | 如何使用 Ollama 下载 &amp; 使用本地大语言模型</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-06-using-the-ollama-local-large-model-to-predict-the-sentiment-category-of-online-comments/"><strong>实验 | 使用本地大模型预测在线评论情感类别和分值</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-08-07-structured-outputs-with-ollama/"><strong>实验 | 如何使 Ollama 结构化输出 JSON 样式的结果</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/"><strong>推荐 | 文本分析库 cntext2.x 使用手册</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/"><strong>实验 | 使用本地大模型从文本中提取结构化信息</strong></a></li>
+<li><a href="https://textdata.cn/blog/2024-07-10-using-large-language-model-to-build-diy-dictionary/">实验 | 使用 Ollama 本地大模型 DIY 制作单词书教案 PDF</a></li>
+<li><a href="https://textdata.cn/blog/2024-08-05-create-a-blog-writer-multi-agent-system-using-crewai-and-ollama/">实验 | 使用 Crewai 和 Ollama 构建智能体(AI Agent)帮我撰写博客文章</a></li>
+</ul>
+<p><br><br></p>
+<h2 id="精选内容">精选内容</h2>
+<ul>
+<li>
+<p><a href="https://textdata.cn/blog/datasets_available_for_management_science/">LIST | 可供社科(经管)领域使用的数据集汇总</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/the_text_analysis_list_about_ms/">LIST | 社科(经管)数据挖掘文献资料汇总</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-06-16-scrapegraph-ai/">网络爬虫 | 使用 scrapegraph-ai(大模型方案)自动采集网页数据</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-04-27-cntext2x-usage-tutorial/">推荐 | 文本分析库 cntext2.x 使用手册</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/management_python_course/">付费视频课 | Python 实证指标构建与文本分析</a></p>
+</li>
+<li>
+<p><a href="https://textdata.cn/blog/2024-06-14-using-large-language-model-to-extract-structure-data-from-raw-text/">实验 | 使用本地大模型从文本中提取结构化信息</a></p>
+<br>
+<br>
+</li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+    <item>
+      <title>教程 | 使用大模型将文本数据转化为结构化数据(本地LM-Studio篇)</title>
       <link>https://textdata.cn/blog/2025-09-09-transform-text-data-into-structured-data-with-lmstudio-and-cntext/</link>
       <pubDate>Tue, 09 Sep 2025 00:00:00 +0000</pubDate>
       
       <guid>/blog/2025-09-09-transform-text-data-into-structured-data-with-lmstudio-and-cntext/</guid>
       <description>实验数据为外卖评论， 今天咱们做个有难度的文本分析任务，从不同维度(味道、速度、服务)对外卖评论进行打分(-1.0~1.0)文本分析（也称为文本挖掘或自然语言处理，NLP）是指使用计算机算法和技术从大量文本数据中提取有价值信息的过程。文本分析的目标是从非结构化的文本数据中识别模式、提取关键信息、理解语义，并将其转化为结构化数据以便进一步分析和应用。</description>
       <content:encoded><![CDATA[<h2 id="一任务">一、任务</h2>
-<p>之前分享 <a href="https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/">教程 | 使用大模型将文本编码为结构化数据(Ollma篇)</a> 是基于Ollma的使用的大模型标注教程。 今天咱们换个新工具-<a href="https://lmstudio.ai/">LM Studio</a></p>
+<p>之前分享 <a href="https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/">教程 | 使用大模型将文本编码为结构化数据(本地Ollma篇)</a> 是基于Ollma的使用的大模型标注教程。 今天咱们换个新工具-<a href="https://lmstudio.ai/">LM Studio</a></p>
 <p>使用 LM Studio 和 cntext2x 进行文本分析。</p>
 <p><br><br></p>
 <h2 id="二配置环境">二、配置环境</h2>
@@ -5526,7 +5921,7 @@ Output Saved To: output/三体-GloVe.50.15.bin
     </item>
     
     <item>
-      <title>教程 | 使用大模型将文本编码为结构化数据(Ollama篇)</title>
+      <title>教程 | 使用大模型将文本编码为结构化数据(本地Ollama篇)</title>
       <link>https://textdata.cn/blog/2025-02-14-using-online-large-model-api-to-transform-text-data-into-structured-data/</link>
       <pubDate>Fri, 14 Feb 2025 00:00:00 +0000</pubDate>
       
