@@ -173,7 +173,7 @@ class Config {
 			{
 				site: 'MyBlog',
 				icon: 'myblog',
-				url: 'https://hidadeng.github.io/',
+				url: 'https://textdata.cn/',
 				category: 'Coding'
 			},
 			
@@ -214,13 +214,45 @@ class Config {
 				site: 'ChatGPT',
 				icon: 'chatgpt',
 				url: 'https://chat.openai.com/',
-				category: 'Academic Tools'
+				category: 'LLM Tools'
 			},
+			{
+				site: '豆包',
+				icon: 'doubao',
+				url: 'https://www.doubao.com/chat/',
+				category: 'LLM Tools'
+			},
+
+			{
+				site: '腾讯元宝',
+				icon: 'yuanbao',
+				url: 'https://yuanbao.tencent.com/chat/',
+				category: 'LLM Tools'
+			},
+			{
+				site: 'Qwen',
+				icon: 'qwen',
+				url: 'https://www.tongyi.com/',
+				category: 'LLM Tools'
+			},
+			{
+				site: 'Gemini',
+				icon: 'gemini',
+				url: 'https://gemini.google.com/',
+				category: 'LLM Tools'
+			},
+			{
+				site: 'Deepseek',
+				icon: 'deepseek',
+				url: 'https://chat.deepseek.com/',
+				category: 'LLM Tools'
+			},
+
 			{
 				site: '秘塔',
 				icon: 'metaso',
 				url: 'https://metaso.cn/',
-				category: 'Academic Tools'
+				category: 'LLM Tools'
 			},
 
 			{
@@ -273,12 +305,7 @@ class Config {
 				url: 'https://www.connectedpapers.com/',
 				category: 'Academic Search Engine'
 			},
-			{
-				site: '秘塔',
-				icon: 'metaso',
-				url: 'https://metaso.cn/',
-				category: 'Academic Search Engine'
-			},
+
 
 			{
 				site: 'Semantic Scholar',
@@ -408,12 +435,7 @@ class Config {
 				category: 'Academic Tools'
 			},
 
-			{
-				site: 'Qwen',
-				icon: 'qwen',
-				url: 'https://chat.qwen.ai/',
-				category: 'Academic Tools'
-			},
+
 
 
 			{
@@ -422,14 +444,6 @@ class Config {
 				url: 'https://www.doubao.com/chat/',
 				category: 'Academic Tools'
 			},
-
-			{
-				site: '腾讯元宝',
-				icon: 'yuanbao',
-				url: 'https://yuanbao.tencent.com/chat/',
-				category: 'Academic Tools'
-			},
-
 
 			{
 				site: 'Aoogle Scholar',
@@ -442,7 +456,7 @@ class Config {
 			{
 				site: '期刊分类',
 				icon: 'list',
-				url: 'https://hidadeng.github.io/list/',
+				url: 'https://textdata.cn/list/',
 				category: 'Academic Search Engine'
 			},
 
@@ -642,9 +656,9 @@ class Config {
 			},
 			
 			{
-				site: 'Zlib',
-				icon: 'zlib',
-				url: 'https://zlib.knat.network/',
+				site: 'SVG',
+				icon: 'picsvg',
+				url: 'https://picsvg.com/',
 				category: 'Coding'
 			},
 			{
@@ -810,11 +824,10 @@ class Config {
 				url: 'https://scispace.com/search',
 			},
 
-
 			{
-				site: 'Github',
-				icon: 'github',
-				url: 'https://github.com/'
+				site: '小红书',
+				icon: 'xiaohongshu',
+				url: 'https://www.xiaohongshu.com/'
 			},
 
 			{
