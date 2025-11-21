@@ -642,6 +642,7 @@ Output Saved To: output/三体-GloVe.50.15.bin
 <li>两行代码训练领域专用词向量（Word2Vec/GloVe）：<code>ct.Word2Vec()</code></li>
 <li>构建概念语义轴（如“创新 vs 守旧”）：<code>ct.generate_concept_axis()</code></li>
 <li>通过语义投影量化刻板印象、组织文化偏移：<code>ct.project_text()</code></li>
+<li>计算文本对应的词嵌入投影得分WEPA：<code>ct.wepa()</code></li>
 </ul>
 </li>
 <li>
@@ -657,7 +658,12 @@ Output Saved To: output/三体-GloVe.50.15.bin
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip3 install cntext --upgrade
 </code></pre></div><br>
 <p>需要注意， <strong>cntext 使用环境为 Python3.9 ~ 3.12</strong>,如安装失败，问题可能出在 python 版本问题；</p>
-<p><br><br></p>
+<br>
+<p>如cntext安装成功，但是导入失败，可先将scipy、numpy、gensim降到指定版本，看能否解决问题。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">pip install scipy==1.12.0
+pip install numpy==1.26.4
+pip install gensim==4.3.3
+</code></pre></div><p><br><br></p>
 <h2 id="功能模块">功能模块</h2>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span>
 <span class="n">ct</span><span class="o">.</span><span class="n">hello</span><span class="p">()</span>
@@ -894,8 +900,8 @@ Output Saved To: output/三体-GloVe.50.15.bin
 </tr>
 <tr>
 <td><strong>mind</strong></td>
-<td><code>ct.project_text(wv, text, axis, lang='chinese', cosine=False)</code></td>
-<td>计算词语文本text在概念轴向量axis上的投影值</td>
+<td><code>ct.wepa(wv, text, poswords, negwords, lang='chinese')</code></td>
+<td>计算文本在概念轴上的投影得分，返回wepa得分</td>
 </tr>
 <tr>
 <td><strong>mind</strong></td>
@@ -2380,6 +2386,11 @@ Loading output/三体-GloVe.50.15.bin...
 </tr>
 <tr>
 <td><strong>mind</strong></td>
+<td><code>ct.wepa(wv, text, poswords, negwords, lang='chinese')</code></td>
+<td>计算文本在概念轴上的投影得分，返回wepa得分</td>
+</tr>
+<tr>
+<td><strong>mind</strong></td>
 <td><code>ct.sematic_distance(wv, words1, words2)</code></td>
 <td>测量语义距离</td>
 </tr>
@@ -2705,7 +2716,44 @@ dist(female, engineer) = distance(female_concept,  engineer_concept)
 [6] 投影值: -0.6124 | 项目失败了，还被领导批评，心里非常难过和失望。
 [7] 投影值: -0.9012 | 亲人离世，我感到极度悲伤和痛苦，世界仿佛失去了颜色。
 </code></pre></div><br>
-<h3 id="57-divergent_association_task">5.7 divergent_association_task()</h3>
+<h3 id="57-wepa">5.7 wepa()</h3>
+<p>计算文本在概念轴上的投影得分，返回wepa得分。 WEPA是词嵌入投影算法(Word Embeddings Projection Algorithm)的英文简称。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.wepa(wv, text, poswords, negwords, lang=&#39;chinese&#39;, cosine=False)
+</code></pre></div><ul>
+<li><strong>wv</strong> 模型数据， 数据类型为 gensim.models.keyedvectors.KeyedVectors。</li>
+<li><strong>poswords、negwords</strong> 确定概念轴的两极(端点)对应的词语列表</li>
+<li><strong>lang (str)</strong>: 语言，支持&rsquo;chinese&rsquo;或&rsquo;english'，默认为&rsquo;chinese'</li>
+<li><strong>cosine (bool)</strong>: 是否使用余弦相似度，默认为False</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">cntext</span> <span class="k">as</span> <span class="nn">ct</span> 
+
+<span class="c1"># 加载已训练好的词嵌入模型(GloVe)</span>
+<span class="n">M1</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">load_w2v</span><span class="p">(</span><span class="s2">&#34;output/corpus-GloVe.200.15.bin&#34;</span><span class="p">)</span>
+
+<span class="c1"># 目标具体性正、负向词(部分)</span>
+
+<span class="n">POSs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;kg&#34;</span><span class="p">,</span> <span class="s2">&#34;公斤&#34;</span><span class="p">,</span> <span class="s2">&#34;体脂率&#34;</span><span class="p">,</span> <span class="s2">&#34;bmi&#34;</span><span class="p">,</span> <span class="s2">&#34;公里&#34;</span><span class="p">,</span> <span class="s2">&#34;km&#34;</span><span class="p">,</span> <span class="s2">&#34;小时&#34;</span><span class="p">,</span> <span class="s2">&#34;分钟&#34;</span><span class="p">,</span><span class="o">...</span><span class="p">]</span>
+<span class="n">NEGs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;差不多&#34;</span><span class="p">,</span> <span class="s2">&#34;大概&#34;</span><span class="p">,</span> <span class="s2">&#34;变瘦&#34;</span><span class="p">,</span> <span class="s2">&#34;变强&#34;</span><span class="p">,</span> <span class="s2">&#34;变好&#34;</span><span class="p">,</span> <span class="s2">&#34;变美&#34;</span><span class="p">,</span> <span class="s2">&#34;变帅&#34;</span><span class="p">,</span> <span class="s2">&#34;进步&#34;</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+
+<span class="c1"># 实验文本</span>
+<span class="n">TEXTs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&#34;完成了3组卧推，每组10次，重量80kg。&#34;</span><span class="p">,</span>
+         <span class="s2">&#34;今天跑步5公里，用了30分钟，消耗了400卡路里。&#34;</span><span class="p">,</span>
+         <span class="s2">&#34;差不多就行了，今天有点累。&#34;</span><span class="p">,</span>
+         <span class="s2">&#34;希望自己能变得更强。&#34;</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&#34;目标具体性得分: </span><span class="se">\n</span><span class="s2">&#34;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">TEXTs</span><span class="p">:</span>
+    <span class="n">proj_score</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">wepa</span><span class="p">(</span><span class="n">wv</span><span class="o">=</span><span class="n">M1</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">poswords</span><span class="o">=</span><span class="n">POSs</span><span class="p">,</span> <span class="n">negwords</span><span class="o">=</span><span class="n">NEGs</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj_score</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+</code></pre></div><p>Run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">目标具体性得分:
+1.22 完成了3组卧推，每组10次，重量80kg。
+0.96 今天跑步5公里，用了30分钟，消耗了40...
+-0.17 差不多就行了，今天有点累。
+-1.42 希望自己能变得更强。
+</code></pre></div><p>输出结果清晰地表明，在目标具体性维度上的语义差异：包含具体量化指标的文本（如 80kg、5 公里）获得高分， 而表达模糊意图的文本（如差不多、变强）则得分较低。</p>
+<br>
+<h3 id="58-divergent_association_task">5.8 divergent_association_task()</h3>
 <p><a href="https://textdata.cn/blog/2022-11-14-pnas_naming_unrelated_words_predicts_creativity/">PNAS | 使用语义距离测量一个人的创新力(发散思维)得分</a>。一些理论认为，有 创造力 的人能够产生更多 发散性 的想法。如果这是正确的，简单地让被试写 N 个不相关的单词，然后测量这 N 个词的语义距离， 作为发散思维的客观衡量标准。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.divergent_association_task(wv, words)
 </code></pre></div><ul>
@@ -2728,7 +2776,7 @@ print(ct.divergent_association_task(wv, high_words)) # 95
 78
 95
 </code></pre></div><br>
-<h3 id="58-discursive_diversity_score">5.8 discursive_diversity_score()</h3>
+<h3 id="59-discursive_diversity_score">5.9 discursive_diversity_score()</h3>
 <p><a href="https://textdata.cn/blog/2023-11-02-measure-cognitive-diversity-through-language-discursive-diversity/">MS2022 | 使用语言差异性测量团队认知差异性</a></p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.discursive_diversity_score(wv, words)
 </code></pre></div><ul>
@@ -2740,7 +2788,7 @@ print(ct.divergent_association_task(wv, high_words)) # 95
 </p>
 <p>高绩效团队是那些具有调节共享认知以适应不断变化的任务要求的集体能力的团队：在进行构思任务时，它们表现出更高的话语多样性，在执行协调任务时，表现出较低的话语多样性。</p>
 <br>
-<h3 id="58-procrustes_align">5.8 procrustes_align()</h3>
+<h3 id="510-procrustes_align">5.10 procrustes_align()</h3>
 <p>该函数主要用于反映同一研究对象随着时间推进的社会文化变迁，或者同一时间范围内两个被研究主体间的差异。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">ct.procrustes_align(base_wv, other_wv, words=None)
 </code></pre></div><ul>
