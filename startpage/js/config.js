@@ -185,6 +185,13 @@ class Config {
 			},
 
 			{
+				site: '免费音乐',
+				icon: 'pixabay',
+				url: 'https://pixabay.com/zh/music/',
+				category: 'media'
+			},
+
+			{
 				site: 'LetPub',
 				icon: 'letpub',
 				url: 'https://www.letpub.com.cn/index.php?page=journalapp&view=search',
@@ -363,6 +370,12 @@ class Config {
 				site: 'Nature',
 				icon: 'nature',
 				url: 'https://www.nature.com/',
+				category: 'cNews'
+			},
+			{
+				site: 'BestBlogs',
+				icon: 'bestblogs',
+				url: 'https://www.bestblogs.dev/articles?time=1w&qualified=true',
 				category: 'cNews'
 			},
 			{
@@ -785,6 +798,22 @@ class Config {
 			},
 
 			{
+				site: 'Fiverr',
+				icon: 'fiverr',
+				url: 'https://pro.fiverr.com/',
+				category: 'Business'
+			},
+
+			{
+				site: 'upwork',
+				icon: 'upwork',
+				url: 'https://www.upwork.com/',
+				category: 'Business'
+			},
+
+
+
+			{
 				site: '雪球财经',
 				icon: 'xueqiu',
 				url: 'https://xueqiu.com/',
@@ -845,6 +874,11 @@ class Config {
 				icon: 'doi2bib',
 				url: 'https://www.doi2bib.org/'
 			},
+			{
+				site: 'BestBlogs',
+				icon: 'bestblogs',
+				url: 'https://www.bestblogs.dev/articles?time=1w&qualified=true'
+			}
 
 
 		];
